@@ -1,0 +1,67 @@
+"""Primitivas de seguridad: hash de contrasenas y tokens JWT (RNF01).
+
+Este modulo no conoce la base de datos ni FastAPI. Solo transforma datos.
+La verificacion de identidad contra la base vive en app/core/dependencies.py.
+"""
+
+from datetime import datetime, timedelta, timezone
+from typing import Any
+
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+
+from app.core.config import settings
+
+_pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+# --- Contrasenas ---------------------------------------------------------
+
+def hash_password(password: str) -> str:
+    """Devuelve el hash bcrypt de una contrasena en claro."""
+    return _pwd.hash(password)
+
+
+def verify_password(password: str, hashed: str) -> bool:
+    """Verifica una contrasena en claro contra su hash almacenado."""
+    return _pwd.verify(password, hashed)
+
+
+# --- Tokens --------------------------------------------------------------
+
+def crear_access_token(
+    *,
+    usuario_id: int,
+    rol: str,
+    sucursal_id: int | None = None,
+    expira_en: timedelta | None = None,
+) -> str:
+    """Emite un token de acceso.
+
+    El token porta el identificador del usuario, su rol y -- cuando aplica --
+    la sucursal a la que pertenece. El ambito de sucursal es lo que impide
+    que un Encargado opere sobre una sucursal que no es la suya.
+    """
+    ahora = datetime.now(timezone.utc)
+    expiracion = ahora + (
+        expira_en or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+    payload: dict[str, Any] = {
+        "sub": str(usuario_id),
+        "rol": rol,
+        "sucursal_id": sucursal_id,
+        "iat": ahora,
+        "exp": expiracion,
+        "tipo": "access",
+    }
+    return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+
+
+def decodificar_token(token: str) -> dict[str, Any] | None:
+    """Devuelve el contenido del token, o None si es invalido o expiro."""
+    try:
+        return jwt.decode(
+            token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
+        )
+    except JWTError:
+        return None

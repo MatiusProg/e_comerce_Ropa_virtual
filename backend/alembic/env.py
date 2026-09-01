@@ -1,0 +1,77 @@
+"""Entorno de Alembic.
+
+La URL de la base se toma de la configuracion de la aplicacion (DATABASE_URL),
+no de alembic.ini: asi el mismo archivo funciona en local y en Railway.
+
+IMPORTANTE: para que `alembic revision --autogenerate` detecte una tabla nueva,
+el modelo tiene que estar importado abajo. Un modelo que no se importa aqui
+sencillamente no existe para Alembic, y la migracion sale vacia.
+"""
+
+from logging.config import fileConfig
+
+from alembic import context
+from sqlalchemy import engine_from_config, pool
+
+from app.core.config import settings
+from app.db.base import Base
+from app.db.session import _normalizar_url
+
+# --- Modelos: importar TODOS los modulos que definan tablas --------------
+# Ciclo 1
+from app.modules.seguridad import models as _seguridad_models  # noqa: F401
+from app.modules.organizacion import models as _organizacion_models  # noqa: F401
+from app.modules.catalogo import models as _catalogo_models  # noqa: F401
+
+# Ciclo 2 - descomentar al implementarlos
+# from app.modules.inventario import models as _inventario_models  # noqa: F401
+# from app.modules.catalogo_publico import models as _cat_pub_models  # noqa: F401
+# from app.modules.reservas import models as _reservas_models  # noqa: F401
+
+# Ciclo 3 - descomentar al implementarlos
+# from app.modules.ventas import models as _ventas_models  # noqa: F401
+# from app.modules.pagos import models as _pagos_models  # noqa: F401
+# from app.modules.vestidor_virtual import models as _vestidor_models  # noqa: F401
+# from app.modules.ia import models as _ia_models  # noqa: F401
+
+config = context.config
+config.set_main_option("sqlalchemy.url", _normalizar_url(settings.DATABASE_URL))
+
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
+
+target_metadata = Base.metadata
+
+
+def run_migrations_offline() -> None:
+    context.configure(
+        url=config.get_main_option("sqlalchemy.url"),
+        target_metadata=target_metadata,
+        literal_binds=True,
+        compare_type=True,
+        dialect_opts={"paramstyle": "named"},
+    )
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+def run_migrations_online() -> None:
+    connectable = engine_from_config(
+        config.get_section(config.config_ini_section, {}),
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
+    )
+    with connectable.connect() as connection:
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            compare_type=True,
+        )
+        with context.begin_transaction():
+            context.run_migrations()
+
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()

@@ -1,0 +1,42 @@
+# FashionStore - API REST (FastAPI)
+# Python 3.13
+#
+# Instalacion:  pip install -r requirements.txt
+# Versiones verificadas contra PyPI el 01/09/2026.
+
+# --- Framework y servidor -----------------------------------------------
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+gunicorn==26.2.0
+python-multipart==0.0.32        # formularios y carga de imagenes
+
+# --- Base de datos -------------------------------------------------------
+SQLAlchemy==2.0.52
+psycopg[binary]==3.3.5          # controlador PostgreSQL (psycopg 3, no psycopg2)
+alembic==1.19.1
+
+# --- Validacion y configuracion -----------------------------------------
+pydantic==2.13.5
+pydantic-settings==2.15.0
+email-validator==2.3.0
+
+# --- Seguridad (RNF01) ---------------------------------------------------
+passlib[bcrypt]==1.7.4
+bcrypt==4.3.0                   # NO subir a 5.x: passlib 1.7.4 no lo soporta
+python-jose[cryptography]==3.5.0
+
+# --- Tareas programadas (CU-25: expiracion de reservas) ------------------
+APScheduler==3.11.3
+
+# --- Reportes (CU-37) ----------------------------------------------------
+reportlab==5.0.1                # PDF
+openpyxl==3.1.5                 # Excel
+
+# --- Integraciones externas (ciclo 3) ------------------------------------
+stripe==15.6.1                  # P8 - pasarela de pago (modo sandbox)
+anthropic==1.3.0                # P10 - servicio de inteligencia artificial
+
+# --- Pruebas -------------------------------------------------------------
+pytest==9.1.1
+pytest-cov==7.1.0
+httpx==0.28.1

@@ -1,0 +1,68 @@
+# ---------- Secretos y entorno ----------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ---------- Python / FastAPI ----------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ---------- Node / Angular ----------
+node_modules/
+dist/
+.angular/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+
+# ---------- Flutter / Dart ----------
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/android/key.properties
+mobile/ios/Pods/
+*.apk
+*.aab
+*.ipa
+*.jks
+*.keystore
+
+# ---------- Base de datos ----------
+*.sqlite3
+*.db
+pgdata/
+
+# ---------- Archivos subidos en desarrollo ----------
+backend/uploads/
+backend/media/
+
+# ---------- Editores e IDE ----------
+.vscode/
+.idea/
+*.swp
+*~
+
+# ---------- Sistema operativo ----------
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ---------- Documentación: temporales de Office ----------
+~$*.docx
+~$*.xlsx
+~$*.pptx

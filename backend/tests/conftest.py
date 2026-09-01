@@ -1,0 +1,11 @@
+"""Configuracion compartida de las pruebas (flujo de Pruebas del PUDS)."""
+
+import pytest
+from fastapi.testclient import TestClient
+
+from app.main import app
+
+
+@pytest.fixture
+def client() -> TestClient:
+    return TestClient(app)

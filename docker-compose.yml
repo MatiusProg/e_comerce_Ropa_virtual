@@ -1,0 +1,54 @@
+# Entorno de DESARROLLO local.
+#
+# En produccion nada de esto se usa: la base y la API viven en Railway.
+# Este archivo existe solo para que cada integrante levante PostgreSQL
+# sin instalarlo en su maquina.
+#
+#   docker compose up -d          levanta la base
+#   docker compose logs -f db     ver el arranque
+#   docker compose down           apagar (los datos sobreviven en el volumen)
+#   docker compose down -v        apagar Y BORRAR los datos
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: fashionstore_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fashionstore
+      POSTGRES_PASSWORD: fashionstore
+      POSTGRES_DB: fashionstore
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fashionstore -d fashionstore"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Opcional: la API dentro de Docker. Para desarrollar con recarga en
+  # caliente conviene correrla fuera (uvicorn --reload) y dejar aqui solo
+  # la base. Levantarla con:  docker compose --profile api up -d
+  api:
+    profiles: ["api"]
+    build: ./backend
+    container_name: fashionstore_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 8000
+      DATABASE_URL: postgresql+psycopg://fashionstore:fashionstore@db:5432/fashionstore
+    env_file:
+      - ./backend/.env
+    ports:
+      - "8000:8000"
+    volumes:
+      - media:/app/media
+
+volumes:
+  pgdata:
+  media:
