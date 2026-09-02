@@ -107,22 +107,85 @@ winget install --id Google.AndroidStudio -e
 
 O el instalador desde <https://developer.android.com/studio> (~1.4 GB).
 
-Dos pasos que son gráficos y hay que hacer a mano:
+Instalar Android Studio es solo el primero de **cuatro** pasos. Los otros tres
+no son obvios y cada uno produce un mensaje distinto en `flutter doctor` que
+parece decir otra cosa. Está todo verificado sobre esta máquina.
 
-1. **Aceptar el UAC** si aparece durante la instalación. Se instala a nivel de
-   máquina y pide elevación; sin eso winget falla al final, después de haber
-   bajado todo.
-2. **Abrir Android Studio una vez.** Instalar Android Studio **no alcanza**:
-   `flutter doctor` sigue diciendo *Unable to locate Android SDK* hasta que lo
-   abrís, porque el SDK se descarga recién en el asistente del primer arranque.
-   Está verificado — con Android Studio ya instalado, el diagnóstico no cambia
-   hasta hacer este paso.
+#### 5.1 Aceptar el UAC durante la instalación
 
-Luego, aceptar las licencias del SDK (responder `y` a cada una):
+Se instala a nivel de máquina y pide elevación. Si el prompt aparece y no se
+acepta, winget falla al final, después de haber bajado 1.4 GB.
+
+#### 5.2 Abrir Android Studio una vez
+
+Instalar Android Studio **no alcanza**: `flutter doctor` sigue diciendo
+*Unable to locate Android SDK* hasta que lo abrís, porque el SDK se descarga
+recién en el asistente del primer arranque.
+
+#### 5.3 Instalar `cmdline-tools` — **revisión 19.0, no la última**
+
+El asistente de Android Studio instala el SDK pero **no instala
+`cmdline-tools`**, que es el componente que Flutter necesita para hablar con
+el SDK. El diagnóstico pasa de `[X]` a `[!]` —o sea avanza— pero sigue trabado
+en *cmdline-tools component is missing*.
+
+Y acá está la trampa: **no sirve la última revisión.** `cmdline-tools` viene en
+dos generaciones incompatibles para este uso:
+
+| Revisión | Qué trae | Con Flutter 3.47.2 |
+|---|---|---|
+| **23.0** (la última) | Reemplaza `sdkmanager` por el CLI `android`. El `sdkmanager.bat` que queda es un stub que avisa que está obsoleto y **rechaza `--licenses`** | ❌ Flutter no puede leer el estado → *license status unknown* |
+| **19.0** | `sdkmanager` real y funcional | ✔ |
+
+Con la 23.0, `flutter doctor --android-licenses` responde *"Warning: The
+--licenses option is no longer needed"*. Ese mensaje es engañoso: **no
+significa que las licencias estén aceptadas**, significa que esa herramienta ya
+no las maneja así — y Flutter todavía las necesita aceptadas por la vía vieja.
+
+Instalar la 19.0 (137 MB):
+
+```powershell
+# descargar y descomprimir
+curl.exe -L -o cmdline-tools.zip `
+  https://dl.google.com/android/repository/commandlinetools-win-13114758_latest.zip
+Expand-Archive cmdline-tools.zip -DestinationPath .\cmdt
+
+# mover a <SDK>\cmdline-tools\latest
+$sdk = "$env:LOCALAPPDATA\Android\Sdk"
+New-Item -ItemType Directory -Force "$sdk\cmdline-tools" | Out-Null
+Move-Item .\cmdt\cmdline-tools "$sdk\cmdline-tools\latest"
+```
+
+Verificación: `<SDK>\cmdline-tools\latest\source.properties` debe decir
+`Pkg.Revision=19.0`, y en `bin\` **no** debe haber un `android.exe`.
+
+Después hay que definir `ANDROID_HOME` y agregar dos rutas al PATH del usuario:
+
+```powershell
+$sdk = "$env:LOCALAPPDATA\Android\Sdk"
+[Environment]::SetEnvironmentVariable('ANDROID_HOME', $sdk, 'User')
+$p = [Environment]::GetEnvironmentVariable('Path','User')
+[Environment]::SetEnvironmentVariable('Path',
+  ($p.TrimEnd(';') + ";$sdk\platform-tools;$sdk\cmdline-tools\latest\bin"), 'User')
+```
+
+#### 5.4 Aceptar las licencias del SDK
+
+En una **terminal nueva** (el PATH cambió):
 
 ```powershell
 flutter doctor --android-licenses
 ```
+
+Responder `y` + Enter a cada una — son 6 o 7. Ojo con tipear cualquier otra
+tecla: cuenta como rechazo y hay que volver a correr el comando para esa
+licencia. El comando cierra con *All SDK package licenses accepted*.
+
+Ignorar estas advertencias, son ruido y no impiden nada:
+
+- `This version only understands SDK XML versions up to 3 but ... version 4`
+- `WARNING: A restricted method in java.lang.System has been called` (es JNA
+  con Java 17)
 
 ---
 
@@ -143,21 +206,33 @@ cd backend; .venv\Scripts\activate; pytest
 Debe cerrar con **1 passed**. Esa prueba levanta la app, monta los routers del
 Ciclo 1 y golpea `/health`: si pasa, el backend está bien armado.
 
-### Estado actual de `flutter doctor`
+### Cómo debe quedar `flutter doctor`
 
 ```
 [√] Flutter (Channel stable, 3.47.2, on Windows 11 25H2, locale es-BO)
 [√] Windows Version (Windows 11 25H2)
-[X] Android toolchain — Unable to locate Android SDK    ← se resuelve con el paso 5
+[√] Android toolchain (Android SDK version 36.0.0)
 [√] Chrome — develop for the web
 [√] Visual Studio — Visual Studio Build Tools 2026 18.9.1
 [√] Connected device (3 available)
 [√] Network resources
+
+• No issues found!
 ```
 
-La única cruz es la cadena de Android, y desaparece al terminar el paso 5. Las
-demás no son necesarias para este proyecto (no compilamos para Windows ni para
-web desde Flutter), pero no molestan.
+Verificado en la máquina de Mateo el 02/09/2026. Si el Android toolchain no
+sale en verde, el mensaje dice en qué punto del paso 5 quedaste:
+
+| Mensaje de `flutter doctor` | Qué falta |
+|---|---|
+| `[X] Unable to locate Android SDK` | Abrir Android Studio una vez (5.2) |
+| `[!] cmdline-tools component is missing` | Instalar `cmdline-tools` 19.0 (5.3) |
+| `[!] Android license status unknown` | Tenés la revisión 23.0; bajá a la 19.0 (5.3) |
+| `[!] Some Android licenses not accepted` | Correr `flutter doctor --android-licenses` (5.4) |
+
+Los últimos dos se parecen pero son distintos: *unknown* significa que Flutter
+**no pudo consultar** el estado (herramienta incompatible); *not accepted*
+significa que sí lo consultó y faltan aceptar.
 
 ---
 
