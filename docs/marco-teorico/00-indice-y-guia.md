@@ -1,8 +1,13 @@
 # Parte I — Fundamentación Teórica · índice y guía
 
-**Estado: pendiente de redacción.** Este archivo no es el marco teórico: es el índice exacto que
-exige el enunciado, con lo que hay que responder en cada punto. Sirve para que ninguna exigencia
-se pase por alto y para repartir el trabajo.
+**Estado: redactado.** Este archivo es el índice y la guía; el contenido está en los cinco
+documentos que se listan abajo. Sirve para verificar que ninguna exigencia del enunciado se pasó
+por alto.
+
+> **Lo único que falta son las capturas propias.** El enunciado pide *experimentar* con Amazon,
+> Alibaba y Shopify como usuario. El documento `01-ecommerce.md` marca con 📷 los seis puntos
+> donde van esas capturas. Sin ellas la sección a.a queda incompleta, por bien redactada que
+> esté.
 
 El enunciado pide expresamente *"revisar en libros o sitios en internet especializados en la
 temática"*. Cada afirmación con dato duro (comisiones, plazos, porcentajes) debe llevar su fuente
@@ -31,13 +36,13 @@ Parte I – Fundamentación Teórica
 
 ## Archivos
 
-| # | Archivo | Contenido | Responsable |
+| # | Archivo | Contenido | Estado |
 |---|---|---|---|
-| a | `01-ecommerce.md` | Conceptos, características, y la experimentación como usuario y como desarrollador | Karen |
-| b | `02-pasarelas-de-pago.md` | Formas de pago en línea, Libélula, PayPal y Stripe | Karen |
-| c | `03-deliverys.md` | Funcionamiento y cálculo del costo de entrega | Karen |
-| d | `04-puds.md` | Proceso Unificado de Desarrollo de Software | Mateo |
-| e | `05-uml.md` | UML 2.5+ | Mateo |
+| a | [`01-ecommerce.md`](01-ecommerce.md) | Conceptos y características; Amazon, Alibaba y Shopify como usuario; Magento, PrestaShop y WooCommerce como desarrollador; por qué no se usa ninguno | ✔ redactado · faltan las capturas 📷 |
+| b | [`02-pasarelas-de-pago.md`](02-pasarelas-de-pago.md) | Actores y etapas de un cobro; débito, crédito, QR y transferencias; **Libélula**; **PayPal**; **Stripe** | ✔ redactado |
+| c | [`03-deliverys.md`](03-deliverys.md) | Ciclo de un pedido; Yaigo, Yummy y el mercado boliviano; cálculo de la tarifa de entrega | ✔ redactado |
+| d | [`04-puds.md`](04-puds.md) | Origen, las tres características, fases, flujos de trabajo y aplicación al proyecto | ✔ redactado |
+| e | [`05-uml.md`](05-uml.md) | Qué es UML, los catorce diagramas, notación y los que usa este proyecto | ✔ redactado |
 
 ---
 
