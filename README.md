@@ -204,6 +204,7 @@ la defensa no hay que traducir entre uno y otro.
 | agregar un caso de uso o un paquete | [docs/03-captura-requisitos.md](docs/03-captura-requisitos.md) y [docs/04-analisis-arquitectura.md](docs/04-analisis-arquitectura.md) |
 | entender el problema que se resuelve | [docs/01-perfil.md](docs/01-perfil.md) y [docs/02-modelo-negocio.md](docs/02-modelo-negocio.md) |
 | trabajar con el repositorio | [docs/07-estructura-repositorio.md](docs/07-estructura-repositorio.md) — ramas, commits y etiquetas |
+| **redactar el marco teórico** | **[docs/marco-teorico/00-indice-y-guia.md](docs/marco-teorico/00-indice-y-guia.md)** — el índice que exige el enunciado y qué responder en cada punto |
 
 ---
 

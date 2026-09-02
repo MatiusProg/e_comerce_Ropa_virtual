@@ -143,7 +143,8 @@ models`): son las mismas que aparecen en los diagramas de secuencia.
 | Esqueleto de la app Flutter (`pubspec.yaml` + `lib/`) | ✔ parcial — falta `flutter create` |
 | Modelos, migraciones y endpoints del Ciclo 1 | ✖ pendiente |
 | Servicios de Railway creados y desplegados | ✖ pendiente |
-| Marco teórico (Parte I del enunciado) | ✖ pendiente — Karen |
+| Guía e índice del marco teórico (`docs/marco-teorico/00-indice-y-guia.md`) | ✔ |
+| Marco teórico redactado (Parte I del enunciado) | ✖ pendiente — Karen (a–c) y Mateo (d–e) |
 | Diagramas UML | ✖ pendientes |
 | Detalle de los 9 casos de uso del Ciclo 1 | ✖ pendiente |
 | Prototipos de interfaz | ✖ pendientes |

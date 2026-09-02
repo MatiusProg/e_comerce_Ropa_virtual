@@ -54,28 +54,53 @@ en ciclos sucesivos. El modelado de todos los artefactos se realiza con **UML 2.
 
 ### 1.2.1 Objetivo General
 
-Desarrollar una plataforma inteligente de comercio electrónico para una cadena de tiendas de
-ropa, que integre comercio electrónico web y móvil, reservas de prendas, gestión de sucursales,
-inventario, puntos de venta, pagos electrónicos, vestidores virtuales mediante realidad aumentada
-e inteligencia artificial, aplicando el Proceso Unificado de Desarrollo y modelos UML 2.5+.
+> Desarrollar una plataforma inteligente de comercio electrónico para una cadena de tiendas de
+> ropa, que integre comercio electrónico web y móvil, reservas de prendas, gestión de sucursales,
+> inventario, puntos de venta, pagos electrónicos, vestidores virtuales mediante realidad
+> aumentada e inteligencia artificial, utilizando el Proceso Unificado de Desarrollo y modelos
+> UML.
+
+*(Transcrito literalmente del enunciado, §2.)*
 
 ### 1.2.2 Objetivos Específicos
 
-| Código | Objetivo específico | RF que cubre |
+#### a) Objetivos específicos del enunciado
+
+Transcritos **literalmente** del enunciado (§3). La numeración OE-01 a OE-16 respeta el orden
+original. La última columna indica dónde se realiza cada uno dentro del proyecto.
+
+| Código | Objetivo específico (textual del enunciado) | Se realiza en |
 |---|---|---|
-| OE-01 | Analizar y especificar los requisitos funcionales y no funcionales del sistema, y modelarlos con UML 2.5+ en cada flujo de trabajo del PUDS. | — |
-| OE-02 | Implementar un módulo de autenticación y autorización basado en roles (Cliente, Administrador, Encargado de Sucursal, Cajero, Proveedor) con protección de credenciales y datos sensibles. | RF01, RF02, RNF01 |
-| OE-03 | Desarrollar la gestión maestra de la organización: ciudades, sucursales, empleados y proveedores, permitiendo incorporar nuevas sucursales sin cambios estructurales. | RF03, RF06, RNF04 |
-| OE-04 | Construir el módulo de catálogo de productos con su estructura de variantes (producto → talla × color = SKU), categorías, temporadas y colecciones. | RF04, RF05, RF23 |
-| OE-05 | Implementar el control de inventario por sucursal y variante, con registro trazable de todos los movimientos (ingreso, reserva, venta, devolución, transferencia, ajuste) y actualización automática. | RF20, RF21, RF22 |
-| OE-06 | Desarrollar la consulta pública de catálogo y disponibilidad por sucursal desde la aplicación web (Angular) y la aplicación móvil (Flutter). | RF07, RF08 |
-| OE-07 | Implementar el proceso de reserva múltiple de prendas con selección de sucursal y horario, su notificación a la sucursal, su preparación, atención y expiración automática. | RF09, RF10, RF11, RF12 |
-| OE-08 | Implementar el carrito de compras y la venta digital web y móvil, integrando una pasarela de pago electrónica en entorno de pruebas. | RF14, RF15, RF16, RF19, RNF09 |
-| OE-09 | Implementar el punto de venta (POS) de sucursal para la venta presencial, el cobro en caja y la emisión de comprobantes. | RF17, RF18 |
-| OE-10 | Incorporar un vestidor virtual mediante realidad aumentada en la aplicación móvil, integrado con el catálogo y las variantes de cada prenda. | RF13 |
-| OE-11 | Incorporar funcionalidades de inteligencia artificial: recomendador de prendas, asistente conversacional de compra y generación de reportes bajo demanda mediante comando de voz. | RF25 |
-| OE-12 | Generar reportes y un tablero de indicadores (KPIs) de ventas, reservas e inventario para apoyar la toma de decisiones. | RF24 |
-| OE-13 | Desplegar la solución completa en la nube (backend, base de datos, frontend web y distribución de la app móvil), sin dependencia de entornos locales. | RNF03 |
+| **OE-01** | Analizar y especificar los requisitos funcionales y no funcionales del sistema. | Flujo de Captura de Requisitos (doc. 03) |
+| **OE-02** | Gestionar clientes, usuarios, empleados, proveedores y sucursales. | Paquetes P1 y P2 · CU-01 a CU-07 |
+| **OE-03** | Administrar el catálogo de prendas, categorías, tallas, colores, temporadas y colecciones. | Paquete P3 · CU-08 a CU-11 |
+| **OE-04** | Consultar la disponibilidad de prendas por sucursal. | Paquetes P4 y P5 · CU-14, CU-19 |
+| **OE-05** | Permitir al cliente reservar varias prendas para probarlas posteriormente en una tienda. | Paquete P6 · CU-22 |
+| **OE-06** | Gestionar el proceso de recepción y atención de reservas. | Paquete P6 · CU-23, CU-24, CU-25 |
+| **OE-07** | Incorporar vestidores virtuales utilizando realidad aumentada. | Paquete P9 · CU-21 |
+| **OE-08** | Permitir compras mediante la plataforma web y aplicación móvil. | Paquete P7 · CU-26, CU-27 |
+| **OE-09** | Permitir pagos presenciales en puntos de caja. | Paquete P7 · CU-30, CU-31 |
+| **OE-10** | Integrar una pasarela de pago para compras digitales. | Paquete P8 · CU-27, CU-28 |
+| **OE-11** | Actualizar automáticamente el inventario después de reservas, ventas, devoluciones y recepción de productos. | Paquete P4 · CU-13, CU-22, CU-28, CU-31, CU-32 |
+| **OE-12** | Gestionar productos provenientes de diferentes proveedores y temporadas. | Paquetes P2 y P3 · CU-07, CU-09, CU-10, CU-13 |
+| **OE-13** | Incorporar funcionalidades de inteligencia artificial para recomendación o asistencia al cliente. | Paquete P10 · CU-33, CU-34, CU-35 |
+| **OE-14** | Generar reportes y dashboards para apoyar la toma de decisiones. | Paquete P11 · CU-36, CU-37 |
+| **OE-15** | Aplicar UML 2.5+ para modelar los procesos, funcionalidades y arquitectura del sistema. | Todos los flujos de trabajo del PUDS (docs. 03, 04 y siguientes) |
+| **OE-16** | Implementar el sistema utilizando FastAPI, Angular y Flutter/Dart. | Decisiones técnicas (doc. 06) |
+
+#### b) Objetivos específicos adicionales del equipo
+
+El enunciado exige en su apartado *TOMAR EN CUENTA* el despliegue en la nube, y el análisis del
+modelo de negocio (doc. 02) expuso problemas —la falta de trazabilidad de los movimientos de
+mercadería, P5— que ninguno de los dieciséis objetivos anteriores cubre de forma explícita. Se
+incorporan cuatro objetivos adicionales, numerados a continuación de los originales:
+
+| Código | Objetivo específico | Justificación |
+|---|---|---|
+| **OE-17** | Desplegar la solución completa en la nube —backend, base de datos y aplicación web con URL pública, y la aplicación móvil como artefacto instalable—, sin dependencia de entornos locales. | Exigencia explícita del enunciado (*"Despliegue: En la nube (no localhost)"*), no recogida en los objetivos específicos. Realiza RNF03. |
+| **OE-18** | Implementar el control de acceso basado en roles (Cliente, Administrador, Encargado de Sucursal, Cajero, Proveedor) y la protección de credenciales y datos sensibles. | El OE-02 exige gestionar usuarios, pero no su seguridad. Realiza RNF01 y acota el ámbito de datos de cada rol a su sucursal. |
+| **OE-19** | Garantizar la trazabilidad de las existencias registrando cada modificación de inventario como un movimiento inmutable con tipo, motivo, usuario y fecha. | Responde al problema P5 del modelo de negocio. El OE-11 exige que el inventario se actualice, pero no que el cambio quede explicado. |
+| **OE-20** | Asegurar la consistencia transaccional de reservas y ventas, impidiendo la sobreventa de una misma variante ante operaciones concurrentes. | Sin esta garantía, dos clientes pueden reservar o comprar la última unidad disponible. Realiza RNF11. |
 
 ## 1.3 Descripción del problema
 

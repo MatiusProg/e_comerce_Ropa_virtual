@@ -23,6 +23,19 @@ excepciones) se desarrolla por ciclo en el documento de entrega.
 | **A8** | **Servicio de Inteligencia Artificial** | No humano, externo | Servicio de IA consumido vía API. Analiza preferencias y genera recomendaciones de prendas, sostiene la conversación del asistente virtual y produce los reportes generativos bajo demanda solicitados por comando de voz. |
 | **A9** | **Servicio de Realidad Aumentada** | No humano, externo | Componente del dispositivo móvil (cámara, detección de pose corporal) sobre el que se construye el vestidor virtual. Provee al sistema la posición del cuerpo del usuario para superponer la prenda seleccionada. |
 
+**Correspondencia con el enunciado.** Los actores **A1 a A5, A7 y A8** son los siete actores
+principales listados en el enunciado (§4): Cliente, Administrador, Encargado de sucursal, Cajero,
+Proveedor, Sistema de pagos y Servicio de inteligencia artificial. Se conservan con esos nombres
+y esas responsabilidades. El equipo incorpora dos actores adicionales:
+
+- **A6 · Sistema (procesos automáticos).** El enunciado exige comportamientos que ocurren sin
+  intervención humana —la actualización automática del inventario (RF20) y la confirmación del
+  pago— pero no los atribuye a ningún actor. Modelarlos como actor permite que los casos de uso
+  CU-25 y CU-28 tengan un iniciador explícito.
+- **A9 · Servicio de Realidad Aumentada.** El enunciado exige el vestidor virtual (RF13) sin
+  nombrar el componente que provee la detección de pose corporal. Se modela como actor externo
+  por simetría con A7 y A8, que también son servicios consumidos por el sistema.
+
 **Nota sobre A5 (Proveedor).** El enunciado lo lista como actor principal. En este proyecto su
 participación se modela con alcance acotado (registro y consulta de sus productos y su
 disponibilidad); el ciclo de órdenes de compra queda fuera del alcance —ver §1.4.2.
@@ -156,60 +169,87 @@ y P11.
 > sacrificarse si el plazo aprieta, y el **prototipo aislado del vestidor virtual** se construye
 > durante el Ciclo 2, en paralelo, no cuando empieza el Ciclo 3.
 
-## 3.3 Trazabilidad Requisito Funcional → Caso de Uso
+## 3.3 Requisitos funcionales
 
-| RF | Enunciado (resumido) | Casos de uso que lo realizan |
+### 3.3.1 Requisitos funcionales del enunciado
+
+Transcritos **literalmente** del enunciado (§5). La numeración RF01 a RF25 respeta el orden
+original. La última columna traza cada requisito con los casos de uso que lo realizan.
+
+| RF | Requisito funcional (textual del enunciado) | Casos de uso |
 |---|---|---|
-| RF01 | Registrar clientes | CU-01, CU-04 |
-| RF02 | Gestionar usuarios y roles | CU-02, CU-03 |
-| RF03 | Administrar múltiples ciudades y sucursales | CU-05 |
-| RF04 | Gestionar productos de ropa | CU-10, CU-11 |
-| RF05 | Gestionar tallas, colores, categorías y temporadas | CU-08, CU-09, CU-10 |
-| RF06 | Gestionar proveedores | CU-07, CU-13 |
-| RF07 | Consultar el catálogo desde web y móvil | CU-17, CU-18 |
-| RF08 | Consultar disponibilidad por sucursal | CU-19 |
-| RF09 | Seleccionar múltiples prendas para una reserva | CU-22 |
-| RF10 | Registrar y gestionar reservas | CU-22, CU-23, CU-24, CU-25 |
-| RF11 | Notificar las reservas a la sucursal | CU-22, CU-24 |
-| RF12 | Consultar el estado de una reserva | CU-23, CU-24 |
-| RF13 | Vestidor virtual en la aplicación móvil | CU-21 |
-| RF14 | Agregar productos al carrito | CU-26 |
-| RF15 | Comprar mediante la plataforma web | CU-26, CU-27, CU-28 |
-| RF16 | Comprar mediante la aplicación móvil | CU-26, CU-27, CU-28 |
-| RF17 | Registrar ventas presenciales | CU-31 |
-| RF18 | Permitir pagos en punto de caja | CU-30, CU-31 |
-| RF19 | Integrar pasarela de pago para compras digitales | CU-27, CU-28 |
-| RF20 | Actualizar automáticamente el inventario tras una venta | CU-28, CU-31, CU-32 |
-| RF21 | Controlar las existencias por sucursal | CU-14, CU-16, CU-19 |
-| RF22 | Registrar movimientos de inventario | CU-13, CU-15, CU-25, CU-28, CU-31, CU-32 |
-| RF23 | Gestionar temporadas y colecciones | CU-09 |
-| RF24 | Consultar reportes de ventas e inventario | CU-36, CU-37 |
-| RF25 | Al menos una funcionalidad basada en IA | CU-33, CU-34, CU-35 |
+| **RF01** | El sistema deberá permitir registrar clientes. | CU-01, CU-04 |
+| **RF02** | El sistema deberá permitir gestionar usuarios y roles. | CU-02, CU-03 |
+| **RF03** | El sistema deberá administrar múltiples ciudades y sucursales. | CU-05 |
+| **RF04** | El sistema deberá permitir gestionar productos de ropa. | CU-10, CU-11 |
+| **RF05** | El sistema deberá gestionar tallas, colores, categorías y temporadas. | CU-08, CU-09, CU-10 |
+| **RF06** | El sistema deberá gestionar proveedores. | CU-07, CU-13 |
+| **RF07** | El cliente deberá poder consultar el catálogo desde web y móvil. | CU-17, CU-18 |
+| **RF08** | El cliente deberá poder consultar disponibilidad por sucursal. | CU-19 |
+| **RF09** | El cliente deberá poder seleccionar múltiples prendas para una reserva. | CU-22 |
+| **RF10** | El sistema deberá registrar y gestionar reservas. | CU-22, CU-23, CU-24, CU-25 |
+| **RF11** | El sistema deberá notificar las reservas a la sucursal correspondiente. | CU-22, CU-24 |
+| **RF12** | El sistema deberá permitir consultar el estado de una reserva. | CU-23, CU-24 |
+| **RF13** | La aplicación móvil deberá permitir utilizar el vestidor virtual. | CU-21 |
+| **RF14** | El cliente deberá poder agregar productos al carrito. | CU-26 |
+| **RF15** | El cliente deberá poder comprar mediante la plataforma web. | CU-26, CU-27, CU-28 |
+| **RF16** | El cliente deberá poder comprar mediante la aplicación móvil. | CU-26, CU-27, CU-28 |
+| **RF17** | El cajero deberá poder registrar ventas presenciales. | CU-31 |
+| **RF18** | El sistema deberá permitir pagos en punto de caja. | CU-30, CU-31 |
+| **RF19** | El sistema deberá integrar una pasarela de pago para compras digitales. | CU-27, CU-28 |
+| **RF20** | El sistema deberá actualizar automáticamente el inventario después de una venta. | CU-28, CU-31, CU-32 |
+| **RF21** | El sistema deberá controlar las existencias por sucursal. | CU-14, CU-16, CU-19 |
+| **RF22** | El sistema deberá registrar movimientos de inventario. | CU-13, CU-15, CU-25, CU-28, CU-31, CU-32 |
+| **RF23** | El sistema deberá gestionar temporadas y colecciones. | CU-09 |
+| **RF24** | El sistema deberá permitir consultar reportes de ventas e inventario. | CU-36, CU-37 |
+| **RF25** | El sistema deberá proporcionar al menos una funcionalidad basada en inteligencia artificial. | CU-33, CU-34, CU-35 |
 
-**Cobertura:** los 25 requisitos funcionales del enunciado quedan cubiertos por al menos un caso
-de uso. Los casos de uso CU-06, CU-12, CU-20, CU-29 y CU-32 no derivan de un RF explícito; se
-incorporan porque completan el ciclo de vida de los procesos exigidos (asignación de personal a
-sucursal, promociones por temporada, favoritos, seguimiento del pedido y devoluciones).
+**Cobertura:** los veinticinco requisitos funcionales del enunciado quedan cubiertos por al menos
+un caso de uso.
 
-## 3.4 Requisitos no funcionales y su realización
+### 3.3.2 Requisitos funcionales adicionales del equipo
 
-| RNF | Enunciado | Cómo se realiza en la arquitectura |
+Al detallar los casos de uso aparecieron operaciones necesarias para cerrar el ciclo de vida de
+los procesos exigidos, que el enunciado no enuncia como requisito. Se formulan como requisitos
+adicionales numerados a continuación de los originales.
+
+| RF | Requisito funcional adicional | Casos de uso | Por qué se agrega |
+|---|---|---|---|
+| **RF26** | El sistema deberá permitir registrar empleados y asignarlos a una sucursal. | CU-06 | El RF03 administra sucursales y el RF02 usuarios, pero nadie vincula a la persona con su tienda. Sin esto no puede acotarse el ámbito de datos de un Encargado o un Cajero. |
+| **RF27** | El sistema deberá permitir registrar el ingreso de mercadería enviada por un proveedor a una sucursal. | CU-13 | El OE-11 exige actualizar el inventario tras la *recepción de productos*, pero ningún RF define esa operación. |
+| **RF28** | El sistema deberá permitir registrar transferencias de mercadería entre sucursales y ajustes por conteo físico. | CU-15 | El RF22 exige registrar movimientos; estos dos tipos son los que permiten corregir el desbalance entre sucursales (problema P8). |
+| **RF29** | El cliente deberá poder cancelar una reserva mientras no haya sido atendida. | CU-23 | El RF10 gestiona reservas y el RF12 consulta su estado, pero sin cancelación el stock queda retenido hasta expirar. |
+| **RF30** | El sistema deberá liberar automáticamente el stock de las reservas que venzan sin ser atendidas. | CU-25 | Sin expiración, cada reserva no atendida inmoviliza inventario de forma indefinida. |
+| **RF31** | El cliente deberá poder marcar prendas como favoritas y consultar su lista. | CU-20 | Alimenta el historial de preferencias que necesita el recomendador del RF25. |
+| **RF32** | El cliente deberá poder consultar el historial y el estado de sus pedidos y descargar su comprobante. | CU-29 | Los RF15 y RF16 permiten comprar, pero nada permite al cliente saber después qué pasó con su pedido. |
+| **RF33** | El cajero deberá poder abrir y cerrar su caja por turno, registrando el arqueo. | CU-30 | El RF18 permite cobrar en caja; sin apertura y cierre de turno el dinero cobrado no es atribuible ni cuadrable. |
+| **RF34** | El cajero deberá poder registrar devoluciones de prendas vendidas, reingresándolas al inventario. | CU-32 | El OE-11 exige actualizar el inventario tras *devoluciones*, operación que ningún RF define. |
+| **RF35** | El sistema deberá permitir gestionar promociones y descuentos con vigencia, aplicables a un producto, una categoría o una temporada. | CU-12 | El enunciado incluye "gestionar promociones" entre las funciones del Administrador (§4), pero no lo formula como RF. |
+| **RF36** | El sistema deberá permitir exportar los reportes en formato PDF y Excel. | CU-37 | El RF24 exige consultar reportes; la exportación es lo que los vuelve utilizables fuera del sistema. |
+
+## 3.4 Requisitos no funcionales
+
+### 3.4.1 Requisitos no funcionales del enunciado
+
+Transcritos **literalmente** del enunciado (§6).
+
+| RNF | Requisito no funcional (textual del enunciado) | Cómo se realiza en la arquitectura |
 |---|---|---|
-| RNF01 | **Seguridad**: protección de contraseñas y datos sensibles | Hash de contraseñas con bcrypt/argon2; autenticación por token JWT con expiración; autorización por rol verificada en cada endpoint; secretos gestionados por variables de entorno, nunca en el repositorio; HTTPS obligatorio en todos los entornos desplegados. |
-| RNF02 | **Rendimiento**: respuesta adecuada en consultas de catálogo | Índices sobre las columnas de filtrado y búsqueda; paginación obligatoria en todo listado; carga diferida de relaciones; caché de las consultas de catálogo más frecuentes; imágenes servidas desde almacenamiento de objetos/CDN, no desde la aplicación. |
-| RNF03 | **Disponibilidad**: sistema disponible para usuarios web y móviles | Despliegue en la nube con URL pública y HTTPS; una única API REST que atiende indistintamente a la web y a la app móvil; base de datos gestionada con respaldos automáticos. |
-| RNF04 | **Escalabilidad**: incorporar nuevas sucursales y ciudades | Ciudad y sucursal son entidades de datos, no configuración del código; el inventario se modela por (variante, sucursal), de modo que agregar una sucursal es una operación de datos; backend sin estado, replicable horizontalmente. |
-| RNF05 | **Usabilidad**: interfaces intuitivas y adaptables | Diseño responsivo en Angular; navegación por rol; validación en formulario con mensajes claros; app Flutter con navegación nativa; consistencia visual entre web y móvil. |
-| RNF06 | **Mantenibilidad**: código modular y buenas prácticas | Organización del backend por paquetes correspondientes a los paquetes de análisis; separación en capas (router → servicio → repositorio → modelo); esquemas Pydantic para validación de entrada y salida; control de versiones con Git y revisión por Pull Request. |
-| RNF07 | **Integración**: FastAPI provee servicios REST | API REST versionada (`/api/v1`) con documentación OpenAPI generada automáticamente; contratos JSON estables consumidos por Angular y Flutter. |
-| RNF08 | **Compatibilidad**: app móvil en Flutter/Dart | Único código fuente Flutter para Android; cliente HTTP compartido y modelos de datos generados a partir del contrato de la API. |
-| RNF09 | **Seguridad transaccional**: pagos con mecanismos seguros y entorno de prueba | Pasarela integrada en modo sandbox; el sistema nunca almacena datos de tarjeta —el cobro ocurre en el dominio de la pasarela—; el estado del pedido se confirma exclusivamente por webhook firmado y verificado, nunca por la redirección del navegador; idempotencia en el procesamiento de la notificación de pago. |
+| **RNF01** | **Seguridad:** las contraseñas y datos sensibles deberán protegerse adecuadamente. | Hash de contraseñas con bcrypt; autenticación por token JWT con expiración; autorización por rol verificada en cada endpoint; secretos gestionados por variables de entorno, nunca en el repositorio; HTTPS obligatorio en todos los entornos desplegados. |
+| **RNF02** | **Rendimiento:** las consultas del catálogo deberán responder en tiempos adecuados. | Índices sobre las columnas de filtrado y búsqueda; paginación obligatoria en todo listado; carga diferida de relaciones; caché de las consultas de catálogo más frecuentes; imágenes servidas desde almacenamiento de objetos, no desde la aplicación. |
+| **RNF03** | **Disponibilidad:** el sistema deberá estar disponible para usuarios web y móviles. | Despliegue en la nube con URL pública y HTTPS; una única API REST que atiende indistintamente a la web y a la app móvil; base de datos gestionada con respaldos automáticos. |
+| **RNF04** | **Escalabilidad:** la arquitectura deberá permitir incorporar nuevas sucursales y ciudades. | Ciudad y sucursal son entidades de datos, no configuración del código; el inventario se modela por (variante, sucursal), de modo que agregar una sucursal es una operación de datos; backend sin estado, replicable horizontalmente. |
+| **RNF05** | **Usabilidad:** las interfaces deberán ser intuitivas y adaptables a diferentes dispositivos. | Diseño responsivo en Angular; navegación por rol; validación en formulario con mensajes claros; app Flutter con navegación nativa; consistencia visual entre web y móvil. |
+| **RNF06** | **Mantenibilidad:** el código deberá organizarse en módulos y seguir buenas prácticas. | Organización del backend por paquetes correspondientes a los paquetes de análisis; separación en capas (router → servicio → repositorio → modelo); esquemas Pydantic para validación de entrada y salida; control de versiones con Git y revisión por Pull Request. |
+| **RNF07** | **Integración:** FastAPI deberá proporcionar servicios mediante API REST. | API REST versionada (`/api/v1`) con documentación OpenAPI generada automáticamente; contratos JSON estables consumidos por Angular y Flutter. |
+| **RNF08** | **Compatibilidad:** la aplicación móvil deberá desarrollarse utilizando Flutter/Dart. | Único código fuente Flutter para Android; cliente HTTP compartido y modelos de datos derivados del contrato de la API. |
+| **RNF09** | **Seguridad transaccional:** las operaciones de pago deberán utilizar mecanismos seguros y, para el proyecto académico, entornos de prueba. | Pasarela integrada en modo sandbox; el sistema nunca almacena datos de tarjeta —el cobro ocurre en el dominio de la pasarela—; el estado del pedido se confirma exclusivamente por webhook firmado y verificado, nunca por la redirección del navegador; idempotencia en el procesamiento de la notificación de pago. |
 
-**Requisitos no funcionales adicionales asumidos por el equipo**
+### 3.4.2 Requisitos no funcionales adicionales del equipo
 
-| RNF | Enunciado | Justificación |
+| RNF | Requisito no funcional adicional | Justificación |
 |---|---|---|
-| RNF10 | **Trazabilidad**: toda modificación de existencias queda registrada como un movimiento inmutable con usuario, fecha, tipo y motivo | Deriva del problema P5; sin él no hay auditoría ni explicación de las diferencias de inventario. |
-| RNF11 | **Consistencia transaccional**: la reserva, la venta y la confirmación de pago se ejecutan en una transacción con bloqueo de la fila de existencia | Evita la sobreventa cuando dos clientes compiten por la última unidad de una variante. |
-| RNF12 | **Restricción tecnológica**: prohibido el uso de frameworks de e-commerce (PrestaShop, Shopify, Magento, WooCommerce y similares) | Exigencia explícita del enunciado. |
-| RNF13 | **Despliegue en la nube**: la demostración y la defensa se realizan sobre el sistema desplegado, no sobre localhost | Exigencia explícita del enunciado. |
+| **RNF10** | **Trazabilidad:** toda modificación de existencias deberá quedar registrada como un movimiento inmutable con tipo, motivo, usuario y fecha. | Deriva del problema P5 del modelo de negocio; sin él no hay auditoría ni explicación posible de las diferencias de inventario. |
+| **RNF11** | **Consistencia transaccional:** la reserva, la venta y la confirmación de pago deberán ejecutarse en una transacción con bloqueo de la fila de existencia. | Evita la sobreventa cuando dos clientes compiten por la última unidad de una variante. |
+| **RNF12** | **Restricción tecnológica:** no deberán utilizarse frameworks de tipo e-commerce (PrestaShop, Shopify, Magento, WooCommerce y similares). | Exigencia explícita del enunciado (*TOMAR EN CUENTA*). |
+| **RNF13** | **Despliegue:** el sistema deberá desplegarse en la nube; la demostración y la defensa se realizarán sobre el sistema desplegado, no sobre localhost. | Exigencia explícita del enunciado (*TOMAR EN CUENTA*). |
