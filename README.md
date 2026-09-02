@@ -193,7 +193,8 @@ la defensa no hay que traducir entre uno y otro.
 
 | Si vas a… | Leé primero |
 |---|---|
-| **montar tu entorno por primera vez** | **[backend/README.md](backend/README.md)** — de cero a `/health` respondiendo |
+| **montar tu entorno por primera vez** | **[docs/entorno/versiones.md](docs/entorno/versiones.md)** — qué instalar, en qué orden, con las versiones exactas |
+| **levantar el backend** | **[backend/README.md](backend/README.md)** — de cero a `/health` respondiendo |
 | **escribir código del backend** | **[backend/README.md](backend/README.md)** — las cuatro capas y las reglas que no se rompen |
 | **escribir código del frontend web** | [frontend-web/README.md](frontend-web/README.md) — áreas por rol y configuración de la API |
 | **tocar el vestidor virtual** | **[mobile/README.md](mobile/README.md)** — cómo funciona la superposición y qué necesita de las imágenes |
