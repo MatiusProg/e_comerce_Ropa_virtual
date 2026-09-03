@@ -36,8 +36,8 @@ La consecuencia práctica es que **el sistema se construye por funcionalidades c
 verificables**, no por capas técnicas. No se hace "toda la base de datos" y luego "todos los
 formularios": se hace *Crear reserva* de punta a punta.
 
-> **En este proyecto:** los 37 casos de uso de
-> [`docs/03-captura-requisitos.md`](../03-captura-requisitos.md) son el eje. La tabla de
+> **En este proyecto:** los 37 casos de uso del **CAP. 1 § 1.1.2**
+> ([`docs/03-captura-requisitos.md`](../03-captura-requisitos.md)) son el eje. La tabla de
 > trazabilidad RF → CU y la organización del código por paquetes son la aplicación directa de
 > este principio.
 
@@ -53,8 +53,8 @@ atraviesan la mayor cantidad de partes del sistema—. La arquitectura y los cas
 moldean mutuamente: los casos de uso dicen qué debe hacer el sistema; la arquitectura dice cómo
 puede hacerlo de forma sostenible.
 
-> **En este proyecto:** los once paquetes de análisis de
-> [`docs/04-analisis-arquitectura.md`](../04-analisis-arquitectura.md), su regla de dependencias
+> **En este proyecto:** los once paquetes de análisis del **CAP. 2 § 2.1.1**
+> ([`docs/04-analisis-arquitectura.md`](../04-analisis-arquitectura.md)), su regla de dependencias
 > unidireccionales y las cuatro capas del backend (router → service → repository → model). El
 > código replica los paquetes con el mismo nombre, de modo que el diagrama de paquetes y el árbol
 > de carpetas son la misma cosa.

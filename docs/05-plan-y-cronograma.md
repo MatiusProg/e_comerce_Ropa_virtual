@@ -55,11 +55,11 @@ Captura de Requisitos, y dejar el proyecto arrancado, con seguridad y organizaci
 | 1 | Perfil: introducción, objetivos, descripción del problema, alcance | Mateo | ✔ |
 | 2 | Modelo del negocio: problemas, depuración, propietarios, cuantificación, alternativas, Ishikawa | Mateo | ✔ |
 | 3 | Captura de requisitos: actores, casos de uso, priorización, trazabilidad RF/RNF | Mateo | ✔ |
-| 4 | **Parte I · E-commerce**: conceptos y características; como usuario en Amazon, Alibaba y Shopify; como desarrollador en Magento, PrestaShop y WooCommerce | Karen | pendiente |
-| 5 | **Parte I · Pasarelas de pago**: formas de pago en línea (débito, crédito, QR, transferencias); **Libélula**; **PayPal** y **Stripe** | Karen | pendiente |
-| 6 | **Parte I · Deliverys**: funcionamiento (Yaigo / Yummy) y cálculo del costo de entrega (distancia, peso, frecuencia, tamaño) | Karen | pendiente |
-| 7 | **Parte I · PUDS**: fases, flujos de trabajo, carácter iterativo e incremental | Mateo | pendiente |
-| 8 | **Parte I · UML 2.5+**: diagramas estructurales y de comportamiento; los que se usan en este proyecto | Mateo | pendiente |
+| 4 | **Parte I · E-commerce**: conceptos y características; como usuario en Amazon, Alibaba y Shopify; como desarrollador en Magento, PrestaShop y WooCommerce | Karen | ✔ |
+| 5 | **Parte I · Pasarelas de pago**: formas de pago en línea (débito, crédito, QR, transferencias); **Libélula**; **PayPal** y **Stripe** | Karen | ✔ |
+| 6 | **Parte I · Deliverys**: funcionamiento (Yaigo / Yummy) y cálculo del costo de entrega (distancia, peso, frecuencia, tamaño) | Karen | ✔ |
+| 7 | **Parte I · PUDS**: fases, flujos de trabajo, carácter iterativo e incremental | Mateo | ✔ |
+| 8 | **Parte I · UML 2.5+**: diagramas estructurales y de comportamiento; los que se usan en este proyecto | Mateo | ✔ |
 | 9 | Diagrama de Ishikawa (dibujado) | Karen | pendiente |
 | 10 | **Diagrama de Casos de Uso UML** (general y del Ciclo 1) | Karen | pendiente |
 | 11 | **Detalle de los 9 casos de uso del Ciclo 1** con plantilla completa: descripción, propósito, actores, iniciador, precondiciones, flujo principal, postcondiciones y excepciones | Ambos | pendiente |

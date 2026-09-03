@@ -179,6 +179,7 @@ mobile/
   lib/data/         modelos del contrato y repositorios
   lib/features/     auth · catalogo · reservas · vestidor_virtual · compra · asistente
 docs/
+  00                índice oficial de la ingeniera y mapeo del entregable
   01 a 07           documentación PUDS
   diagramas/        fuentes UML y exportados
   casos-de-uso/     detalle por ciclo
@@ -193,6 +194,7 @@ la defensa no hay que traducir entre uno y otro.
 
 | Si vas a… | Leé primero |
 |---|---|
+| **armar el documento de entrega** | **[docs/00-indice-oficial.md](docs/00-indice-oficial.md)** — el índice que dio la ingeniera, qué sección sale de qué archivo y qué falta |
 | **montar tu entorno por primera vez** | **[docs/entorno/versiones.md](docs/entorno/versiones.md)** — qué instalar, en qué orden, con las versiones exactas |
 | **levantar el backend** | **[backend/README.md](backend/README.md)** — de cero a `/health` respondiendo |
 | **escribir código del backend** | **[backend/README.md](backend/README.md)** — las cuatro capas y las reglas que no se rompen |
