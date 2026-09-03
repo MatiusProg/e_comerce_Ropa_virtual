@@ -66,3 +66,10 @@ Desktop.ini
 ~$*.docx
 ~$*.xlsx
 ~$*.pptx
+~WRL*.tmp
+
+# El documento de entrega se edita en linea, en OneDrive, entre los dos. No se
+# versiona aqui: una copia en Git quedaria desactualizada al dia siguiente y los
+# .docx no se pueden fusionar. La fuente del contenido son los .md de docs/.
+# Ver docs/00-indice-oficial.md
+/SI2 Ex1 Grupo 16.docx
