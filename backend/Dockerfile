@@ -21,6 +21,12 @@ COPY . .
 # en el volumen se pierde en cada despliegue.
 RUN mkdir -p /app/media
 
+# ATENCION: este puerto y el que use gunicorn tienen que ser EL MISMO.
+# Railway decide a que puerto enruta el trafico mirando esta instruccion, pero
+# gunicorn se ata a $PORT. Si Railway inyecta PORT=8080 y aqui dice 8000, la
+# aplicacion arranca bien, el healthcheck no la encuentra, Railway detiene el
+# contenedor y el dominio responde 502 sin ningun error en los logs.
+# Solucion: definir PORT=8000 en las variables del servicio.
 EXPOSE 8000
 
 # Railway inyecta $PORT. En local, docker-compose fija PORT=8000.
