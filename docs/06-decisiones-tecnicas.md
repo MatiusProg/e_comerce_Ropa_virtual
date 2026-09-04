@@ -289,3 +289,37 @@ datos durante la defensa.
 | Mensajes de commit | Convención `tipo(alcance): descripción` — p. ej. `feat(inventario): registrar movimiento por ingreso de proveedor` |
 | Etiquetas | Una etiqueta por entrega: `v0.1-presentacion1`, `v0.2-presentacion2`, `v1.0-final`, para poder mostrar el estado exacto de cada entrega |
 | Frecuencia | *Commits* diarios; nadie retiene trabajo sin subir más de un día (mitiga R8) |
+
+## 6.11 Fronteras entre casos de uso (decisiones del Ciclo 1)
+
+Al implementar el CU-03 aparecieron dos puntos donde el límite entre casos de uso no era
+evidente. Se registran aquí porque condicionan el trabajo de los ciclos siguientes.
+
+### 6.11.1 Quién da de alta al usuario de un Encargado o un Cajero
+
+El paso 4 del CU-03 exige que, al crear un usuario con rol Encargado o Cajero, se le asigne una
+sucursal. Eso significa crear también el **empleado**, que es el objeto del CU-06.
+
+**Decisión: el alta la realiza el CU-03.** El caso de uso crea la cuenta y el empleado asociado en
+la misma transacción, porque una cuenta de Encargado sin sucursal no es un estado válido del
+sistema: no podría autorizarse ninguna operación con ella. Partir el alta en dos casos de uso
+dejaría al sistema en un estado inconsistente entre uno y otro.
+
+**Consecuencia para el CU-06.** El CU-06 no incluye el alta inicial; se ocupa del resto del ciclo
+de vida del empleado: editar sus datos, cambiarlo de sucursal, darlo de baja y consultar el
+listado. Cuando se implemente, extiende lo que el CU-03 ya dejó creado.
+
+### 6.11.2 Lectura de sucursales desde el módulo de organización
+
+El formulario del CU-03 necesita un selector de sucursales. El endpoint
+`GET /organizacion/sucursales` —solo lectura, devuelve identificador, nombre y ciudad de las
+sucursales activas— vive en el módulo `organizacion`, que corresponde al CU-05.
+
+**Decisión: el endpoint permanece en `organizacion`.** Duplicarlo bajo `seguridad` habría expuesto
+el mismo recurso en dos rutas distintas y habría obligado a eliminarlo al implementar el CU-05. El
+módulo queda con la lectura resuelta y marcada con un `TODO CU-05`; el alta, la edición y la baja
+de sucursales se agregan sobre ese mismo *router* cuando llegue su turno.
+
+**Consecuencia para el CU-05.** Quien implemente el CU-05 debe **extender** el endpoint existente,
+no declarar otro con la misma ruta: FastAPI no advierte de rutas duplicadas, se queda con la
+primera registrada y la segunda queda muerta sin ningún error visible.
