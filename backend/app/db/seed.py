@@ -13,17 +13,18 @@ que importa porque se ejecuta contra la base desplegada.
 Uso:
     python -m app.db.seed
 
-La contrasena inicial del administrador se toma de ADMIN_PASSWORD. Si no esta
-definida, el seed no crea el usuario: nunca se versiona ni se inventa una
-contrasena por defecto para un entorno desplegado.
+La contrasena inicial del administrador se toma de ADMIN_PASSWORD (en .env
+local, o en las variables del servicio en Railway). Si no esta definida, el seed
+no crea el usuario: nunca se versiona ni se inventa una contrasena por defecto
+para un entorno desplegado.
 """
 
-import os
 import sys
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.security import hash_password
 from app.db.session import SessionLocal
 from app.modules.organizacion.models import Ciudad
@@ -65,8 +66,10 @@ def _sembrar_ciudades(db: Session) -> None:
 
 
 def _sembrar_administrador(db: Session, roles: dict[str, Rol]) -> None:
-    correo = os.getenv("ADMIN_EMAIL", "admin@fashionstore.bo")
-    password = os.getenv("ADMIN_PASSWORD")
+    # Se leen de la configuracion, no de os.getenv: asi funcionan igual desde
+    # el archivo .env en local y desde las variables del servicio en Railway.
+    correo = settings.ADMIN_EMAIL
+    password = settings.ADMIN_PASSWORD
 
     if db.scalar(select(Usuario).where(Usuario.correo == correo)):
         print(f"  = administrador {correo} ya existe")
