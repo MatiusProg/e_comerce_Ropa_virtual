@@ -73,21 +73,21 @@ proyecto arrancado, con seguridad y organización funcionando y **desplegado en 
 | 5 | **1.1.3 Requisitos Funcionales** — RF01 a RF36 con su trazabilidad a casos de uso, completo | Mateo | ✔ |
 | 6 | **1.1.4 Requisitos No Funcionales** — RNF01 a RNF13, completo | Mateo | ✔ |
 | 7 | **1.2 Priorización** — los 37 con prioridad y paquete, agrupados en CICLO #1, #2 y #3 | Mateo | ✔ redactado · falta volcarlo al `.docx` |
-| 8 | **1.3.1 Tabla de detalle** de los nueve casos de uso del Ciclo 1 | Ambos | pendiente |
+| 8 | **1.3.1 Tabla de detalle** de los nueve casos de uso del Ciclo 1 | Mateo | ✔ redactadas · falta volcarlas |
 | 9 | **1.3.2 Diagrama de casos de uso**: el general con los 37 y el del Ciclo 1 con los 9 agrupados por paquete | Karen | pendiente |
 | 10 | **1.4 Prototipos de interfaz** del Ciclo 1 (~12 pantallas: login, registro, perfil, ABM de usuarios, ciudades, sucursales, empleados, proveedores, categorías, tallas y colores, temporadas y colecciones, y el layout con menú por rol) | Karen | pendiente |
-| 11 | **1.5 Modelo de casos de uso estructurado** del Ciclo 1: `include` de *Autenticar usuario*, `extend` de la verificación de correo y generalización de los actores internos | Mateo | pendiente |
+| 11 | **1.5 Modelo de casos de uso estructurado** del Ciclo 1: `include` de *Autenticar usuario*, `extend` de la verificación de correo y generalización de los actores internos | Mateo (texto) · Karen (diagrama) | ◐ texto ✔ · diagrama pendiente |
 | 12 | **2.1.1 a 2.1.3 Paquetes**: identificación de los once, matriz paquete–caso de uso y **diagrama** de la vista de paquetes con sus dependencias | Mateo (texto) · Karen (diagrama) | ◐ texto ✔ · diagrama pendiente |
-| 13 | **2.2 Diagramas de comunicación** de los nueve casos de uso del Ciclo 1, con sus clases «boundary», «control» y «entity» | Karen | pendiente |
-| 14 | **2.3 Diagrama de clases de análisis** del Ciclo 1: las catorce clases de P1, P2 y P3-maestros | Mateo | pendiente |
-| 15 | **2.4 Análisis de paquetes** P1, P2 y P3-maestros: contenido de cada uno y dependencias entre ellos | Mateo | pendiente |
-| 16 | **3.1.1 Diseño lógico**: diagrama de las cuatro capas (`router → service → repository → model`) y de los paquetes de diseño | Mateo | pendiente |
-| 17 | **3.1.2 Diseño físico**: diagrama de despliegue con los nodos, artefactos y vías de comunicación | Mateo | pendiente |
+| 13 | **2.2 Diagramas de comunicación** de los nueve casos de uso del Ciclo 1, con sus clases «boundary», «control» y «entity» | Karen | ◐ clases y mensajes especificados ✔ · 9 diagramas pendientes |
+| 14 | **2.3 Diagrama de clases de análisis** del Ciclo 1: las catorce clases de P1, P2 y P3-maestros | Mateo (texto) · Karen (diagrama) | ◐ texto ✔ · diagrama pendiente |
+| 15 | **2.4 Análisis de paquetes** P1, P2 y P3-maestros: contenido de cada uno y dependencias entre ellos | Mateo | ✔ |
+| 16 | **3.1.1 Diseño lógico**: diagrama de las cuatro capas (`router → service → repository → model`) y de los paquetes de diseño | Mateo | ◐ texto ✔ · diagrama pendiente |
+| 17 | **3.1.2 Diseño físico**: diagrama de despliegue con los nodos, artefactos y vías de comunicación | Mateo | ◐ los cuatro nodos ✔ · diagrama pendiente · **bloqueado** por el proveedor de nube |
 | 18 | **3.2 Diagramas de secuencia** de los nueve casos de uso del Ciclo 1 | Ambos | pendiente |
-| 19 | **3.2 Diagrama de estado** del Ciclo 1 — `SesionToken`: emitido → vigente → expirado → revocado | Mateo | pendiente |
-| 20 | **3.2 Diagrama de navegación** del Ciclo 1: mapa de pantallas de la web, por rol | Karen | pendiente |
-| 21 | **3.3.1 Diseño de datos lógico**: modelo entidad-relación de las catorce entidades del Ciclo 1 | Mateo | pendiente |
-| 22 | **3.3.2 Diseño de datos físico**: esquema PostgreSQL con tipos, claves foráneas e índices | Mateo | pendiente |
+| 19 | **3.2 Diagrama de estado** del Ciclo 1 — `SesionToken`: vigente → expirado / revocado | Mateo | ◐ estados y transiciones ✔ · diagrama pendiente |
+| 20 | **3.2 Diagrama de navegación** del Ciclo 1: mapa de pantallas de la web, por rol | Karen | ◐ mapa por rol ✔ · diagrama pendiente |
+| 21 | **3.3.1 Diseño de datos lógico**: modelo entidad-relación de las catorce entidades del Ciclo 1 | Mateo | ◐ entidades, claves y cardinalidades ✔ · diagrama pendiente |
+| 22 | **3.3.2 Diseño de datos físico**: esquema PostgreSQL con tipos, claves foráneas e índices | Mateo | ✔ |
 | 23 | Consolidación en Word: estilos, **actualización del índice con F9**, portada y numeración | Karen | pendiente |
 
 > **Sobre el Diagrama de Estado del Ciclo 1.** Los objetos con ciclo de vida rico son `Reserva`

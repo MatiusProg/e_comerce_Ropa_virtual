@@ -180,6 +180,7 @@ mobile/
 docs/
   00                índice oficial de la ingeniera y mapeo del entregable
   01 a 07           documentación PUDS
+  entregas/         el contenido de cada ciclo, listo para volcar al documento
   diagramas/        fuentes UML y exportados
   casos-de-uso/     detalle por ciclo
   entregas/         el documento de cada presentación
@@ -193,7 +194,9 @@ la defensa no hay que traducir entre uno y otro.
 
 | Si vas a… | Leé primero |
 |---|---|
+| **incorporarte al desarrollo** | **[docs/07-estructura-repositorio.md](docs/07-estructura-repositorio.md) §7.3** — entorno, rama propia, qué tomar y con qué frecuencia subir |
 | **armar el documento de entrega** | **[docs/00-indice-oficial.md](docs/00-indice-oficial.md)** — el índice que dio la ingeniera, qué sección sale de qué archivo y qué falta |
+| **desarrollar un caso de uso del Ciclo 1** | **[docs/entregas/ciclo-1/](docs/entregas/ciclo-1/)** — las 9 tablas de detalle, el análisis y el diseño de datos |
 | **montar tu entorno por primera vez** | **[docs/entorno/versiones.md](docs/entorno/versiones.md)** — qué instalar, en qué orden, con las versiones exactas |
 | **levantar el backend** | **[backend/README.md](backend/README.md)** — de cero a `/health` respondiendo |
 | **escribir código del backend** | **[backend/README.md](backend/README.md)** — las cuatro capas y las reglas que no se rompen |

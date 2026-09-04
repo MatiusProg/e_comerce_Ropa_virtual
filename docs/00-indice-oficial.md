@@ -142,24 +142,24 @@ son **doce diagramas** para el Ciclo 1, contando los nueve de secuencia como uno
 | **1.1.3 Requisitos Funcionales** | `03-captura-requisitos.md` §3.3 | ✔ RF01–RF36 con trazabilidad a CU |
 | **1.1.4 Requisitos No Funcionales** | `03-captura-requisitos.md` §3.4 | ✔ RNF01–RNF13 |
 | **1.2 Priorización** (los tres ciclos) | `03-captura-requisitos.md` §3.2 | ✔ redactado · falta volcarlo al `.docx` |
-| **1.3.1 Tabla Detalle** · Ciclo 1 | — | ✘ **falta** — 9 tablas (CU-01 a CU-09) |
+| **1.3.1 Tabla Detalle** · Ciclo 1 | `entregas/ciclo-1/cap-1-captura-requisitos.md` | ✔ las 9 tablas, listas para volcar |
 | **1.3.2 Diseñar Casos de Uso** · Ciclo 1 | — | ✘ **falta** — diagrama general (37) y del Ciclo 1 (9) |
 | **1.4 Prototipar Interfaz** · Ciclo 1 | `prototipos/` (vacío) | ✘ **falta** — ~12 pantallas |
-| **1.5 Estructurar Modelo de CU** · Ciclo 1 | — | ✘ **falta** — `include`, `extend`, generalización |
+| **1.5 Estructurar Modelo de CU** · Ciclo 1 | `entregas/ciclo-1/cap-1-captura-requisitos.md` | ✔ `include`, `extend` y generalización · falta dibujarlo |
 | 2.1.1 Identificar Paquetes | `04-analisis-arquitectura.md` §4.1.1 | ✔ los 11 |
 | 2.1.2 Relacionar Paquetes y CU | `04-analisis-arquitectura.md` §4.1.2 | ✔ |
 | 2.1.3 Vista de Paquetes | `04-analisis-arquitectura.md` §4.1.3 | ◐ texto ✔ · **falta el diagrama** |
-| **2.2 Analizar Casos de Uso** · Ciclo 1 | — | ✘ **falta** — 9 diagramas de comunicación con «boundary» / «control» / «entity» |
-| **2.3 Análisis de Clases** · Ciclo 1 | `04-analisis-arquitectura.md` §4.2 (insumo) | ✘ **falta el diagrama** — 14 clases de P1, P2 y P3-maestros |
-| **2.4 Análisis de Paquetes** · Ciclo 1 | `04-analisis-arquitectura.md` §4.1.1 (insumo) | ✘ **falta** — contenido y dependencias de P1, P2 y P3-maestros |
-| **3.1.1 Diseño lógico** · Ciclo 1 | `06-decisiones-tecnicas.md` §6.1 (insumo) | ✘ **falta el diagrama** de capas y paquetes de diseño |
-| **3.1.2 Diseño Físico** · Ciclo 1 | `04-analisis-arquitectura.md` §4.3 + `06-decisiones-tecnicas.md` §6.9 | ✘ **falta el diagrama** de despliegue |
+| **2.2 Analizar Casos de Uso** · Ciclo 1 | `entregas/ciclo-1/cap-2-3-analisis-y-diseno.md` | ◐ clases y mensajes de los 9 especificados · **faltan los 9 diagramas** |
+| **2.3 Análisis de Clases** · Ciclo 1 | `entregas/ciclo-1/cap-2-3-analisis-y-diseno.md` | ◐ las 14 clases con atributos y relaciones · **falta el diagrama** |
+| **2.4 Análisis de Paquetes** · Ciclo 1 | `entregas/ciclo-1/cap-2-3-analisis-y-diseno.md` | ✔ contenido y dependencias de P1, P2 y P3-maestros |
+| **3.1.1 Diseño lógico** · Ciclo 1 | `entregas/ciclo-1/cap-2-3-analisis-y-diseno.md` | ◐ las cuatro capas y su correspondencia con los estereotipos · **falta el diagrama** |
+| **3.1.2 Diseño Físico** · Ciclo 1 | `entregas/ciclo-1/cap-2-3-analisis-y-diseno.md` | ◐ los cuatro nodos especificados · **falta el diagrama** y cerrar el proveedor de nube |
 | **Diagrama de Secuencia** · Ciclo 1 | — | ✘ **falta** — 9, uno por caso de uso |
 | Diagrama de Tiempo | — | — no pedido todavía |
-| **Diagrama de Estado** · Ciclo 1 | — | ✘ **falta** — `SesionToken` |
-| **Diagrama de Navegación** · Ciclo 1 | — | ✘ **falta** — mapa de pantallas de la web, por rol |
-| **3.3.1 Diseño de datos lógico** · Ciclo 1 | `04-analisis-arquitectura.md` §4.2 (insumo) | ✘ **falta** — modelo entidad-relación de 14 entidades |
-| **3.3.2 Diseño de datos físico** · Ciclo 1 | — | ✘ **falta** — esquema PostgreSQL con tipos, claves foráneas e índices |
+| **Diagrama de Estado** · Ciclo 1 | `entregas/ciclo-1/cap-2-3-analisis-y-diseno.md` | ◐ estados y transiciones de `SesionToken` · **falta el diagrama** |
+| **Diagrama de Navegación** · Ciclo 1 | `entregas/ciclo-1/cap-2-3-analisis-y-diseno.md` | ◐ mapa de pantallas por rol · **falta el diagrama** |
+| **3.3.1 Diseño de datos lógico** · Ciclo 1 | `entregas/ciclo-1/cap-2-3-analisis-y-diseno.md` | ◐ entidades, claves y cardinalidades · **falta el diagrama entidad-relación** |
+| **3.3.2 Diseño de datos físico** · Ciclo 1 | `entregas/ciclo-1/cap-2-3-analisis-y-diseno.md` | ✔ esquema PostgreSQL completo con tipos, claves, índices y restricciones |
 | CAP. 4 · Implementación | `06-decisiones-tecnicas.md` + `entorno/versiones.md` + `07-estructura-repositorio.md` | Ciclo 2 — el material ya está escrito, hay que reordenarlo en 4.1.1–4.1.4, 4.2 y 4.3 |
 | CAP. 5 · Pruebas | `pruebas/` (vacío) | Ciclo 3 |
 | BIBLIOGRAFÍA | bibliografías por sección en `marco-teorico/` | Ciclo 2 — hay que consolidarlas |
@@ -171,25 +171,40 @@ Leyenda: ✔ hecho · ◐ hay material, falta el diagrama · ✘ falta
 
 ---
 
-## 0.4 Lo que falta para esta entrega, en orden
+## 0.4 Lo que falta para esta entrega
 
-Nada de esto depende del código, así que puede avanzar en paralelo al backend y al despliegue:
+El **texto** de todas las secciones del Ciclo 1 está escrito y listo para volcar al `.docx`:
 
-1. **Volcar 1.2 al `.docx`** con los tres ciclos — es lo más barato y lo más rentable: muestra los
-   37 casos de uso repartidos y explica por sí solo por qué 1.3 tiene nueve.
-2. **9 tablas de detalle** (1.3.1) — el artefacto más voluminoso y el único que no depende de
-   ningún otro.
-3. **Diagrama de casos de uso** general y del Ciclo 1 (1.3.2).
-4. **~12 prototipos de interfaz** (1.4).
-5. **Modelo de casos de uso estructurado** (1.5) — `include` de *Autenticar usuario* en los ocho
-   casos de uso internos, `extend` de la verificación de correo sobre *Registrar cliente*, y
-   generalización de Administrador, Encargado y Cajero desde un actor *Usuario interno*.
-6. **Diagrama de la vista de paquetes** (2.1.3).
-7. **9 diagramas de comunicación** (2.2) y **diagrama de clases de análisis** (2.3).
-8. **Análisis de los paquetes P1, P2 y P3-maestros** (2.4).
-9. **Diagramas de diseño** (3.1.1, 3.1.2), **9 de secuencia**, **estado**, **navegación** (3.2).
-10. **Modelo entidad-relación y esquema físico** (3.3).
-11. **Actualizar el índice del `.docx` con F9** — hoy está desactualizado (ver §0.6).
+- `CAP. 1` → [`entregas/ciclo-1/cap-1-captura-requisitos.md`](entregas/ciclo-1/cap-1-captura-requisitos.md)
+  — las nueve tablas de detalle (1.3.1) y el modelo estructurado con `include`, `extend` y
+  generalización (1.5).
+- `CAP. 2` y `CAP. 3` → [`entregas/ciclo-1/cap-2-3-analisis-y-diseno.md`](entregas/ciclo-1/cap-2-3-analisis-y-diseno.md)
+  — clases de análisis y mensajes por caso de uso (2.2), las catorce clases (2.3), los tres
+  paquetes (2.4), las cuatro capas (3.1.1), los cuatro nodos de despliegue (3.1.2), los estados de
+  la sesión y el mapa de navegación (3.2), y el modelo de datos lógico y físico (3.3).
+
+**Lo que falta son los artefactos gráficos y el volcado.** Todo lo de abajo se dibuja a partir de
+los dos documentos anteriores:
+
+| # | Artefacto | Sección | Cantidad |
+|---|---|---|:---:|
+| 1 | Diagrama de casos de uso general y del Ciclo 1 | 1.3.2 | 2 |
+| 2 | Prototipos de interfaz | 1.4 | ~12 |
+| 3 | Diagrama del modelo estructurado (include / extend / generalización) | 1.5 | 1 |
+| 4 | Diagrama de la vista de paquetes | 2.1.3 | 1 |
+| 5 | Diagramas de comunicación | 2.2 | 9 |
+| 6 | Diagrama de clases de análisis | 2.3 | 1 |
+| 7 | Diagrama de capas y paquetes de diseño | 3.1.1 | 1 |
+| 8 | Diagrama de despliegue | 3.1.2 | 1 |
+| 9 | Diagramas de secuencia | 3.2 | 9 |
+| 10 | Diagrama de estado de `SesionToken` | 3.2 | 1 |
+| 11 | Diagrama de navegación | 3.2 | 1 |
+| 12 | Diagrama entidad-relación | 3.3.1 | 1 |
+
+Más dos tareas de documento: **volcar todo al `.docx`** y **actualizar el índice con F9**.
+
+Los diagramas de secuencia (9) son los únicos que conviene esperar a tener el código, porque el
+orden exacto de llamadas se fija al implementar. Los once artefactos restantes pueden dibujarse ya.
 
 El detalle con responsables y estado está en `05-plan-y-cronograma.md` §5.3.
 
