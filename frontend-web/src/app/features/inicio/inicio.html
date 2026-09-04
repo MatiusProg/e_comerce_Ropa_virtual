@@ -1,0 +1,20 @@
+<mat-toolbar class="barra">
+  <span class="logotipo fs-titulo">FashionStore</span>
+
+  <span class="separador"></span>
+
+  @if (usuario(); as u) {
+    <span class="identidad">
+      <span class="avatar">{{ iniciales() }}</span>
+      <span class="datos">
+        <span class="nombre">{{ u.nombres }} {{ u.apellidos }}</span>
+        <span class="rol">{{ u.rol }}</span>
+      </span>
+    </span>
+    <button matIconButton type="button" (click)="salir()" aria-label="Cerrar sesión">
+      <mat-icon>logout</mat-icon>
+    </button>
+  }
+</mat-toolbar>
+
+<app-bienvenida />

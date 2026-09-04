@@ -1,0 +1,129 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+  background: var(--fs-marfil);
+}
+
+.barra {
+  background: var(--fs-degradado);
+  color: #fff;
+  box-shadow: var(--fs-sombra-suave);
+  gap: 0.85rem;
+}
+
+.logotipo {
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.etiqueta-area {
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgb(231 191 168 / 55%);
+  background: rgb(255 255 255 / 12%);
+  font-size: 0.72rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.separador {
+  flex: 1 1 auto;
+}
+
+.identidad {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 18%);
+  border: 1px solid rgb(231 191 168 / 60%);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.datos {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.nombre {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.rol {
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  color: #f3d9c6;
+}
+
+// --- Navegación ------------------------------------------------------------
+
+.navegacion {
+  display: flex;
+  align-items: stretch;
+  gap: 0.25rem;
+  padding: 0 1rem;
+  background: var(--mat-sys-surface);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  overflow-x: auto;
+
+  a,
+  .pendiente {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.85rem 1rem;
+    font-size: 0.94rem;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+    color: var(--mat-sys-on-surface-variant);
+    border-bottom: 3px solid transparent;
+    transition: color 120ms ease, border-color 120ms ease;
+
+    mat-icon {
+      width: 1.15rem;
+      height: 1.15rem;
+      font-size: 1.15rem;
+    }
+  }
+
+  a:hover {
+    color: var(--fs-malva);
+  }
+
+  a.activo {
+    color: var(--fs-malva);
+    border-bottom-color: var(--fs-malva);
+  }
+
+  // Secciones que todavía no existen: se ven, pero no engañan.
+  .pendiente {
+    opacity: 0.42;
+    cursor: not-allowed;
+  }
+}
+
+.contenido {
+  padding: 2rem 1.5rem 3rem;
+}
+
+@media (max-width: 700px) {
+  .etiqueta-area,
+  .datos {
+    display: none;
+  }
+
+  .contenido {
+    padding: 1.25rem 0.85rem 2rem;
+  }
+}

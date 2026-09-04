@@ -1,0 +1,44 @@
+<mat-toolbar class="barra">
+  <span class="logotipo fs-titulo">FashionStore</span>
+  <span class="etiqueta-area">Administración</span>
+
+  <span class="separador"></span>
+
+  @if (usuario(); as u) {
+    <span class="identidad">
+      <span class="avatar">{{ iniciales() }}</span>
+      <span class="datos">
+        <span class="nombre">{{ u.nombres }} {{ u.apellidos }}</span>
+        <span class="rol">Administrador</span>
+      </span>
+    </span>
+    <button matIconButton type="button" (click)="salir()" aria-label="Cerrar sesión">
+      <mat-icon>logout</mat-icon>
+    </button>
+  }
+</mat-toolbar>
+
+<nav class="navegacion" aria-label="Secciones de administración">
+  <a routerLink="/admin" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }">
+    <mat-icon>dashboard</mat-icon>
+    Tablero
+  </a>
+  <a routerLink="/admin/usuarios" routerLinkActive="activo">
+    <mat-icon>manage_accounts</mat-icon>
+    Usuarios
+  </a>
+
+  <!-- Se habilitan con CU-05 a CU-09. -->
+  <span class="pendiente" title="Disponible con los casos de uso CU-05 a CU-07">
+    <mat-icon>store</mat-icon>
+    Organización
+  </span>
+  <span class="pendiente" title="Disponible con los casos de uso CU-08 y CU-09">
+    <mat-icon>sell</mat-icon>
+    Catálogo
+  </span>
+</nav>
+
+<main class="contenido">
+  <router-outlet />
+</main>
