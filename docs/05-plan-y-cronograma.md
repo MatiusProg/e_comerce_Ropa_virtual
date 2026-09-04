@@ -74,9 +74,9 @@ proyecto arrancado, con seguridad y organización funcionando y **desplegado en 
 | 6 | **1.1.4 Requisitos No Funcionales** — RNF01 a RNF13, completo | Mateo | ✔ |
 | 7 | **1.2 Priorización** — los 37 con prioridad y paquete, agrupados en CICLO #1, #2 y #3 | Mateo | ✔ redactado · falta volcarlo al `.docx` |
 | 8 | **1.3.1 Tabla de detalle** de los nueve casos de uso del Ciclo 1 | Mateo | ✔ redactadas · falta volcarlas |
-| 9 | **1.3.2 Diagrama de casos de uso**: el general con los 37 y el del Ciclo 1 con los 9 agrupados por paquete | Karen | pendiente |
+| 9 | **1.3.2 Diagrama de casos de uso**: uno por cada caso de uso del Ciclo 1, generados en Enterprise Architect | Mateo | ✔ los 9 · falta el general con los 37 |
 | 10 | **1.4 Prototipos de interfaz** del Ciclo 1 (~12 pantallas: login, registro, perfil, ABM de usuarios, ciudades, sucursales, empleados, proveedores, categorías, tallas y colores, temporadas y colecciones, y el layout con menú por rol) | Karen | pendiente |
-| 11 | **1.5 Modelo de casos de uso estructurado** del Ciclo 1: `include` de *Autenticar usuario*, `extend` de la verificación de correo y generalización de los actores internos | Mateo (texto) · Karen (diagrama) | ◐ texto ✔ · diagrama pendiente |
+| 11 | **1.5 Modelo de casos de uso estructurado** del Ciclo 1: `include` de *Autenticar usuario*, `extend` de la verificación de correo y generalización de los actores internos | Mateo | ✔ texto y diagrama |
 | 12 | **2.1.1 a 2.1.3 Paquetes**: identificación de los once, matriz paquete–caso de uso y **diagrama** de la vista de paquetes con sus dependencias | Mateo (texto) · Karen (diagrama) | ◐ texto ✔ · diagrama pendiente |
 | 13 | **2.2 Diagramas de comunicación** de los nueve casos de uso del Ciclo 1, con sus clases «boundary», «control» y «entity» | Karen | ◐ clases y mensajes especificados ✔ · 9 diagramas pendientes |
 | 14 | **2.3 Diagrama de clases de análisis** del Ciclo 1: las catorce clases de P1, P2 y P3-maestros | Mateo (texto) · Karen (diagrama) | ◐ texto ✔ · diagrama pendiente |

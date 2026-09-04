@@ -143,12 +143,91 @@ $dCu01 = New-DiagramaDeCasoDeUso $pCiclo1 'CU-01 Registrar cliente' @(
     @{ el=$U['verif'];   l=700; t=-40;  w=230; h=80 },
     @{ el=$U['cu02'];    l=700; t=-210; w=230; h=80 }
 ) @( ,@($A['cliente'], $U['cu02']) )
-Write-Output "CU-01 -> objetos: $($dCu01.DiagramObjects.Count) | conectores visibles: $(($dCu01.DiagramLinks | Where-Object { -not $_.IsHidden }).Count)"
 
+# --- CU-02 Iniciar y cerrar sesion ---
+$dCu02 = New-DiagramaDeCasoDeUso $pCiclo1 'CU-02 Iniciar y cerrar sesión' @(
+    @{ el=$A['cliente'];   l=40;  t=-40;  w=100; h=80 },
+    @{ el=$A['interno'];   l=40;  t=-160; w=100; h=80 },
+    @{ el=$A['proveedor']; l=40;  t=-280; w=100; h=80 },
+    @{ el=$U['cu02'];      l=290; t=-140; w=250; h=85 },
+    @{ el=$U['cu01'];      l=700; t=-125; w=230; h=115 }
+) @( ,@($A['cliente'], $U['cu01']) )
+
+# --- CU-03 Gestionar usuarios y roles ---
+$dCu03 = New-DiagramaDeCasoDeUso $pCiclo1 'CU-03 Gestionar usuarios y roles' @(
+    @{ el=$A['admin']; l=40;  t=-120; w=100; h=80 },
+    @{ el=$U['cu03'];  l=290; t=-110; w=250; h=85 },
+    @{ el=$U['auth'];  l=700; t=-40;  w=230; h=85 },
+    @{ el=$U['revoc']; l=700; t=-180; w=230; h=85 }
+) $null
+
+# --- CU-04 Gestionar perfil del cliente ---
+$dCu04 = New-DiagramaDeCasoDeUso $pCiclo1 'CU-04 Gestionar perfil del cliente' @(
+    @{ el=$A['cliente']; l=40;  t=-120; w=100; h=80 },
+    @{ el=$U['cu04'];    l=290; t=-110; w=250; h=85 },
+    @{ el=$U['auth'];    l=700; t=-40;  w=230; h=85 },
+    @{ el=$U['pass'];    l=700; t=-180; w=230; h=85 }
+) $null
+
+# --- CU-05 Gestionar ciudades y sucursales ---
+$dCu05 = New-DiagramaDeCasoDeUso $pCiclo1 'CU-05 Gestionar ciudades y sucursales' @(
+    @{ el=$A['admin']; l=40;  t=-80; w=100; h=80 },
+    @{ el=$U['cu05'];  l=290; t=-70; w=250; h=85 },
+    @{ el=$U['auth'];  l=700; t=-70; w=230; h=85 }
+) $null
+
+# --- CU-06 Gestionar empleados ---
+$dCu06 = New-DiagramaDeCasoDeUso $pCiclo1 'CU-06 Gestionar empleados' @(
+    @{ el=$A['admin']; l=40;  t=-160; w=100; h=80 },
+    @{ el=$U['cu06'];  l=290; t=-150; w=250; h=85 },
+    @{ el=$U['cu03'];  l=700; t=-40;  w=230; h=85 },
+    @{ el=$U['auth'];  l=700; t=-160; w=230; h=85 },
+    @{ el=$U['revoc']; l=700; t=-280; w=230; h=85 }
+) @( @($A['admin'], $U['cu03']), @($U['cu03'], $U['auth']), @($U['revoc'], $U['cu03']) )
+
+# --- CU-07 Gestionar proveedores ---
+$dCu07 = New-DiagramaDeCasoDeUso $pCiclo1 'CU-07 Gestionar proveedores' @(
+    @{ el=$A['admin'];     l=40;  t=-60;  w=100; h=80 },
+    @{ el=$A['proveedor']; l=40;  t=-180; w=100; h=80 },
+    @{ el=$U['cu07'];      l=290; t=-110; w=250; h=85 },
+    @{ el=$U['auth'];      l=700; t=-110; w=230; h=85 }
+) $null
+
+# --- CU-08 Gestionar categorias, tallas y colores ---
+$dCu08 = New-DiagramaDeCasoDeUso $pCiclo1 'CU-08 Gestionar categorías, tallas y colores' @(
+    @{ el=$A['admin']; l=40;  t=-80; w=100; h=80 },
+    @{ el=$U['cu08'];  l=290; t=-70; w=250; h=85 },
+    @{ el=$U['auth'];  l=700; t=-70; w=230; h=85 }
+) $null
+
+# --- CU-09 Gestionar temporadas y colecciones ---
+$dCu09 = New-DiagramaDeCasoDeUso $pCiclo1 'CU-09 Gestionar temporadas y colecciones' @(
+    @{ el=$A['admin']; l=40;  t=-80; w=100; h=80 },
+    @{ el=$U['cu09'];  l=290; t=-70; w=250; h=85 },
+    @{ el=$U['auth'];  l=700; t=-70; w=230; h=85 }
+) $null
+
+# --- exportacion -------------------------------------------------------------
 $prj = $ea.GetProjectInterface()
 $dirPng = 'D:\UNI\Si2\PRIMER_PARCIAL\docs\diagramas\casos-de-uso\'
-Write-Output "export 1.5   => $($prj.PutDiagramImageToFile($dia.DiagramGUID,   $dirPng + '1.5-modelo-estructurado-ciclo-1.png', 1))"
-Write-Output "export CU-01 => $($prj.PutDiagramImageToFile($dCu01.DiagramGUID, $dirPng + '1.3.2-cu-01-registrar-cliente.png', 1))"
+
+$salidas = @(
+    @{ d=$dia;   f='1.5-modelo-estructurado-ciclo-1.png';               n='1.5  ' },
+    @{ d=$dCu01; f='1.3.2-cu-01-registrar-cliente.png';                 n='CU-01' },
+    @{ d=$dCu02; f='1.3.2-cu-02-iniciar-y-cerrar-sesion.png';           n='CU-02' },
+    @{ d=$dCu03; f='1.3.2-cu-03-gestionar-usuarios-y-roles.png';        n='CU-03' },
+    @{ d=$dCu04; f='1.3.2-cu-04-gestionar-perfil-del-cliente.png';      n='CU-04' },
+    @{ d=$dCu05; f='1.3.2-cu-05-gestionar-ciudades-y-sucursales.png';   n='CU-05' },
+    @{ d=$dCu06; f='1.3.2-cu-06-gestionar-empleados.png';               n='CU-06' },
+    @{ d=$dCu07; f='1.3.2-cu-07-gestionar-proveedores.png';             n='CU-07' },
+    @{ d=$dCu08; f='1.3.2-cu-08-gestionar-categorias-tallas-colores.png'; n='CU-08' },
+    @{ d=$dCu09; f='1.3.2-cu-09-gestionar-temporadas-y-colecciones.png'; n='CU-09' }
+)
+foreach ($s in $salidas) {
+    $visibles = ($s.d.DiagramLinks | Where-Object { -not $_.IsHidden }).Count
+    $exp = $prj.PutDiagramImageToFile($s.d.DiagramGUID, $dirPng + $s.f, 1)
+    Write-Output ("{0} -> objetos: {1,2} | relaciones visibles: {2,2} | export: {3}" -f $s.n, $s.d.DiagramObjects.Count, $visibles, $exp)
+}
 
 $ea.CloseFile(); $ea.Exit()
 [System.Runtime.InteropServices.Marshal]::ReleaseComObject($ea) | Out-Null
