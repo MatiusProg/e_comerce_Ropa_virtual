@@ -1,0 +1,5 @@
+@use '../auth-form' as auth;
+
+:host {
+  @include auth.formulario-auth;
+}

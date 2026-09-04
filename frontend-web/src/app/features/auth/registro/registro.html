@@ -2,8 +2,11 @@
   CU-01 · Registrar cliente — «boundary» FormularioRegistro.
   El orden de los campos es el del paso 2 del flujo principal.
 -->
-<div class="pantalla">
-  <mat-card class="tarjeta" appearance="outlined">
+<app-auth-layout
+  titulo="Crear cuenta"
+  subtitulo="Registrate para reservar prendas y comprar en línea."
+>
+  <mat-card class="tarjeta fs-filete-superior" appearance="outlined">
     @if (enviando()) {
       <mat-progress-bar mode="indeterminate" />
     }
@@ -12,25 +15,23 @@
       <!-- Paso 8: confirmación. -->
       <mat-card-content class="confirmacion">
         <mat-icon class="icono-ok">check_circle</mat-icon>
-        <h1>Su cuenta fue creada</h1>
-        <p>Ya puede iniciar sesión con su correo y contraseña.</p>
-        <button matButton="filled" type="button" (click)="irALogin()">
+        <h1 class="fs-titulo">Tu cuenta fue creada</h1>
+        <p>Ya podés iniciar sesión con tu correo y contraseña.</p>
+        <button
+          matButton="filled"
+          type="button"
+          class="fs-boton-marca boton-principal"
+          (click)="irALogin()"
+        >
           Iniciar sesión
         </button>
       </mat-card-content>
     } @else {
-      <mat-card-header>
-        <mat-card-title>Crear cuenta</mat-card-title>
-        <mat-card-subtitle>
-          Regístrese para reservar prendas y comprar en línea.
-        </mat-card-subtitle>
-      </mat-card-header>
-
       <mat-card-content>
         @if (error(); as e) {
           @if (e.tipo === 'correo-duplicado') {
-            <!-- Excepción E1: se ofrece iniciar sesión o recuperar la contraseña. -->
-            <div class="aviso aviso-error" role="alert">
+            <!-- Excepción E1: se ofrece iniciar sesión. -->
+            <div class="aviso" role="alert">
               <mat-icon>error_outline</mat-icon>
               <span>
                 {{ e.mensaje }}
@@ -38,7 +39,7 @@
               </span>
             </div>
           } @else if (e.tipo !== 'datos-invalidos') {
-            <div class="aviso aviso-error" role="alert">
+            <div class="aviso" role="alert">
               <mat-icon>error_outline</mat-icon>
               <span>{{ e.mensaje }}</span>
             </div>
@@ -93,6 +94,7 @@
           <mat-form-field appearance="outline" class="ancho-completo">
             <mat-label>Correo electrónico</mat-label>
             <input matInput type="email" formControlName="correo" autocomplete="email" />
+            <mat-icon matSuffix>mail_outline</mat-icon>
             @if (control('correo').hasError('required')) {
               <mat-error>Ingrese su correo electrónico.</mat-error>
             } @else if (control('correo').hasError('email')) {
@@ -133,14 +135,21 @@
             }
           </mat-form-field>
 
-          <div class="acciones">
-            <button matButton="filled" type="submit" [disabled]="enviando()">
-              Crear cuenta
-            </button>
-            <a matButton routerLink="/login">Ya tengo cuenta</a>
-          </div>
+          <button
+            matButton="filled"
+            type="submit"
+            class="fs-boton-marca boton-principal"
+            [disabled]="enviando()"
+          >
+            Crear cuenta
+          </button>
         </form>
+
+        <p class="pie">
+          ¿Ya tenés cuenta?
+          <a routerLink="/login">Iniciá sesión</a>
+        </p>
       </mat-card-content>
     }
   </mat-card>
-</div>
+</app-auth-layout>

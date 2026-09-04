@@ -13,6 +13,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 
+import { AuthLayout } from '../auth-layout/auth-layout';
 import { AuthService, type ErrorRegistro } from '../../../core/services/auth.service';
 import {
   CONTRASENA_LONGITUD_MINIMA,
@@ -30,6 +31,7 @@ import {
   imports: [
     ReactiveFormsModule,
     RouterLink,
+    AuthLayout,
     MatButtonModule,
     MatCardModule,
     MatFormFieldModule,

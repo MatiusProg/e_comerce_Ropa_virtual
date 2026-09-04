@@ -1,0 +1,69 @@
+<!-- CU-02 · Iniciar sesión — «boundary» FormularioLogin. -->
+<app-auth-layout
+  titulo="Iniciar sesión"
+  subtitulo="Ingresá con tu correo y contraseña."
+>
+  <mat-card class="tarjeta fs-filete-superior" appearance="outlined">
+    @if (enviando()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+
+    <mat-card-content>
+      @if (error(); as e) {
+        <div class="aviso" [class.aviso-atencion]="e.tipo === 'desactivada'" role="alert">
+          <mat-icon>{{ e.tipo === 'desactivada' ? 'block' : 'error_outline' }}</mat-icon>
+          <span>{{ e.mensaje }}</span>
+        </div>
+      }
+
+      <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
+        <mat-form-field appearance="outline" class="ancho-completo">
+          <mat-label>Correo electrónico</mat-label>
+          <input matInput type="email" formControlName="correo" autocomplete="email" />
+          <mat-icon matSuffix>mail_outline</mat-icon>
+          @if (control('correo').hasError('required')) {
+            <mat-error>Ingrese su correo electrónico.</mat-error>
+          } @else if (control('correo').hasError('email')) {
+            <mat-error>El correo no tiene un formato válido.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="ancho-completo">
+          <mat-label>Contraseña</mat-label>
+          <input
+            matInput
+            [type]="verContrasena() ? 'text' : 'password'"
+            formControlName="contrasena"
+            autocomplete="current-password"
+          />
+          <button
+            matIconButton
+            type="button"
+            matSuffix
+            (click)="verContrasena.set(!verContrasena())"
+            [attr.aria-label]="verContrasena() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          >
+            <mat-icon>{{ verContrasena() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (control('contrasena').hasError('required')) {
+            <mat-error>Ingrese su contraseña.</mat-error>
+          }
+        </mat-form-field>
+
+        <button
+          matButton="filled"
+          type="submit"
+          class="fs-boton-marca boton-principal"
+          [disabled]="enviando()"
+        >
+          Entrar
+        </button>
+      </form>
+
+      <p class="pie">
+        ¿No tenés cuenta?
+        <a routerLink="/registro">Creá una</a>
+      </p>
+    </mat-card-content>
+  </mat-card>
+</app-auth-layout>

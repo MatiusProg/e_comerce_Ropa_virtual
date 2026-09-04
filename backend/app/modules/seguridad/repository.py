@@ -9,10 +9,14 @@ Casos de uso que realiza este paquete:
   CU-03 Gestionar usuarios y roles
   CU-04 Gestionar perfil del cliente
 """
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+import uuid
+from datetime import datetime, timezone
 
-from app.modules.seguridad.models import Cliente, Rol, Usuario
+from sqlalchemy import select, update
+from sqlalchemy.orm import Session, joinedload
+
+from app.modules.organizacion.models import Empleado
+from app.modules.seguridad.models import Cliente, Rol, SesionToken, Usuario
 
 # Regla: aqui solo van consultas. Ninguna regla de negocio, ninguna
 # validacion de permisos, ningun commit de transaccion compuesta.
@@ -91,4 +95,81 @@ def agregar_cliente(
     return cliente
 
 
-# TODO CU-02, CU-03 y CU-04: implementar sus consultas.
+# --- CU-02 Iniciar y cerrar sesion ---------------------------------------
+
+def obtener_usuario_con_rol(db: Session, correo: str) -> Usuario | None:
+    """Igual que obtener_usuario_por_correo, pero trae el rol en la misma
+    consulta.
+
+    El login necesita el nombre del rol para armar el token. Sin joinedload
+    SQLAlchemy lo pediria en una segunda consulta, y si el objeto sale de la
+    sesion antes de eso, falla.
+    """
+    return db.scalar(
+        select(Usuario).options(joinedload(Usuario.rol)).where(Usuario.correo == correo)
+    )
+
+
+def obtener_usuario_con_id(db: Session, usuario_id: int) -> Usuario | None:
+    """Usuario por identificador, con su rol cargado."""
+    return db.scalar(
+        select(Usuario).options(joinedload(Usuario.rol)).where(Usuario.id == usuario_id)
+    )
+
+
+def obtener_sucursal_de_usuario(db: Session, usuario_id: int) -> int | None:
+    """Sucursal a la que pertenece el usuario, si es un empleado.
+
+    Para Cliente y Administrador devuelve None: su ambito no es una sucursal.
+    """
+    return db.scalar(select(Empleado.sucursal_id).where(Empleado.usuario_id == usuario_id))
+
+
+def agregar_sesion(
+    db: Session,
+    *,
+    usuario_id: int,
+    jti: uuid.UUID,
+    expira_en: datetime,
+) -> SesionToken:
+    """Registra la sesion emitida. No confirma: la transaccion es del servicio."""
+    sesion = SesionToken(usuario_id=usuario_id, jti=jti, expira_en=expira_en)
+    db.add(sesion)
+    db.flush()
+    return sesion
+
+
+def obtener_sesion_por_jti(db: Session, jti: uuid.UUID) -> SesionToken | None:
+    """Devuelve la sesion con ese identificador, revocada o no."""
+    return db.scalar(select(SesionToken).where(SesionToken.jti == jti))
+
+
+def revocar_sesion(db: Session, jti: uuid.UUID) -> int:
+    """Marca la sesion como revocada. Devuelve cuantas filas cambio.
+
+    Solo toca las que siguen vigentes, para que cerrar sesion dos veces no
+    reescriba la fecha de la primera.
+    """
+    resultado = db.execute(
+        update(SesionToken)
+        .where(SesionToken.jti == jti, SesionToken.revocado_en.is_(None))
+        .values(revocado_en=datetime.now(timezone.utc))
+    )
+    return resultado.rowcount
+
+
+def revocar_sesiones_de_usuario(db: Session, usuario_id: int) -> int:
+    """Revoca todas las sesiones vigentes de un usuario.
+
+    Lo necesita CU-03: al desactivar una cuenta hay que cortarle el acceso en
+    el acto, no esperar a que sus tokens venzan.
+    """
+    resultado = db.execute(
+        update(SesionToken)
+        .where(SesionToken.usuario_id == usuario_id, SesionToken.revocado_en.is_(None))
+        .values(revocado_en=datetime.now(timezone.utc))
+    )
+    return resultado.rowcount
+
+
+# TODO CU-03 y CU-04: implementar sus consultas.
