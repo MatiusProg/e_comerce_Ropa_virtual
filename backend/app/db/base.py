@@ -7,7 +7,7 @@ PostgreSQL y las migraciones de bajada (downgrade) fallan.
 
 from datetime import datetime
 
-from sqlalchemy import MetaData, func
+from sqlalchemy import DateTime, MetaData, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 CONVENCION_NOMBRES = {
@@ -30,7 +30,9 @@ class Auditoria:
     movimiento es inmutable por diseno (D4 en docs/04-analisis-arquitectura.md).
     """
 
-    creado_en: Mapped[datetime] = mapped_column(server_default=func.now())
+    creado_en: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
     actualizado_en: Mapped[datetime] = mapped_column(
-        server_default=func.now(), onupdate=func.now()
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )

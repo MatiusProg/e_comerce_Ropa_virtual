@@ -204,52 +204,78 @@ de carga del catálogo resultan insuficientes en las pruebas.
 **Requisito del vestidor virtual:** la imagen PNG con fondo transparente de cada variante es un
 activo del mismo volumen, no un archivo aparte. Sin ella el módulo de RA no funciona (supuesto S5).
 
-## 6.9 Despliegue en la nube — Railway
+## 6.9 Despliegue en la nube — Supabase y Railway
 
-Toda la infraestructura vive en **un único proyecto de Railway** con tres servicios, más el
-artefacto móvil distribuido por GitHub.
+**Decisión del 02/09/2026:** la base de datos vive en **Supabase**; **Railway** hospeda la API y
+la web. Antes se había previsto usar también el PostgreSQL de Railway. El cambio responde a que
+Railway cobra por uso —incluida la base, que corre las 24 horas— y el crédito del plan de prueba
+es finito hasta el 22/09 (riesgo R9); Supabase ofrece PostgreSQL gestionado con un plan gratuito
+que cubre de sobra el volumen de este proyecto, con respaldos y un panel para inspeccionar los
+datos durante la defensa.
 
-| Servicio en Railway | Origen | Notas |
+| Componente | Dónde vive | Notas |
 |---|---|---|
-| `postgres` | Plantilla PostgreSQL de Railway | Expone `DATABASE_URL` como referencia. **No copiar el valor a mano**: usar `${{Postgres.DATABASE_URL}}` en las variables del servicio `api`, para que siga funcionando si Railway rota las credenciales |
-| `api` | Repositorio, *root directory* `backend/`, `Dockerfile` | Healthcheck en `/health` (declarado en `backend/railway.json`); volumen persistente montado en `/app/media`; todas las variables de `backend/.env.example` cargadas en *Variables* |
-| `web` | Repositorio, *root directory* `frontend-web/`, `Dockerfile` | Compila Angular y sirve la SPA con nginx; el puerto lo inyecta Railway como `$PORT` |
+| Base de datos | **Supabase** — PostgreSQL 16 gestionado | Conexión por el *session pooler*; respaldos automáticos |
+| `api` | **Railway** — repositorio, *root directory* `backend/`, `Dockerfile` | Healthcheck en `/health` (declarado en `backend/railway.json`); volumen persistente en `/app/media` |
+| `web` | **Railway** — repositorio, *root directory* `frontend-web/`, `Dockerfile` | Compila Angular y sirve la SPA con nginx; el puerto lo inyecta Railway como `$PORT` |
 | App móvil | APK firmado en las *releases* de GitHub | Instalación directa en el dispositivo de la defensa |
 
-**Configuración inicial (una sola vez)**
+### Configuración inicial (una sola vez)
 
-1. Crear el proyecto en Railway y conectarlo al repositorio de GitHub.
-2. Agregar el servicio **PostgreSQL** desde la plantilla.
-3. Agregar el servicio `api`: *root directory* `backend`, `DATABASE_URL = ${{Postgres.DATABASE_URL}}`
-   y el resto de variables. Generar `JWT_SECRET_KEY` con
-   `python -c "import secrets; print(secrets.token_urlsafe(48))"`.
-4. Crear el volumen del servicio `api` con punto de montaje `/app/media`.
-5. Agregar el servicio `web`: *root directory* `frontend-web`. Generar su dominio público y
+**Supabase**
+
+1. Crear el proyecto, elegir la región más cercana y **guardar la contraseña de la base**: se
+   muestra una sola vez.
+2. Copiar la cadena de conexión del **Session pooler** en *Project Settings → Database →
+   Connection string*. Tiene la forma
+   `postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres`.
+
+**Railway**
+
+3. Crear el proyecto y conectarlo al repositorio de GitHub.
+4. Agregar el servicio `api` con *root directory* `backend`, y cargar en *Variables* los nombres
+   de `backend/.env.example`. `DATABASE_URL` es la cadena del pooler de Supabase.
+5. Generar `JWT_SECRET_KEY` con `python -c "import secrets; print(secrets.token_urlsafe(48))"`.
+6. Crear el volumen del servicio `api` con punto de montaje `/app/media`.
+7. Agregar el servicio `web` con *root directory* `frontend-web`. Generar su dominio público y
    copiarlo a `CORS_ORIGINS` del servicio `api`.
-6. Copiar el dominio público del servicio `api` a `frontend-web/src/environments/environment.prod.ts`.
+8. Copiar el dominio público del `api` a `frontend-web/src/environments/environment.prod.ts`.
+9. Con el `api` ya desplegado, sembrar los datos iniciales: `python -m app.db.seed` con
+   `DATABASE_URL` y `ADMIN_PASSWORD` apuntando a Supabase.
 
-**Detalles que cuestan una tarde si se pasan por alto**
+### Detalles que cuestan una tarde si se pasan por alto
 
-- **`DATABASE_URL` de Railway llega como `postgresql://`**, sin controlador. SQLAlchemy necesita
-  `postgresql+psycopg://`. La conversión ya está resuelta en `app/db/session.py`; no hay que editar
-  la variable en Railway.
+- **Usar el *session pooler*, no la conexión directa.** La conexión directa de Supabase
+  (`db.<ref>.supabase.co`) resuelve **solo a IPv6**. Si el contenedor de Railway no tiene salida
+  IPv6, la conexión falla con un error de red que no menciona IPv6 por ningún lado, y se pierde la
+  tarde buscando en el lugar equivocado. El pooler responde por IPv4.
+- **Puerto 5432 (session), no 6543 (transaction).** El modo *transaction* no admite sentencias
+  preparadas, y psycopg 3 las usa por defecto: las consultas fallan de forma intermitente, que es
+  peor que fallar siempre.
+- **`DATABASE_URL` llega como `postgresql://`**, sin controlador. SQLAlchemy necesita
+  `postgresql+psycopg://`. La conversión ya está resuelta en `app/db/session.py`; no hay que
+  editar la variable.
 - **Las migraciones corren al arrancar el contenedor** (`alembic upgrade head` en el `CMD` del
   `Dockerfile`). Si una migración falla, el servicio no levanta — y eso es deliberado: es preferible
   a quedar sirviendo tráfico contra un esquema desactualizado.
 - **CORS.** Mientras el dominio del servicio `web` no esté en `CORS_ORIGINS` del `api`, la web
   compila bien, carga bien, y ninguna petición funciona. El síntoma no menciona CORS de forma
   evidente en la consola del navegador.
+- **Supabase pausa los proyectos gratuitos tras una semana sin actividad.** Entre la entrega del
+  20/09 y la defensa del 22/09 hay dos días: conviene entrar al panel el día previo y verificar que
+  el proyecto sigue activo, no descubrirlo delante de la docente.
 - **El webhook de Stripe apunta al dominio público del `api`**, no a `localhost`. Configurarlo en
   el panel de Stripe el primer día del Ciclo 3, no el último.
-- **Consumo del plan.** Railway cobra por uso y el crédito del plan de prueba es finito. Hay que
-  vigilar el consumo desde el primer día: quedarse sin crédito el 21/09 es el riesgo R9.
+- **Consumo de Railway.** Sacar la base de Railway reduce bastante el gasto, pero el `api` y la
+  `web` siguen consumiendo. Vigilar el crédito desde el primer día (riesgo R9).
 
-**Reglas de despliegue**
+### Reglas de despliegue
 
-- Ningún secreto (claves de API, cadena de conexión, clave de firma JWT) se versiona en el
-  repositorio. `backend/.env.example` documenta los **nombres** de las variables, nunca sus valores.
-- Existen dos entornos: **desarrollo** (PostgreSQL en `docker compose`) y **producción** (Railway).
-  La demostración y la defensa se realizan siempre sobre producción (RNF13).
+- Ningún secreto (contraseña de Supabase, cadena de conexión, clave de firma JWT, claves de API) se
+  versiona en el repositorio. `backend/.env.example` documenta los **nombres** de las variables,
+  nunca sus valores.
+- Existen dos entornos: **desarrollo** (PostgreSQL en `docker compose`) y **producción** (Supabase
+  + Railway). La demostración y la defensa se realizan siempre sobre producción (RNF13).
 - Cada ciclo cierra con un despliegue verificado, no con código sin desplegar.
 
 ## 6.10 Trabajo con Git y GitHub
@@ -257,8 +283,8 @@ artefacto móvil distribuido por GitHub.
 | Aspecto | Decisión |
 |---|---|
 | Estructura | **Monorepo**: backend, frontend web, app móvil y documentación en un solo repositorio |
-| Ramas | `main` (estable y desplegable) · `develop` (integración) · `feature/<paquete>-<descripcion>` · `fix/<descripcion>` |
-| Integración | Mediante **Pull Request** de `feature/*` hacia `develop`, con revisión del otro integrante. Nunca se hace *commit* directo sobre `main` |
+| Ramas | `main` (estable y desplegable) · una rama por integrante y ciclo: `MateoCiclo1`, `KarenCiclo1` — ver `docs/07-estructura-repositorio.md` §7.1 |
+| Integración | Mediante **Pull Request** de la rama del integrante hacia `main`, con revisión del otro. Nunca se hace *commit* directo sobre `main` |
 | Mensajes de commit | Convención `tipo(alcance): descripción` — p. ej. `feat(inventario): registrar movimiento por ingreso de proveedor` |
 | Etiquetas | Una etiqueta por entrega: `v0.1-presentacion1`, `v0.2-presentacion2`, `v1.0-final`, para poder mostrar el estado exacto de cada entrega |
 | Frecuencia | *Commits* diarios; nadie retiene trabajo sin subir más de un día (mitiga R8) |
