@@ -1,0 +1,70 @@
+:host {
+  display: block;
+}
+
+h2 {
+  color: var(--fs-malva-oscuro);
+  // Las etiquetas flotantes de Material suben por encima del borde del campo;
+  // sin este margen el primer campo se monta sobre el título.
+  margin-bottom: 0.5rem;
+}
+
+mat-dialog-content {
+  padding-top: 1rem;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.ancho-completo {
+  width: 100%;
+}
+
+.casilla {
+  margin-top: 0.35rem;
+}
+
+.nota {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.nota-primera {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--fs-radio-chico);
+  background: var(--fs-rosa-palido);
+  color: var(--fs-malva-oscuro);
+
+  mat-icon {
+    flex: none;
+    font-size: 1.15rem;
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+}
+
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--fs-radio-chico);
+  margin-bottom: 1rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+
+  mat-icon {
+    flex: none;
+  }
+}

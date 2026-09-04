@@ -3,13 +3,14 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { SucursalBreve } from '../models/organizacion.models';
+import { CiudadBreve, SucursalBreve } from '../models/organizacion.models';
 
 /**
  * P2 · Organización.
  *
- * Hoy solo expone el listado de sucursales activas, que es lo que CU-03
- * necesita para el selector. El CRUD completo llega con CU-05.
+ * Hoy solo expone lecturas: las sucursales activas que CU-03 necesita para su
+ * selector y las ciudades que CU-04 necesita para el suyo. El CRUD completo
+ * llega con CU-05 — ver §6.11.2 de `docs/06-decisiones-tecnicas.md`.
  */
 @Injectable({ providedIn: 'root' })
 export class OrganizacionService {
@@ -18,5 +19,9 @@ export class OrganizacionService {
 
   sucursales(): Observable<SucursalBreve[]> {
     return this.http.get<SucursalBreve[]>(`${this.base}/sucursales`);
+  }
+
+  ciudades(): Observable<CiudadBreve[]> {
+    return this.http.get<CiudadBreve[]>(`${this.base}/ciudades`);
   }
 }

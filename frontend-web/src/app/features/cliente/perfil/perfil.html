@@ -1,0 +1,267 @@
+<!-- CU-04 · Gestionar perfil del cliente — «boundary» PantallaPerfil. -->
+<mat-toolbar class="barra">
+  <span class="logotipo fs-titulo">FashionStore</span>
+  <span class="etiqueta-area">Mi cuenta</span>
+
+  <span class="separador"></span>
+
+  @if (usuario(); as u) {
+    <span class="identidad">
+      <span class="avatar">{{ iniciales() }}</span>
+      <span class="datos">
+        <span class="nombre">{{ u.nombres }} {{ u.apellidos }}</span>
+        <span class="rol">Cliente</span>
+      </span>
+    </span>
+    <button matIconButton type="button" (click)="salir()" aria-label="Cerrar sesión">
+      <mat-icon>logout</mat-icon>
+    </button>
+  }
+</mat-toolbar>
+
+<main class="contenido">
+  <header class="encabezado">
+    <div>
+      <h1 class="fs-titulo">Mi perfil</h1>
+      <p class="bajada">
+        Tus datos, tus tallas habituales y las direcciones a las que te entregamos.
+      </p>
+    </div>
+  </header>
+
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  @if (error(); as e) {
+    <div class="aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ e }}</span>
+    </div>
+  }
+
+  @if (perfil()) {
+    <!-- Pasos 2 a 5: datos personales y tallas habituales. -->
+    <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+      <mat-card class="tarjeta fs-filete-superior" appearance="outlined">
+        <mat-card-header>
+          <mat-card-title class="titulo-seccion">
+            <mat-icon>badge</mat-icon>
+            Datos personales
+          </mat-card-title>
+        </mat-card-header>
+
+        <mat-card-content>
+          <div class="fila">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombres</mat-label>
+              <input matInput formControlName="nombres" />
+              @if (formulario.controls.nombres.hasError('required')) {
+                <mat-error>Ingresá tus nombres.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Apellidos</mat-label>
+              <input matInput formControlName="apellidos" />
+              @if (formulario.controls.apellidos.hasError('required')) {
+                <mat-error>Ingresá tus apellidos.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="ancho-completo">
+            <mat-label>Correo electrónico</mat-label>
+            <input matInput type="email" formControlName="correo" />
+            <mat-hint>Es el correo con el que iniciás sesión.</mat-hint>
+            @if (formulario.controls.correo.hasError('required')) {
+              <mat-error>Ingresá tu correo electrónico.</mat-error>
+            } @else if (formulario.controls.correo.hasError('email')) {
+              <mat-error>El correo no tiene un formato válido.</mat-error>
+            } @else if (formulario.controls.correo.hasError('duplicado')) {
+              <!-- Excepción E2. -->
+              <mat-error>Ese correo ya pertenece a otra cuenta.</mat-error>
+            }
+          </mat-form-field>
+
+          <div class="fila">
+            <mat-form-field appearance="outline">
+              <mat-label>Documento de identidad</mat-label>
+              <input matInput formControlName="documento" />
+              @if (formulario.controls.documento.hasError('duplicado')) {
+                <mat-error>Ese documento ya pertenece a otro cliente.</mat-error>
+              } @else if (formulario.controls.documento.hasError('maxlength')) {
+                <mat-error>Como máximo 20 caracteres.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Teléfono</mat-label>
+              <input matInput type="tel" formControlName="telefono" />
+              @if (formulario.controls.telefono.hasError('maxlength')) {
+                <mat-error>Como máximo 20 caracteres.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="tarjeta fs-filete-superior" appearance="outlined">
+        <mat-card-header>
+          <mat-card-title class="titulo-seccion">
+            <mat-icon>straighten</mat-icon>
+            Tallas habituales
+          </mat-card-title>
+          <mat-card-subtitle>
+            Nos sirven para recomendarte prendas que realmente te queden.
+          </mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          <div class="fila fila-tres">
+            <mat-form-field appearance="outline">
+              <mat-label>Parte superior</mat-label>
+              <mat-select formControlName="talla_superior">
+                <mat-option value="">Sin definir</mat-option>
+                @for (t of tallasSuperior; track t) {
+                  <mat-option [value]="t">{{ t }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Parte inferior</mat-label>
+              <mat-select formControlName="talla_inferior">
+                <mat-option value="">Sin definir</mat-option>
+                @for (t of tallasInferior; track t) {
+                  <mat-option [value]="t">{{ t }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Calzado</mat-label>
+              <mat-select formControlName="talla_calzado">
+                <mat-option value="">Sin definir</mat-option>
+                @for (t of tallasCalzado; track t) {
+                  <mat-option [value]="t">{{ t }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <div class="acciones-formulario">
+        @if (formulario.dirty) {
+          <button matButton type="button" (click)="descartar()">Descartar cambios</button>
+        }
+        <button
+          matButton="filled"
+          type="submit"
+          class="fs-boton-marca"
+          [disabled]="guardando()"
+        >
+          <mat-icon>save</mat-icon>
+          Guardar cambios
+        </button>
+      </div>
+    </form>
+
+    <!-- Flujos alternativos 3a y 3b. -->
+    <mat-card class="tarjeta fs-filete-superior" appearance="outlined">
+      <mat-card-header class="encabezado-tarjeta">
+        <mat-card-title class="titulo-seccion">
+          <mat-icon>local_shipping</mat-icon>
+          Direcciones de entrega
+        </mat-card-title>
+        <button matButton type="button" (click)="agregarDireccion()">
+          <mat-icon>add_location_alt</mat-icon>
+          Agregar
+        </button>
+      </mat-card-header>
+
+      <mat-card-content>
+        @if (direcciones().length) {
+          <ul class="direcciones">
+            @for (d of direcciones(); track d.id) {
+              <li class="direccion" [class.es-predeterminada]="d.predeterminada">
+                <div class="detalle">
+                  <span class="alias">
+                    {{ d.alias }}
+                    @if (d.predeterminada) {
+                      <span class="pastilla-predeterminada">
+                        <mat-icon>star</mat-icon>
+                        Predeterminada
+                      </span>
+                    }
+                  </span>
+                  <span class="linea">{{ d.direccion }}</span>
+                  <span class="ciudad">{{ d.ciudad }}</span>
+                  @if (d.referencia) {
+                    <span class="referencia">{{ d.referencia }}</span>
+                  }
+                </div>
+
+                <div class="acciones">
+                  @if (!d.predeterminada) {
+                    <button
+                      matIconButton
+                      type="button"
+                      (click)="marcarPredeterminada(d)"
+                      matTooltip="Usar como predeterminada"
+                      aria-label="Usar como dirección predeterminada"
+                    >
+                      <mat-icon>star_border</mat-icon>
+                    </button>
+                  }
+                  <button
+                    matIconButton
+                    type="button"
+                    class="accion-peligro"
+                    (click)="eliminarDireccion(d)"
+                    matTooltip="Eliminar dirección"
+                    aria-label="Eliminar dirección"
+                  >
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                </div>
+              </li>
+            }
+          </ul>
+        } @else {
+          <div class="vacio">
+            <mat-icon>location_off</mat-icon>
+            <p class="titulo-vacio">Todavía no cargaste ninguna dirección</p>
+            <p class="bajada-vacio">
+              Necesitás al menos una para que podamos entregarte tus pedidos.
+            </p>
+            <button matButton="filled" type="button" class="fs-boton-marca" (click)="agregarDireccion()">
+              Agregar la primera
+            </button>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Flujo alternativo 3c. -->
+    <mat-card class="tarjeta fs-filete-superior" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title class="titulo-seccion">
+          <mat-icon>lock</mat-icon>
+          Seguridad
+        </mat-card-title>
+      </mat-card-header>
+
+      <mat-card-content class="seguridad">
+        <p class="texto-seguridad">
+          Cambiar tu contraseña cierra todas las sesiones abiertas, incluida ésta.
+        </p>
+        <button matButton type="button" (click)="cambiarContrasena()">
+          <mat-icon>key</mat-icon>
+          Cambiar contraseña
+        </button>
+      </mat-card-content>
+    </mat-card>
+  }
+</main>

@@ -1,0 +1,113 @@
+@if (guardando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<h2 mat-dialog-title class="fs-titulo">Cambiar contraseña</h2>
+
+<mat-dialog-content>
+  @if (error(); as e) {
+    <div class="aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ e }}</span>
+    </div>
+  }
+
+  <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate id="formulario-contrasena">
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Contraseña actual</mat-label>
+      <input
+        matInput
+        [type]="verActual() ? 'text' : 'password'"
+        formControlName="contrasena_actual"
+        autocomplete="current-password"
+      />
+      <button
+        matIconButton
+        type="button"
+        matSuffix
+        (click)="verActual.set(!verActual())"
+        [attr.aria-label]="verActual() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+      >
+        <mat-icon>{{ verActual() ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+      @if (formulario.controls.contrasena_actual.hasError('required')) {
+        <mat-error>Ingresá tu contraseña actual.</mat-error>
+      } @else if (formulario.controls.contrasena_actual.hasError('incorrecta')) {
+        <!-- Excepción E1. -->
+        <mat-error>La contraseña actual no es correcta.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Contraseña nueva</mat-label>
+      <input
+        matInput
+        [type]="verNueva() ? 'text' : 'password'"
+        formControlName="contrasena_nueva"
+        autocomplete="new-password"
+      />
+      <button
+        matIconButton
+        type="button"
+        matSuffix
+        (click)="verNueva.set(!verNueva())"
+        [attr.aria-label]="verNueva() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+      >
+        <mat-icon>{{ verNueva() ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+      <mat-hint>
+        Mínimo {{ longitudMinima }} caracteres, con al menos una letra y un número.
+      </mat-hint>
+      @if (formulario.controls.contrasena_nueva.hasError('required')) {
+        <mat-error>Ingresá la contraseña nueva.</mat-error>
+      } @else if (formulario.controls.contrasena_nueva.hasError('minlength')) {
+        <mat-error>Debe tener al menos {{ longitudMinima }} caracteres.</mat-error>
+      } @else if (formulario.controls.contrasena_nueva.hasError('pattern')) {
+        <mat-error>Debe incluir al menos una letra y un número.</mat-error>
+      }
+    </mat-form-field>
+
+    <!-- El flujo 3c pide la contraseña nueva dos veces. -->
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Repetir la contraseña nueva</mat-label>
+      <input
+        matInput
+        [type]="verNueva() ? 'text' : 'password'"
+        formControlName="contrasena_repetida"
+        autocomplete="new-password"
+      />
+      @if (formulario.controls.contrasena_repetida.hasError('required')) {
+        <mat-error>Repetí la contraseña nueva.</mat-error>
+      }
+    </mat-form-field>
+
+    @if (formulario.hasError('noCoinciden') && formulario.controls.contrasena_repetida.touched) {
+      <p class="error-grupo" role="alert">Las dos contraseñas nuevas no coinciden.</p>
+    } @else if (formulario.hasError('sinCambio')) {
+      <p class="error-grupo" role="alert">
+        La contraseña nueva debe ser distinta de la actual.
+      </p>
+    }
+
+    <p class="nota">
+      <mat-icon>logout</mat-icon>
+      <span>
+        Al cambiarla se cierran todas tus sesiones abiertas, incluida ésta. Vas a tener
+        que iniciar sesión de nuevo.
+      </span>
+    </p>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="ref.close(false)">Cancelar</button>
+  <button
+    matButton="filled"
+    type="submit"
+    form="formulario-contrasena"
+    class="fs-boton-marca"
+    [disabled]="guardando()"
+  >
+    Cambiar contraseña
+  </button>
+</mat-dialog-actions>

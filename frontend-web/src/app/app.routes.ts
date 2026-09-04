@@ -52,9 +52,10 @@ export const routes: Routes = [
   },
   {
     path: 'mi-cuenta',
-    title: 'Mi cuenta · FashionStore',
+    title: 'Mi perfil · FashionStore',
     canActivate: [sesionGuard, rolGuard('CLIENTE')],
-    loadComponent: inicio,
+    loadComponent: () =>
+      import('./features/cliente/perfil/perfil').then((m) => m.Perfil),
   },
   {
     path: 'sucursal',

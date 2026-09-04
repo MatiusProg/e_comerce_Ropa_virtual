@@ -1,0 +1,95 @@
+@if (guardando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<h2 mat-dialog-title class="fs-titulo">Nueva dirección de entrega</h2>
+
+<mat-dialog-content>
+  @if (error(); as e) {
+    <div class="aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ e }}</span>
+    </div>
+  }
+
+  <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate id="formulario-direccion">
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Alias</mat-label>
+      <input matInput formControlName="alias" placeholder="Casa, Trabajo, Casa de mamá…" />
+      <mat-hint>Un nombre corto para reconocerla al momento de la entrega.</mat-hint>
+      @if (formulario.controls.alias.hasError('required')) {
+        <mat-error>Ingresá un alias.</mat-error>
+      } @else if (formulario.controls.alias.hasError('maxlength')) {
+        <mat-error>Como máximo 40 caracteres.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Ciudad</mat-label>
+      <mat-select formControlName="ciudad_id">
+        @for (c of ciudades(); track c.id) {
+          <mat-option [value]="c.id">{{ c.nombre }} · {{ c.departamento }}</mat-option>
+        }
+      </mat-select>
+      @if (!ciudades().length) {
+        <mat-hint>No hay ciudades cargadas todavía.</mat-hint>
+      }
+      @if (formulario.controls.ciudad_id.hasError('required')) {
+        <mat-error>Elegí una ciudad.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Dirección</mat-label>
+      <input matInput formControlName="direccion" placeholder="Calle, número, zona" />
+      @if (formulario.controls.direccion.hasError('required')) {
+        <mat-error>Ingresá la dirección.</mat-error>
+      } @else if (formulario.controls.direccion.hasError('maxlength')) {
+        <mat-error>Como máximo 200 caracteres.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Referencia</mat-label>
+      <textarea
+        matInput
+        formControlName="referencia"
+        rows="2"
+        placeholder="Frente a la plaza, portón verde…"
+      ></textarea>
+      <mat-hint>Opcional. Ayuda a quien entrega a encontrar el lugar.</mat-hint>
+      @if (formulario.controls.referencia.hasError('maxlength')) {
+        <mat-error>Como máximo 200 caracteres.</mat-error>
+      }
+    </mat-form-field>
+
+    <!--
+      Si es la primera dirección, el servidor la marca como predeterminada
+      igual: dar a elegir algo que no se puede elegir confunde.
+    -->
+    @if (datos.hayDirecciones) {
+      <mat-checkbox formControlName="predeterminada" class="casilla">
+        Usar como dirección predeterminada
+      </mat-checkbox>
+      <p class="nota">Si la marcás, la que tenés ahora deja de serlo.</p>
+    } @else {
+      <p class="nota nota-primera">
+        <mat-icon>info_outline</mat-icon>
+        <span>Al ser tu primera dirección, queda como predeterminada.</span>
+      </p>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="ref.close()">Cancelar</button>
+  <button
+    matButton="filled"
+    type="submit"
+    form="formulario-direccion"
+    class="fs-boton-marca"
+    [disabled]="guardando()"
+  >
+    Agregar dirección
+  </button>
+</mat-dialog-actions>
