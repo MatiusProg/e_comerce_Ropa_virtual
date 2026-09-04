@@ -49,8 +49,17 @@ export interface TokenOut {
   usuario: UsuarioAutenticado;
 }
 
-/** Los cuatro roles que carga el seed. */
-export type Rol = 'ADMINISTRADOR' | 'CLIENTE' | 'ENCARGADO' | 'CAJERO';
+/**
+ * Los cinco roles del control de acceso (OE-18), tal como los carga el seed.
+ * Proveedor entra aca aunque su area sea minima en el Ciclo 1: el rol existe en
+ * la base y es asignable, asi que la interfaz tiene que saber nombrarlo.
+ */
+export type Rol =
+  | 'ADMINISTRADOR'
+  | 'CLIENTE'
+  | 'ENCARGADO'
+  | 'CAJERO'
+  | 'PROVEEDOR';
 
 /**
  * Ruta de inicio de cada rol, según el diagrama de navegación §3.2.
@@ -61,6 +70,7 @@ export const INICIO_POR_ROL: Record<Rol, string> = {
   CLIENTE: '/mi-cuenta',
   ENCARGADO: '/sucursal',
   CAJERO: '/caja',
+  PROVEEDOR: '/proveedor',
 };
 
 /**

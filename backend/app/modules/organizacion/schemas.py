@@ -8,10 +8,25 @@ Casos de uso que realiza este paquete:
   CU-06 Gestionar empleados
   CU-07 Gestionar proveedores
 """
-from pydantic import BaseModel, ConfigDict  # noqa: F401
+from pydantic import BaseModel, ConfigDict
 
 # Regla: NUNCA se expone un modelo SQLAlchemy directamente.
 # Por cada operacion se define su esquema de entrada (Create/Update)
 # y su esquema de salida (Read).
 
-# TODO: definir los esquemas de este paquete.
+
+class SucursalBreveOut(BaseModel):
+    """Sucursal reducida a lo que hace falta para elegirla en un selector.
+
+    Es lo minimo que necesita CU-03 para asignarle sucursal a un Encargado o a
+    un Cajero. El detalle completo y el CRUD son de CU-05.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nombre: str
+    ciudad: str
+
+
+# TODO CU-05, CU-06 y CU-07: definir el resto de los esquemas.

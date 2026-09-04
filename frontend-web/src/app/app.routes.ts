@@ -31,9 +31,24 @@ export const routes: Routes = [
   // --- Con sesión, una por rol ------------------------------------------
   {
     path: 'admin',
-    title: 'Administración · FashionStore',
     canActivate: [sesionGuard, rolGuard('ADMINISTRADOR')],
-    loadComponent: inicio,
+    loadComponent: () =>
+      import('./features/admin/admin-layout/admin-layout').then((m) => m.AdminLayout),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        title: 'Administración · FashionStore',
+        loadComponent: () =>
+          import('./shared/bienvenida/bienvenida').then((m) => m.Bienvenida),
+      },
+      {
+        path: 'usuarios',
+        title: 'Usuarios · FashionStore',
+        loadComponent: () =>
+          import('./features/admin/usuarios/usuarios').then((m) => m.Usuarios),
+      },
+    ],
   },
   {
     path: 'mi-cuenta',
@@ -51,6 +66,12 @@ export const routes: Routes = [
     path: 'caja',
     title: 'Caja · FashionStore',
     canActivate: [sesionGuard, rolGuard('CAJERO')],
+    loadComponent: inicio,
+  },
+  {
+    path: 'proveedor',
+    title: 'Proveedor · FashionStore',
+    canActivate: [sesionGuard, rolGuard('PROVEEDOR')],
     loadComponent: inicio,
   },
 

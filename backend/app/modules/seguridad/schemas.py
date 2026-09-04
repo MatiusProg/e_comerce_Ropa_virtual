@@ -10,7 +10,7 @@ Casos de uso que realiza este paquete:
   CU-04 Gestionar perfil del cliente
 """
 import re
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
@@ -135,4 +135,147 @@ class TokenOut(BaseModel):
     usuario: UsuarioAutenticadoOut
 
 
-# TODO CU-03 y CU-04: definir sus esquemas.
+# --- CU-03 Gestionar usuarios y roles ------------------------------------
+
+#: Roles cuyo ambito de datos es una sucursal concreta. Para ellos la sucursal
+#: es obligatoria: sin ella el token no puede acotar sobre que puede operar
+#: (excepcion E2).
+ROLES_CON_SUCURSAL = frozenset({"ENCARGADO", "CAJERO"})
+
+
+class RolOut(BaseModel):
+    """Un rol asignable, para poblar el selector del formulario."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nombre: str
+    descripcion: str | None = None
+    exige_sucursal: bool = False
+
+
+class UsuarioResumenOut(BaseModel):
+    """Fila del listado de usuarios (paso 2 del flujo principal)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    correo: EmailStr
+    nombres: str
+    apellidos: str
+    rol: str
+    sucursal_id: int | None = None
+    sucursal: str | None = None
+    activo: bool
+    creado_en: datetime
+
+
+class PaginaUsuarios(BaseModel):
+    """Listado paginado. El total viaja aparte para poder dibujar el paginador."""
+
+    items: list[UsuarioResumenOut]
+    total: int
+    pagina: int
+    tamano: int
+    paginas: int
+
+
+class UsuarioCrearIn(BaseModel):
+    """Alta de usuario desde el panel de administración (paso 4).
+
+    `documento` y `fecha_ingreso` no figuran en el paso 4 del caso de uso, pero
+    la tabla `empleado` los exige NOT NULL, y es esa tabla la que guarda la
+    sucursal. Sin ellos no se puede crear un Encargado ni un Cajero. Solo se
+    piden cuando el rol lo requiere.
+    """
+
+    nombres: str = Field(min_length=1, max_length=80)
+    apellidos: str = Field(min_length=1, max_length=80)
+    correo: EmailStr = Field(max_length=120)
+    contrasena: str = Field(min_length=CONTRASENA_LONGITUD_MINIMA, max_length=128)
+    rol: str = Field(min_length=1, max_length=30)
+
+    sucursal_id: int | None = None
+    documento: str | None = Field(default=None, max_length=20)
+    fecha_ingreso: date | None = None
+
+    @field_validator("nombres", "apellidos", "documento")
+    @classmethod
+    def _recortar(cls, valor: str | None) -> str | None:
+        if valor is None:
+            return None
+        return valor.strip() or None
+
+    @field_validator("correo")
+    @classmethod
+    def _correo_en_minusculas(cls, valor: str) -> str:
+        return valor.strip().lower()
+
+    @field_validator("rol")
+    @classmethod
+    def _rol_en_mayusculas(cls, valor: str) -> str:
+        return valor.strip().upper()
+
+    @field_validator("contrasena")
+    @classmethod
+    def _contrasena_fuerte(cls, valor: str) -> str:
+        if not _TIENE_LETRA.search(valor) or not _TIENE_DIGITO.search(valor):
+            raise ValueError(
+                "La contraseña debe incluir al menos una letra y un número."
+            )
+        return valor
+
+
+class UsuarioEditarIn(BaseModel):
+    """Edición de un usuario (flujo alternativo 3a).
+
+    Todos los campos son opcionales: solo se modifica lo que llega. En
+    particular, **la contraseña solo cambia si se envía una nueva**, tal como
+    dice el flujo alternativo.
+    """
+
+    nombres: str | None = Field(default=None, min_length=1, max_length=80)
+    apellidos: str | None = Field(default=None, min_length=1, max_length=80)
+    correo: EmailStr | None = Field(default=None, max_length=120)
+    contrasena: str | None = Field(
+        default=None, min_length=CONTRASENA_LONGITUD_MINIMA, max_length=128
+    )
+    rol: str | None = Field(default=None, min_length=1, max_length=30)
+    sucursal_id: int | None = None
+
+    @field_validator("nombres", "apellidos")
+    @classmethod
+    def _recortar(cls, valor: str | None) -> str | None:
+        if valor is None:
+            return None
+        return valor.strip() or None
+
+    @field_validator("correo")
+    @classmethod
+    def _correo_en_minusculas(cls, valor: str | None) -> str | None:
+        return valor.strip().lower() if valor else None
+
+    @field_validator("rol")
+    @classmethod
+    def _rol_en_mayusculas(cls, valor: str | None) -> str | None:
+        return valor.strip().upper() if valor else None
+
+    @field_validator("contrasena")
+    @classmethod
+    def _contrasena_fuerte(cls, valor: str | None) -> str | None:
+        if valor is None:
+            return None
+        if not _TIENE_LETRA.search(valor) or not _TIENE_DIGITO.search(valor):
+            raise ValueError(
+                "La contraseña debe incluir al menos una letra y un número."
+            )
+        return valor
+
+
+class CambioEstadoIn(BaseModel):
+    """Activación o desactivación de una cuenta (flujo alternativo 3b)."""
+
+    activo: bool
+
+
+# TODO CU-04: definir sus esquemas.

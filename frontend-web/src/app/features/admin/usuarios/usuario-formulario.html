@@ -1,0 +1,137 @@
+@if (guardando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<h2 mat-dialog-title class="fs-titulo">
+  {{ esEdicion ? 'Editar usuario' : 'Nuevo usuario' }}
+</h2>
+
+<mat-dialog-content>
+  @if (error(); as e) {
+    <div class="aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ e }}</span>
+    </div>
+  }
+
+  <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate id="formulario-usuario">
+    <div class="fila">
+      <mat-form-field appearance="outline">
+        <mat-label>Nombres</mat-label>
+        <input matInput formControlName="nombres" />
+        @if (formulario.controls.nombres.hasError('required')) {
+          <mat-error>Ingrese los nombres.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Apellidos</mat-label>
+        <input matInput formControlName="apellidos" />
+        @if (formulario.controls.apellidos.hasError('required')) {
+          <mat-error>Ingrese los apellidos.</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Correo electrónico</mat-label>
+      <input matInput type="email" formControlName="correo" />
+      @if (formulario.controls.correo.hasError('required')) {
+        <mat-error>Ingrese el correo electrónico.</mat-error>
+      } @else if (formulario.controls.correo.hasError('email')) {
+        <mat-error>El correo no tiene un formato válido.</mat-error>
+      } @else if (formulario.controls.correo.hasError('duplicado')) {
+        <mat-error>Ese correo ya tiene una cuenta.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>{{ esEdicion ? 'Nueva contraseña' : 'Contraseña inicial' }}</mat-label>
+      <input
+        matInput
+        [type]="verContrasena() ? 'text' : 'password'"
+        formControlName="contrasena"
+        autocomplete="new-password"
+      />
+      <button
+        matIconButton
+        type="button"
+        matSuffix
+        (click)="verContrasena.set(!verContrasena())"
+        [attr.aria-label]="verContrasena() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+      >
+        <mat-icon>{{ verContrasena() ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+      <mat-hint>
+        @if (esEdicion) {
+          Dejala vacía para no cambiar la contraseña actual.
+        } @else {
+          Mínimo {{ longitudMinima }} caracteres, con al menos una letra y un número.
+        }
+      </mat-hint>
+      @if (formulario.controls.contrasena.hasError('required')) {
+        <mat-error>Ingrese una contraseña inicial.</mat-error>
+      } @else if (formulario.controls.contrasena.hasError('minlength')) {
+        <mat-error>Debe tener al menos {{ longitudMinima }} caracteres.</mat-error>
+      } @else if (formulario.controls.contrasena.hasError('pattern')) {
+        <mat-error>Debe incluir al menos una letra y un número.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Rol</mat-label>
+      <mat-select formControlName="rol">
+        @for (r of datos.roles; track r.id) {
+          <mat-option [value]="r.nombre">{{ etiquetaRol[r.nombre] ?? r.nombre }}</mat-option>
+        }
+      </mat-select>
+      @if (formulario.controls.rol.hasError('required')) {
+        <mat-error>Elija un rol.</mat-error>
+      }
+    </mat-form-field>
+
+    <!-- Excepción E2: solo los roles con ámbito de sucursal la piden. -->
+    @if (exigeSucursal()) {
+      <mat-form-field appearance="outline" class="ancho-completo">
+        <mat-label>Sucursal</mat-label>
+        <mat-select formControlName="sucursal_id">
+          @for (s of sucursales(); track s.id) {
+            <mat-option [value]="s.id">{{ s.nombre }} · {{ s.ciudad }}</mat-option>
+          }
+        </mat-select>
+        @if (!sucursales().length) {
+          <mat-hint>No hay sucursales activas cargadas todavía.</mat-hint>
+        }
+        @if (formulario.controls.sucursal_id.hasError('required')) {
+          <mat-error>Este rol necesita una sucursal asignada.</mat-error>
+        }
+      </mat-form-field>
+    }
+
+    @if (pideDatosEmpleado()) {
+      <mat-form-field appearance="outline" class="ancho-completo">
+        <mat-label>Documento de identidad</mat-label>
+        <input matInput formControlName="documento" />
+        <mat-hint>Necesario para crear su ficha de empleado.</mat-hint>
+        @if (formulario.controls.documento.hasError('required')) {
+          <mat-error>Ingrese el documento.</mat-error>
+        } @else if (formulario.controls.documento.hasError('duplicado')) {
+          <mat-error>Ese documento ya pertenece a otro empleado.</mat-error>
+        }
+      </mat-form-field>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="ref.close(false)">Cancelar</button>
+  <button
+    matButton="filled"
+    type="submit"
+    form="formulario-usuario"
+    class="fs-boton-marca"
+    [disabled]="guardando()"
+  >
+    {{ esEdicion ? 'Guardar cambios' : 'Crear usuario' }}
+  </button>
+</mat-dialog-actions>

@@ -17,24 +17,4 @@
   }
 </mat-toolbar>
 
-<main class="contenido">
-  @if (usuario(); as u) {
-    <mat-card class="tarjeta fs-filete-superior" appearance="outlined">
-      <mat-card-content class="cuerpo">
-        <span class="medallon">
-          <mat-icon class="icono">{{ area()?.icono }}</mat-icon>
-        </span>
-        <h1 class="fs-titulo">Hola, {{ u.nombres }}</h1>
-        <p class="area">{{ area()?.titulo }}</p>
-        <p class="detalle">{{ area()?.detalle }}</p>
-
-        @if (u.sucursal_id !== null) {
-          <p class="sucursal">
-            <mat-icon>place</mat-icon>
-            Sucursal asignada n.º {{ u.sucursal_id }}
-          </p>
-        }
-      </mat-card-content>
-    </mat-card>
-  }
-</main>
+<app-bienvenida />
