@@ -92,8 +92,17 @@ class Usuario(Auditoria, Base):
     activo: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
 
     rol: Mapped[Rol] = relationship(back_populates="usuarios")
-    cliente: Mapped["Cliente | None"] = relationship(back_populates="usuario")
-    sesiones: Mapped[list["SesionToken"]] = relationship(back_populates="usuario")
+
+    # passive_deletes deja que el ON DELETE CASCADE de la base haga el trabajo.
+    # Sin el, al borrar un usuario el ORM intenta primero poner en NULL la clave
+    # foranea de cliente y de sesion_token, que son NOT NULL, y el borrado falla
+    # con una violacion de integridad. Lo necesita CU-03, que elimina cuentas.
+    cliente: Mapped["Cliente | None"] = relationship(
+        back_populates="usuario", cascade="all, delete-orphan", passive_deletes=True
+    )
+    sesiones: Mapped[list["SesionToken"]] = relationship(
+        back_populates="usuario", cascade="all, delete-orphan", passive_deletes=True
+    )
 
 
 class Cliente(Auditoria, Base):
@@ -116,7 +125,7 @@ class Cliente(Auditoria, Base):
 
     usuario: Mapped[Usuario] = relationship(back_populates="cliente")
     direcciones: Mapped[list["DireccionCliente"]] = relationship(
-        back_populates="cliente", cascade="all, delete-orphan"
+        back_populates="cliente", cascade="all, delete-orphan", passive_deletes=True
     )
 
 
