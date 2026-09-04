@@ -323,3 +323,24 @@ de sucursales se agregan sobre ese mismo *router* cuando llegue su turno.
 **Consecuencia para el CU-05.** Quien implemente el CU-05 debe **extender** el endpoint existente,
 no declarar otro con la misma ruta: FastAPI no advierte de rutas duplicadas, se queda con la
 primera registrada y la segunda queda muerta sin ningún error visible.
+
+### 6.11.3 Las categorías preferidas del cliente se difieren al Ciclo 2
+
+El paso 2 del flujo principal del CU-04 muestra, entre los datos del perfil, las **categorías
+preferidas** del cliente, y la tabla de clases de análisis las lista como atributo de `Cliente`.
+No son un atributo: un cliente prefiere varias categorías, de modo que exigen una tabla
+`cliente_categoria` propia —el mismo razonamiento por el que el diseño creó `direccion_cliente`—.
+No figuran en el diseño físico (§3.3.2) ni en la migración `0001_ciclo1`.
+
+**Decisión: se implementan en el Ciclo 2, junto con el CU-08.** El motivo no es el costo —la tabla
+es de dos columnas— sino la dependencia: las categorías las crea el **CU-08**, que es del Ciclo 1
+pero todavía no está implementado, y el *seed* no siembra ninguna. Construirlas ahora dejaría en el
+perfil un selector permanentemente vacío: código imposible de probar, de demostrar y de defender.
+
+**Costo de diferirlo: ninguno.** El cambio es aditivo. Cuando llegue el momento se agrega una
+migración `0002` con la tabla y un campo más al esquema del perfil, que para entonces ya existirá.
+Nada de lo que se construya en el CU-04 hay que rehacerlo.
+
+**Alcance real del CU-04 en el Ciclo 1**, por lo tanto: datos personales, tallas habituales,
+direcciones de entrega (alta, baja y predeterminada) y cambio de contraseña. Todo lo demás del
+flujo se cumple.

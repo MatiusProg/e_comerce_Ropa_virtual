@@ -170,6 +170,10 @@ P3 Catálogo (maestros).
 - **E1. Contraseña actual incorrecta.** El sistema rechaza el cambio y devuelve el control al paso 3c.
 - **E2. Correo en uso.** Si el Cliente intenta cambiar su correo por uno ya registrado, el sistema lo impide.
 
+**Nota de alcance (Ciclo 1).** Las *categorías preferidas* del paso 2 se difieren al Ciclo 2, donde
+se implementan junto con el CU-08, que es el que da de alta las categorías. Ver §6.11.3 de
+`docs/06-decisiones-tecnicas.md`. El resto del flujo se realiza completo en el Ciclo 1.
+
 ---
 
 ### CU-05 · Gestionar ciudades y sucursales
