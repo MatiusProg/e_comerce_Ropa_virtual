@@ -10,6 +10,7 @@ Casos de uso que realiza este paquete:
   CU-04 Gestionar perfil del cliente
 """
 import re
+from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
@@ -71,7 +72,7 @@ class ClienteRegistroIn(BaseModel):
         """Exige al menos una letra y un digito (paso 4 del flujo principal)."""
         if not _TIENE_LETRA.search(valor) or not _TIENE_DIGITO.search(valor):
             raise ValueError(
-                "La contrasena debe incluir al menos una letra y un numero."
+                "La contraseña debe incluir al menos una letra y un número."
             )
         return valor
 
@@ -92,4 +93,46 @@ class ClienteRegistradoOut(BaseModel):
     rol: str
 
 
-# TODO CU-02, CU-03 y CU-04: definir sus esquemas.
+# --- CU-02 Iniciar y cerrar sesion ---------------------------------------
+
+class LoginIn(BaseModel):
+    """Credenciales que envia el usuario (paso 2 del flujo principal)."""
+
+    correo: EmailStr = Field(max_length=120)
+    contrasena: str = Field(min_length=1, max_length=128)
+
+    @field_validator("correo")
+    @classmethod
+    def _correo_en_minusculas(cls, valor: str) -> str:
+        """Misma normalizacion que en el registro, o el login no encontraria
+        al usuario que se registro escribiendo su correo con mayusculas."""
+        return valor.strip().lower()
+
+
+class UsuarioAutenticadoOut(BaseModel):
+    """Datos del usuario que la interfaz necesita para armar su menu."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    correo: EmailStr
+    nombres: str
+    apellidos: str
+    rol: str
+    sucursal_id: int | None = None
+
+
+class TokenOut(BaseModel):
+    """Respuesta del login.
+
+    `expira_en` viaja para que la interfaz sepa cuando pedir credenciales de
+    nuevo sin tener que abrir el token.
+    """
+
+    access_token: str
+    token_type: str = "bearer"
+    expira_en: datetime
+    usuario: UsuarioAutenticadoOut
+
+
+# TODO CU-03 y CU-04: definir sus esquemas.
