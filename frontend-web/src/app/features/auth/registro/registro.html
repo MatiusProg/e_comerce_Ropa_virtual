@@ -1,0 +1,146 @@
+<!--
+  CU-01 · Registrar cliente — «boundary» FormularioRegistro.
+  El orden de los campos es el del paso 2 del flujo principal.
+-->
+<div class="pantalla">
+  <mat-card class="tarjeta" appearance="outlined">
+    @if (enviando()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+
+    @if (registrado()) {
+      <!-- Paso 8: confirmación. -->
+      <mat-card-content class="confirmacion">
+        <mat-icon class="icono-ok">check_circle</mat-icon>
+        <h1>Su cuenta fue creada</h1>
+        <p>Ya puede iniciar sesión con su correo y contraseña.</p>
+        <button matButton="filled" type="button" (click)="irALogin()">
+          Iniciar sesión
+        </button>
+      </mat-card-content>
+    } @else {
+      <mat-card-header>
+        <mat-card-title>Crear cuenta</mat-card-title>
+        <mat-card-subtitle>
+          Regístrese para reservar prendas y comprar en línea.
+        </mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        @if (error(); as e) {
+          @if (e.tipo === 'correo-duplicado') {
+            <!-- Excepción E1: se ofrece iniciar sesión o recuperar la contraseña. -->
+            <div class="aviso aviso-error" role="alert">
+              <mat-icon>error_outline</mat-icon>
+              <span>
+                {{ e.mensaje }}
+                <a routerLink="/login">Iniciar sesión</a>
+              </span>
+            </div>
+          } @else if (e.tipo !== 'datos-invalidos') {
+            <div class="aviso aviso-error" role="alert">
+              <mat-icon>error_outline</mat-icon>
+              <span>{{ e.mensaje }}</span>
+            </div>
+          }
+        }
+
+        <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
+          <div class="fila">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombres</mat-label>
+              <input matInput formControlName="nombres" autocomplete="given-name" />
+              @if (control('nombres').hasError('required')) {
+                <mat-error>Ingrese sus nombres.</mat-error>
+              } @else if (control('nombres').hasError('maxlength')) {
+                <mat-error>Máximo 80 caracteres.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Apellidos</mat-label>
+              <input matInput formControlName="apellidos" autocomplete="family-name" />
+              @if (control('apellidos').hasError('required')) {
+                <mat-error>Ingrese sus apellidos.</mat-error>
+              } @else if (control('apellidos').hasError('maxlength')) {
+                <mat-error>Máximo 80 caracteres.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="fila">
+            <mat-form-field appearance="outline">
+              <mat-label>Documento de identidad</mat-label>
+              <input matInput formControlName="documento" />
+              <mat-hint>Opcional</mat-hint>
+              @if (control('documento').hasError('duplicado')) {
+                <mat-error>Ese documento ya tiene una cuenta.</mat-error>
+              } @else if (control('documento').hasError('maxlength')) {
+                <mat-error>Máximo 20 caracteres.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Teléfono</mat-label>
+              <input matInput formControlName="telefono" autocomplete="tel" />
+              <mat-hint>Opcional</mat-hint>
+              @if (control('telefono').hasError('maxlength')) {
+                <mat-error>Máximo 20 caracteres.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="ancho-completo">
+            <mat-label>Correo electrónico</mat-label>
+            <input matInput type="email" formControlName="correo" autocomplete="email" />
+            @if (control('correo').hasError('required')) {
+              <mat-error>Ingrese su correo electrónico.</mat-error>
+            } @else if (control('correo').hasError('email')) {
+              <mat-error>El correo no tiene un formato válido.</mat-error>
+            } @else if (control('correo').hasError('duplicado')) {
+              <mat-error>Ese correo ya tiene una cuenta.</mat-error>
+            } @else if (control('correo').hasError('maxlength')) {
+              <mat-error>Máximo 120 caracteres.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="ancho-completo">
+            <mat-label>Contraseña</mat-label>
+            <input
+              matInput
+              [type]="verContrasena() ? 'text' : 'password'"
+              formControlName="contrasena"
+              autocomplete="new-password"
+            />
+            <button
+              matIconButton
+              type="button"
+              matSuffix
+              (click)="verContrasena.set(!verContrasena())"
+              [attr.aria-label]="verContrasena() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+            >
+              <mat-icon>{{ verContrasena() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            <mat-hint>
+              Mínimo {{ longitudMinima }} caracteres, con al menos una letra y un número.
+            </mat-hint>
+            @if (control('contrasena').hasError('required')) {
+              <mat-error>Ingrese una contraseña.</mat-error>
+            } @else if (control('contrasena').hasError('minlength')) {
+              <mat-error>Debe tener al menos {{ longitudMinima }} caracteres.</mat-error>
+            } @else if (control('contrasena').hasError('pattern')) {
+              <mat-error>Debe incluir al menos una letra y un número.</mat-error>
+            }
+          </mat-form-field>
+
+          <div class="acciones">
+            <button matButton="filled" type="submit" [disabled]="enviando()">
+              Crear cuenta
+            </button>
+            <a matButton routerLink="/login">Ya tengo cuenta</a>
+          </div>
+        </form>
+      </mat-card-content>
+    }
+  </mat-card>
+</div>
