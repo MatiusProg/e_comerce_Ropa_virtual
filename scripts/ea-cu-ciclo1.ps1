@@ -145,12 +145,19 @@ $dCu01 = New-DiagramaDeCasoDeUso $pCiclo1 'CU-01 Registrar cliente' @(
 ) @( ,@($A['cliente'], $U['cu02']) )
 
 # --- CU-02 Iniciar y cerrar sesion ---
+# Los cinco actores humanos usan este caso de uso. Cliente y Proveedor se asocian
+# directamente; Administrador, Encargado y Cajero lo heredan de Usuario interno.
+# Se dibujan igual los tres concretos --- sin linea propia al caso de uso --- para
+# que el diagrama se entienda sin tener al lado el 1.5.
 $dCu02 = New-DiagramaDeCasoDeUso $pCiclo1 'CU-02 Iniciar y cerrar sesión' @(
-    @{ el=$A['cliente'];   l=40;  t=-40;  w=100; h=80 },
-    @{ el=$A['interno'];   l=40;  t=-160; w=100; h=80 },
-    @{ el=$A['proveedor']; l=40;  t=-280; w=100; h=80 },
-    @{ el=$U['cu02'];      l=290; t=-140; w=250; h=85 },
-    @{ el=$U['cu01'];      l=700; t=-125; w=230; h=115 }
+    @{ el=$A['cliente'];   l=40;  t=-40;  w=110; h=80 },
+    @{ el=$A['interno'];   l=40;  t=-200; w=110; h=80 },
+    @{ el=$A['admin'];     l=40;  t=-330; w=110; h=80 },
+    @{ el=$A['encargado']; l=40;  t=-450; w=140; h=80 },
+    @{ el=$A['cajero'];    l=40;  t=-570; w=110; h=80 },
+    @{ el=$A['proveedor']; l=40;  t=-700; w=110; h=80 },
+    @{ el=$U['cu02'];      l=340; t=-280; w=250; h=85 },
+    @{ el=$U['cu01'];      l=750; t=-265; w=230; h=115 }
 ) @( ,@($A['cliente'], $U['cu01']) )
 
 # --- CU-03 Gestionar usuarios y roles ---
