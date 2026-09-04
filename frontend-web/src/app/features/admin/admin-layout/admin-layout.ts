@@ -10,9 +10,9 @@ import { AuthService } from '../../../core/services/auth.service';
  * Cáscara del área de administración.
  *
  * La navegación sigue el árbol del Administrador en el diagrama de navegación
- * §3.2. Las entradas de Organización y Catálogo aparecen deshabilitadas: se
- * habilitan con CU-05 a CU-09. Mostrarlas desde ahora deja ver el mapa completo
- * del área sin fingir que ya funcionan.
+ * §3.2. Las entradas que todavía no tienen caso de uso implementado aparecen
+ * deshabilitadas: se habilitan con CU-06 a CU-09. Mostrarlas desde ahora deja
+ * ver el mapa completo del área sin fingir que ya funcionan.
  */
 @Component({
   selector: 'app-admin-layout',

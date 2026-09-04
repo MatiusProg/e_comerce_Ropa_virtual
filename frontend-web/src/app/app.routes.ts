@@ -48,6 +48,18 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/admin/usuarios/usuarios').then((m) => m.Usuarios),
       },
+      {
+        path: 'sucursales',
+        title: 'Sucursales · FashionStore',
+        loadComponent: () =>
+          import('./features/admin/sucursales/sucursales').then((m) => m.Sucursales),
+      },
+      {
+        path: 'ciudades',
+        title: 'Ciudades · FashionStore',
+        loadComponent: () =>
+          import('./features/admin/ciudades/ciudades').then((m) => m.Ciudades),
+      },
     ],
   },
   {

@@ -323,3 +323,16 @@ de sucursales se agregan sobre ese mismo *router* cuando llegue su turno.
 **Consecuencia para el CU-05.** Quien implemente el CU-05 debe **extender** el endpoint existente,
 no declarar otro con la misma ruta: FastAPI no advierte de rutas duplicadas, se queda con la
 primera registrada y la segunda queda muerta sin ningún error visible.
+
+**Cómo quedó.** El CU-05 extendió ese mismo `GET /organizacion/sucursales`: ahora devuelve la fila
+completa —dirección, horario, capacidad y estado— y acepta los filtros `busqueda`, `ciudad_id` y
+`activa`. El selector del CU-03 sigue leyendo solo `id`, `nombre` y `ciudad`, que siguen ahí.
+
+Lo único que cambió del lado del CU-03 es que **`OrganizacionService.sucursales()` ahora envía
+`activa=true`**. Hace falta: sin ese parámetro el endpoint devuelve también las sucursales dadas
+de baja —que es lo que el CU-05 necesita para poder reactivarlas—, el selector las ofrecería, y el
+alta fallaría con «la sucursal indicada no existe o no está activa».
+
+También se movió la exigencia de rol Administrador del endpoint al *router* de `organizacion`,
+por el mismo motivo por el que el CU-03 la declara a nivel de router: endpoint por endpoint,
+olvidarla en uno solo abre un agujero sin que nada avise.
