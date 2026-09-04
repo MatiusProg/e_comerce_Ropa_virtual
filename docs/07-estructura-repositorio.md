@@ -6,15 +6,36 @@
 |---|---|
 | Repositorio | <https://github.com/MatiusProg/e_comerce_Ropa_virtual> |
 | Estructura | Monorepo: backend, frontend web, app móvil y documentación juntos |
-| Rama estable | `main` — siempre desplegable |
-| Rama de integración | `develop` |
-| Ramas de trabajo | `feature/<paquete>-<descripcion>` · `fix/<descripcion>` |
+| Rama estable | `main` — siempre desplegable; es la que se entrega y la que se despliega |
+| Ramas de trabajo | Una por integrante y por ciclo: `<Nombre>Ciclo<N>` — `MateoCiclo1`, `KarenCiclo1` |
+| Rama `develop` | En desuso desde el 03/09/2026; se conserva por historial |
 
 ### Convenciones de trabajo
 
-**Ramas.** Nunca se hace *commit* directo sobre `main`. Todo entra por Pull Request desde
-`feature/*` hacia `develop`, y `develop` se integra a `main` al cerrar cada ciclo. La rama `main`
-es la que Railway despliega: si se rompe, el sistema desplegado se rompe.
+**Ramas — decisión del 03/09/2026.** Se abandona el esquema `feature/*` → `develop` → `main` y se
+adopta **una rama por integrante y por ciclo**, con el formato `<Nombre>Ciclo<N>`:
+
+```
+main
+ ├── MateoCiclo1
+ └── KarenCiclo1
+```
+
+Cada rama **se crea desde `main`** y vuelve a `main` por Pull Request. `develop` queda sin uso; se
+conserva solo por historial. Al empezar el Ciclo 2 se abren `MateoCiclo2` y `KarenCiclo2` desde
+`main`, y así sucesivamente.
+
+**Por qué se cambió.** Somos dos y trabajamos sobre partes distintas del monorepo —backend y
+documentación por un lado, frontend y diagramas por el otro—. Con `feature/*` + `develop` cada
+cambio pasaba por dos integraciones antes de llegar a la rama que se entrega; con una rama por
+persona y ciclo, cada uno tiene un espacio propio, estable durante todo el ciclo, y `main` refleja
+en todo momento lo que hay entregado.
+
+**Sigue en pie:** nunca se hace *commit* directo sobre `main`. La rama `main` es la que se
+despliega: si se rompe, el sistema desplegado se rompe.
+
+**Antes de empezar el día:** `git checkout main && git pull` y luego `git merge main` sobre tu
+rama, para no acumular divergencia.
 
 **Mensajes de commit.** Convención `tipo(alcance): descripción`, en español y en imperativo:
 
@@ -129,7 +150,96 @@ buscadas:
 Lo mismo vale para las cuatro capas dentro de cada módulo (`router → service → repository →
 models`): son las mismas que aparecen en los diagramas de secuencia.
 
-## 7.3 Estado actual
+## 7.3 Arranque de un integrante
+
+Pasos para incorporarse al desarrollo. Están escritos en orden y **el orden importa**: cada paso
+supone el anterior.
+
+### 1. Bajar el proyecto y leer
+
+```bash
+git clone https://github.com/MatiusProg/e_comerce_Ropa_virtual.git
+cd e_comerce_Ropa_virtual
+```
+
+Tres documentos, en este orden:
+
+1. [`README.md`](../README.md) — qué es el proyecto y cómo está organizado.
+2. [`docs/00-indice-oficial.md`](00-indice-oficial.md) — el índice de la ingeniera, qué va
+   completo, qué va por ciclo y qué falta.
+3. [`docs/05-plan-y-cronograma.md`](05-plan-y-cronograma.md) §5.3 — las tareas del Ciclo 1 con
+   responsable y estado.
+
+### 2. Instalar el entorno
+
+Las versiones exactas y el orden de instalación están en
+[`docs/entorno/versiones.md`](entorno/versiones.md). Para el Ciclo 1 hace falta:
+
+| Herramienta | Versión | Necesaria en el Ciclo 1 |
+|---|---|---|
+| Python | 3.13.15 — **no 3.14** | Sí, para el backend |
+| Node.js y npm | 24.19.0 / 11.17.0 | Sí, para Angular |
+| Docker Desktop + PostgreSQL | imagen `postgres:16-alpine` | Sí, base de datos local |
+| Git | 2.55.0 | Sí |
+| **Flutter** | 3.47.2 | **Aplazado** |
+| **Android Studio** | 2026.1.4.7 | **Aplazado** |
+
+> **Sobre Flutter y Android Studio.** Son los dos más pesados del conjunto —Android Studio con el
+> SDK y un emulador pide mucha RAM y bastante disco— y **la aplicación móvil no se toca en el
+> Ciclo 1**: los nueve casos de uso son de seguridad, organización y maestros del catálogo, y se
+> demuestran desde la web. Por eso su instalación se aplaza.
+>
+> **Verificá esta decisión con tu propio Claude antes de aplicarla**, contándole las
+> características reales de tu equipo (RAM, disco libre, procesador). Si tu máquina los aguanta
+> sin problema, instalalos igual y te ahorrás el trabajo en el Ciclo 3; si no, aplazalos y
+> seguí con el resto. Lo que **no** conviene es instalarlos a ciegas y quedarte sin espacio a
+> mitad del ciclo.
+
+Al terminar, verificá el entorno con la sección *Verificación del entorno* de
+`docs/entorno/versiones.md`. Si aplazaste Flutter, `flutter doctor` no aplica todavía.
+
+### 3. Crear tu rama
+
+```bash
+git checkout main
+git pull
+git checkout -b KarenCiclo1
+git push -u origin KarenCiclo1
+```
+
+### 4. Tomar un caso de uso pendiente
+
+Los casos de uso del Ciclo 1 son **CU-01 a CU-09**, y su detalle completo —flujo principal,
+alternativos, excepciones— está en
+[`docs/entregas/ciclo-1/cap-1-captura-requisitos.md`](entregas/ciclo-1/cap-1-captura-requisitos.md).
+El diseño de datos y la arquitectura por capas están en
+[`cap-2-3-analisis-y-diseno.md`](entregas/ciclo-1/cap-2-3-analisis-y-diseno.md).
+
+**Antes de empezar, avisá cuál tomás**, para no trabajar los dos sobre lo mismo. El reparto
+previsto está en `05-plan-y-cronograma.md` §5.3 y §5.7: el backend y la base de datos son de
+Mateo; el frontend web, los diagramas UML y los prototipos son de Karen. Dentro de eso, elegí y
+avisá.
+
+### 5. Commitear y pushear a medida que avanzás
+
+No se retiene trabajo sin subir. La regla es **al menos un push por día de trabajo**, y mejor uno
+por cada pieza que quede funcionando. Mensajes con la convención `tipo(alcance): descripción` de
+§7.1.
+
+```bash
+git add -A
+git commit -m "feat(seguridad): pantalla de inicio de sesion con guarda por rol"
+git push
+```
+
+Cuando algo esté terminado y probado, Pull Request de tu rama hacia `main`.
+
+**Por qué esta frecuencia.** Es la mitigación del riesgo R8 —somos dos, y si uno no puede
+trabajar un día el otro tiene que poder continuar desde lo último subido—. Y es lo que nos permite
+avanzar en paralelo: mientras uno desarrolla los casos de uso, el otro modela los diagramas sobre
+lo que ya está en `main`.
+
+## 7.4 Estado actual
 
 | Elemento | Estado |
 |---|---|
