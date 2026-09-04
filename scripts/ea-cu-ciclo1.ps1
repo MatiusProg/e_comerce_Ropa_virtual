@@ -33,18 +33,18 @@ $pFashion = New-Paquete $root     'FashionStore'
 $pCap1    = New-Paquete $pFashion 'CAP. 1 - Captura de Requisitos'
 $pCiclo1  = New-Paquete $pCap1    'Ciclo 1'
 
-$dia = $pCiclo1.Diagrams.AddNew('1.3.2 Diagrama de Casos de Uso - CICLO #1', 'UseCase')
+$dia = $pCiclo1.Diagrams.AddNew('1.5 Modelo de Casos de Uso Estructurado - CICLO #1', 'UseCase')
 [void]$dia.Update(); $pCiclo1.Diagrams.Refresh()
 
 # ---------------- actores ----------------
 $A = @{}
 $defA = @(
-  @{k='cliente';   n='Cliente';               t=-100; nt='Persona que se registra, consulta y mantiene su perfil. Se autorregistra en el sistema.'},
-  @{k='interno';   n='Usuario interno';       t=-330; nt='Actor abstracto. Personal de la empresa que se autentica con credenciales corporativas y opera dentro del ambito de datos que define su rol.'},
-  @{k='admin';     n='Administrador';         t=-470; nt='Acceso completo: usuarios y roles, organizacion y maestros del catalogo.'},
-  @{k='encargado'; n='Encargado de Sucursal'; t=-600; nt='Responsable operativo de una sucursal. Sus funciones propias llegan en el Ciclo 2.'},
-  @{k='cajero';    n='Cajero';                t=-730; nt='Opera el punto de venta de una sucursal. Sus funciones propias llegan en el Ciclo 3.'},
-  @{k='proveedor'; n='Proveedor';             t=-880; nt='Empresa que abastece prendas. Su acceso se limita a sus propios datos.'}
+  @{k='cliente';   n='Cliente';               t=-110; nt='Persona que se registra, consulta y mantiene su perfil. Se autorregistra en el sistema.'},
+  @{k='interno';   n='Usuario interno';       t=-350; nt='Actor abstracto. Personal de la empresa que se autentica con credenciales corporativas y opera dentro del ambito de datos que define su rol.'},
+  @{k='admin';     n='Administrador';         t=-500; nt='Acceso completo: usuarios y roles, organizacion y maestros del catalogo.'},
+  @{k='encargado'; n='Encargado de Sucursal'; t=-640; nt='Responsable operativo de una sucursal. Sus funciones propias llegan en el Ciclo 2.'},
+  @{k='cajero';    n='Cajero';                t=-780; nt='Opera el punto de venta de una sucursal. Sus funciones propias llegan en el Ciclo 3.'},
+  @{k='proveedor'; n='Proveedor';             t=-930; nt='Empresa que abastece prendas. Su acceso se limita a sus propios datos.'}
 )
 foreach ($def in $defA) {
     $e = New-Elemento $pCiclo1 $def.n 'Actor' $def.nt
@@ -56,23 +56,23 @@ foreach ($def in $defA) {
 # ---------------- casos de uso ----------------
 $U = @{}
 $defU = @(
-  @{k='cu01';  n='CU-01 Registrar cliente';                      l=300; t=-40;   nt='Permite a una persona crear su cuenta de cliente indicando sus datos personales, correo y contrasena, quedando habilitada para reservar y comprar.'},
-  @{k='cu04';  n='CU-04 Gestionar perfil del cliente';           l=300; t=-150;  nt='Permite al Cliente consultar y modificar sus datos personales, sus tallas habituales, sus preferencias y sus direcciones de entrega.'},
-  @{k='cu02';  n='CU-02 Iniciar y cerrar sesión';                l=300; t=-260;  nt='Autentica al usuario con correo y contrasena y emite un token acorde a su rol; el cierre de sesion lo revoca.'},
-  @{k='cu03';  n='CU-03 Gestionar usuarios y roles';             l=300; t=-370;  nt='Permite al Administrador crear, editar, activar o desactivar y eliminar cuentas de usuario, asignando su rol y su sucursal cuando corresponde.'},
-  @{k='cu05';  n='CU-05 Gestionar ciudades y sucursales';        l=300; t=-480;  nt='Permite al Administrador registrar, editar y dar de baja ciudades y sucursales con su direccion, horario y capacidad de vestidores.'},
-  @{k='cu06';  n='CU-06 Gestionar empleados';                    l=300; t=-590;  nt='Permite al Administrador registrar empleados y asignarlos a una sucursal, vinculandolos a su usuario del sistema.'},
-  @{k='cu07';  n='CU-07 Gestionar proveedores';                  l=300; t=-700;  nt='Permite al Administrador registrar, editar y consultar proveedores con sus datos de contacto.'},
-  @{k='cu08';  n='CU-08 Gestionar categorías, tallas y colores'; l=300; t=-810;  nt='Permite al Administrador mantener las categorias jerarquicas, el catalogo de tallas y el de colores.'},
-  @{k='cu09';  n='CU-09 Gestionar temporadas y colecciones';     l=300; t=-920;  nt='Permite al Administrador registrar temporadas comerciales con su vigencia y las colecciones asociadas.'},
-  @{k='verif'; n='Verificar correo electrónico';                 l=680; t=-40;   nt='Extension de CU-01. Solo ocurre si el registro se realizo con un correo que exige confirmacion.'},
-  @{k='pass';  n='Cambiar contraseña';                           l=680; t=-150;  nt='Extension de CU-04. Solo ocurre si el Cliente elige modificar su contrasena.'},
-  @{k='revoc'; n='Revocar sesiones activas';                     l=680; t=-370;  nt='Extension de CU-03 y CU-06. Solo ocurre si el usuario afectado tiene tokens vigentes.'},
-  @{k='auth';  n='Autenticar usuario';                           l=680; t=-1060; nt='Caso de uso de inclusion. Verifica el token y el rol antes del primer paso de toda operacion interna. No es uno de los 37 numerados: no produce por si mismo un resultado de valor para un actor.'}
+  @{k='cu01';  n='CU-01 Registrar cliente';                      l=300; t=-40; h=120;   nt='Permite a una persona crear su cuenta de cliente indicando sus datos personales, correo y contrasena, quedando habilitada para reservar y comprar.'},
+  @{k='cu04';  n='CU-04 Gestionar perfil del cliente';           l=300; t=-185; h=85;  nt='Permite al Cliente consultar y modificar sus datos personales, sus tallas habituales, sus preferencias y sus direcciones de entrega.'},
+  @{k='cu02';  n='CU-02 Iniciar y cerrar sesión';                l=300; t=-295; h=85;  nt='Autentica al usuario con correo y contrasena y emite un token acorde a su rol; el cierre de sesion lo revoca.'},
+  @{k='cu03';  n='CU-03 Gestionar usuarios y roles';             l=300; t=-405; h=85;  nt='Permite al Administrador crear, editar, activar o desactivar y eliminar cuentas de usuario, asignando su rol y su sucursal cuando corresponde.'},
+  @{k='cu05';  n='CU-05 Gestionar ciudades y sucursales';        l=300; t=-515; h=85;  nt='Permite al Administrador registrar, editar y dar de baja ciudades y sucursales con su direccion, horario y capacidad de vestidores.'},
+  @{k='cu06';  n='CU-06 Gestionar empleados';                    l=300; t=-625; h=85;  nt='Permite al Administrador registrar empleados y asignarlos a una sucursal, vinculandolos a su usuario del sistema.'},
+  @{k='cu07';  n='CU-07 Gestionar proveedores';                  l=300; t=-735; h=85;  nt='Permite al Administrador registrar, editar y consultar proveedores con sus datos de contacto.'},
+  @{k='cu08';  n='CU-08 Gestionar categorías, tallas y colores'; l=300; t=-845; h=85;  nt='Permite al Administrador mantener las categorias jerarquicas, el catalogo de tallas y el de colores.'},
+  @{k='cu09';  n='CU-09 Gestionar temporadas y colecciones';     l=300; t=-955; h=85;  nt='Permite al Administrador registrar temporadas comerciales con su vigencia y las colecciones asociadas.'},
+  @{k='verif'; n='Verificar correo electrónico';                 l=680; t=-40; h=85;   nt='Extension de CU-01. Solo ocurre si el registro se realizo con un correo que exige confirmacion.'},
+  @{k='pass';  n='Cambiar contraseña';                           l=680; t=-185; h=85;  nt='Extension de CU-04. Solo ocurre si el Cliente elige modificar su contrasena.'},
+  @{k='revoc'; n='Revocar sesiones activas';                     l=680; t=-405; h=85;  nt='Extension de CU-03 y CU-06. Solo ocurre si el usuario afectado tiene tokens vigentes.'},
+  @{k='auth';  n='Autenticar usuario';                           l=680; t=-1120; h=85; nt='Caso de uso de inclusion. Verifica el token y el rol antes del primer paso de toda operacion interna. No es uno de los 37 numerados: no produce por si mismo un resultado de valor para un actor.'}
 )
 foreach ($def in $defU) {
     $e = New-Elemento $pCiclo1 $def.n 'UseCase' $def.nt
-    Add-AlDiagrama $dia $e $def.l $def.t 220 75
+    Add-AlDiagrama $dia $e $def.l $def.t 220 $def.h
     $U[$def.k] = $e
 }
 
@@ -104,11 +104,51 @@ New-Conector $U['revoc'] $U['cu03'] 'Dependency' 'extend'
 New-Conector $U['revoc'] $U['cu06'] 'Dependency' 'extend'
 
 $pCiclo1.Elements.Refresh(); $dia.DiagramObjects.Refresh(); $dia.DiagramLinks.Refresh()
-Write-Output "elementos: $($pCiclo1.Elements.Count) | objetos: $($dia.DiagramObjects.Count) | conectores: $($dia.DiagramLinks.Count)"
+Write-Output "1.5  -> elementos: $($pCiclo1.Elements.Count) | objetos: $($dia.DiagramObjects.Count) | conectores: $($dia.DiagramLinks.Count)"
+
+# =========================================================================
+# 1.3.2 Disenar Casos de Uso: un diagrama por cada caso de uso.
+# Los diagramas viven en el mismo paquete que los elementos: si estuvieran en un
+# subpaquete, EA rotula cada elemento con "(from Ciclo 1)" y ensucia el dibujo.
+# =========================================================================
+function New-DiagramaDeCasoDeUso($paquete, $nombre, $puestos, $ocultar) {
+    $d = $paquete.Diagrams.AddNew($nombre, 'UseCase')
+    [void]$d.Update(); $paquete.Diagrams.Refresh()
+    foreach ($x in $puestos) { Add-AlDiagrama $d $x.el $x.l $x.t $x.w $x.h }
+    $d.DiagramObjects.Refresh(); $d.DiagramLinks.Refresh()
+
+    # Oculta las relaciones que existen entre elementos presentes pero que no son
+    # objeto de este diagrama (p. ej. Cliente-CU-02 en el diagrama de CU-01).
+    if ($ocultar) {
+        foreach ($lnk in $d.DiagramLinks) {
+            $con = $ea.GetConnectorByID($lnk.ConnectorID)
+            foreach ($par in $ocultar) {
+                if ($con.ClientID -eq $par[0].ElementID -and $con.SupplierID -eq $par[1].ElementID) {
+                    $lnk.IsHidden = $true; [void]$lnk.Update()
+                }
+            }
+        }
+        $d.DiagramLinks.Refresh()
+    }
+    return $d
+}
+
+# --- CU-01 Registrar cliente ---
+$U['cu01'].ExtensionPoints = 'Tras crear la cuenta'
+[void]$U['cu01'].Update()
+
+$dCu01 = New-DiagramaDeCasoDeUso $pCiclo1 'CU-01 Registrar cliente' @(
+    @{ el=$A['cliente']; l=40;  t=-150; w=100; h=80 },
+    @{ el=$U['cu01'];    l=290; t=-120; w=250; h=115 },
+    @{ el=$U['verif'];   l=700; t=-40;  w=230; h=80 },
+    @{ el=$U['cu02'];    l=700; t=-210; w=230; h=80 }
+) @( ,@($A['cliente'], $U['cu02']) )
+Write-Output "CU-01 -> objetos: $($dCu01.DiagramObjects.Count) | conectores visibles: $(($dCu01.DiagramLinks | Where-Object { -not $_.IsHidden }).Count)"
 
 $prj = $ea.GetProjectInterface()
-$png = 'D:\UNI\Si2\PRIMER_PARCIAL\docs\diagramas\casos-de-uso\1.3.2-casos-de-uso-ciclo-1.png'
-Write-Output "export => $($prj.PutDiagramImageToFile($dia.DiagramGUID, $png, 1))"
+$dirPng = 'D:\UNI\Si2\PRIMER_PARCIAL\docs\diagramas\casos-de-uso\'
+Write-Output "export 1.5   => $($prj.PutDiagramImageToFile($dia.DiagramGUID,   $dirPng + '1.5-modelo-estructurado-ciclo-1.png', 1))"
+Write-Output "export CU-01 => $($prj.PutDiagramImageToFile($dCu01.DiagramGUID, $dirPng + '1.3.2-cu-01-registrar-cliente.png', 1))"
 
 $ea.CloseFile(); $ea.Exit()
 [System.Runtime.InteropServices.Marshal]::ReleaseComObject($ea) | Out-Null
