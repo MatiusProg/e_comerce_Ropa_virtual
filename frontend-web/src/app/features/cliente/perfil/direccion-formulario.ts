@@ -11,7 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 
 import { OrganizacionService } from '../../../core/services/organizacion.service';
 import { PerfilService, type ErrorPerfil } from '../../../core/services/perfil.service';
-import type { CiudadBreve } from '../../../core/models/organizacion.models';
+import type { Ciudad } from '../../../core/models/organizacion.models';
 import type { Direccion } from '../../../core/models/perfil.models';
 
 export interface DatosDireccion {
@@ -57,7 +57,7 @@ export class DireccionFormulario {
 
   protected readonly guardando = signal(false);
   protected readonly error = signal<string | null>(null);
-  protected readonly ciudades = signal<CiudadBreve[]>([]);
+  protected readonly ciudades = signal<Ciudad[]>([]);
 
   protected readonly formulario = this.fb.nonNullable.group({
     alias: ['', [Validators.required, Validators.maxLength(40)]],
@@ -68,7 +68,7 @@ export class DireccionFormulario {
   });
 
   constructor() {
-    this.organizacion.ciudades().subscribe({
+    this.organizacion.listarCiudades().subscribe({
       next: (c) => this.ciudades.set(c),
       error: () =>
         this.error.set('No se pudieron cargar las ciudades. Intentá de nuevo.'),

@@ -1,0 +1,107 @@
+@if (guardando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<h2 mat-dialog-title class="fs-titulo">
+  {{ esEdicion ? 'Editar sucursal' : 'Nueva sucursal' }}
+</h2>
+
+<mat-dialog-content>
+  @if (error(); as e) {
+    <div class="aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ e }}</span>
+    </div>
+  }
+
+  <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate id="formulario-sucursal">
+    <div class="fila">
+      <mat-form-field appearance="outline">
+        <mat-label>Nombre</mat-label>
+        <input matInput formControlName="nombre" />
+        @if (formulario.controls.nombre.hasError('required')) {
+          <mat-error>Ingrese el nombre de la sucursal.</mat-error>
+        } @else if (formulario.controls.nombre.hasError('duplicado')) {
+          <mat-error>Ya hay una sucursal con ese nombre en esa ciudad.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Ciudad</mat-label>
+        <mat-select formControlName="ciudad_id">
+          @for (c of datos.ciudades; track c.id) {
+            <mat-option [value]="c.id">{{ c.nombre }} · {{ c.departamento }}</mat-option>
+          }
+        </mat-select>
+        @if (formulario.controls.ciudad_id.hasError('required')) {
+          <mat-error>Elija una ciudad.</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Dirección</mat-label>
+      <input matInput formControlName="direccion" />
+      @if (formulario.controls.direccion.hasError('required')) {
+        <mat-error>Ingrese la dirección.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Teléfono</mat-label>
+      <input matInput formControlName="telefono" />
+      <mat-hint>Opcional.</mat-hint>
+    </mat-form-field>
+
+    <div class="fila">
+      <mat-form-field appearance="outline">
+        <mat-label>Abre a las</mat-label>
+        <input matInput type="time" formControlName="horario_apertura" />
+        @if (formulario.controls.horario_apertura.hasError('required')) {
+          <mat-error>Indique la hora de apertura.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Cierra a las</mat-label>
+        <input matInput type="time" formControlName="horario_cierre" />
+        @if (formulario.controls.horario_cierre.hasError('required')) {
+          <mat-error>Indique la hora de cierre.</mat-error>
+        } @else if (horarioInvertido) {
+          <mat-error>El cierre debe ser posterior a la apertura.</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <!-- Excepción E3: la capacidad de vestidores tiene que ser positiva. -->
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Capacidad de vestidores</mat-label>
+      <input matInput type="number" [min]="capacidadMinima" formControlName="capacidad_vestidores" />
+      <mat-hint>Cuántas personas pueden probarse ropa a la vez.</mat-hint>
+      @if (formulario.controls.capacidad_vestidores.hasError('required')) {
+        <mat-error>Indique la capacidad.</mat-error>
+      } @else if (formulario.controls.capacidad_vestidores.hasError('min')) {
+        <mat-error>Debe ser al menos {{ capacidadMinima }}.</mat-error>
+      }
+    </mat-form-field>
+
+    @if (!esEdicion) {
+      <mat-slide-toggle formControlName="activa" class="interruptor">
+        Habilitarla para reservas y compras desde ya
+      </mat-slide-toggle>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="ref.close(false)">Cancelar</button>
+  <button
+    matButton="filled"
+    type="submit"
+    form="formulario-sucursal"
+    class="fs-boton-marca"
+    [disabled]="guardando()"
+  >
+    {{ esEdicion ? 'Guardar cambios' : 'Registrar sucursal' }}
+  </button>
+</mat-dialog-actions>

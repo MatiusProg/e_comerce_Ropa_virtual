@@ -1,0 +1,132 @@
+<!-- CU-05 · flujo alternativo 3a — «boundary» PantallaCiudades. -->
+<header class="encabezado">
+  <div>
+    <h1 class="fs-titulo">Ciudades</h1>
+    <p class="bajada">Plazas donde opera la cadena. Cada sucursal pertenece a una.</p>
+  </div>
+  <div class="acciones-encabezado">
+    <a matButton routerLink="/admin/sucursales">
+      <mat-icon>storefront</mat-icon>
+      Sucursales
+    </a>
+    <button matButton="filled" type="button" class="fs-boton-marca" (click)="nueva()">
+      <mat-icon>add_location_alt</mat-icon>
+      Nueva ciudad
+    </button>
+  </div>
+</header>
+
+<mat-card class="tarjeta fs-filete-superior" appearance="outlined">
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <div class="filtros">
+    <mat-form-field appearance="outline" class="campo-busqueda">
+      <mat-label>Buscar por ciudad o departamento</mat-label>
+      <input matInput [formControl]="busqueda" />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    @if (busqueda.value) {
+      <button matButton type="button" (click)="limpiarBusqueda()">
+        <mat-icon>filter_alt_off</mat-icon>
+        Limpiar
+      </button>
+    }
+  </div>
+
+  @if (ciudades().length) {
+    <div class="envoltorio-tabla">
+      <table mat-table [dataSource]="ciudades()">
+        <ng-container matColumnDef="ciudad">
+          <th mat-header-cell *matHeaderCellDef>Ciudad</th>
+          <td mat-cell *matCellDef="let c" class="celda-nombre">{{ c.nombre }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="departamento">
+          <th mat-header-cell *matHeaderCellDef>Departamento</th>
+          <td mat-cell *matCellDef="let c">{{ c.departamento }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="sucursales">
+          <th mat-header-cell *matHeaderCellDef>Sucursales</th>
+          <td mat-cell *matCellDef="let c">
+            @if (c.sucursales) {
+              <span class="recuento">
+                <span class="pastilla pastilla-activo">{{ c.sucursales_activas }} activas</span>
+                @if (c.sucursales > c.sucursales_activas) {
+                  <span class="pastilla pastilla-inactivo">
+                    {{ c.sucursales - c.sucursales_activas }} de baja
+                  </span>
+                }
+              </span>
+            } @else {
+              <span class="sin-sucursales">Sin sucursales</span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef aria-label="Acciones"></th>
+          <td mat-cell *matCellDef="let c" class="celda-acciones">
+            <button
+              matIconButton
+              type="button"
+              [matMenuTriggerFor]="menu"
+              aria-label="Acciones de la ciudad"
+            >
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item type="button" (click)="editar(c)">
+                <mat-icon>edit</mat-icon>
+                <span>Editar</span>
+              </button>
+              <!-- Excepción E2: con sucursales encima no se puede eliminar.
+                   La acción NO se deshabilita: un botón inerte no explica nada
+                   y Material no muestra tooltips sobre botones deshabilitados.
+                   Al pulsarla se dice exactamente qué falta hacer. -->
+              <button
+                mat-menu-item
+                type="button"
+                class="accion-peligro"
+                [matTooltip]="
+                  c.sucursales_activas
+                    ? 'Primero dé de baja sus sucursales activas'
+                    : c.sucursales
+                      ? 'Conserva sucursales dadas de baja por trazabilidad'
+                      : ''
+                "
+                matTooltipPosition="left"
+                (click)="eliminar(c)"
+              >
+                <mat-icon>delete_outline</mat-icon>
+                <span>Eliminar</span>
+              </button>
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr mat-row *matRowDef="let fila; columns: columnas"></tr>
+      </table>
+    </div>
+  } @else if (!cargando()) {
+    <div class="vacio">
+      <mat-icon>location_city</mat-icon>
+      <p class="titulo-vacio">
+        {{
+          busqueda.value
+            ? 'Ninguna ciudad coincide con la búsqueda'
+            : 'Todavía no hay ciudades registradas'
+        }}
+      </p>
+      @if (busqueda.value) {
+        <button matButton type="button" (click)="limpiarBusqueda()">Limpiar la búsqueda</button>
+      } @else {
+        <p class="pista-vacio">Es el primer paso: sin ciudad no se puede crear una sucursal.</p>
+      }
+    </div>
+  }
+</mat-card>

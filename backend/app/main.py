@@ -15,6 +15,7 @@ from app.modules.seguridad.router import admin_router as seguridad_admin_router
 from app.modules.seguridad.router import perfil_router as seguridad_perfil_router
 from app.modules.seguridad.router import router as seguridad_router
 from app.modules.organizacion.router import router as organizacion_router
+from app.modules.organizacion.router import consulta_router as organizacion_consulta_router
 from app.modules.catalogo.router import router as catalogo_router
 
 # --- Ciclo 2 -------------------------------------------------------------
@@ -87,6 +88,7 @@ app.include_router(seguridad_router, prefix=API)
 app.include_router(seguridad_admin_router, prefix=API)
 app.include_router(seguridad_perfil_router, prefix=API)
 app.include_router(organizacion_router, prefix=API)
+app.include_router(organizacion_consulta_router, prefix=API)
 app.include_router(catalogo_router, prefix=API)
 
 # --- Ciclo 2 -------------------------------------------------------------

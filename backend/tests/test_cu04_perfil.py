@@ -361,3 +361,21 @@ def test_el_cliente_puede_listar_las_ciudades(
 
 def test_el_listado_de_ciudades_exige_sesion(api: TestClient) -> None:
     assert api.get("/api/v1/organizacion/ciudades").status_code == 401
+
+
+def test_el_cliente_no_puede_crear_ciudades(
+    api: TestClient, cabeceras_cliente: dict[str, str]
+) -> None:
+    """El router de consulta abre la LECTURA, no el CRUD.
+
+    Al mover el listado de ciudades fuera del router administrativo para que el
+    formulario de direcciones pudiera poblarse (seccion 6.11.4), habia que
+    verificar que no se abriera de paso el alta, que sigue siendo de CU-05 y
+    solo del Administrador.
+    """
+    respuesta = api.post(
+        "/api/v1/organizacion/ciudades",
+        headers=cabeceras_cliente,
+        json={"nombre": "Ciudad Pirata", "departamento": "Ninguno"},
+    )
+    assert respuesta.status_code == 403

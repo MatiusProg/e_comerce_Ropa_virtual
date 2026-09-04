@@ -324,6 +324,19 @@ de sucursales se agregan sobre ese mismo *router* cuando llegue su turno.
 no declarar otro con la misma ruta: FastAPI no advierte de rutas duplicadas, se queda con la
 primera registrada y la segunda queda muerta sin ningún error visible.
 
+**Cómo quedó.** El CU-05 extendió ese mismo `GET /organizacion/sucursales`: ahora devuelve la fila
+completa —dirección, horario, capacidad y estado— y acepta los filtros `busqueda`, `ciudad_id` y
+`activa`. El selector del CU-03 sigue leyendo solo `id`, `nombre` y `ciudad`, que siguen ahí.
+
+Lo único que cambió del lado del CU-03 es que **`OrganizacionService.sucursales()` ahora envía
+`activa=true`**. Hace falta: sin ese parámetro el endpoint devuelve también las sucursales dadas
+de baja —que es lo que el CU-05 necesita para poder reactivarlas—, el selector las ofrecería, y el
+alta fallaría con «la sucursal indicada no existe o no está activa».
+
+También se movió la exigencia de rol Administrador del endpoint al *router* de `organizacion`,
+por el mismo motivo por el que el CU-03 la declara a nivel de router: endpoint por endpoint,
+olvidarla en uno solo abre un agujero sin que nada avise.
+
 ### 6.11.3 Las categorías preferidas del cliente se difieren al Ciclo 2
 
 El paso 2 del flujo principal del CU-04 muestra, entre los datos del perfil, las **categorías
@@ -344,3 +357,25 @@ Nada de lo que se construya en el CU-04 hay que rehacerlo.
 **Alcance real del CU-04 en el Ciclo 1**, por lo tanto: datos personales, tallas habituales,
 direcciones de entrega (alta, baja y predeterminada) y cambio de contraseña. Todo lo demás del
 flujo se cumple.
+
+### 6.11.4 Quién puede listar las ciudades
+
+Al integrar el CU-04 con el CU-05 apareció un choque que ninguno de los dos podía ver por separado.
+El CU-05 declaró la exigencia de rol **Administrador a nivel del *router* de `organizacion`**, que
+es la decisión correcta y la misma que toma el CU-03. Pero el formulario de direcciones del CU-04
+necesita el listado de ciudades para su selector, y su actor es el **Cliente**: con la exigencia a
+nivel de router, ese selector recibía un 403 y la dirección no se podía cargar.
+
+**Decisión: `GET /organizacion/ciudades` se declara en un *router* de consulta aparte**, dentro del
+mismo módulo, que admite Administrador **y** Cliente. El alta, la edición y la baja siguen en el
+router administrativo, con su exigencia intacta.
+
+Se evaluó y se descartó duplicar el endpoint bajo `seguridad`: expondría el mismo recurso en dos
+rutas, que es justamente lo que la §6.11.2 decidió no hacer. También se descartó bajar la
+exigencia de rol al nivel de cada endpoint: reintroduciría el agujero que el CU-05 quiso cerrar,
+porque olvidarla en uno solo pasaría inadvertido.
+
+La regla que queda para los casos de uso siguientes: **una lectura que alimenta un selector no
+tiene por qué compartir el ámbito de autorización del CRUD que la mantiene.** Cuando un módulo
+administrativo tenga que exponer un dato a otro rol, va en su router de consulta, no en el
+administrativo y no en el módulo del que consume.
