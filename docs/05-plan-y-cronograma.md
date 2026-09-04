@@ -74,9 +74,9 @@ proyecto arrancado, con seguridad y organización funcionando y **desplegado en 
 | 6 | **1.1.4 Requisitos No Funcionales** — RNF01 a RNF13, completo | Mateo | ✔ |
 | 7 | **1.2 Priorización** — los 37 con prioridad y paquete, agrupados en CICLO #1, #2 y #3 | Mateo | ✔ redactado · falta volcarlo al `.docx` |
 | 8 | **1.3.1 Tabla de detalle** de los nueve casos de uso del Ciclo 1 | Mateo | ✔ redactadas · falta volcarlas |
-| 9 | **1.3.2 Diagrama de casos de uso**: el general con los 37 y el del Ciclo 1 con los 9 agrupados por paquete | Karen | pendiente |
+| 9 | **1.3.2 Diagrama de casos de uso**: uno por cada caso de uso del Ciclo 1, generados en Enterprise Architect | Mateo | ✔ los 9 · falta el general con los 37 |
 | 10 | **1.4 Prototipos de interfaz** del Ciclo 1 (~12 pantallas: login, registro, perfil, ABM de usuarios, ciudades, sucursales, empleados, proveedores, categorías, tallas y colores, temporadas y colecciones, y el layout con menú por rol) | Karen | pendiente |
-| 11 | **1.5 Modelo de casos de uso estructurado** del Ciclo 1: `include` de *Autenticar usuario*, `extend` de la verificación de correo y generalización de los actores internos | Mateo (texto) · Karen (diagrama) | ◐ texto ✔ · diagrama pendiente |
+| 11 | **1.5 Modelo de casos de uso estructurado** del Ciclo 1: `include` de *Autenticar usuario*, `extend` de la verificación de correo y generalización de los actores internos | Mateo | ✔ texto y diagrama |
 | 12 | **2.1.1 a 2.1.3 Paquetes**: identificación de los once, matriz paquete–caso de uso y **diagrama** de la vista de paquetes con sus dependencias | Mateo (texto) · Karen (diagrama) | ◐ texto ✔ · diagrama pendiente |
 | 13 | **2.2 Diagramas de comunicación** de los nueve casos de uso del Ciclo 1, con sus clases «boundary», «control» y «entity» | Karen | ◐ clases y mensajes especificados ✔ · 9 diagramas pendientes |
 | 14 | **2.3 Diagrama de clases de análisis** del Ciclo 1: las catorce clases de P1, P2 y P3-maestros | Mateo (texto) · Karen (diagrama) | ◐ texto ✔ · diagrama pendiente |
@@ -102,11 +102,17 @@ proyecto arrancado, con seguridad y organización funcionando y **desplegado en 
 | 24 | Repositorio en GitHub, ramas y estructura del monorepo | Mateo | ✔ |
 | 25 | Esqueleto del backend FastAPI por paquetes, configuración por entorno, `/health` | Mateo | ✔ |
 | 26 | Proyecto Angular 22 y esqueleto de la app Flutter | Karen | ✔ (generados) |
-| 27 | Servicio **PostgreSQL en Railway** creado y conectado | Mateo | pendiente |
-| 28 | Modelos y migración de P1, P2 y P3 (maestros) + *seed* de usuarios | Mateo | pendiente |
-| 29 | Endpoints de P1, P2 y P3 (maestros) | Mateo | pendiente |
+| 27 | Proyecto **Supabase** creado y `DATABASE_URL` (session pooler) cargada en Railway | Mateo | pendiente |
+| 28 | Modelos y migración de P1, P2 y P3 (maestros) + *seed* de roles, administrador y ciudades | Mateo | ✔ |
+| 29 | Endpoints de P1, P2 y P3 (maestros) — CU-01 lo toma Karen | Mateo · Karen | pendiente |
 | 30 | Login, guardas por rol y ABM de organización y maestros en Angular | Karen | pendiente |
-| 31 | **Despliegue del backend y de la web en Railway con URL pública** | Mateo · Karen | pendiente |
+| 31 | **Despliegue del backend y de la web en Railway con URL pública** | Mateo · Karen | pendiente — no depende de ningún caso de uso: se puede hacer ya |
+
+> **Orden de trabajo en el backend.** Los modelos y la migración de P1, P2 y P3 ya están en
+> `main`: quien implemente un caso de uso escribe su `router`, `service`, `repository` y `schemas`
+> sobre un esquema que ya existe, sin tocar `models.py`. Si dos personas declaran modelos en
+> paralelo, chocan en el mismo archivo y el esquema deja de coincidir con el diseño de la
+> sección 3.3.
 
 > **Criterio de cierre del Ciclo 1:** el documento está entregado en la plataforma **y** existe una
 > URL pública en Railway donde se puede iniciar sesión como Administrador y dar de alta una

@@ -23,6 +23,10 @@ email-validator==2.3.0
 # --- Seguridad (RNF01) ---------------------------------------------------
 passlib[bcrypt]==1.7.4
 bcrypt==4.3.0                   # NO subir a 5.x: passlib 1.7.4 no lo soporta
+# Al arrancar aparece "(trapped) error reading bcrypt version". Es cosmetico:
+# bcrypt 4.1 quito el atributo __about__ que passlib usa para leer la version,
+# passlib atrapa el error y sigue. El hash y la verificacion funcionan --- esta
+# probado contra la base. No perder tiempo con esto.
 python-jose[cryptography]==3.5.0
 
 # --- Tareas programadas (CU-25: expiracion de reservas) ------------------
