@@ -47,7 +47,7 @@ correspondan literalmente con el código.
 | Aspecto | Decisión |
 |---|---|
 | Versión | PostgreSQL 16 |
-| Proveedor | **PostgreSQL gestionado por Railway**, en el mismo proyecto que la API |
+| Proveedor | **PostgreSQL gestionado por Supabase** (decisión del 02/09/2026; ver §6.9). Railway hospeda solo la API y la web |
 | Claves | Enteras autoincrementales; código de negocio (SKU, número de venta) como columna única aparte |
 | Índices | Sobre las columnas de filtrado del catálogo (categoría, temporada, colección, talla, color, precio) y sobre `(variante_id, sucursal_id)` en existencias |
 | Búsqueda de texto | Índice **GIN** sobre `to_tsvector` del nombre y la descripción del producto (RNF02) |
@@ -197,9 +197,10 @@ Railway ese sistema de archivos es efímero y se pierde entero en cada despliegu
 **volumen persistente de Railway** montado en `/app/media`, y la base de datos guarda únicamente
 la ruta. Es la opción que mantiene todo dentro de un mismo proveedor y sin cuentas adicionales.
 
-*Alternativa evaluada:* almacenamiento de objetos externo con CDN (Cloudinary). Sirve mejor al
-RNF02 —las imágenes no pasan por la API— y queda como mejora si el catálogo crece o si los tiempos
-de carga del catálogo resultan insuficientes en las pruebas.
+*Alternativas evaluadas:* **Supabase Storage**, que ya viene con el proyecto de base de datos y
+sirve las imágenes por CDN sin que pasen por la API (mejor para el RNF02), y Cloudinary. Cualquiera
+de las dos queda como mejora si el catálogo crece o si los tiempos de carga resultan insuficientes
+en las pruebas. Para el Ciclo 1 no aplica: todavía no hay imágenes de producto.
 
 **Requisito del vestidor virtual:** la imagen PNG con fondo transparente de cada variante es un
 activo del mismo volumen, no un archivo aparte. Sin ella el módulo de RA no funciona (supuesto S5).
