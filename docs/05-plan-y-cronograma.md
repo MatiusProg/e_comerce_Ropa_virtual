@@ -36,9 +36,23 @@ comprometer la calidad de los otros dos.
 
 ## 5.3 Ciclo 1 — Fundamentos (01/09 al 05/09)
 
-**Objetivo:** entregar la documentación de Perfil, Fundamentación Teórica, Modelo del Negocio y
-Captura de Requisitos, y dejar el proyecto arrancado, con seguridad y organización funcionando y
-**desplegado en Railway**.
+**Objetivo:** entregar el documento **hasta el CAP. 3** con el Ciclo 1 desarrollado, y dejar el
+proyecto arrancado, con seguridad y organización funcionando y **desplegado en la nube**.
+
+**Regla de alcance de este ciclo** (índice oficial, ver
+[`docs/00-indice-oficial.md`](00-indice-oficial.md)):
+
+- Van **completos**, sin subdividir por ciclo: 1.1.1 Actores, 1.1.2 Casos de Uso,
+  1.1.3 Requisitos Funcionales, 1.1.4 Requisitos No Funcionales y 2.1 Análisis de Arquitectura
+  (los once paquetes, la matriz paquete–caso de uso y la vista de paquetes).
+- Van **solo con CICLO #1** —los nueve casos de uso CU-01 a CU-09—: 1.3, 1.4, 1.5, 2.2, 2.3, 2.4
+  y todo el CAP. 3.
+- **No se entregan en este ciclo:** CAP. 4 (Implementación), CAP. 5 (Pruebas), Bibliografía y
+  Anexos.
+- **No se realizan en este proyecto:** el Modelado del Negocio y el diagrama de Ishikawa.
+- **El Diagrama de Tiempo (3.2) no fue pedido**; queda vacío hasta que la docente lo solicite.
+- Todo lo demás **se entrega dibujado**: donde el índice pide un diagrama va un diagrama, no una
+  tabla ni un resumen en prosa.
 
 ### Alcance funcional — paquetes P1, P2 y P3 (maestros)
 
@@ -52,32 +66,47 @@ Captura de Requisitos, y dejar el proyecto arrancado, con seguridad y organizaci
 
 | # | Tarea | Responsable | Estado |
 |---|---|---|---|
-| 1 | Perfil: introducción, objetivos, descripción del problema, alcance | Mateo | ✔ |
-| 2 | Modelo del negocio: problemas, depuración, propietarios, cuantificación, alternativas, Ishikawa | Mateo | ✔ |
-| 3 | Captura de requisitos: actores, casos de uso, priorización, trazabilidad RF/RNF | Mateo | ✔ |
-| 4 | **Parte I · E-commerce**: conceptos y características; como usuario en Amazon, Alibaba y Shopify; como desarrollador en Magento, PrestaShop y WooCommerce | Karen | ✔ |
-| 5 | **Parte I · Pasarelas de pago**: formas de pago en línea (débito, crédito, QR, transferencias); **Libélula**; **PayPal** y **Stripe** | Karen | ✔ |
-| 6 | **Parte I · Deliverys**: funcionamiento (Yaigo / Yummy) y cálculo del costo de entrega (distancia, peso, frecuencia, tamaño) | Karen | ✔ |
-| 7 | **Parte I · PUDS**: fases, flujos de trabajo, carácter iterativo e incremental | Mateo | ✔ |
-| 8 | **Parte I · UML 2.5+**: diagramas estructurales y de comportamiento; los que se usan en este proyecto | Mateo | ✔ |
-| 9 | Diagrama de Ishikawa (dibujado) | Karen | pendiente |
-| 10 | **Diagrama de Casos de Uso UML** (general y del Ciclo 1) | Karen | pendiente |
-| 11 | **Detalle de los 9 casos de uso del Ciclo 1** con plantilla completa: descripción, propósito, actores, iniciador, precondiciones, flujo principal, postcondiciones y excepciones | Ambos | pendiente |
-| 12 | **Prototipos de interfaz** del Ciclo 1 (login, gestión de usuarios, sucursales, maestros) | Karen | pendiente |
-| 13 | Consolidación en Word con índice automático, portada y bibliografía | Karen | pendiente |
+| 1 | **Perfil** (1.1 a 1.5): introducción, objetivos general y específicos, descripción del problema y alcance positivo/negativo | Mateo | ✔ |
+| 2 | **Parte I · Fundamentación teórica** completa: e-commerce, pasarelas de pago, deliverys, PUDS y UML | Mateo · Karen | ✔ |
+| 3 | **1.1.1 Actores** — los nueve (A1 a A9), completo | Mateo | ✔ |
+| 4 | **1.1.2 Casos de Uso** — los treinta y siete (CU-01 a CU-37), completo | Mateo | ✔ |
+| 5 | **1.1.3 Requisitos Funcionales** — RF01 a RF36 con su trazabilidad a casos de uso, completo | Mateo | ✔ |
+| 6 | **1.1.4 Requisitos No Funcionales** — RNF01 a RNF13, completo | Mateo | ✔ |
+| 7 | **1.2 Priorización** — los 37 con prioridad y paquete, agrupados en CICLO #1, #2 y #3 | Mateo | ✔ redactado · falta volcarlo al `.docx` |
+| 8 | **1.3.1 Tabla de detalle** de los nueve casos de uso del Ciclo 1 | Ambos | pendiente |
+| 9 | **1.3.2 Diagrama de casos de uso**: el general con los 37 y el del Ciclo 1 con los 9 agrupados por paquete | Karen | pendiente |
+| 10 | **1.4 Prototipos de interfaz** del Ciclo 1 (~12 pantallas: login, registro, perfil, ABM de usuarios, ciudades, sucursales, empleados, proveedores, categorías, tallas y colores, temporadas y colecciones, y el layout con menú por rol) | Karen | pendiente |
+| 11 | **1.5 Modelo de casos de uso estructurado** del Ciclo 1: `include` de *Autenticar usuario*, `extend` de la verificación de correo y generalización de los actores internos | Mateo | pendiente |
+| 12 | **2.1.1 a 2.1.3 Paquetes**: identificación de los once, matriz paquete–caso de uso y **diagrama** de la vista de paquetes con sus dependencias | Mateo (texto) · Karen (diagrama) | ◐ texto ✔ · diagrama pendiente |
+| 13 | **2.2 Diagramas de comunicación** de los nueve casos de uso del Ciclo 1, con sus clases «boundary», «control» y «entity» | Karen | pendiente |
+| 14 | **2.3 Diagrama de clases de análisis** del Ciclo 1: las catorce clases de P1, P2 y P3-maestros | Mateo | pendiente |
+| 15 | **2.4 Análisis de paquetes** P1, P2 y P3-maestros: contenido de cada uno y dependencias entre ellos | Mateo | pendiente |
+| 16 | **3.1.1 Diseño lógico**: diagrama de las cuatro capas (`router → service → repository → model`) y de los paquetes de diseño | Mateo | pendiente |
+| 17 | **3.1.2 Diseño físico**: diagrama de despliegue con los nodos, artefactos y vías de comunicación | Mateo | pendiente |
+| 18 | **3.2 Diagramas de secuencia** de los nueve casos de uso del Ciclo 1 | Ambos | pendiente |
+| 19 | **3.2 Diagrama de estado** del Ciclo 1 — `SesionToken`: emitido → vigente → expirado → revocado | Mateo | pendiente |
+| 20 | **3.2 Diagrama de navegación** del Ciclo 1: mapa de pantallas de la web, por rol | Karen | pendiente |
+| 21 | **3.3.1 Diseño de datos lógico**: modelo entidad-relación de las catorce entidades del Ciclo 1 | Mateo | pendiente |
+| 22 | **3.3.2 Diseño de datos físico**: esquema PostgreSQL con tipos, claves foráneas e índices | Mateo | pendiente |
+| 23 | Consolidación en Word: estilos, **actualización del índice con F9**, portada y numeración | Karen | pendiente |
+
+> **Sobre el Diagrama de Estado del Ciclo 1.** Los objetos con ciclo de vida rico son `Reserva`
+> (Ciclo 2) y `Pedido` (Ciclo 3). En el Ciclo 1 el único con estados propios es la sesión, y es
+> preferible modelarla honestamente a forzar un diagrama de estado sobre un CRUD. Así queda dicho
+> en el documento.
 
 ### Técnico
 
 | # | Tarea | Responsable | Estado |
 |---|---|---|---|
-| 14 | Repositorio en GitHub, ramas y estructura del monorepo | Mateo | ✔ |
-| 15 | Esqueleto del backend FastAPI por paquetes, configuración por entorno, `/health` | Mateo | ✔ |
-| 16 | Proyecto Angular 22 y esqueleto de la app Flutter | Karen | ✔ (generados) |
-| 17 | Servicio **PostgreSQL en Railway** creado y conectado | Mateo | pendiente |
-| 18 | Modelos y migración de P1, P2 y P3 (maestros) + *seed* de usuarios | Mateo | pendiente |
-| 19 | Endpoints de P1, P2 y P3 (maestros) | Mateo | pendiente |
-| 20 | Login, guardas por rol y ABM de organización y maestros en Angular | Karen | pendiente |
-| 21 | **Despliegue del backend y de la web en Railway con URL pública** | Mateo · Karen | pendiente |
+| 24 | Repositorio en GitHub, ramas y estructura del monorepo | Mateo | ✔ |
+| 25 | Esqueleto del backend FastAPI por paquetes, configuración por entorno, `/health` | Mateo | ✔ |
+| 26 | Proyecto Angular 22 y esqueleto de la app Flutter | Karen | ✔ (generados) |
+| 27 | Servicio **PostgreSQL en Railway** creado y conectado | Mateo | pendiente |
+| 28 | Modelos y migración de P1, P2 y P3 (maestros) + *seed* de usuarios | Mateo | pendiente |
+| 29 | Endpoints de P1, P2 y P3 (maestros) | Mateo | pendiente |
+| 30 | Login, guardas por rol y ABM de organización y maestros en Angular | Karen | pendiente |
+| 31 | **Despliegue del backend y de la web en Railway con URL pública** | Mateo · Karen | pendiente |
 
 > **Criterio de cierre del Ciclo 1:** el documento está entregado en la plataforma **y** existe una
 > URL pública en Railway donde se puede iniciar sesión como Administrador y dar de alta una
@@ -109,6 +138,11 @@ multisucursal y reservas.
   de secuencia**, **diagrama de clases de diseño**, diseño lógico de datos (modelo
   entidad-relación) y diseño físico (migraciones y tabla de volúmenes).
 - **Detalle de los 13 casos de uso del Ciclo 2** y prototipos de sus interfaces.
+- **CAP. 4 · Flujo de Implementación**, que se estrena en este ciclo: selección de la plataforma
+  de software (lenguaje, base de datos, sistemas operativos, frameworks y librerías),
+  implementación de la arquitectura del sistema principal y de los subsistemas por paquete.
+- **Bibliografía y Anexos** (GitHub, plataforma desplegada y descarga de la app), que también se
+  incorporan en este ciclo.
 
 > **Criterio de cierre del Ciclo 2:** un cliente puede registrarse desde la app, navegar el
 > catálogo, filtrar por talla y color, ver en qué sucursal hay stock, crear una reserva de varias
@@ -139,10 +173,10 @@ listo para la defensa.
 
 - Diseño del Ciclo 3 (secuencia, clases, datos) y actualización de los modelos de los ciclos
   anteriores que hayan cambiado durante la implementación.
-- **Flujo de Pruebas:** casos de prueba por caso de uso con resultado esperado y obtenido, y
-  evidencia (capturas) tomada del sistema desplegado.
+- **CAP. 5 · Flujo de Pruebas**, que se estrena en este ciclo: casos de prueba por caso de uso
+  con resultado esperado y obtenido, y evidencia (capturas) tomada del sistema desplegado.
 - Manual de usuario breve por rol y manual de despliegue en Railway.
-- Bibliografía, anexos y consolidación final del documento.
+- Actualización de la bibliografía y los anexos, y consolidación final del documento.
 
 > **Criterio de cierre del Ciclo 3:** el flujo se puede demostrar de punta a punta sobre el sistema
 > desplegado: catálogo → vestidor virtual → reserva → atención en sucursal → venta en caja; y en
@@ -178,7 +212,7 @@ listo para la defensa.
 | **Inteligencia artificial** | Responsable principal (backend) | Comando de voz en el navegador |
 | **Pasarela de pago** | Responsable principal | — |
 | **Despliegue en Railway** | Responsable principal | Servicio del frontend web |
-| **Documentación PUDS** | Perfil, modelo de negocio, requisitos, análisis, diseño de datos | Marco teórico, diagramas UML, prototipos, consolidación |
+| **Documentación PUDS** | Perfil, requisitos, análisis, diseño de datos | Marco teórico, diagramas UML, prototipos, consolidación |
 | **Diagramas UML** | Revisión y validación | Elaboración |
 
 **Regla de trabajo acordada.** Ninguno de los dos es el único que entiende un módulo: al cierre de

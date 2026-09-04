@@ -43,7 +43,8 @@ PRIMER_PARCIAL/                        raíz del repositorio
 │
 ├── docs/                              DOCUMENTACIÓN PUDS
 │   ├── 01-perfil.md
-│   ├── 02-modelo-negocio.md
+│   ├── 00-indice-oficial.md
+│   ├── 02-modelo-negocio.md          (contexto interno; no se entrega)
 │   ├── 03-captura-requisitos.md
 │   ├── 04-analisis-arquitectura.md
 │   ├── 05-plan-y-cronograma.md
@@ -134,7 +135,8 @@ models`): son las mismas que aparecen en los diagramas de secuencia.
 |---|---|
 | Enunciado analizado (`Examen1-Ecommerce-Si2-s2-26.pdf`) | ✔ |
 | Documento de referencia de SI1 revisado | ✔ |
-| Perfil, modelo de negocio, captura de requisitos, análisis de arquitectura | ✔ |
+| Perfil, captura de requisitos y análisis de arquitectura | ✔ |
+| Índice oficial de la ingeniera mapeado (`docs/00-indice-oficial.md`) | ✔ |
 | Plan, cronograma en 3 ciclos y decisiones técnicas | ✔ |
 | Repositorio Git conectado a GitHub | ✔ |
 | Estructura del monorepo | ✔ |

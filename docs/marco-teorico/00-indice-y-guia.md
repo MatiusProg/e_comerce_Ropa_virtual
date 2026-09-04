@@ -95,7 +95,8 @@ en línea.
 desarrollo a medida es la opción correcta para este caso — y el argumento no es "porque lo pide
 el examen", sino que ninguno resuelve de fábrica la combinación que exige el problema: inventario
 multisucursal con reserva para prueba física, POS de sucursal, vestidor virtual con RA e IA
-integrada. Esto enlaza con la alternativa A2 descartada en `docs/02-modelo-negocio.md` §2.1.7.
+integrada. Es el razonamiento que sustenta descartar la alternativa de adoptar una plataforma
+de e-commerce existente y limitarse a configurarla.
 
 ---
 

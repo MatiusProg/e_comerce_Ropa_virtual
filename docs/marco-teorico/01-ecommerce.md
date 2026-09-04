@@ -246,8 +246,8 @@ A esto se suma que el proyecto debe aplicar **PUDS y UML** sobre una arquitectur
 una plataforma existente dejaría sin objeto los flujos de Análisis y Diseño, que son el núcleo de
 la materia.
 
-Este razonamiento es el mismo que sustenta el descarte de la alternativa **A2** en
-[`docs/02-modelo-negocio.md`](../02-modelo-negocio.md) §2.1.7.
+Este razonamiento es el que sustenta el descarte de la alternativa de adoptar una plataforma de
+e-commerce existente y limitarse a configurarla.
 
 ---
 

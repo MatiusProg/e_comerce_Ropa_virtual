@@ -1,5 +1,13 @@
 # 2) MODELO DEL NEGOCIO
 
+> **FUERA DEL ALCANCE DEL ENTREGABLE.** El índice oficial de la ingeniera no incluye el Modelado
+> del Negocio ni el diagrama de Ishikawa, y se confirmó que **no se realizan en este proyecto**.
+> Este documento **no se vuelca al `.docx`** y ninguna sección entregada debe citar sus códigos
+> de problema (P1, P2, …). Se conserva en el repositorio como contexto interno: es el análisis
+> del que salieron el alcance, los objetivos adicionales y varios requisitos, y sirve para
+> responder en la defensa por qué el sistema hace lo que hace. Ver
+> [`docs/00-indice-oficial.md`](00-indice-oficial.md).
+
 Este capítulo corresponde al modelado del negocio previo a la captura de requisitos del PUDS.
 Se identifica y depura el problema, se determinan sus propietarios, se cuantifica su impacto, se
 evalúan alternativas de cambio y se construye el diagrama causa-efecto (Ishikawa).
