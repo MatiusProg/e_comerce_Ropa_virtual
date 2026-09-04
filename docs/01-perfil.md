@@ -90,16 +90,17 @@ original. La última columna indica dónde se realiza cada uno dentro del proyec
 
 #### b) Objetivos específicos adicionales del equipo
 
-El enunciado exige en su apartado *TOMAR EN CUENTA* el despliegue en la nube, y el análisis del
-modelo de negocio (doc. 02) expuso problemas —la falta de trazabilidad de los movimientos de
-mercadería, P5— que ninguno de los dieciséis objetivos anteriores cubre de forma explícita. Se
-incorporan cuatro objetivos adicionales, numerados a continuación de los originales:
+El enunciado exige en su apartado *TOMAR EN CUENTA* el despliegue en la nube, y la descripción
+del problema (§1.3) expone deficiencias —la falta de trazabilidad de los movimientos de
+mercadería, entre otras— que ninguno de los dieciséis objetivos anteriores cubre de forma
+explícita. Se incorporan cuatro objetivos adicionales, numerados a continuación de los
+originales:
 
 | Código | Objetivo específico | Justificación |
 |---|---|---|
 | **OE-17** | Desplegar la solución completa en la nube —backend, base de datos y aplicación web con URL pública, y la aplicación móvil como artefacto instalable—, sin dependencia de entornos locales. | Exigencia explícita del enunciado (*"Despliegue: En la nube (no localhost)"*), no recogida en los objetivos específicos. Realiza RNF03. |
 | **OE-18** | Implementar el control de acceso basado en roles (Cliente, Administrador, Encargado de Sucursal, Cajero, Proveedor) y la protección de credenciales y datos sensibles. | El OE-02 exige gestionar usuarios, pero no su seguridad. Realiza RNF01 y acota el ámbito de datos de cada rol a su sucursal. |
-| **OE-19** | Garantizar la trazabilidad de las existencias registrando cada modificación de inventario como un movimiento inmutable con tipo, motivo, usuario y fecha. | Responde al problema P5 del modelo de negocio. El OE-11 exige que el inventario se actualice, pero no que el cambio quede explicado. |
+| **OE-19** | Garantizar la trazabilidad de las existencias registrando cada modificación de inventario como un movimiento inmutable con tipo, motivo, usuario y fecha. | Responde al registro manual y sin trazabilidad de los movimientos de mercadería descrito en §1.3. El OE-11 exige que el inventario se actualice, pero no que el cambio quede explicado. |
 | **OE-20** | Asegurar la consistencia transaccional de reservas y ventas, impidiendo la sobreventa de una misma variante ante operaciones concurrentes. | Sin esta garantía, dos clientes pueden reservar o comprar la última unidad disponible. Realiza RNF11. |
 
 ## 1.3 Descripción del problema

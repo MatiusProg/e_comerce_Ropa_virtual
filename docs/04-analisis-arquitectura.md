@@ -221,7 +221,7 @@ disponibilidad real al cliente y evitar la sobreventa.
 **D4 — Todo cambio de existencia genera un `MovimientoInventario` inmutable.**
 Los movimientos nunca se editan ni se eliminan; una corrección se registra como un nuevo
 movimiento de ajuste. `Existencia` es, conceptualmente, el saldo de sus movimientos. Realiza el
-RNF10 y responde al problema P5.
+RNF10 y es lo que vuelve auditable un inventario que hoy se lleva a mano y sin rastro.
 
 **D5 — El estado del pago solo lo determina la pasarela.**
 El pedido pasa a *pagado* únicamente al recibir y verificar la notificación (webhook) firmada por

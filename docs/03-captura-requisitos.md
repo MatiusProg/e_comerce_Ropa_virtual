@@ -147,15 +147,20 @@ Productos y sus **variantes (SKU)** con imágenes, el **inventario multisucursal
 trazables, el **catálogo público** con búsqueda, filtros y consulta de disponibilidad por
 sucursal, y el ciclo completo de **reservas** para prueba presencial. Es el núcleo arquitectónico
 y el que concentra las reglas de negocio duras del sistema (traslado disponible ↔ reservado,
-movimientos inmutables, expiración automática). Resuelve los problemas P1, P2, P5, P8 y P13.
+movimientos inmutables, expiración automática). Resuelve la fragmentación del inventario entre
+sucursales, la imposibilidad del cliente de conocer la disponibilidad por talla, color y sucursal
+antes de acudir a la tienda, la falta de trazabilidad de los movimientos de mercadería, el
+desbalance de stock entre sucursales y la ausencia de un mecanismo de reserva anticipada.
 
 **CICLO 3 — Comercio, experiencia e inteligencia (15 casos de uso: CU-12, CU-20, CU-21, CU-26 a
 CU-37).** Presentación final, 20/09.
 Promociones, favoritos, **vestidor virtual con realidad aumentada**, carrito y **venta digital con
 pasarela de pago**, **punto de venta presencial**, **inteligencia artificial** (recomendador,
 asistente conversacional y reportes por comando de voz) y el **tablero de indicadores** con los
-reportes exportables. Completa el ciclo de vida comercial y resuelve los problemas P3, P4, P6, P9
-y P11.
+reportes exportables. Completa el ciclo de vida comercial y resuelve la inexistencia de canal de
+venta digital y pago electrónico, la alta proporción de visitas a tienda que terminan sin compra,
+la gestión no estructurada de proveedores, temporadas y colecciones, los reportes elaborados
+manualmente y con días de retraso, y la nula personalización de la oferta.
 
 | Ciclo | Entrega | Días | Casos de uso | Carácter |
 |---|---|:---:|:---:|---|
@@ -217,7 +222,7 @@ adicionales numerados a continuación de los originales.
 |---|---|---|---|
 | **RF26** | El sistema deberá permitir registrar empleados y asignarlos a una sucursal. | CU-06 | El RF03 administra sucursales y el RF02 usuarios, pero nadie vincula a la persona con su tienda. Sin esto no puede acotarse el ámbito de datos de un Encargado o un Cajero. |
 | **RF27** | El sistema deberá permitir registrar el ingreso de mercadería enviada por un proveedor a una sucursal. | CU-13 | El OE-11 exige actualizar el inventario tras la *recepción de productos*, pero ningún RF define esa operación. |
-| **RF28** | El sistema deberá permitir registrar transferencias de mercadería entre sucursales y ajustes por conteo físico. | CU-15 | El RF22 exige registrar movimientos; estos dos tipos son los que permiten corregir el desbalance entre sucursales (problema P8). |
+| **RF28** | El sistema deberá permitir registrar transferencias de mercadería entre sucursales y ajustes por conteo físico. | CU-15 | El RF22 exige registrar movimientos; estos dos tipos son los que permiten corregir el desbalance de stock entre sucursales. |
 | **RF29** | El cliente deberá poder cancelar una reserva mientras no haya sido atendida. | CU-23 | El RF10 gestiona reservas y el RF12 consulta su estado, pero sin cancelación el stock queda retenido hasta expirar. |
 | **RF30** | El sistema deberá liberar automáticamente el stock de las reservas que venzan sin ser atendidas. | CU-25 | Sin expiración, cada reserva no atendida inmoviliza inventario de forma indefinida. |
 | **RF31** | El cliente deberá poder marcar prendas como favoritas y consultar su lista. | CU-20 | Alimenta el historial de preferencias que necesita el recomendador del RF25. |
@@ -249,7 +254,7 @@ Transcritos **literalmente** del enunciado (§6).
 
 | RNF | Requisito no funcional adicional | Justificación |
 |---|---|---|
-| **RNF10** | **Trazabilidad:** toda modificación de existencias deberá quedar registrada como un movimiento inmutable con tipo, motivo, usuario y fecha. | Deriva del problema P5 del modelo de negocio; sin él no hay auditoría ni explicación posible de las diferencias de inventario. |
+| **RNF10** | **Trazabilidad:** toda modificación de existencias deberá quedar registrada como un movimiento inmutable con tipo, motivo, usuario y fecha. | Hoy los movimientos de mercadería se registran a mano y sin rastro; sin este requisito no hay auditoría ni explicación posible de las diferencias de inventario. |
 | **RNF11** | **Consistencia transaccional:** la reserva, la venta y la confirmación de pago deberán ejecutarse en una transacción con bloqueo de la fila de existencia. | Evita la sobreventa cuando dos clientes compiten por la última unidad de una variante. |
 | **RNF12** | **Restricción tecnológica:** no deberán utilizarse frameworks de tipo e-commerce (PrestaShop, Shopify, Magento, WooCommerce y similares). | Exigencia explícita del enunciado (*TOMAR EN CUENTA*). |
 | **RNF13** | **Despliegue:** el sistema deberá desplegarse en la nube; la demostración y la defensa se realizarán sobre el sistema desplegado, no sobre localhost. | Exigencia explícita del enunciado (*TOMAR EN CUENTA*). |

@@ -114,9 +114,8 @@ producto. Sin esta separación no se pueden cumplir RF05, RF08 ni RF21.
 **2. Ninguna cantidad cambia sin generar un `MovimientoInventario`.**
 Los movimientos son **inmutables**: una corrección es un movimiento nuevo de
 tipo ajuste, nunca una edición del anterior. `Existencia` es el saldo de sus
-movimientos. Esto responde al problema P5 del modelo de negocio: hoy las
-diferencias de inventario no son atribuibles a nada porque las planillas se
-sobrescriben.
+movimientos. Hoy las diferencias de inventario no son atribuibles a nada
+porque las planillas se sobrescriben; con esto, cada cambio queda explicado.
 
 **3. La reserva no descuenta stock: lo traslada.**
 `Existencia` lleva `cantidad_disponible` y `cantidad_reservada`.
@@ -204,7 +203,7 @@ la defensa no hay que traducir entre uno y otro.
 | saber por qué se eligió cada tecnología | [docs/06-decisiones-tecnicas.md](docs/06-decisiones-tecnicas.md) |
 | **desplegar en Railway** | [docs/06-decisiones-tecnicas.md](docs/06-decisiones-tecnicas.md) §6.9 — servicios, variables y las confusiones que cuestan una tarde |
 | agregar un caso de uso o un paquete | [docs/03-captura-requisitos.md](docs/03-captura-requisitos.md) y [docs/04-analisis-arquitectura.md](docs/04-analisis-arquitectura.md) |
-| entender el problema que se resuelve | [docs/01-perfil.md](docs/01-perfil.md) y [docs/02-modelo-negocio.md](docs/02-modelo-negocio.md) |
+| entender el problema que se resuelve | [docs/01-perfil.md](docs/01-perfil.md) §1.3 — y, como contexto interno que no se entrega, [docs/02-modelo-negocio.md](docs/02-modelo-negocio.md) |
 | trabajar con el repositorio | [docs/07-estructura-repositorio.md](docs/07-estructura-repositorio.md) — ramas, commits y etiquetas |
 | **redactar el marco teórico** | **[docs/marco-teorico/00-indice-y-guia.md](docs/marco-teorico/00-indice-y-guia.md)** — el índice que exige el enunciado y qué responder en cada punto |
 
