@@ -29,4 +29,11 @@ def listar_sucursales_activas(db: Session) -> list[Row]:
     )
 
 
+def listar_ciudades(db: Session) -> list[Ciudad]:
+    """Ciudades registradas, ordenadas por departamento y nombre."""
+    return list(
+        db.scalars(select(Ciudad).order_by(Ciudad.departamento, Ciudad.nombre)).all()
+    )
+
+
 # TODO CU-05, CU-06 y CU-07: implementar el resto de las consultas.

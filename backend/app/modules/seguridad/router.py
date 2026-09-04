@@ -16,11 +16,16 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.core.dependencies import DbSession, Usuario, requiere_roles
 from app.modules.seguridad import service
 from app.modules.seguridad.schemas import (
+    CambioContrasenaIn,
     CambioEstadoIn,
     ClienteRegistradoOut,
     ClienteRegistroIn,
+    DireccionIn,
+    DireccionOut,
     LoginIn,
     PaginaUsuarios,
+    PerfilEditarIn,
+    PerfilOut,
     RolOut,
     TokenOut,
     UsuarioAutenticadoOut,
@@ -285,4 +290,128 @@ def eliminar_usuario(usuario_id: int, db: DbSession, usuario: Usuario) -> None:
         raise _traducir(error)
 
 
-# TODO CU-04: declarar sus endpoints.
+# --- CU-04 Gestionar perfil del cliente ----------------------------------
+# Todo el perfil cuelga de un router propio que exige rol CLIENTE. Igual que en
+# CU-03, la dependencia se declara una sola vez a nivel de router.
+#
+# Ningun endpoint recibe el identificador del cliente: sale del token. Un
+# cliente no puede leer ni tocar el perfil de otro porque no existe forma de
+# nombrarlo en la peticion.
+
+perfil_router = APIRouter(
+    prefix="/perfil",
+    tags=["Seguridad · Perfil"],
+    dependencies=[Depends(requiere_roles("CLIENTE"))],
+    responses={
+        401: {"description": "Falta el token o ya no es válido."},
+        403: {"description": "El usuario no es Cliente."},
+    },
+)
+
+
+def _traducir_perfil(error: service.ErrorDePerfil) -> HTTPException:
+    """Convierte los errores de negocio de CU-04 en respuestas HTTP."""
+    if isinstance(error, service.PerfilInexistente):
+        return HTTPException(404, "Su cuenta no tiene una ficha de cliente asociada.")
+    if isinstance(error, service.CiudadInexistente):
+        return HTTPException(422, "La ciudad indicada no existe.")
+    if isinstance(error, service.DireccionInexistente):
+        return HTTPException(404, "La dirección indicada no existe.")
+    if isinstance(error, service.ContrasenaActualIncorrecta):
+        # Excepcion E1: el flujo devuelve el control al paso 3c.
+        return HTTPException(422, "La contraseña actual no es correcta.")
+    return HTTPException(400, "No se pudo completar la operación.")
+
+
+@perfil_router.get("", response_model=PerfilOut, summary="CU-04 Ver mi perfil")
+def obtener_perfil(db: DbSession, usuario: Usuario) -> PerfilOut:
+    """Pasos 1 y 2: datos personales, tallas habituales y direcciones."""
+    try:
+        return service.obtener_perfil(db, usuario.id)
+    except service.ErrorDePerfil as error:
+        raise _traducir_perfil(error)
+
+
+@perfil_router.patch(
+    "",
+    response_model=PerfilOut,
+    summary="CU-04 Editar mi perfil",
+    responses={409: {"description": "El correo ya está en uso (excepción E2)."}},
+)
+def editar_perfil(datos: PerfilEditarIn, db: DbSession, usuario: Usuario) -> PerfilOut:
+    """Pasos 3 a 5: guarda los datos personales y las tallas habituales."""
+    try:
+        return service.editar_perfil(db, usuario.id, datos)
+    except service.CorreoYaRegistrado:
+        # Excepcion E2.
+        raise HTTPException(409, "Ya existe una cuenta con ese correo electrónico.")
+    except service.DocumentoYaRegistrado:
+        raise HTTPException(409, "Ya existe un cliente con ese documento.")
+    except service.ErrorDePerfil as error:
+        raise _traducir_perfil(error)
+
+
+@perfil_router.post(
+    "/direcciones",
+    response_model=list[DireccionOut],
+    status_code=status.HTTP_201_CREATED,
+    summary="CU-04 Agregar dirección",
+)
+def agregar_direccion(
+    datos: DireccionIn, db: DbSession, usuario: Usuario
+) -> list[DireccionOut]:
+    """Flujo alternativo 3a. Devuelve la lista completa ya reordenada."""
+    try:
+        return service.agregar_direccion(db, usuario.id, datos)
+    except service.ErrorDePerfil as error:
+        raise _traducir_perfil(error)
+
+
+@perfil_router.patch(
+    "/direcciones/{direccion_id}/predeterminada",
+    response_model=list[DireccionOut],
+    summary="CU-04 Marcar dirección predeterminada",
+)
+def marcar_predeterminada(
+    direccion_id: int, db: DbSession, usuario: Usuario
+) -> list[DireccionOut]:
+    """Deja esa dirección como la predeterminada y desmarca la anterior."""
+    try:
+        return service.marcar_direccion_predeterminada(db, usuario.id, direccion_id)
+    except service.ErrorDePerfil as error:
+        raise _traducir_perfil(error)
+
+
+@perfil_router.delete(
+    "/direcciones/{direccion_id}",
+    response_model=list[DireccionOut],
+    summary="CU-04 Eliminar dirección",
+)
+def eliminar_direccion(
+    direccion_id: int, db: DbSession, usuario: Usuario
+) -> list[DireccionOut]:
+    """Flujo alternativo 3b. La confirmación previa la pide la interfaz."""
+    try:
+        return service.eliminar_direccion(db, usuario.id, direccion_id)
+    except service.ErrorDePerfil as error:
+        raise _traducir_perfil(error)
+
+
+@perfil_router.put(
+    "/contrasena",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="CU-04 Cambiar mi contraseña",
+    responses={422: {"description": "La contraseña actual no es correcta (E1)."}},
+)
+def cambiar_contrasena(
+    datos: CambioContrasenaIn, db: DbSession, usuario: Usuario
+) -> None:
+    """Flujo alternativo 3c.
+
+    Al cambiar la contraseña se revocan las sesiones abiertas, incluida la que
+    hizo esta petición: el cliente tiene que volver a iniciar sesión.
+    """
+    try:
+        service.cambiar_contrasena(db, usuario.id, datos)
+    except service.ErrorDePerfil as error:
+        raise _traducir_perfil(error)

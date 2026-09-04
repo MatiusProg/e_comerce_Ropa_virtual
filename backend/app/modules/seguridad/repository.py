@@ -15,8 +15,14 @@ from datetime import date, datetime, timezone
 from sqlalchemy import Row, func, or_, select, update
 from sqlalchemy.orm import Session, joinedload
 
-from app.modules.organizacion.models import Empleado, Proveedor, Sucursal
-from app.modules.seguridad.models import Cliente, Rol, SesionToken, Usuario
+from app.modules.organizacion.models import Ciudad, Empleado, Proveedor, Sucursal
+from app.modules.seguridad.models import (
+    Cliente,
+    DireccionCliente,
+    Rol,
+    SesionToken,
+    Usuario,
+)
 
 # Regla: aqui solo van consultas. Ninguna regla de negocio, ninguna
 # validacion de permisos, ningun commit de transaccion compuesta.
@@ -324,4 +330,111 @@ def eliminar_usuario(db: Session, usuario: Usuario) -> None:
     db.flush()
 
 
-# TODO CU-04: implementar sus consultas.
+# --- CU-04 Gestionar perfil del cliente ----------------------------------
+
+def obtener_cliente_de_usuario(db: Session, usuario_id: int) -> Cliente | None:
+    """Ficha de cliente del usuario, con su usuario ya cargado.
+
+    El joinedload evita la consulta extra al leer nombres, apellidos y correo,
+    que viven en usuario y no en cliente.
+    """
+    return db.scalar(
+        select(Cliente)
+        .options(joinedload(Cliente.usuario))
+        .where(Cliente.usuario_id == usuario_id)
+    )
+
+
+def listar_direcciones(db: Session, cliente_id: int) -> list[Row]:
+    """Direcciones del cliente con el nombre de su ciudad.
+
+    La predeterminada va primero: es la que la interfaz ofrece por defecto.
+    """
+    return list(
+        db.execute(
+            select(
+                DireccionCliente.id,
+                DireccionCliente.ciudad_id,
+                Ciudad.nombre.label("ciudad"),
+                DireccionCliente.alias,
+                DireccionCliente.direccion,
+                DireccionCliente.referencia,
+                DireccionCliente.predeterminada,
+            )
+            .join(Ciudad, Ciudad.id == DireccionCliente.ciudad_id)
+            .where(DireccionCliente.cliente_id == cliente_id)
+            .order_by(DireccionCliente.predeterminada.desc(), DireccionCliente.alias)
+        ).all()
+    )
+
+
+def existe_ciudad(db: Session, ciudad_id: int) -> bool:
+    """Indica si la ciudad existe. La clave foranea cruza al paquete P2."""
+    return db.scalar(select(Ciudad.id).where(Ciudad.id == ciudad_id)) is not None
+
+
+def obtener_direccion(
+    db: Session, direccion_id: int, cliente_id: int
+) -> DireccionCliente | None:
+    """Direccion del cliente indicado, o None.
+
+    Filtra SIEMPRE por cliente_id ademas de por id: es lo que impide que un
+    cliente borre o modifique la direccion de otro pasando un id ajeno.
+    """
+    return db.scalar(
+        select(DireccionCliente).where(
+            DireccionCliente.id == direccion_id,
+            DireccionCliente.cliente_id == cliente_id,
+        )
+    )
+
+
+def desmarcar_predeterminadas(db: Session, cliente_id: int) -> None:
+    """Quita la marca de predeterminada a todas las direcciones del cliente.
+
+    Hay que ejecutarlo ANTES de marcar la nueva, dentro de la misma
+    transaccion: el indice parcial uq_direccion_predeterminada solo admite una
+    fila con predeterminada = true por cliente, y rechazaria la segunda.
+    """
+    db.execute(
+        update(DireccionCliente)
+        .where(
+            DireccionCliente.cliente_id == cliente_id,
+            DireccionCliente.predeterminada.is_(True),
+        )
+        .values(predeterminada=False)
+    )
+    db.flush()
+
+
+def agregar_direccion(
+    db: Session,
+    *,
+    cliente_id: int,
+    ciudad_id: int,
+    alias: str,
+    direccion: str,
+    referencia: str | None,
+    predeterminada: bool,
+) -> DireccionCliente:
+    """Agrega una direccion de entrega, sin confirmar."""
+    fila = DireccionCliente(
+        cliente_id=cliente_id,
+        ciudad_id=ciudad_id,
+        alias=alias,
+        direccion=direccion,
+        referencia=referencia,
+        predeterminada=predeterminada,
+    )
+    db.add(fila)
+    db.flush()
+    return fila
+
+
+def eliminar_direccion(db: Session, direccion: DireccionCliente) -> None:
+    """Borra la direccion. Si era la predeterminada, el cliente queda sin una.
+
+    Es lo que pide el flujo alternativo 3b: no se promueve otra en su lugar.
+    """
+    db.delete(direccion)
+    db.flush()

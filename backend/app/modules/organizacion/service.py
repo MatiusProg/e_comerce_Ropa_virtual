@@ -11,7 +11,7 @@ Casos de uso que realiza este paquete:
 from sqlalchemy.orm import Session
 
 from app.modules.organizacion import repository
-from app.modules.organizacion.schemas import SucursalBreveOut
+from app.modules.organizacion.schemas import CiudadBreveOut, SucursalBreveOut
 
 # Regla: aqui viven las reglas de negocio y el control de la transaccion.
 # El servicio orquesta repositorios; nunca conoce el objeto Request de HTTP.
@@ -23,6 +23,11 @@ def listar_sucursales_activas(db: Session) -> list[SucursalBreveOut]:
         SucursalBreveOut(id=f.id, nombre=f.nombre, ciudad=f.ciudad)
         for f in repository.listar_sucursales_activas(db)
     ]
+
+
+def listar_ciudades(db: Session) -> list[CiudadBreveOut]:
+    """Ciudades disponibles para indicar en una direccion de entrega."""
+    return [CiudadBreveOut.model_validate(c) for c in repository.listar_ciudades(db)]
 
 
 # TODO CU-05, CU-06 y CU-07: implementar el resto de las reglas.

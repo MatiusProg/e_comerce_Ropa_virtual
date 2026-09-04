@@ -29,4 +29,18 @@ class SucursalBreveOut(BaseModel):
     ciudad: str
 
 
+class CiudadBreveOut(BaseModel):
+    """Ciudad reducida a lo que hace falta para elegirla en un selector.
+
+    Es lo minimo que necesita CU-04 para que el Cliente indique la ciudad de una
+    direccion de entrega. El detalle completo y el CRUD son de CU-05.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nombre: str
+    departamento: str
+
+
 # TODO CU-05, CU-06 y CU-07: definir el resto de los esquemas.

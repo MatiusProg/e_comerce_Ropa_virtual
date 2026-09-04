@@ -18,13 +18,19 @@ from sqlalchemy.orm import Session
 
 from app.core.security import crear_access_token, hash_password, verify_password
 from app.modules.seguridad import repository
+from app.modules.seguridad.models import Cliente
 from app.modules.seguridad.schemas import (
     ROLES_CON_SUCURSAL,
+    CambioContrasenaIn,
     CambioEstadoIn,  # noqa: F401  (lo usa el router)
     ClienteRegistradoOut,
     ClienteRegistroIn,
+    DireccionIn,
+    DireccionOut,
     LoginIn,
     PaginaUsuarios,
+    PerfilEditarIn,
+    PerfilOut,
     RolOut,
     TokenOut,
     UsuarioAutenticadoOut,
@@ -528,4 +534,237 @@ def eliminar_usuario(db: Session, usuario_id: int, *, solicitante_id: int) -> No
         raise
 
 
-# TODO CU-04: implementar sus reglas de negocio.
+# --- CU-04 Gestionar perfil del cliente ----------------------------------
+
+class ErrorDePerfil(Exception):
+    """Base de los errores previstos de CU-04."""
+
+
+class PerfilInexistente(ErrorDePerfil):
+    """El usuario autenticado no tiene ficha de cliente.
+
+    No deberia ocurrir: CU-01 crea usuario y cliente en la misma transaccion, y
+    el endpoint exige rol CLIENTE. Se contempla igual porque un administrador
+    puede haber creado por CU-03 una cuenta con rol Cliente sin ficha.
+    """
+
+
+class CiudadInexistente(ErrorDePerfil):
+    """La ciudad indicada para la direccion no existe."""
+
+
+class DireccionInexistente(ErrorDePerfil):
+    """La direccion no existe o no pertenece a este cliente."""
+
+
+class ContrasenaActualIncorrecta(ErrorDePerfil):
+    """Excepcion E1 del flujo alternativo 3c."""
+
+
+def _cliente_del_usuario(db: Session, usuario_id: int) -> Cliente:
+    """Ficha de cliente del usuario autenticado, o error.
+
+    Toda operacion de CU-04 pasa por aqui: es el unico punto donde se resuelve
+    de quien es el perfil, y lo resuelve a partir del usuario_id del token,
+    nunca de un identificador enviado en el cuerpo de la peticion.
+    """
+    cliente = repository.obtener_cliente_de_usuario(db, usuario_id)
+    if cliente is None:
+        raise PerfilInexistente(str(usuario_id))
+    return cliente
+
+
+def _direcciones(db: Session, cliente_id: int) -> list[DireccionOut]:
+    """Direcciones del cliente ya convertidas al esquema de salida."""
+    return [
+        DireccionOut.model_validate(f, from_attributes=True)
+        for f in repository.listar_direcciones(db, cliente_id)
+    ]
+
+
+def obtener_perfil(db: Session, usuario_id: int) -> PerfilOut:
+    """Pasos 1 y 2: devuelve los datos del perfil del cliente autenticado."""
+    cliente = _cliente_del_usuario(db, usuario_id)
+    return PerfilOut(
+        nombres=cliente.usuario.nombres,
+        apellidos=cliente.usuario.apellidos,
+        correo=cliente.usuario.correo,
+        documento=cliente.documento,
+        telefono=cliente.telefono,
+        talla_superior=cliente.talla_superior,
+        talla_inferior=cliente.talla_inferior,
+        talla_calzado=cliente.talla_calzado,
+        direcciones=_direcciones(db, cliente.id),
+    )
+
+
+def editar_perfil(db: Session, usuario_id: int, datos: PerfilEditarIn) -> PerfilOut:
+    """Pasos 3 a 5: valida los datos recibidos y los guarda.
+
+    Solo se toca lo que vino en la peticion. `model_fields_set` distingue el
+    campo ausente -- que se deja como esta -- del campo enviado vacio, que el
+    validador convirtio en None y que aqui significa borrar el dato.
+    """
+    cliente = _cliente_del_usuario(db, usuario_id)
+    usuario = cliente.usuario
+    enviados = datos.model_fields_set
+
+    # Excepcion E2: el correo nuevo no puede estar en uso por otra cuenta.
+    if datos.correo and datos.correo != usuario.correo:
+        otro = repository.obtener_usuario_por_correo(db, datos.correo)
+        if otro is not None and otro.id != usuario_id:
+            raise CorreoYaRegistrado(datos.correo)
+
+    if (
+        "documento" in enviados
+        and datos.documento is not None
+        and datos.documento != cliente.documento
+        and repository.existe_cliente_con_documento(db, datos.documento)
+    ):
+        raise DocumentoYaRegistrado(datos.documento)
+
+    try:
+        # nombres, apellidos y correo son NOT NULL: vaciarlos no es borrar un
+        # dato opcional, es dejar la fila invalida. Por eso solo se asignan
+        # cuando traen valor, y el esquema les exige min_length=1.
+        if datos.nombres is not None:
+            usuario.nombres = datos.nombres
+        if datos.apellidos is not None:
+            usuario.apellidos = datos.apellidos
+        if datos.correo is not None:
+            usuario.correo = datos.correo
+
+        # Los de cliente si son opcionales en la base, asi que aca enviar el
+        # campo vacio significa borrarlo.
+        for campo in (
+            "documento",
+            "telefono",
+            "talla_superior",
+            "talla_inferior",
+            "talla_calzado",
+        ):
+            if campo in enviados:
+                setattr(cliente, campo, getattr(datos, campo))
+
+        db.commit()
+    except IntegrityError as exc:
+        # Misma carrera que en CU-01: entre la verificacion y el commit puede
+        # colarse otra cuenta con ese correo. La restriccion UNIQUE es la que
+        # lo impide de verdad.
+        db.rollback()
+        if _viola(exc, "usuario", "correo"):
+            raise CorreoYaRegistrado(datos.correo or "") from exc
+        if _viola(exc, "cliente", "documento"):
+            raise DocumentoYaRegistrado(datos.documento or "") from exc
+        raise
+    except Exception:
+        db.rollback()
+        raise
+
+    return obtener_perfil(db, usuario_id)
+
+
+def agregar_direccion(
+    db: Session, usuario_id: int, datos: DireccionIn
+) -> list[DireccionOut]:
+    """Flujo alternativo 3a: registra una direccion de entrega.
+
+    Si llega marcada como predeterminada hay que desmarcar la anterior primero,
+    en la misma transaccion: el indice parcial uq_direccion_predeterminada
+    admite una sola por cliente y, sin ese paso, la insercion fallaria.
+    """
+    cliente = _cliente_del_usuario(db, usuario_id)
+
+    if not repository.existe_ciudad(db, datos.ciudad_id):
+        raise CiudadInexistente(str(datos.ciudad_id))
+
+    # La primera direccion de un cliente queda como predeterminada aunque no la
+    # haya marcado: tener direcciones y ninguna preferida no le sirve a nadie.
+    predeterminada = datos.predeterminada or not repository.listar_direcciones(
+        db, cliente.id
+    )
+
+    try:
+        if predeterminada:
+            repository.desmarcar_predeterminadas(db, cliente.id)
+        repository.agregar_direccion(
+            db,
+            cliente_id=cliente.id,
+            ciudad_id=datos.ciudad_id,
+            alias=datos.alias,
+            direccion=datos.direccion,
+            referencia=datos.referencia,
+            predeterminada=predeterminada,
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    return _direcciones(db, cliente.id)
+
+
+def marcar_direccion_predeterminada(
+    db: Session, usuario_id: int, direccion_id: int
+) -> list[DireccionOut]:
+    """Deja una direccion como la predeterminada del cliente."""
+    cliente = _cliente_del_usuario(db, usuario_id)
+    direccion = repository.obtener_direccion(db, direccion_id, cliente.id)
+    if direccion is None:
+        raise DireccionInexistente(str(direccion_id))
+
+    try:
+        repository.desmarcar_predeterminadas(db, cliente.id)
+        direccion.predeterminada = True
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    return _direcciones(db, cliente.id)
+
+
+def eliminar_direccion(
+    db: Session, usuario_id: int, direccion_id: int
+) -> list[DireccionOut]:
+    """Flujo alternativo 3b: elimina una direccion.
+
+    Si era la predeterminada, el cliente queda sin predeterminada; el caso de
+    uso no pide promover otra en su lugar.
+    """
+    cliente = _cliente_del_usuario(db, usuario_id)
+    direccion = repository.obtener_direccion(db, direccion_id, cliente.id)
+    if direccion is None:
+        raise DireccionInexistente(str(direccion_id))
+
+    try:
+        repository.eliminar_direccion(db, direccion)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    return _direcciones(db, cliente.id)
+
+
+def cambiar_contrasena(db: Session, usuario_id: int, datos: CambioContrasenaIn) -> None:
+    """Flujo alternativo 3c: reemplaza la contrasena del propio cliente.
+
+    Verifica la actual ANTES de reemplazar el hash (excepcion E1) y revoca las
+    sesiones abiertas, por el mismo motivo que CU-03: si la contrasena se
+    cambio porque la cuenta estaba comprometida, dejar vivos los tokens ya
+    emitidos no serviria de nada.
+    """
+    cliente = _cliente_del_usuario(db, usuario_id)
+    usuario = cliente.usuario
+
+    if not verify_password(datos.contrasena_actual, usuario.hash_contrasena):
+        raise ContrasenaActualIncorrecta(str(usuario_id))
+
+    try:
+        usuario.hash_contrasena = hash_password(datos.contrasena_nueva)
+        repository.revocar_sesiones_de_usuario(db, usuario_id)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
