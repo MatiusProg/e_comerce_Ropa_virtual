@@ -416,6 +416,13 @@ definido por su rol. Se modela un actor abstracto **Usuario interno** del que lo
 Cliente y Proveedor no heredan de él: el Cliente se autorregistra y el Proveedor tiene acceso
 restringido a sus propios datos.
 
+**Qué gana el modelo con esto.** CU-02 lo usan los **cinco** actores humanos. Sin la
+generalización harían falta cinco asociaciones; con ella bastan dos —Cliente y Proveedor— más la
+de *Usuario interno*, porque Administrador, Encargado y Cajero heredan las asociaciones de su
+actor padre. El diagrama de CU-02 dibuja igual a los tres concretos con su relación de herencia,
+para que se entienda sin tener al lado el modelo estructurado, pero **ninguno lleva línea propia
+al caso de uso**: sería redundante.
+
 ```
         Usuario interno  (abstracto)
               △

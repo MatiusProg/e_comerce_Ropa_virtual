@@ -20,8 +20,10 @@ class Settings(BaseSettings):
     DEBUG: bool = True
 
     # --- Base de datos ---------------------------------------------------
-    # Railway inyecta DATABASE_URL automaticamente al vincular el servicio
-    # PostgreSQL. En local apunta al contenedor de docker-compose.
+    # La base es Supabase (PostgreSQL gestionado); Railway solo hospeda la API
+    # y la web. En produccion se carga la cadena del SESSION POOLER de Supabase
+    # (puerto 5432), no la conexion directa. En local apunta al contenedor de
+    # docker-compose. Ver backend/.env.example.
     DATABASE_URL: str = "postgresql+psycopg://fashionstore:fashionstore@localhost:5432/fashionstore"
 
     # --- Seguridad (RNF01) -----------------------------------------------
@@ -47,6 +49,10 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     IA_MODELO: str = "claude-opus-5"
     IA_MAX_PETICIONES_DIA: int = 50       # tope por usuario, control de costo
+
+    # --- Datos iniciales (app/db/seed.py) --------------------------------
+    ADMIN_EMAIL: str = "admin@fashionstore.bo"
+    ADMIN_PASSWORD: str = ""      # sin valor por defecto: ver seed.py
 
     # --- Almacenamiento de imagenes --------------------------------------
     # Volumen persistente de Railway montado en el contenedor.
