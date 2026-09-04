@@ -1,28 +1,36 @@
 ﻿# =========================================================================
 # CAP. 2 - 2.2 Analizar Casos de Uso: diagramas de comunicacion.
 #
-# Un diagrama por caso de uso del Ciclo 1, con sus clases de analisis y los
-# mensajes numerados entre ellas.
+# Un diagrama por caso de uso del Ciclo 1: sus clases de analisis y los mensajes
+# que intercambian, agrupados por flujo.
 #
-# NUMERACION DE LOS FLUJOS. El flujo principal va 1, 2, 3... Los flujos
-# alternativos y las excepciones conservan la etiqueta que usa la tabla de
-# detalle de cap-1-captura-requisitos.md: "3a.1" es el primer mensaje del flujo
-# alternativo 3a, y "E1" el de la primera excepcion. Asi el diagrama se lee
-# contra la tabla sin tener que traducir nada.
+# ---- COMO SE ARMA UN MENSAJE EN EA -------------------------------------
 #
-# COMO SE ARMA UN MENSAJE EN EA, que costo averiguarlo:
-#   - El ENLACE entre dos objetos es un conector 'Association'. Es lo que dibuja
-#     la linea, y va uno solo por par aunque intercambien varios mensajes.
-#   - Cada MENSAJE es un conector 'Collaboration' cuyo nombre es el texto
-#     numerado. Aporta la etiqueta, no la linea.
-#   - Un conector 'Sequence' --- el de los diagramas de secuencia --- se crea sin
-#     error y no dibuja nada en un diagrama de comunicacion.
-#   - Los estereotipos boundary/control/entity se dibujan como un circulo
-#     inscrito en la caja, asi que la caja tiene que ser CUADRADA.
+#   1. El ENLACE entre dos objetos es un conector 'Association'. Es lo que
+#      dibuja la linea, y va UNO SOLO por par de objetos, aunque intercambien
+#      varios mensajes.
+#   2. Cada MENSAJE es un conector 'Collaboration'. Su nombre es SOLO la
+#      operacion: nada de numerarlo a mano.
+#   3. El numero lo pone EA, y sale del campo PDATA4 del conector, con el
+#      formato "<grupo>.<orden>". Ese campo es el "Start New Group" de la
+#      interfaz: al cambiar de grupo, EA reinicia la numeracion y dibuja el
+#      grupo nuevo en otro color.
 #
-# LIMITACION CONOCIDA: los mensajes que comparten enlace apilan sus etiquetas en
-# el punto medio. Se intento separarlas por DiagramLink.Geometry y EA lo
-# recalcula. Se arreglan arrastrandolas una vez en EA.
+#   PDATA4 es de SOLO LECTURA por la API (MiscData(3)), asi que se escribe con
+#   Repository.Execute contra t_connector. Es la unica forma de fijar los grupos
+#   por automatizacion.
+#
+#   Numerar a mano dentro del nombre del mensaje --- "1: enviarDatos()" --- se
+#   ve parecido pero es peor: EA no sabe que son grupos, no los colorea y
+#   amontona todas las etiquetas en el punto medio del enlace. Con PDATA4 las
+#   apila ordenadas.
+#
+#   Un conector 'Sequence' --- el de los diagramas de secuencia --- se crea sin
+#   error y no dibuja nada en un diagrama de comunicacion.
+#
+#   Los estereotipos boundary/control/entity se dibujan como un circulo inscrito
+#   en la caja del elemento, asi que la caja tiene que ser CUADRADA y la
+#   separacion entre elementos, mayor que su alto.
 #
 # ADITIVO: abre el modelo y solo agrega los diagramas que faltan.
 # =========================================================================
@@ -85,10 +93,17 @@ function New-Enlace($src, $dst) {
     [void]$c.Update(); $src.Connectors.Refresh()
 }
 
+# Devuelve el ConnectorID para poder fijarle el numero de grupo despues.
 function New-Mensaje($src, $dst, $nombre) {
+    foreach ($c in $src.Connectors) {
+        if ($c.SupplierID -eq $dst.ElementID -and $c.Type -eq 'Collaboration' -and $c.Name -eq $nombre) {
+            return $c.ConnectorID   # ya existe: no duplicar
+        }
+    }
     $c = $src.Connectors.AddNew($nombre, 'Collaboration')
     $c.SupplierID = $dst.ElementID
     [void]$c.Update(); $src.Connectors.Refresh()
+    return $c.ConnectorID
 }
 
 # ---------------- estructura ----------------
@@ -100,8 +115,6 @@ Registrar-Elementos $pFashion
 $pCap2 = Get-OCrearPaqueteModelo $pFashion 'CAP. 2 - Flujo de Trabajo: Analisis'
 $p22   = Get-OCrearPaqueteModelo $pCap2    '2.2 Analizar Casos de Uso'
 $pClas = Get-OCrearPaqueteModelo $p22      'Clases de Analisis'
-
-# ---------------- descripcion de las clases de analisis ----------------
 
 $desc = @{
     'FormularioRegistro'       = 'Pantalla de registro, en la web y en la app movil.'
@@ -138,189 +151,198 @@ $desc = @{
     'Coleccion'        = 'Conjunto de productos de una temporada.'
 }
 
-# ---------------- definicion de los nueve diagramas ----------------
+# ---------------- los nueve diagramas ----------------
+#
+# 'g' es el grupo del mensaje. El orden dentro del grupo lo da el orden de
+# declaracion. Los actores se referencian con prefijo "A:" porque el actor
+# Cliente y la entidad Cliente son elementos distintos con el mismo nombre.
 
 $casos = @(
   @{ n='2.2 CU-01 Registrar cliente'
      actores=@('Cliente'); boundary='FormularioRegistro'; controles=@('GestorRegistro')
-     entidades=@('Rol','Usuario','Cliente'); nota=$null
+     entidades=@('Rol','Usuario','Cliente')
+     grupos='Grupo 1: flujo principal.   Grupo 2: excepciones E1 (correo ya registrado) y E2 (fallo al persistir).'
      msj=@(
-       @{d='A:Cliente';a='FormularioRegistro';m='1: enviarDatos(nombres, apellidos, correo, contrasena)'},
-       @{d='FormularioRegistro';a='GestorRegistro';m='2: registrarCliente(datos)'},
-       @{d='GestorRegistro';a='GestorRegistro';m='3: validarDatos(datos)'},
-       @{d='GestorRegistro';a='Usuario';m='4: existeCorreo(correo)'},
-       @{d='GestorRegistro';a='GestorRegistro';m='5: hashearContrasena(contrasena)'},
-       @{d='GestorRegistro';a='Rol';m='6: obtenerRol("CLIENTE")'},
-       @{d='GestorRegistro';a='Usuario';m='7: crear(usuario)'},
-       @{d='GestorRegistro';a='Cliente';m='8: crear(cliente)'},
-       @{d='FormularioRegistro';a='A:Cliente';m='9: confirmarRegistro()'},
-       @{d='GestorRegistro';a='FormularioRegistro';m='E1: correoYaRegistrado()'},
-       @{d='GestorRegistro';a='GestorRegistro';m='E2: revertirTransaccion()'}
+       @{g=1;d='A:Cliente';a='FormularioRegistro';m='enviarDatos(nombres, apellidos, correo, contrasena)'},
+       @{g=1;d='FormularioRegistro';a='GestorRegistro';m='registrarCliente(datos)'},
+       @{g=1;d='GestorRegistro';a='GestorRegistro';m='validarDatos(datos)'},
+       @{g=1;d='GestorRegistro';a='Usuario';m='existeCorreo(correo)'},
+       @{g=1;d='GestorRegistro';a='GestorRegistro';m='hashearContrasena(contrasena)'},
+       @{g=1;d='GestorRegistro';a='Rol';m='obtenerRol("CLIENTE")'},
+       @{g=1;d='GestorRegistro';a='Usuario';m='crear(usuario)'},
+       @{g=1;d='GestorRegistro';a='Cliente';m='crear(cliente)'},
+       @{g=1;d='FormularioRegistro';a='A:Cliente';m='confirmarRegistro()'},
+       @{g=2;d='GestorRegistro';a='FormularioRegistro';m='correoYaRegistrado()'},
+       @{g=2;d='GestorRegistro';a='GestorRegistro';m='revertirTransaccion()'}
      )},
 
   @{ n='2.2 CU-02 Iniciar y cerrar sesión'
      actores=@('Cliente'); boundary='FormularioLogin'; controles=@('GestorAutenticacion')
      entidades=@('Rol','Usuario','SesionToken')
-     nota='Cualquiera de los cinco actores humanos inicia este caso de uso y la colaboracion es la misma; se dibuja Cliente como representante. Que actores participan se ve en el diagrama 1.3.2 de CU-02. Los mensajes C1 a C3 son el flujo de cierre de sesion.'
+     grupos='Grupo 1: inicio de sesion.   Grupo 2: cierre de sesion.   Grupo 3: excepciones E1 (credenciales invalidas) y E2 (cuenta desactivada). Cualquiera de los cinco actores humanos inicia este caso de uso y la colaboracion es la misma; se dibuja Cliente como representante.'
      msj=@(
-       @{d='A:Cliente';a='FormularioLogin';m='1: enviarCredenciales(correo, contrasena)'},
-       @{d='FormularioLogin';a='GestorAutenticacion';m='2: autenticar(credenciales)'},
-       @{d='GestorAutenticacion';a='Usuario';m='3: buscarPorCorreo(correo)'},
-       @{d='GestorAutenticacion';a='Usuario';m='4: verificarActivo()'},
-       @{d='GestorAutenticacion';a='GestorAutenticacion';m='5: verificarContrasena(hash)'},
-       @{d='GestorAutenticacion';a='Rol';m='6: obtenerRol()'},
-       @{d='GestorAutenticacion';a='GestorAutenticacion';m='7: emitirToken(usuario, rol, sucursal)'},
-       @{d='GestorAutenticacion';a='SesionToken';m='8: registrarSesion(jti, expiraEn)'},
-       @{d='GestorAutenticacion';a='FormularioLogin';m='9: devolverToken(token)'},
-       @{d='FormularioLogin';a='A:Cliente';m='10: mostrarAreaDelRol()'},
-       @{d='A:Cliente';a='FormularioLogin';m='C1: solicitarCierre()'},
-       @{d='FormularioLogin';a='GestorAutenticacion';m='C2: cerrarSesion(jti)'},
-       @{d='GestorAutenticacion';a='SesionToken';m='C3: revocar(jti)'},
-       @{d='GestorAutenticacion';a='FormularioLogin';m='E1: credencialesInvalidas()'},
-       @{d='GestorAutenticacion';a='FormularioLogin';m='E2: cuentaDesactivada()'}
+       @{g=1;d='A:Cliente';a='FormularioLogin';m='enviarCredenciales(correo, contrasena)'},
+       @{g=1;d='FormularioLogin';a='GestorAutenticacion';m='autenticar(credenciales)'},
+       @{g=1;d='GestorAutenticacion';a='Usuario';m='buscarPorCorreo(correo)'},
+       @{g=1;d='GestorAutenticacion';a='Usuario';m='verificarActivo()'},
+       @{g=1;d='GestorAutenticacion';a='GestorAutenticacion';m='verificarContrasena(hash)'},
+       @{g=1;d='GestorAutenticacion';a='Rol';m='obtenerRol()'},
+       @{g=1;d='GestorAutenticacion';a='GestorAutenticacion';m='emitirToken(usuario, rol, sucursal)'},
+       @{g=1;d='GestorAutenticacion';a='SesionToken';m='registrarSesion(jti, expiraEn)'},
+       @{g=1;d='GestorAutenticacion';a='FormularioLogin';m='devolverToken(token)'},
+       @{g=1;d='FormularioLogin';a='A:Cliente';m='mostrarAreaDelRol()'},
+       @{g=2;d='A:Cliente';a='FormularioLogin';m='solicitarCierre()'},
+       @{g=2;d='FormularioLogin';a='GestorAutenticacion';m='cerrarSesion(jti)'},
+       @{g=2;d='GestorAutenticacion';a='SesionToken';m='revocar(jti)'},
+       @{g=3;d='GestorAutenticacion';a='FormularioLogin';m='credencialesInvalidas()'},
+       @{g=3;d='GestorAutenticacion';a='FormularioLogin';m='cuentaDesactivada()'}
      )},
 
   @{ n='2.2 CU-03 Gestionar usuarios y roles'
      actores=@('Administrador'); boundary='PantallaUsuarios'
      controles=@('GestorUsuarios','GestorAutenticacion')
-     entidades=@('Rol','Usuario','SesionToken'); nota=$null
+     entidades=@('Rol','Usuario','SesionToken')
+     grupos='Grupo 1: alta de usuario.   Grupo 2: flujo alternativo 3a, edicion.   Grupo 3: flujo alternativo 3b, activar o desactivar --- desactivar revoca las sesiones vigentes.   Grupo 4: excepciones E1 y E3.'
      msj=@(
-       @{d='A:Administrador';a='PantallaUsuarios';m='1: crearUsuario(datos)'},
-       @{d='PantallaUsuarios';a='GestorUsuarios';m='2: registrar(datos)'},
-       @{d='GestorUsuarios';a='GestorAutenticacion';m='3: autorizar("ADMINISTRADOR")'},
-       @{d='GestorUsuarios';a='GestorUsuarios';m='4: validarDatos(datos)'},
-       @{d='GestorUsuarios';a='Usuario';m='5: existeCorreo(correo)'},
-       @{d='GestorUsuarios';a='Rol';m='6: obtenerRol(rol)'},
-       @{d='GestorUsuarios';a='Usuario';m='7: crear(usuario)'},
-       @{d='GestorUsuarios';a='PantallaUsuarios';m='8: confirmar()'},
-       @{d='A:Administrador';a='PantallaUsuarios';m='3a.1: editar(id, datos)'},
-       @{d='A:Administrador';a='PantallaUsuarios';m='3b.1: desactivar(id)'},
-       @{d='GestorUsuarios';a='SesionToken';m='3b.2: revocarSesionesDe(usuario)'},
-       @{d='GestorUsuarios';a='PantallaUsuarios';m='E1: correoYaRegistrado()'},
-       @{d='GestorUsuarios';a='PantallaUsuarios';m='E3: noPuedeAutodesactivarse()'}
+       @{g=1;d='A:Administrador';a='PantallaUsuarios';m='crearUsuario(datos)'},
+       @{g=1;d='PantallaUsuarios';a='GestorUsuarios';m='registrar(datos)'},
+       @{g=1;d='GestorUsuarios';a='GestorAutenticacion';m='autorizar("ADMINISTRADOR")'},
+       @{g=1;d='GestorUsuarios';a='GestorUsuarios';m='validarDatos(datos)'},
+       @{g=1;d='GestorUsuarios';a='Usuario';m='existeCorreo(correo)'},
+       @{g=1;d='GestorUsuarios';a='Rol';m='obtenerRol(rol)'},
+       @{g=1;d='GestorUsuarios';a='Usuario';m='crear(usuario)'},
+       @{g=1;d='GestorUsuarios';a='PantallaUsuarios';m='confirmar()'},
+       @{g=2;d='A:Administrador';a='PantallaUsuarios';m='editar(id, datos)'},
+       @{g=2;d='GestorUsuarios';a='Usuario';m='guardar(usuario)'},
+       @{g=3;d='A:Administrador';a='PantallaUsuarios';m='desactivar(id)'},
+       @{g=3;d='GestorUsuarios';a='SesionToken';m='revocarSesionesDe(usuario)'},
+       @{g=4;d='GestorUsuarios';a='PantallaUsuarios';m='correoYaRegistrado()'},
+       @{g=4;d='GestorUsuarios';a='PantallaUsuarios';m='noPuedeAutodesactivarse()'}
      )},
 
   @{ n='2.2 CU-04 Gestionar perfil del cliente'
      actores=@('Cliente'); boundary='PantallaPerfil'
      controles=@('GestorPerfil','GestorAutenticacion')
-     entidades=@('Usuario','Cliente','DireccionCliente'); nota=$null
+     entidades=@('Usuario','Cliente','DireccionCliente')
+     grupos='Grupo 1: consulta y edicion del perfil.   Grupo 2: flujos alternativos 3a y 3b, direcciones de entrega.   Grupo 3: flujo alternativo 3c, cambio de contrasena --- es el unico que escribe en Usuario.   Grupo 4: excepcion E1.'
      msj=@(
-       @{d='A:Cliente';a='PantallaPerfil';m='1: solicitarPerfil()'},
-       @{d='PantallaPerfil';a='GestorPerfil';m='2: obtenerPerfil()'},
-       @{d='GestorPerfil';a='GestorAutenticacion';m='3: autorizarPropietario()'},
-       @{d='GestorPerfil';a='Cliente';m='4: buscarPorUsuario(idUsuario)'},
-       @{d='A:Cliente';a='PantallaPerfil';m='5: modificar(datos)'},
-       @{d='PantallaPerfil';a='GestorPerfil';m='6: actualizar(datos)'},
-       @{d='GestorPerfil';a='GestorPerfil';m='7: validarDatos(datos)'},
-       @{d='GestorPerfil';a='Cliente';m='8: guardar(cliente)'},
-       @{d='GestorPerfil';a='DireccionCliente';m='3a.1: agregarDireccion(datos)'},
-       @{d='GestorPerfil';a='DireccionCliente';m='3b.1: eliminarDireccion(id)'},
-       @{d='GestorPerfil';a='Usuario';m='3c.1: cambiarContrasena(actual, nueva)'},
-       @{d='GestorPerfil';a='PantallaPerfil';m='E1: contrasenaActualIncorrecta()'}
+       @{g=1;d='A:Cliente';a='PantallaPerfil';m='solicitarPerfil()'},
+       @{g=1;d='PantallaPerfil';a='GestorPerfil';m='obtenerPerfil()'},
+       @{g=1;d='GestorPerfil';a='GestorAutenticacion';m='autorizarPropietario()'},
+       @{g=1;d='GestorPerfil';a='Cliente';m='buscarPorUsuario(idUsuario)'},
+       @{g=1;d='A:Cliente';a='PantallaPerfil';m='modificar(datos)'},
+       @{g=1;d='PantallaPerfil';a='GestorPerfil';m='actualizar(datos)'},
+       @{g=1;d='GestorPerfil';a='GestorPerfil';m='validarDatos(datos)'},
+       @{g=1;d='GestorPerfil';a='Cliente';m='guardar(cliente)'},
+       @{g=2;d='GestorPerfil';a='DireccionCliente';m='agregarDireccion(datos)'},
+       @{g=2;d='GestorPerfil';a='DireccionCliente';m='eliminarDireccion(id)'},
+       @{g=3;d='GestorPerfil';a='Usuario';m='cambiarContrasena(actual, nueva)'},
+       @{g=4;d='GestorPerfil';a='PantallaPerfil';m='contrasenaActualIncorrecta()'}
      )},
 
   @{ n='2.2 CU-05 Gestionar ciudades y sucursales'
      actores=@('Administrador'); boundary='PantallaSucursales'
      controles=@('GestorOrganizacion','GestorAutenticacion')
-     entidades=@('Ciudad','Sucursal'); nota=$null
+     entidades=@('Ciudad','Sucursal')
+     grupos='Grupo 1: alta de sucursal.   Grupo 2: flujo alternativo 3a, gestion de ciudades.   Grupo 3: flujo alternativo 3c, baja de sucursal.   Grupo 4: excepciones E1 y E2.'
      msj=@(
-       @{d='A:Administrador';a='PantallaSucursales';m='1: registrarSucursal(datos)'},
-       @{d='PantallaSucursales';a='GestorOrganizacion';m='2: crearSucursal(datos)'},
-       @{d='GestorOrganizacion';a='GestorAutenticacion';m='3: autorizar("ADMINISTRADOR")'},
-       @{d='GestorOrganizacion';a='GestorOrganizacion';m='4: validarDatos(datos)'},
-       @{d='GestorOrganizacion';a='Ciudad';m='5: obtenerCiudad(id)'},
-       @{d='GestorOrganizacion';a='Sucursal';m='6: existeNombreEnCiudad(ciudad, nombre)'},
-       @{d='GestorOrganizacion';a='Sucursal';m='7: crear(sucursal)'},
-       @{d='GestorOrganizacion';a='PantallaSucursales';m='8: confirmar()'},
-       @{d='A:Administrador';a='PantallaSucursales';m='3a.1: gestionarCiudad(datos)'},
-       @{d='GestorOrganizacion';a='Ciudad';m='3a.2: crear(ciudad)'},
-       @{d='GestorOrganizacion';a='Sucursal';m='3c.1: darDeBaja(sucursal)'},
-       @{d='GestorOrganizacion';a='PantallaSucursales';m='E1: nombreDuplicadoEnLaCiudad()'},
-       @{d='GestorOrganizacion';a='PantallaSucursales';m='E2: ciudadConSucursalesActivas()'}
+       @{g=1;d='A:Administrador';a='PantallaSucursales';m='registrarSucursal(datos)'},
+       @{g=1;d='PantallaSucursales';a='GestorOrganizacion';m='crearSucursal(datos)'},
+       @{g=1;d='GestorOrganizacion';a='GestorAutenticacion';m='autorizar("ADMINISTRADOR")'},
+       @{g=1;d='GestorOrganizacion';a='GestorOrganizacion';m='validarDatos(datos)'},
+       @{g=1;d='GestorOrganizacion';a='Ciudad';m='obtenerCiudad(id)'},
+       @{g=1;d='GestorOrganizacion';a='Sucursal';m='existeNombreEnCiudad(ciudad, nombre)'},
+       @{g=1;d='GestorOrganizacion';a='Sucursal';m='crear(sucursal)'},
+       @{g=1;d='GestorOrganizacion';a='PantallaSucursales';m='confirmar()'},
+       @{g=2;d='A:Administrador';a='PantallaSucursales';m='gestionarCiudad(datos)'},
+       @{g=2;d='GestorOrganizacion';a='Ciudad';m='crear(ciudad)'},
+       @{g=3;d='GestorOrganizacion';a='Sucursal';m='darDeBaja(sucursal)'},
+       @{g=4;d='GestorOrganizacion';a='PantallaSucursales';m='nombreDuplicadoEnLaCiudad()'},
+       @{g=4;d='GestorOrganizacion';a='PantallaSucursales';m='ciudadConSucursalesActivas()'}
      )},
 
   @{ n='2.2 CU-06 Gestionar empleados'
      actores=@('Administrador'); boundary='PantallaEmpleados'
      controles=@('GestorEmpleados','GestorAutenticacion')
      entidades=@('Rol','Usuario','Sucursal','Empleado')
-     nota='CU-06 incluye a CU-03: registrar un empleado crea siempre su usuario con el rol del cargo. Los mensajes 7, 8 y 9 ocurren dentro de una unica transaccion; si falla cualquiera, se revierte todo (E3).'
+     grupos='Grupo 1: alta de empleado. CU-06 incluye a CU-03: los mensajes 1.7 a 1.9 crean el usuario y el empleado dentro de una unica transaccion.   Grupo 2: flujo alternativo 3b, baja --- desactiva tambien su usuario.   Grupo 3: excepciones E1 y E3.'
      msj=@(
-       @{d='A:Administrador';a='PantallaEmpleados';m='1: registrarEmpleado(datos)'},
-       @{d='PantallaEmpleados';a='GestorEmpleados';m='2: crearEmpleado(datos)'},
-       @{d='GestorEmpleados';a='GestorAutenticacion';m='3: autorizar("ADMINISTRADOR")'},
-       @{d='GestorEmpleados';a='GestorEmpleados';m='4: validarDatos(datos)'},
-       @{d='GestorEmpleados';a='Empleado';m='5: existeDocumento(documento)'},
-       @{d='GestorEmpleados';a='Sucursal';m='6: verificarActiva(sucursal)'},
-       @{d='GestorEmpleados';a='Rol';m='7: obtenerRol(cargo)'},
-       @{d='GestorEmpleados';a='Usuario';m='8: crear(usuario)'},
-       @{d='GestorEmpleados';a='Empleado';m='9: crear(empleado)'},
-       @{d='GestorEmpleados';a='PantallaEmpleados';m='10: confirmar()'},
-       @{d='A:Administrador';a='PantallaEmpleados';m='3b.1: darDeBaja(id)'},
-       @{d='GestorEmpleados';a='Usuario';m='3b.2: desactivarUsuario()'},
-       @{d='GestorEmpleados';a='PantallaEmpleados';m='E1: documentoYaRegistrado()'},
-       @{d='GestorEmpleados';a='GestorEmpleados';m='E3: revertirTransaccion()'}
+       @{g=1;d='A:Administrador';a='PantallaEmpleados';m='registrarEmpleado(datos)'},
+       @{g=1;d='PantallaEmpleados';a='GestorEmpleados';m='crearEmpleado(datos)'},
+       @{g=1;d='GestorEmpleados';a='GestorAutenticacion';m='autorizar("ADMINISTRADOR")'},
+       @{g=1;d='GestorEmpleados';a='GestorEmpleados';m='validarDatos(datos)'},
+       @{g=1;d='GestorEmpleados';a='Empleado';m='existeDocumento(documento)'},
+       @{g=1;d='GestorEmpleados';a='Sucursal';m='verificarActiva(sucursal)'},
+       @{g=1;d='GestorEmpleados';a='Rol';m='obtenerRol(cargo)'},
+       @{g=1;d='GestorEmpleados';a='Usuario';m='crear(usuario)'},
+       @{g=1;d='GestorEmpleados';a='Empleado';m='crear(empleado)'},
+       @{g=1;d='GestorEmpleados';a='PantallaEmpleados';m='confirmar()'},
+       @{g=2;d='A:Administrador';a='PantallaEmpleados';m='darDeBaja(id)'},
+       @{g=2;d='GestorEmpleados';a='Usuario';m='desactivarUsuario()'},
+       @{g=3;d='GestorEmpleados';a='PantallaEmpleados';m='documentoYaRegistrado()'},
+       @{g=3;d='GestorEmpleados';a='GestorEmpleados';m='revertirTransaccion()'}
      )},
 
   @{ n='2.2 CU-07 Gestionar proveedores'
      actores=@('Administrador','Proveedor'); boundary='PantallaProveedores'
      controles=@('GestorProveedores','GestorAutenticacion')
      entidades=@('Usuario','Proveedor')
-     nota='El actor Proveedor solo consulta sus propios datos (P1); el alta, la edicion y la baja son del Administrador.'
+     grupos='Grupo 1: alta de proveedor.   Grupo 2: flujos alternativos 3b y 3c, baja y habilitacion de acceso.   Grupo 3: consulta del propio Proveedor, que es su unica intervencion.   Grupo 4: excepcion E1.'
      msj=@(
-       @{d='A:Administrador';a='PantallaProveedores';m='1: registrarProveedor(datos)'},
-       @{d='PantallaProveedores';a='GestorProveedores';m='2: crearProveedor(datos)'},
-       @{d='GestorProveedores';a='GestorAutenticacion';m='3: autorizar("ADMINISTRADOR")'},
-       @{d='GestorProveedores';a='GestorProveedores';m='4: validarDatos(datos)'},
-       @{d='GestorProveedores';a='Proveedor';m='5: existeIdentificacion(nit)'},
-       @{d='GestorProveedores';a='Proveedor';m='6: crear(proveedor)'},
-       @{d='GestorProveedores';a='PantallaProveedores';m='7: confirmar()'},
-       @{d='GestorProveedores';a='Proveedor';m='3b.1: darDeBaja(proveedor)'},
-       @{d='GestorProveedores';a='Usuario';m='3c.1: habilitarAcceso(proveedor)'},
-       @{d='A:Proveedor';a='PantallaProveedores';m='P1: consultarSusDatos()'},
-       @{d='GestorProveedores';a='PantallaProveedores';m='E1: identificacionDuplicada()'}
+       @{g=1;d='A:Administrador';a='PantallaProveedores';m='registrarProveedor(datos)'},
+       @{g=1;d='PantallaProveedores';a='GestorProveedores';m='crearProveedor(datos)'},
+       @{g=1;d='GestorProveedores';a='GestorAutenticacion';m='autorizar("ADMINISTRADOR")'},
+       @{g=1;d='GestorProveedores';a='GestorProveedores';m='validarDatos(datos)'},
+       @{g=1;d='GestorProveedores';a='Proveedor';m='existeIdentificacion(nit)'},
+       @{g=1;d='GestorProveedores';a='Proveedor';m='crear(proveedor)'},
+       @{g=1;d='GestorProveedores';a='PantallaProveedores';m='confirmar()'},
+       @{g=2;d='GestorProveedores';a='Proveedor';m='darDeBaja(proveedor)'},
+       @{g=2;d='GestorProveedores';a='Usuario';m='habilitarAcceso(proveedor)'},
+       @{g=3;d='A:Proveedor';a='PantallaProveedores';m='consultarSusDatos()'},
+       @{g=4;d='GestorProveedores';a='PantallaProveedores';m='identificacionDuplicada()'}
      )},
 
   @{ n='2.2 CU-08 Gestionar categorías, tallas y colores'
      actores=@('Administrador'); boundary='PantallaMaestrosCatalogo'
      controles=@('GestorTaxonomia','GestorAutenticacion')
      entidades=@('Categoria','Talla','Color')
-     nota='El flujo principal 1-8 es el de categorias. Los flujos 1a y 1b son los de tallas y colores, que son mas simples: no tienen jerarquia que validar.'
+     grupos='Grupo 1: categorias, el unico con jerarquia que validar.   Grupo 2: flujo alternativo 1a, tallas.   Grupo 3: flujo alternativo 1b, colores.   Grupo 4: excepciones E2 y E3.'
      msj=@(
-       @{d='A:Administrador';a='PantallaMaestrosCatalogo';m='1: registrarCategoria(datos)'},
-       @{d='PantallaMaestrosCatalogo';a='GestorTaxonomia';m='2: crearCategoria(datos)'},
-       @{d='GestorTaxonomia';a='GestorAutenticacion';m='3: autorizar("ADMINISTRADOR")'},
-       @{d='GestorTaxonomia';a='GestorTaxonomia';m='4: validarDatos(datos)'},
-       @{d='GestorTaxonomia';a='Categoria';m='5: existeEntreHermanas(padre, nombre)'},
-       @{d='GestorTaxonomia';a='Categoria';m='6: verificarSinCiclo(padre)'},
-       @{d='GestorTaxonomia';a='Categoria';m='7: crear(categoria)'},
-       @{d='GestorTaxonomia';a='PantallaMaestrosCatalogo';m='8: confirmar()'},
-       @{d='A:Administrador';a='PantallaMaestrosCatalogo';m='1a.1: gestionarTalla(datos)'},
-       @{d='GestorTaxonomia';a='Talla';m='1a.2: crear(talla)'},
-       @{d='A:Administrador';a='PantallaMaestrosCatalogo';m='1b.1: gestionarColor(datos)'},
-       @{d='GestorTaxonomia';a='Color';m='1b.2: crear(color)'},
-       @{d='GestorTaxonomia';a='PantallaMaestrosCatalogo';m='E2: cicloEnLaJerarquia()'},
-       @{d='GestorTaxonomia';a='PantallaMaestrosCatalogo';m='E3: tieneDependencias()'}
+       @{g=1;d='A:Administrador';a='PantallaMaestrosCatalogo';m='registrarCategoria(datos)'},
+       @{g=1;d='PantallaMaestrosCatalogo';a='GestorTaxonomia';m='crearCategoria(datos)'},
+       @{g=1;d='GestorTaxonomia';a='GestorAutenticacion';m='autorizar("ADMINISTRADOR")'},
+       @{g=1;d='GestorTaxonomia';a='GestorTaxonomia';m='validarDatos(datos)'},
+       @{g=1;d='GestorTaxonomia';a='Categoria';m='existeEntreHermanas(padre, nombre)'},
+       @{g=1;d='GestorTaxonomia';a='Categoria';m='verificarSinCiclo(padre)'},
+       @{g=1;d='GestorTaxonomia';a='Categoria';m='crear(categoria)'},
+       @{g=1;d='GestorTaxonomia';a='PantallaMaestrosCatalogo';m='confirmar()'},
+       @{g=2;d='A:Administrador';a='PantallaMaestrosCatalogo';m='gestionarTalla(datos)'},
+       @{g=2;d='GestorTaxonomia';a='Talla';m='crear(talla)'},
+       @{g=3;d='A:Administrador';a='PantallaMaestrosCatalogo';m='gestionarColor(datos)'},
+       @{g=3;d='GestorTaxonomia';a='Color';m='crear(color)'},
+       @{g=4;d='GestorTaxonomia';a='PantallaMaestrosCatalogo';m='cicloEnLaJerarquia()'},
+       @{g=4;d='GestorTaxonomia';a='PantallaMaestrosCatalogo';m='tieneDependencias()'}
      )},
 
   @{ n='2.2 CU-09 Gestionar temporadas y colecciones'
      actores=@('Administrador'); boundary='PantallaTemporadas'
      controles=@('GestorTemporadas','GestorAutenticacion')
      entidades=@('Temporada','Coleccion')
-     nota='El flujo principal 1-8 es el de temporadas. El flujo 1a es el de colecciones, que dependen de una temporada existente.'
+     grupos='Grupo 1: alta de temporada.   Grupo 2: flujo alternativo 1a, colecciones, que dependen de una temporada existente.   Grupo 3: flujo alternativo 3b, cierre de temporada.   Grupo 4: excepciones E1 y E2.'
      msj=@(
-       @{d='A:Administrador';a='PantallaTemporadas';m='1: registrarTemporada(datos)'},
-       @{d='PantallaTemporadas';a='GestorTemporadas';m='2: crearTemporada(datos)'},
-       @{d='GestorTemporadas';a='GestorAutenticacion';m='3: autorizar("ADMINISTRADOR")'},
-       @{d='GestorTemporadas';a='GestorTemporadas';m='4: verificarRangoDeFechas(inicio, fin)'},
-       @{d='GestorTemporadas';a='Temporada';m='5: existeNombre(nombre)'},
-       @{d='GestorTemporadas';a='Temporada';m='6: buscarSolapamiento(inicio, fin)'},
-       @{d='GestorTemporadas';a='Temporada';m='7: crear(temporada)'},
-       @{d='GestorTemporadas';a='PantallaTemporadas';m='8: confirmar()'},
-       @{d='A:Administrador';a='PantallaTemporadas';m='1a.1: registrarColeccion(datos)'},
-       @{d='GestorTemporadas';a='Coleccion';m='1a.2: crear(coleccion)'},
-       @{d='GestorTemporadas';a='Temporada';m='3b.1: cerrarTemporada(id)'},
-       @{d='GestorTemporadas';a='PantallaTemporadas';m='E1: fechasIncoherentes()'},
-       @{d='GestorTemporadas';a='PantallaTemporadas';m='E2: solapamientoDeVigencias()'}
+       @{g=1;d='A:Administrador';a='PantallaTemporadas';m='registrarTemporada(datos)'},
+       @{g=1;d='PantallaTemporadas';a='GestorTemporadas';m='crearTemporada(datos)'},
+       @{g=1;d='GestorTemporadas';a='GestorAutenticacion';m='autorizar("ADMINISTRADOR")'},
+       @{g=1;d='GestorTemporadas';a='GestorTemporadas';m='verificarRangoDeFechas(inicio, fin)'},
+       @{g=1;d='GestorTemporadas';a='Temporada';m='existeNombre(nombre)'},
+       @{g=1;d='GestorTemporadas';a='Temporada';m='buscarSolapamiento(inicio, fin)'},
+       @{g=1;d='GestorTemporadas';a='Temporada';m='crear(temporada)'},
+       @{g=1;d='GestorTemporadas';a='PantallaTemporadas';m='confirmar()'},
+       @{g=2;d='A:Administrador';a='PantallaTemporadas';m='registrarColeccion(datos)'},
+       @{g=2;d='GestorTemporadas';a='Coleccion';m='crear(coleccion)'},
+       @{g=3;d='GestorTemporadas';a='Temporada';m='cerrarTemporada(id)'},
+       @{g=4;d='GestorTemporadas';a='PantallaTemporadas';m='fechasIncoherentes()'},
+       @{g=4;d='GestorTemporadas';a='PantallaTemporadas';m='solapamientoDeVigencias()'}
      )}
 )
 
@@ -329,11 +351,7 @@ $casos = @(
 foreach ($caso in $casos) {
     if (Get-Diagrama $p22 $caso.n) { Write-Output "  $($caso.n) ya existe, no se toca"; continue }
 
-    # Participantes: actor(es) | boundary | control(es) | entidades.
     $part = @{}
-    # Prefijo "A:" en los actores: el actor Cliente y la entidad Cliente son
-    # elementos distintos y comparten nombre; sin prefijo, uno pisaba al otro en
-    # la tabla de participantes y el diagrama salia con un objeto de menos.
     foreach ($nom in $caso.actores)   { $part["A:$nom"] = Get-Actor $nom }
     $part[$caso.boundary]             = Get-OCrearClase $pClas $caso.boundary 'boundary' $desc[$caso.boundary]
     foreach ($nom in $caso.controles) { $part[$nom] = Get-OCrearClase $pClas $nom 'control' $desc[$nom] }
@@ -342,25 +360,21 @@ foreach ($caso in $casos) {
     $d = $p22.Diagrams.AddNew($caso.n, 'Communication')
     [void]$d.Update(); $p22.Diagrams.Refresh()
 
-    # Cuatro columnas: actor | boundary | control | entidades. Cada columna se
-    # centra sobre el mismo eje horizontal.
     $columnas = @(
         @{ lista=@($caso.actores | ForEach-Object { "A:$_" }); x=40; ancho=100; alto=90 },
-        @{ lista=@($caso.boundary);    x=320; ancho=100; alto=100 },
-        @{ lista=$caso.controles;      x=640; ancho=100; alto=100 },
-        @{ lista=$caso.entidades;      x=960; ancho=100; alto=100 }
+        @{ lista=@($caso.boundary); x=340; ancho=100; alto=100 },
+        @{ lista=$caso.controles;   x=680; ancho=100; alto=100 },
+        @{ lista=$caso.entidades;   x=1020; ancho=100; alto=100 }
     )
     foreach ($col in $columnas) {
-        # EA dibuja el circulo del estereotipo algo mas grande que la caja, asi
-        # que la separacion tiene que ser mayor que el alto o se encabalgan.
         $paso   = $col.alto + 130
-        $inicio = -200 + [int]((($col.lista.Count - 1) * $paso) / 2)
+        $inicio = -220 + [int]((($col.lista.Count - 1) * $paso) / 2)
         for ($i = 0; $i -lt $col.lista.Count; $i++) {
             Poner $d $part[$col.lista[$i]] $col.x ($inicio - $i * $paso) $col.ancho $col.alto
         }
     }
 
-    # Un enlace por par de participantes que se comunican, sin repetir.
+    # Un enlace por par de participantes que se comunican.
     $pares = @{}
     foreach ($m in $caso.msj) {
         if ($m.d -eq $m.a) { continue }
@@ -370,29 +384,36 @@ foreach ($caso in $casos) {
         New-Enlace $c1 $c2
         $pares[$k1] = $true
     }
-    foreach ($m in $caso.msj) { New-Mensaje $part[$m.d] $part[$m.a] $m.m }
 
-    if ($caso.nota) {
-        $nota = $pClas.Elements.AddNew('', 'Note')
-        $nota.Notes = $caso.nota
-        [void]$nota.Update()
-        Poner $d $nota 320 -640 740 120
+    # Mensajes, con su numero de grupo y orden. El nombre no lleva numero: lo
+    # pone EA a partir de PDATA4.
+    $orden = @{}
+    $mios  = @{}
+    foreach ($m in $caso.msj) {
+        $g = $m.g
+        if (-not $orden.ContainsKey($g)) { $orden[$g] = 0 }
+        $orden[$g] = $orden[$g] + 1
+        $id = New-Mensaje $part[$m.d] $part[$m.a] $m.m
+        $ea.Execute("UPDATE t_connector SET PDATA4='$g.$($orden[$g])' WHERE Connector_ID=$id")
+        $mios[$id] = $true
     }
 
-    # Las clases de analisis se comparten entre casos de uso --- GestorAutenticacion,
-    # Usuario y Rol aparecen en casi todos --- y EA dibuja TODA relacion existente
-    # entre los elementos presentes en el lienzo. Sin esto, el diagrama de CU-06
-    # mostraba tambien los mensajes de CU-02. Se oculta en este diagrama todo lo
-    # que no se creo para el; en el modelo no se toca nada.
-    $mios = @{}
-    foreach ($m in $caso.msj) { $mios[$m.m] = $true }
+    # Nota con la leyenda de los grupos.
+    $nota = $pClas.Elements.AddNew('', 'Note')
+    $nota.Notes = $caso.grupos
+    [void]$nota.Update()
+    Poner $d $nota 340 -700 800 130
+
+    # Las clases de analisis se comparten entre casos de uso y EA dibuja TODA
+    # relacion existente entre los elementos del lienzo. Sin esto, el diagrama de
+    # CU-06 mostraria tambien los mensajes de CU-02.
     $d.DiagramLinks.Refresh()
     $ajenos = 0
     foreach ($lnk in $d.DiagramLinks) {
         $con = $ea.GetConnectorByID($lnk.ConnectorID)
         $propio = $false
         if ($con.Type -eq 'Collaboration') {
-            $propio = $mios.ContainsKey($con.Name)
+            $propio = $mios.ContainsKey($con.ConnectorID)
         } elseif ($con.Type -eq 'Association') {
             $k1 = "$($con.ClientID)-$($con.SupplierID)"; $k2 = "$($con.SupplierID)-$($con.ClientID)"
             $propio = ($pares.ContainsKey($k1) -or $pares.ContainsKey($k2))
@@ -400,7 +421,8 @@ foreach ($caso in $casos) {
         if (-not $propio) { $lnk.IsHidden = $true; [void]$lnk.Update(); $ajenos++ }
     }
     $d.DiagramObjects.Refresh(); $d.DiagramLinks.Refresh()
-    Write-Output ("  {0,-46} {1,2} objetos, {2,2} mensajes, {3,2} ajenos ocultos" -f $caso.n, $d.DiagramObjects.Count, $caso.msj.Count, $ajenos)
+    $ng = ($caso.msj | ForEach-Object { $_.g } | Sort-Object -Unique).Count
+    Write-Output ("  {0,-46} {1,2} objetos, {2,2} mensajes en {3} grupos, {4,2} ajenos ocultos" -f $caso.n, $d.DiagramObjects.Count, $caso.msj.Count, $ng, $ajenos)
 }
 
 $ea.CloseFile(); $ea.Exit()
