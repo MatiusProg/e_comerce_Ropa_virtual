@@ -8,9 +8,25 @@ Casos de uso que realiza este paquete:
   CU-06 Gestionar empleados
   CU-07 Gestionar proveedores
 """
-from sqlalchemy.orm import Session  # noqa: F401
+from sqlalchemy import Row, select
+from sqlalchemy.orm import Session
+
+from app.modules.organizacion.models import Ciudad, Sucursal
 
 # Regla: aqui solo van consultas. Ninguna regla de negocio, ninguna
 # validacion de permisos, ningun commit de transaccion compuesta.
 
-# TODO: implementar las consultas de este paquete.
+
+def listar_sucursales_activas(db: Session) -> list[Row]:
+    """Sucursales operativas con el nombre de su ciudad, ordenadas."""
+    return list(
+        db.execute(
+            select(Sucursal.id, Sucursal.nombre, Ciudad.nombre.label("ciudad"))
+            .join(Ciudad, Ciudad.id == Sucursal.ciudad_id)
+            .where(Sucursal.activa.is_(True))
+            .order_by(Ciudad.nombre, Sucursal.nombre)
+        ).all()
+    )
+
+
+# TODO CU-05, CU-06 y CU-07: implementar el resto de las consultas.

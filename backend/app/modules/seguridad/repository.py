@@ -10,12 +10,12 @@ Casos de uso que realiza este paquete:
   CU-04 Gestionar perfil del cliente
 """
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
-from sqlalchemy import select, update
+from sqlalchemy import Row, func, or_, select, update
 from sqlalchemy.orm import Session, joinedload
 
-from app.modules.organizacion.models import Empleado
+from app.modules.organizacion.models import Empleado, Proveedor, Sucursal
 from app.modules.seguridad.models import Cliente, Rol, SesionToken, Usuario
 
 # Regla: aqui solo van consultas. Ninguna regla de negocio, ninguna
@@ -172,4 +172,156 @@ def revocar_sesiones_de_usuario(db: Session, usuario_id: int) -> int:
     return resultado.rowcount
 
 
-# TODO CU-03 y CU-04: implementar sus consultas.
+# --- CU-03 Gestionar usuarios y roles ------------------------------------
+
+def listar_roles(db: Session) -> list[Rol]:
+    """Todos los roles asignables, en orden alfabetico."""
+    return list(db.scalars(select(Rol).order_by(Rol.nombre)))
+
+
+def contar_y_listar_usuarios(
+    db: Session,
+    *,
+    busqueda: str | None,
+    rol: str | None,
+    activo: bool | None,
+    pagina: int,
+    tamano: int,
+) -> tuple[int, list[Row]]:
+    """Listado paginado con busqueda y filtros (paso 2 del flujo principal).
+
+    Devuelve el total ANTES de paginar --el paginador lo necesita-- y la pagina
+    pedida. La sucursal sale de `empleado`, que es donde vive; para Cliente y
+    Administrador queda en nulo.
+    """
+    origen = (
+        select(
+            Usuario.id,
+            Usuario.correo,
+            Usuario.nombres,
+            Usuario.apellidos,
+            Usuario.activo,
+            Usuario.creado_en,
+            Rol.nombre.label("rol"),
+            Empleado.sucursal_id,
+            Sucursal.nombre.label("sucursal"),
+        )
+        .join(Rol, Rol.id == Usuario.rol_id)
+        .outerjoin(Empleado, Empleado.usuario_id == Usuario.id)
+        .outerjoin(Sucursal, Sucursal.id == Empleado.sucursal_id)
+    )
+
+    condiciones = []
+    if busqueda:
+        # Busqueda por nombre o correo, sin distinguir mayusculas.
+        patron = f"%{busqueda.strip().lower()}%"
+        condiciones.append(
+            or_(
+                func.lower(Usuario.correo).like(patron),
+                func.lower(Usuario.nombres).like(patron),
+                func.lower(Usuario.apellidos).like(patron),
+            )
+        )
+    if rol:
+        condiciones.append(Rol.nombre == rol.upper())
+    if activo is not None:
+        condiciones.append(Usuario.activo.is_(activo))
+
+    if condiciones:
+        origen = origen.where(*condiciones)
+
+    total = db.scalar(select(func.count()).select_from(origen.subquery())) or 0
+
+    filas = db.execute(
+        origen.order_by(Usuario.creado_en.desc(), Usuario.id.desc())
+        .offset((pagina - 1) * tamano)
+        .limit(tamano)
+    ).all()
+    return total, list(filas)
+
+
+def obtener_detalle_usuario(db: Session, usuario_id: int) -> Row | None:
+    """Una sola fila del listado, para devolver el usuario recien tocado."""
+    return db.execute(
+        select(
+            Usuario.id,
+            Usuario.correo,
+            Usuario.nombres,
+            Usuario.apellidos,
+            Usuario.activo,
+            Usuario.creado_en,
+            Rol.nombre.label("rol"),
+            Empleado.sucursal_id,
+            Sucursal.nombre.label("sucursal"),
+        )
+        .join(Rol, Rol.id == Usuario.rol_id)
+        .outerjoin(Empleado, Empleado.usuario_id == Usuario.id)
+        .outerjoin(Sucursal, Sucursal.id == Empleado.sucursal_id)
+        .where(Usuario.id == usuario_id)
+    ).one_or_none()
+
+
+def obtener_empleado_de_usuario(db: Session, usuario_id: int) -> Empleado | None:
+    """Ficha de empleado del usuario, si la tiene."""
+    return db.scalar(select(Empleado).where(Empleado.usuario_id == usuario_id))
+
+
+def existe_sucursal_activa(db: Session, sucursal_id: int) -> bool:
+    """La sucursal existe y esta operativa."""
+    return (
+        db.scalar(
+            select(Sucursal.id).where(
+                Sucursal.id == sucursal_id, Sucursal.activa.is_(True)
+            )
+        )
+        is not None
+    )
+
+
+def agregar_empleado(
+    db: Session,
+    *,
+    usuario_id: int,
+    sucursal_id: int,
+    documento: str,
+    cargo: str,
+    fecha_ingreso: date,
+) -> Empleado:
+    """Crea la ficha de empleado que guarda la sucursal del usuario."""
+    empleado = Empleado(
+        usuario_id=usuario_id,
+        sucursal_id=sucursal_id,
+        documento=documento,
+        cargo=cargo,
+        fecha_ingreso=fecha_ingreso,
+    )
+    db.add(empleado)
+    db.flush()
+    return empleado
+
+
+def tiene_operaciones_asociadas(db: Session, usuario_id: int) -> bool:
+    """Indica si el usuario esta referenciado por algo que impida borrarlo.
+
+    En el Ciclo 1 son `empleado` y `proveedor`: sus claves foraneas hacia
+    usuario NO tienen ON DELETE CASCADE, asi que el borrado fallaria con una
+    violacion de integridad. `cliente` y `sesion_token` si cascadean, por eso
+    no cuentan.
+
+    En los ciclos siguientes hay que sumar aca ventas, reservas y movimientos
+    de inventario.
+    """
+    if db.scalar(select(Empleado.id).where(Empleado.usuario_id == usuario_id)):
+        return True
+    if db.scalar(select(Proveedor.id).where(Proveedor.usuario_id == usuario_id)):
+        return True
+    return False
+
+
+def eliminar_usuario(db: Session, usuario: Usuario) -> None:
+    """Borra el usuario. Su ficha de cliente y sus sesiones cascadean."""
+    db.delete(usuario)
+    db.flush()
+
+
+# TODO CU-04: implementar sus consultas.
