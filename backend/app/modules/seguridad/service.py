@@ -9,12 +9,20 @@ Casos de uso que realiza este paquete:
   CU-03 Gestionar usuarios y roles
   CU-04 Gestionar perfil del cliente
 """
+import uuid
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.core.security import hash_password
+from app.core.security import crear_access_token, hash_password, verify_password
 from app.modules.seguridad import repository
-from app.modules.seguridad.schemas import ClienteRegistradoOut, ClienteRegistroIn
+from app.modules.seguridad.schemas import (
+    ClienteRegistradoOut,
+    ClienteRegistroIn,
+    LoginIn,
+    TokenOut,
+    UsuarioAutenticadoOut,
+)
 
 # Regla: aqui viven las reglas de negocio y el control de la transaccion.
 # El servicio orquesta repositorios; nunca conoce el objeto Request de HTTP.
@@ -130,4 +138,111 @@ def _viola(exc: IntegrityError, tabla: str, columna: str) -> bool:
     return f"uq_{tabla}_{columna}" in str(exc.orig)
 
 
-# TODO CU-02, CU-03 y CU-04: implementar sus reglas de negocio.
+# --- CU-02 Iniciar y cerrar sesion ---------------------------------------
+
+class ErrorDeAutenticacion(Exception):
+    """Base de los errores previstos de CU-02."""
+
+
+class CredencialesInvalidas(ErrorDeAutenticacion):
+    """Excepcion E1: el correo no existe o la contrasena no coincide.
+
+    Deliberadamente NO distingue entre ambos casos. Si el sistema dijera cual
+    de los dos fallo, cualquiera podria averiguar que correos estan
+    registrados probando de a uno.
+    """
+
+
+class CuentaDesactivada(ErrorDeAutenticacion):
+    """Excepcion E2: el usuario existe y sus credenciales son correctas, pero
+    su cuenta fue dada de baja."""
+
+
+def autenticar(db: Session, datos: LoginIn) -> TokenOut:
+    """Verifica las credenciales y emite un token, registrando la sesion.
+
+      1. buscar el usuario por correo
+      2. verificar que la cuenta este activa
+      3. verificar el hash de la contrasena
+      4. emitir el token con su jti
+      5. registrar la sesion
+      6. devolver el token
+    """
+    usuario = repository.obtener_usuario_con_rol(db, datos.correo)
+
+    # El orden importa: primero se comprueba que exista y que la contrasena
+    # sea correcta, y recien despues si esta activo. Al reves, un atacante
+    # distinguiria "cuenta desactivada" de "no existe" sin saber la
+    # contrasena, y eso ya revela que el correo esta registrado.
+    if usuario is None or not verify_password(datos.contrasena, usuario.hash_contrasena):
+        raise CredencialesInvalidas(datos.correo)
+
+    if not usuario.activo:
+        raise CuentaDesactivada(datos.correo)
+
+    emitido = crear_access_token(
+        usuario_id=usuario.id,
+        rol=usuario.rol.nombre,
+        sucursal_id=repository.obtener_sucursal_de_usuario(db, usuario.id),
+    )
+
+    try:
+        repository.agregar_sesion(
+            db,
+            usuario_id=usuario.id,
+            jti=emitido.jti,
+            expira_en=emitido.expira_en,
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    return TokenOut(
+        access_token=emitido.token,
+        expira_en=emitido.expira_en,
+        usuario=UsuarioAutenticadoOut(
+            id=usuario.id,
+            correo=usuario.correo,
+            nombres=usuario.nombres,
+            apellidos=usuario.apellidos,
+            rol=usuario.rol.nombre,
+            sucursal_id=repository.obtener_sucursal_de_usuario(db, usuario.id),
+        ),
+    )
+
+
+def obtener_usuario_autenticado(db: Session, usuario_id: int) -> UsuarioAutenticadoOut:
+    """Datos del usuario que porta el token, leidos de la base.
+
+    No se arman desde el token: si el nombre o el rol cambiaron despues de
+    emitirlo, el token seguiria diciendo lo viejo.
+    """
+    usuario = repository.obtener_usuario_con_id(db, usuario_id)
+    if usuario is None:
+        raise CredencialesInvalidas(str(usuario_id))
+    return UsuarioAutenticadoOut(
+        id=usuario.id,
+        correo=usuario.correo,
+        nombres=usuario.nombres,
+        apellidos=usuario.apellidos,
+        rol=usuario.rol.nombre,
+        sucursal_id=repository.obtener_sucursal_de_usuario(db, usuario.id),
+    )
+
+
+def cerrar_sesion(db: Session, jti: uuid.UUID) -> None:
+    """Revoca la sesion del token presentado.
+
+    Es idempotente: cerrar sesion dos veces con el mismo token no es un error,
+    la segunda vez sencillamente no cambia nada.
+    """
+    try:
+        repository.revocar_sesion(db, jti)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+
+# TODO CU-03 y CU-04: implementar sus reglas de negocio.

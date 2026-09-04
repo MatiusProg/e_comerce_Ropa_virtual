@@ -25,6 +25,44 @@ export interface ClienteRegistradoOut {
   rol: string;
 }
 
+/** Cuerpo de POST /api/v1/auth/login — CU-02. */
+export interface LoginIn {
+  correo: string;
+  contrasena: string;
+}
+
+/** Usuario autenticado, tal como lo devuelven /auth/login y /auth/yo. */
+export interface UsuarioAutenticado {
+  id: number;
+  correo: string;
+  nombres: string;
+  apellidos: string;
+  rol: Rol;
+  sucursal_id: number | null;
+}
+
+/** Respuesta 200 de POST /api/v1/auth/login. */
+export interface TokenOut {
+  access_token: string;
+  token_type: string;
+  expira_en: string;
+  usuario: UsuarioAutenticado;
+}
+
+/** Los cuatro roles que carga el seed. */
+export type Rol = 'ADMINISTRADOR' | 'CLIENTE' | 'ENCARGADO' | 'CAJERO';
+
+/**
+ * Ruta de inicio de cada rol, según el diagrama de navegación §3.2.
+ * Es lo que decide a dónde cae alguien después de iniciar sesión.
+ */
+export const INICIO_POR_ROL: Record<Rol, string> = {
+  ADMINISTRADOR: '/admin',
+  CLIENTE: '/mi-cuenta',
+  ENCARGADO: '/sucursal',
+  CAJERO: '/caja',
+};
+
 /**
  * Longitud mínima de la contraseña.
  * Replica CONTRASENA_LONGITUD_MINIMA del backend.

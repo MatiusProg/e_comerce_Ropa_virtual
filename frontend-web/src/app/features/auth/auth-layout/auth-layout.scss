@@ -1,0 +1,165 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+  background: var(--fs-marfil);
+}
+
+.marco {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  min-height: 100dvh;
+}
+
+// --- Panel de marca --------------------------------------------------------
+
+.marca {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  padding: 3rem 3.5rem;
+  background: var(--fs-degradado);
+  color: #fff;
+  isolation: isolate;
+}
+
+.marca-contenido {
+  position: relative;
+  z-index: 2;
+  max-width: 30rem;
+}
+
+.logotipo {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(2.2rem, 3.4vw, 3.4rem);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  // Sin line-height propio, Playfair recorta las mayusculas dentro de la caja.
+  line-height: 1.25;
+  margin: 0 0 0.75rem;
+  color: #fff;
+
+  // Brillo del logotipo: un barrido oro rosa ESTRECHO sobre blanco. La banda
+  // de color se mantiene corta a proposito: cuando ocupaba la mitad del ancho
+  // el texto perdia contraste contra el panel malva y dejaba de leerse.
+  background: linear-gradient(
+    100deg,
+    #ffffff 0%,
+    #ffffff 38%,
+    #f7dcc9 52%,
+    #ffffff 66%,
+    #ffffff 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  // Si el navegador no soporta background-clip:text, el color blanco de arriba
+  // sigue valiendo y el logotipo se lee igual.
+  @supports not (background-clip: text) {
+    -webkit-text-fill-color: #fff;
+  }
+}
+
+.lema {
+  font-size: 1.15rem;
+  font-weight: 500;
+  margin: 0 0 1.5rem;
+  color: #fdeef4;
+}
+
+.detalle {
+  margin: 0;
+  line-height: 1.65;
+  color: #f6dbe6;
+  max-width: 26rem;
+}
+
+// Dos halos difusos que dan profundidad sin usar imágenes.
+.brillo {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  z-index: 1;
+}
+
+.brillo-a {
+  width: 26rem;
+  height: 26rem;
+  right: -8rem;
+  top: -6rem;
+  background: rgb(231 191 168 / 45%);
+}
+
+.brillo-b {
+  width: 20rem;
+  height: 20rem;
+  left: -6rem;
+  bottom: -7rem;
+  background: rgb(201 162 39 / 28%);
+}
+
+// --- Panel del formulario --------------------------------------------------
+
+.panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  background: var(--fs-degradado-suave);
+}
+
+.tarjeta-envoltorio {
+  width: 100%;
+  max-width: 34rem;
+}
+
+.encabezado {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0 0 1.75rem;
+}
+
+.titulo {
+  font-size: clamp(1.7rem, 2.4vw, 2.15rem);
+  font-weight: 600;
+  color: var(--fs-malva-oscuro);
+  line-height: 1.15;
+}
+
+.subtitulo {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.98rem;
+}
+
+// --- Adaptación a pantallas angostas --------------------------------------
+
+@media (max-width: 900px) {
+  .marco {
+    grid-template-columns: 1fr;
+  }
+
+  .marca {
+    padding: 2rem 1.5rem;
+    align-items: flex-start;
+  }
+
+  .logotipo {
+    font-size: 2rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .lema {
+    margin-bottom: 0;
+    font-size: 1rem;
+  }
+
+  // En el móvil el texto largo sobra: el formulario es lo que importa.
+  .detalle {
+    display: none;
+  }
+
+  .panel {
+    padding: 2rem 1rem 3rem;
+  }
+}

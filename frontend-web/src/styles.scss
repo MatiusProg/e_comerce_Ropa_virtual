@@ -1,8 +1,17 @@
-// Include theming for Angular Material with `mat.theme()`.
-// This Sass mixin will define CSS variables that are used for styling Angular Material
-// components according to the Material 3 design spec.
-// Learn more about theming and how to use it for your application's
-// custom components at https://material.angular.dev/guide/theming
+// FashionStore — tema visual
+//
+// Paleta: malva + oro rosa. Es una decisión de marca: la tienda vende
+// principalmente prendas femeninas, y la identidad busca leerse como boutique
+// —elegante y adulta— y no como aplicación administrativa genérica.
+//
+// Cómo está armado: `mat.theme()` genera la estructura de Material 3 (formas,
+// tipografía, densidad) y después se REEMPLAZAN las variables de sistema por
+// los colores de la marca. Es más directo que generar una paleta completa y
+// deja los valores exactos a la vista, en un solo lugar.
+//
+// Regla: ningún componente escribe un color a mano. Todos toman estas
+// variables, así un cambio de marca se hace acá y en ningún otro archivo.
+
 @use '@angular/material' as mat;
 
 html {
@@ -10,8 +19,8 @@ html {
   @include mat.theme(
     (
       color: (
-        primary: mat.$azure-palette,
-        tertiary: mat.$blue-palette,
+        primary: mat.$magenta-palette,
+        tertiary: mat.$orange-palette,
       ),
       typography: Roboto,
       density: 0,
@@ -19,21 +28,122 @@ html {
   );
 }
 
+:root {
+  // --- Marca -------------------------------------------------------------
+  --fs-malva: #8e4a67;
+  --fs-malva-oscuro: #6d3550;
+  --fs-malva-claro: #b57f9a;
+  --fs-oro: #c9a227;
+  --fs-oro-rosa: #e7bfa8;
+  --fs-rosa-palido: #f6e6ec;
+  --fs-marfil: #fbf6f4;
+  --fs-tinta: #2e1f28;
+
+  // Degradado de marca. Se usa en encabezados y en el botón principal; es lo
+  // que da el "brillo" sin recurrir a imágenes.
+  --fs-degradado: linear-gradient(135deg, #8e4a67 0%, #a85b7d 45%, #c98da5 100%);
+  --fs-degradado-suave: linear-gradient(135deg, #f6e6ec 0%, #fbf6f4 55%, #f3e3d8 100%);
+
+  // Filete metálico oro rosa: un borde de 1px que atraviesa la tarjeta.
+  --fs-filete: linear-gradient(90deg, #e7bfa8 0%, #c9a227 35%, #e7bfa8 70%, #f3d9c6 100%);
+
+  --fs-sombra-suave: 0 1px 2px rgb(46 31 40 / 6%), 0 8px 24px rgb(142 74 103 / 8%);
+  --fs-sombra-elevada: 0 2px 4px rgb(46 31 40 / 8%), 0 18px 40px rgb(142 74 103 / 14%);
+
+  --fs-radio: 16px;
+  --fs-radio-chico: 10px;
+
+  // --- Reemplazo de las variables de sistema de Material -----------------
+  --mat-sys-primary: #8e4a67;
+  --mat-sys-on-primary: #ffffff;
+  --mat-sys-primary-container: #f6e6ec;
+  --mat-sys-on-primary-container: #3f1d2d;
+
+  --mat-sys-secondary: #7c5a68;
+  --mat-sys-on-secondary: #ffffff;
+  --mat-sys-secondary-container: #f3e3d8;
+  --mat-sys-on-secondary-container: #3a2b27;
+
+  --mat-sys-tertiary: #a8801f;
+  --mat-sys-on-tertiary: #ffffff;
+  --mat-sys-tertiary-container: #f7ecc9;
+  --mat-sys-on-tertiary-container: #3d2f04;
+
+  --mat-sys-surface: #ffffff;
+  --mat-sys-surface-dim: #efe4e8;
+  --mat-sys-surface-bright: #ffffff;
+  --mat-sys-surface-container-lowest: #ffffff;
+  --mat-sys-surface-container-low: #fbf6f4;
+  --mat-sys-surface-container: #f7eef1;
+  --mat-sys-surface-container-high: #f2e6ea;
+  --mat-sys-surface-container-highest: #ecdee4;
+  --mat-sys-on-surface: #2e1f28;
+  --mat-sys-on-surface-variant: #6d5964;
+
+  --mat-sys-outline: #a08c96;
+  --mat-sys-outline-variant: #e3d2da;
+
+  --mat-sys-error: #b3261e;
+  --mat-sys-on-error: #ffffff;
+  --mat-sys-error-container: #fbe3e1;
+  --mat-sys-on-error-container: #6b1610;
+
+  --mat-sys-inverse-surface: #2e1f28;
+  --mat-sys-inverse-on-surface: #fbf6f4;
+}
+
 body {
-  // Default the application to a light color theme. This can be changed to
-  // `dark` to enable the dark color theme, or to `light dark` to defer to the
-  // user's system settings.
+  // La aplicación se compromete con el tema claro: la paleta pastel pierde
+  // su carácter si se invierte, y la defensa se hace en una sola pantalla.
   color-scheme: light;
 
-  // Set a default background, font and text colors for the application using
-  // Angular Material's system-level CSS variables. Learn more about these
-  // variables at https://material.angular.dev/guide/system-variables
-  background-color: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
-  font: var(--mat-sys-body-medium);
-
-  // Reset the user agent margin.
   margin: 0;
   height: 100%;
+  background-color: var(--fs-marfil);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-/* You can add global styles to this file, and also import other style files */
+
+// Tipografía de marca para los títulos. Playfair aporta el aire editorial de
+// revista de moda; el cuerpo sigue en Roboto, que es más legible en formulario.
+h1,
+h2,
+.fs-titulo {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  letter-spacing: -0.01em;
+}
+
+// --- Utilidades compartidas ----------------------------------------------
+
+// Filete metálico superior de una tarjeta.
+.fs-filete-superior {
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    background: var(--fs-filete);
+    z-index: 1;
+  }
+}
+
+// Botón principal con el degradado de marca.
+.fs-boton-marca.mat-mdc-unelevated-button:not(:disabled) {
+  background: var(--fs-degradado);
+  color: #fff;
+  box-shadow: 0 4px 14px rgb(142 74 103 / 30%);
+  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+
+  &:hover {
+    filter: brightness(1.06);
+    box-shadow: 0 6px 20px rgb(142 74 103 / 38%);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+}
