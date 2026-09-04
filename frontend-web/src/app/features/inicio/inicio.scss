@@ -1,0 +1,169 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+  background: var(--fs-degradado-suave);
+}
+
+.barra {
+  background: var(--fs-degradado);
+  color: #fff;
+  box-shadow: var(--fs-sombra-suave);
+  position: relative;
+
+  // Filete oro rosa al pie de la barra: el mismo recurso de marca que en las
+  // tarjetas, para que la aplicación se lea como un solo sistema.
+  &::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0;
+    height: 2px;
+    background: var(--fs-filete);
+  }
+}
+
+.logotipo {
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.separador {
+  flex: 1 1 auto;
+}
+
+.identidad {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-right: 0.35rem;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 18%);
+  border: 1px solid rgb(231 191 168 / 60%);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.datos {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.nombre {
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+.rol {
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: #f3d9c6;
+}
+
+.contenido {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+}
+
+.tarjeta {
+  width: 100%;
+  max-width: 44rem;
+  border-radius: var(--fs-radio);
+  border: 1px solid var(--mat-sys-outline-variant);
+  box-shadow: var(--fs-sombra-suave);
+  overflow: hidden;
+  background: var(--mat-sys-surface);
+}
+
+.cuerpo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.6rem;
+  padding: 3rem 2rem;
+}
+
+// El ícono suelto se leía como un bloque sólido pesado. Dentro de un medallón
+// pastel con anillo oro rosa pasa a ser un elemento de marca.
+.medallon {
+  display: grid;
+  place-items: center;
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  background: var(--fs-degradado-suave);
+  border: 1px solid var(--fs-oro-rosa);
+  box-shadow: 0 6px 18px rgb(142 74 103 / 12%);
+  margin-bottom: 0.5rem;
+}
+
+.icono {
+  width: 2.4rem;
+  height: 2.4rem;
+  font-size: 2.4rem;
+  color: var(--fs-malva);
+}
+
+h1 {
+  margin: 0.35rem 0 0;
+  font-size: 1.9rem;
+  font-weight: 600;
+  color: var(--fs-malva-oscuro);
+}
+
+.area {
+  margin: 0.25rem 0 0.5rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--fs-malva);
+}
+
+.detalle {
+  margin: 0;
+  max-width: 34rem;
+  line-height: 1.65;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.sucursal {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.75rem 0 0;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+  font-size: 0.9rem;
+  font-weight: 500;
+
+  mat-icon {
+    width: 1.1rem;
+    height: 1.1rem;
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .datos {
+    display: none;
+  }
+
+  .contenido {
+    padding: 2rem 1rem;
+  }
+
+  .cuerpo {
+    padding: 2.25rem 1.25rem;
+  }
+}

@@ -1,0 +1,104 @@
+// Estilos compartidos por los formularios sin sesión (login y registro).
+// Se importan con `@use` desde el .scss de cada componente para que las dos
+// pantallas no puedan verse distintas entre sí.
+
+@mixin formulario-auth {
+  .tarjeta {
+    border-radius: var(--fs-radio);
+    border: 1px solid var(--mat-sys-outline-variant);
+    box-shadow: var(--fs-sombra-suave);
+    overflow: hidden;
+    background: var(--mat-sys-surface);
+  }
+
+  mat-card-content {
+    padding: 1.75rem 1.75rem 1.25rem;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .fila {
+    display: flex;
+    gap: 1rem;
+
+    mat-form-field {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+  }
+
+  .ancho-completo {
+    width: 100%;
+  }
+
+  .boton-principal {
+    margin-top: 0.75rem;
+    height: 3rem;
+    border-radius: var(--fs-radio-chico);
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  .aviso {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.85rem 1rem;
+    border-radius: var(--fs-radio-chico);
+    margin-bottom: 1.25rem;
+    font-size: 0.94rem;
+    line-height: 1.45;
+    background: var(--mat-sys-error-container);
+    color: var(--mat-sys-on-error-container);
+
+    a {
+      color: inherit;
+      font-weight: 600;
+      margin-left: 0.25rem;
+    }
+
+    mat-icon {
+      flex: none;
+    }
+  }
+
+  // Cuenta desactivada no es un error del usuario: se muestra en tono de
+  // advertencia, no de error.
+  .aviso-atencion {
+    background: var(--mat-sys-tertiary-container);
+    color: var(--mat-sys-on-tertiary-container);
+  }
+
+  .pie {
+    margin: 1.25rem 0 0.25rem;
+    text-align: center;
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 0.94rem;
+
+    a {
+      color: var(--fs-malva);
+      font-weight: 600;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+
+  @media (max-width: 600px) {
+    mat-card-content {
+      padding: 1.25rem 1.1rem 1rem;
+    }
+
+    .fila {
+      flex-direction: column;
+      gap: 0;
+    }
+  }
+}
