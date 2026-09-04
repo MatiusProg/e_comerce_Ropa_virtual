@@ -13,6 +13,23 @@ Docente: MSc. Ing. Angélica Garzón Cuéllar.
 
 ---
 
+## Sistema desplegado
+
+Todo lo demostrable corre en la nube; no se usa `localhost` para la defensa
+(RNF13).
+
+| | |
+|---|---|
+| **Web** | <https://ecomerceropavirtual-production-b192.up.railway.app> |
+| **API** | <https://ecomerceropavirtual-production.up.railway.app> |
+| **Documentación interactiva** | <https://ecomerceropavirtual-production.up.railway.app/docs> |
+| **Sonda de salud** | <https://ecomerceropavirtual-production.up.railway.app/health> |
+
+La base de datos es **Supabase**; **Railway** hospeda la API y la web. Las
+migraciones corren solas al arrancar el contenedor, así que un despliegue nunca
+queda sirviendo contra un esquema viejo. Detalle en
+[docs/06-decisiones-tecnicas.md](docs/06-decisiones-tecnicas.md) §6.9.
+
 ## Tecnologías
 
 | Capa | Herramienta | Versión |
@@ -26,7 +43,8 @@ Docente: MSc. Ing. Angélica Garzón Cuéllar.
 | Realidad aumentada | `camera` + ML Kit Pose Detection | procesamiento en el dispositivo |
 | Inteligencia artificial | API de Claude (`anthropic`) | `claude-opus-5` |
 | Pasarela de pago | Stripe | **modo de pruebas** |
-| Hospedaje | Railway | API · PostgreSQL · web, en un solo proyecto |
+| Base de datos gestionada | Supabase | PostgreSQL 16, por *session pooler* |
+| Hospedaje | Railway | API y web, en un solo proyecto |
 | Metodología | PUDS + UML 2.5+ | 3 ciclos |
 
 ### ⚠️ Python 3.13, no 3.14
@@ -151,8 +169,8 @@ corto: son cuatro días y su contenido es CRUD y autenticación.
 | **2 · Núcleo del negocio** | 13/09 | 8 | 13 | Productos y **variantes** · **Inventario multisucursal** con movimientos trazables · Catálogo público y disponibilidad · **Reservas** para prueba en sucursal |
 | **3 · Comercio e inteligencia** | 20/09 | 7 | 15 | **Vestidor virtual (RA)** · Carrito y **pago en línea** · **Punto de venta** · **IA**: recomendador, asistente y reportes por voz · Tablero de KPIs |
 
-Defensa: **martes 22/09**. Cada ciclo cierra con software **desplegado en
-Railway**, no con código sin desplegar.
+Defensa: **martes 22/09**. Cada ciclo cierra con software **desplegado en la
+nube**, no con código sin desplegar.
 
 ---
 
@@ -197,6 +215,7 @@ la defensa no hay que traducir entre uno y otro.
 | **incorporarte al desarrollo** | **[docs/07-estructura-repositorio.md](docs/07-estructura-repositorio.md) §7.3** — entorno, rama propia, qué tomar y con qué frecuencia subir |
 | **armar el documento de entrega** | **[docs/00-indice-oficial.md](docs/00-indice-oficial.md)** — el índice que dio la ingeniera, qué sección sale de qué archivo y qué falta |
 | **desarrollar un caso de uso del Ciclo 1** | **[docs/entregas/ciclo-1/](docs/entregas/ciclo-1/)** — las 9 tablas de detalle, el análisis y el diseño de datos |
+| **implementar CU-02 (login)** | **[docs/entregas/ciclo-1/guia-cu-02-iniciar-y-cerrar-sesion.md](docs/entregas/ciclo-1/guia-cu-02-iniciar-y-cerrar-sesion.md)** — qué falta en el código y cómo saber que está terminado |
 | **montar tu entorno por primera vez** | **[docs/entorno/versiones.md](docs/entorno/versiones.md)** — qué instalar, en qué orden, con las versiones exactas |
 | **levantar el backend** | **[backend/README.md](backend/README.md)** — de cero a `/health` respondiendo |
 | **escribir código del backend** | **[backend/README.md](backend/README.md)** — las cuatro capas y las reglas que no se rompen |
@@ -215,8 +234,9 @@ la defensa no hay que traducir entre uno y otro.
 ## Cómo contribuir
 
 Nunca se hace *commit* directo sobre `main`: es la rama que Railway despliega.
-Todo entra por Pull Request desde `feature/<paquete>-<descripcion>` hacia
-`develop`, con revisión del otro integrante.
+Cada integrante trabaja en **una rama por ciclo** —`MateoCiclo1`, `KarenCiclo1`—
+creada desde `main`, y todo entra por Pull Request hacia `main` con revisión del
+otro.
 
 Mensajes de commit en español, en imperativo, con la convención
 `tipo(alcance): descripción`:

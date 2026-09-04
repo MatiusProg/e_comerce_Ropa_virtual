@@ -102,11 +102,11 @@ proyecto arrancado, con seguridad y organización funcionando y **desplegado en 
 | 24 | Repositorio en GitHub, ramas y estructura del monorepo | Mateo | ✔ |
 | 25 | Esqueleto del backend FastAPI por paquetes, configuración por entorno, `/health` | Mateo | ✔ |
 | 26 | Proyecto Angular 22 y esqueleto de la app Flutter | Karen | ✔ (generados) |
-| 27 | Proyecto **Supabase** creado y `DATABASE_URL` (session pooler) cargada en Railway | Mateo | pendiente |
+| 27 | Proyecto **Supabase** creado y `DATABASE_URL` (session pooler) cargada en Railway | Mateo | ✔ |
 | 28 | Modelos y migración de P1, P2 y P3 (maestros) + *seed* de roles, administrador y ciudades | Mateo | ✔ |
 | 29 | Endpoints de P1, P2 y P3 (maestros) — CU-01 lo toma Karen | Mateo · Karen | pendiente |
 | 30 | Login, guardas por rol y ABM de organización y maestros en Angular | Karen | pendiente |
-| 31 | **Despliegue del backend y de la web en Railway con URL pública** | Mateo · Karen | pendiente — no depende de ningún caso de uso: se puede hacer ya |
+| 31 | **Despliegue del backend y de la web en Railway con URL pública** | Mateo · Karen | ✔ API y web desplegadas y verificadas de punta a punta |
 
 > **Orden de trabajo en el backend.** Los modelos y la migración de P1, P2 y P3 ya están en
 > `main`: quien implemente un caso de uso escribe su `router`, `service`, `repository` y `schemas`
