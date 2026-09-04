@@ -51,6 +51,22 @@ app.add_middleware(
 )
 
 
+@app.get("/", tags=["Infraestructura"], include_in_schema=False)
+def raiz() -> dict:
+    """Punto de entrada. La API no sirve contenido en la raiz.
+
+    Existe para que abrir el dominio en el navegador diga algo util en vez de
+    un 404 seco, que se confunde con un despliegue roto.
+    """
+    return {
+        "servicio": "fashionstore-api",
+        "version": app.version,
+        "documentacion": "/docs",
+        "salud": "/health",
+        "api": settings.API_PREFIX,
+    }
+
+
 @app.get("/health", tags=["Infraestructura"])
 def health() -> dict:
     """Sonda de salud. La usa Railway para saber si el servicio esta vivo."""
