@@ -67,6 +67,9 @@ export class Proveedores implements OnInit {
   ];
 
   protected readonly cargando = signal(false);
+  /** Mensaje del ultimo fallo al listar, o null. Distingue «no se pudo
+   *  consultar» de «no hay nada», que en pantalla se confundian. */
+  protected readonly error = signal<string | null>(null);
   protected readonly proveedores = signal<Proveedor[]>([]);
 
   protected readonly busqueda = new FormControl('', { nonNullable: true });
@@ -83,6 +86,7 @@ export class Proveedores implements OnInit {
 
   protected cargar(): void {
     this.cargando.set(true);
+    this.error.set(null);
     const estado = this.filtroEstado.value;
     this.api
       .listar({
@@ -96,6 +100,7 @@ export class Proveedores implements OnInit {
         },
         error: (e: ErrorProveedores) => {
           this.cargando.set(false);
+          this.error.set(e.mensaje);
           this.mostrar(e.mensaje);
         },
       });
