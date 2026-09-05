@@ -69,6 +69,9 @@ export class Sucursales implements OnInit {
   ];
 
   protected readonly cargando = signal(false);
+  /** Mensaje del ultimo fallo al listar, o null. Distingue «no se pudo
+   *  consultar» de «no hay nada», que en pantalla se confundian. */
+  protected readonly error = signal<string | null>(null);
   protected readonly sucursales = signal<Sucursal[]>([]);
   protected readonly ciudades = signal<Ciudad[]>([]);
 
@@ -100,6 +103,7 @@ export class Sucursales implements OnInit {
 
   protected cargar(): void {
     this.cargando.set(true);
+    this.error.set(null);
     const estado = this.filtroEstado.value;
     const ciudad = this.filtroCiudad.value;
     this.api
@@ -115,6 +119,7 @@ export class Sucursales implements OnInit {
         },
         error: (e: ErrorOrganizacion) => {
           this.cargando.set(false);
+          this.error.set(e.mensaje);
           this.mostrar(e.mensaje);
         },
       });

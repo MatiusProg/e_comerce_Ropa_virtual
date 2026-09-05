@@ -58,7 +58,20 @@
     }
   </div>
 
-  @if (sucursales().length) {
+  @if (error(); as e) {
+    <!-- Un fallo de red o de permisos NO puede verse igual que un listado
+         vacio: decir "todavia no hay" cuando en realidad no se pudo consultar
+         hace pensar que los datos se borraron. -->
+    <div class="vacio estado-error" role="alert">
+      <mat-icon>cloud_off</mat-icon>
+      <p class="titulo-vacio">No se pudo cargar el listado</p>
+      <p class="pista-vacio">{{ e }}</p>
+      <button matButton="filled" type="button" class="fs-boton-marca" (click)="cargar()">
+        <mat-icon>refresh</mat-icon>
+        Reintentar
+      </button>
+    </div>
+  } @else if (sucursales().length) {
     <div class="envoltorio-tabla">
       <table mat-table [dataSource]="sucursales()">
         <ng-container matColumnDef="sucursal">

@@ -59,6 +59,9 @@ export class Ciudades implements OnInit {
   protected readonly columnas = ['ciudad', 'departamento', 'sucursales', 'acciones'];
 
   protected readonly cargando = signal(false);
+  /** Mensaje del ultimo fallo al listar, o null. Distingue «no se pudo
+   *  consultar» de «no hay nada», que en pantalla se confundian. */
+  protected readonly error = signal<string | null>(null);
   protected readonly ciudades = signal<Ciudad[]>([]);
 
   protected readonly busqueda = new FormControl('', { nonNullable: true });
@@ -72,6 +75,7 @@ export class Ciudades implements OnInit {
 
   protected cargar(): void {
     this.cargando.set(true);
+    this.error.set(null);
     this.api.listarCiudades(this.busqueda.value || undefined).subscribe({
       next: (c) => {
         this.ciudades.set(c);
@@ -79,6 +83,7 @@ export class Ciudades implements OnInit {
       },
       error: (e: ErrorOrganizacion) => {
         this.cargando.set(false);
+        this.error.set(e.mensaje);
         this.mostrar(e.mensaje);
       },
     });

@@ -181,3 +181,9 @@ th {
     }
   }
 }
+
+// El estado de error se distingue del vacio por el color del icono: el vacio
+// es informativo, esto es un fallo que hay que reintentar.
+.estado-error mat-icon {
+  color: var(--mat-sys-error);
+}
