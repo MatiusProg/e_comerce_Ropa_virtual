@@ -42,7 +42,20 @@ from app.modules.seguridad import models as modelos_seguridad  # noqa: E402,F401
 
 #: Tablas que se vacian entre una prueba y la siguiente. El resto (roles,
 #: ciudades) son datos de referencia y se siembran una sola vez.
-TABLAS_VOLATILES = ("direccion_cliente", "sesion_token", "cliente", "usuario")
+#:
+#: `sucursal` entra aca porque CU-06 crea una por prueba y el UNIQUE
+#: (ciudad_id, nombre) haria fallar a la segunda. `empleado` cascadearia con
+#: usuario, pero se nombra igual: depender de un CASCADE para la limpieza
+#: hace que la prueba dependa de un detalle del esquema.
+TABLAS_VOLATILES = (
+    "direccion_cliente",
+    "sesion_token",
+    "cliente",
+    "empleado",
+    "proveedor",
+    "sucursal",
+    "usuario",
+)
 
 #: Credenciales del cliente de prueba. La contrasena cumple la regla del
 #: RNF01: ocho caracteres, con letra y digito.

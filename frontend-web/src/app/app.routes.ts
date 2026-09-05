@@ -60,7 +60,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/admin/ciudades/ciudades').then((m) => m.Ciudades),
       },
-      // CU-06 (empleados) entra aquí, entre ciudades y proveedores.
+      {
+        path: 'empleados',
+        title: 'Empleados · FashionStore',
+        loadComponent: () =>
+          import('./features/admin/empleados/empleados').then((m) => m.Empleados),
+      },
       {
         path: 'proveedores',
         title: 'Proveedores · FashionStore',
