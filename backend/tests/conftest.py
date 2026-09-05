@@ -55,6 +55,9 @@ TABLAS_VOLATILES = (
     "proveedor",
     "sucursal",
     "usuario",
+    "categoria",
+    "talla",
+    "color",
 )
 
 #: Credenciales del cliente de prueba. La contrasena cumple la regla del

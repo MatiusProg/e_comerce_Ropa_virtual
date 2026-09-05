@@ -1,0 +1,301 @@
+<!-- CU-08 · Gestionar categorías, tallas y colores — «boundary» PantallaMaestros. -->
+<header class="encabezado">
+  <div>
+    <h1 class="fs-titulo">Maestros del catálogo</h1>
+    <p class="bajada">
+      La taxonomía sin la cual no puede existir una variante de producto.
+    </p>
+  </div>
+</header>
+
+<mat-card class="tarjeta fs-filete-superior" appearance="outlined">
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <mat-tab-group>
+    <!-- Flujo principal: categorías -->
+    <mat-tab label="Categorías">
+      <div class="barra-acciones">
+        <p class="explicacion">
+          Jerarquía de prendas. Una categoría puede colgar de otra.
+        </p>
+        <button matButton="filled" type="button" class="fs-boton-marca" (click)="nuevaCategoria()">
+          <mat-icon>add</mat-icon>
+          Nueva categoría
+        </button>
+      </div>
+
+      @if (categoriasPlanas().length) {
+        <div class="envoltorio-tabla">
+          <table mat-table [dataSource]="categoriasPlanas()">
+            <ng-container matColumnDef="nombre">
+              <th mat-header-cell *matHeaderCellDef>Nombre</th>
+              <td mat-cell *matCellDef="let fila">
+                <!--
+                  La sangría es lo que conserva la jerarquía en una tabla plana.
+                  El icono distingue una rama de una hoja de un vistazo.
+                -->
+                <span class="celda-arbol" [style.padding-left.rem]="fila.nivel * 1.4">
+                  <mat-icon class="icono-rama">
+                    {{ fila.categoria.subcategorias.length ? 'folder' : 'label' }}
+                  </mat-icon>
+                  {{ fila.categoria.nombre }}
+                </span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="orden">
+              <th mat-header-cell *matHeaderCellDef>Orden</th>
+              <td mat-cell *matCellDef="let fila">{{ fila.categoria.orden }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let fila">
+                <span
+                  class="pastilla"
+                  [class.pastilla-activo]="fila.categoria.activa"
+                  [class.pastilla-inactivo]="!fila.categoria.activa"
+                >
+                  {{ fila.categoria.activa ? 'Activa' : 'Inactiva' }}
+                </span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef aria-label="Acciones"></th>
+              <td mat-cell *matCellDef="let fila" class="celda-acciones">
+                <button
+                  matIconButton
+                  type="button"
+                  [matMenuTriggerFor]="menuCategoria"
+                  aria-label="Acciones de la categoría"
+                >
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #menuCategoria="matMenu">
+                  <button mat-menu-item type="button" (click)="editarCategoria(fila.categoria)">
+                    <mat-icon>edit</mat-icon>
+                    <span>Editar</span>
+                  </button>
+                  <button
+                    mat-menu-item
+                    type="button"
+                    (click)="cambiarEstadoCategoria(fila.categoria)"
+                  >
+                    <mat-icon>{{ fila.categoria.activa ? 'block' : 'check_circle' }}</mat-icon>
+                    <span>{{ fila.categoria.activa ? 'Desactivar' : 'Activar' }}</span>
+                  </button>
+                  <button
+                    mat-menu-item
+                    type="button"
+                    class="accion-peligro"
+                    (click)="eliminarCategoria(fila.categoria)"
+                  >
+                    <mat-icon>delete_outline</mat-icon>
+                    <span>Eliminar</span>
+                  </button>
+                </mat-menu>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnasCategorias"></tr>
+            <tr
+              mat-row
+              *matRowDef="let fila; columns: columnasCategorias"
+              [class.fila-inactiva]="!fila.categoria.activa"
+            ></tr>
+          </table>
+        </div>
+      } @else if (!cargando()) {
+        <div class="vacio">
+          <mat-icon>account_tree</mat-icon>
+          <p class="titulo-vacio">Todavía no hay categorías</p>
+          <p class="bajada-vacio">
+            Sin categorías no se pueden registrar productos en el Ciclo 2.
+          </p>
+          <button matButton="filled" type="button" class="fs-boton-marca" (click)="nuevaCategoria()">
+            Crear la primera
+          </button>
+        </div>
+      }
+    </mat-tab>
+
+    <!-- Flujo alternativo 1a: tallas -->
+    <mat-tab label="Tallas">
+      <div class="barra-acciones">
+        <p class="explicacion">
+          El orden decide cómo se muestran en la ficha de producto.
+        </p>
+        <button matButton="filled" type="button" class="fs-boton-marca" (click)="nuevaTalla()">
+          <mat-icon>add</mat-icon>
+          Nueva talla
+        </button>
+      </div>
+
+      @if (tallas().length) {
+        <div class="envoltorio-tabla">
+          <table mat-table [dataSource]="tallas()">
+            <ng-container matColumnDef="tipo">
+              <th mat-header-cell *matHeaderCellDef>Tipo de prenda</th>
+              <td mat-cell *matCellDef="let t">{{ t.tipo_prenda }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="codigo">
+              <th mat-header-cell *matHeaderCellDef>Código</th>
+              <td mat-cell *matCellDef="let t">
+                <span class="pastilla pastilla-codigo">{{ t.codigo }}</span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="orden">
+              <th mat-header-cell *matHeaderCellDef>Orden</th>
+              <td mat-cell *matCellDef="let t">{{ t.orden }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let t">
+                <span class="pastilla" [class.pastilla-activo]="t.activa" [class.pastilla-inactivo]="!t.activa">
+                  {{ t.activa ? 'Activa' : 'Inactiva' }}
+                </span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef aria-label="Acciones"></th>
+              <td mat-cell *matCellDef="let t" class="celda-acciones">
+                <button
+                  matIconButton
+                  type="button"
+                  [matMenuTriggerFor]="menuTalla"
+                  aria-label="Acciones de la talla"
+                >
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #menuTalla="matMenu">
+                  <button mat-menu-item type="button" (click)="editarTalla(t)">
+                    <mat-icon>edit</mat-icon>
+                    <span>Editar</span>
+                  </button>
+                  <button mat-menu-item type="button" (click)="cambiarEstadoTalla(t)">
+                    <mat-icon>{{ t.activa ? 'block' : 'check_circle' }}</mat-icon>
+                    <span>{{ t.activa ? 'Desactivar' : 'Activar' }}</span>
+                  </button>
+                  <button mat-menu-item type="button" class="accion-peligro" (click)="eliminarTalla(t)">
+                    <mat-icon>delete_outline</mat-icon>
+                    <span>Eliminar</span>
+                  </button>
+                </mat-menu>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnasTallas"></tr>
+            <tr
+              mat-row
+              *matRowDef="let fila; columns: columnasTallas"
+              [class.fila-inactiva]="!fila.activa"
+            ></tr>
+          </table>
+        </div>
+      } @else if (!cargando()) {
+        <div class="vacio">
+          <mat-icon>straighten</mat-icon>
+          <p class="titulo-vacio">Todavía no hay tallas</p>
+          <button matButton="filled" type="button" class="fs-boton-marca" (click)="nuevaTalla()">
+            Crear la primera
+          </button>
+        </div>
+      }
+    </mat-tab>
+
+    <!-- Flujo alternativo 1b: colores -->
+    <mat-tab label="Colores">
+      <div class="barra-acciones">
+        <p class="explicacion">
+          El valor hexadecimal es el que pinta la muestra en la ficha.
+        </p>
+        <button matButton="filled" type="button" class="fs-boton-marca" (click)="nuevoColor()">
+          <mat-icon>add</mat-icon>
+          Nuevo color
+        </button>
+      </div>
+
+      @if (colores().length) {
+        <div class="envoltorio-tabla">
+          <table mat-table [dataSource]="colores()">
+            <ng-container matColumnDef="muestra">
+              <th mat-header-cell *matHeaderCellDef aria-label="Muestra"></th>
+              <td mat-cell *matCellDef="let c">
+                <span class="muestra" [style.background]="c.hexadecimal" [attr.title]="c.nombre"></span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="nombre">
+              <th mat-header-cell *matHeaderCellDef>Nombre</th>
+              <td mat-cell *matCellDef="let c">{{ c.nombre }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="hexadecimal">
+              <th mat-header-cell *matHeaderCellDef>Valor</th>
+              <td mat-cell *matCellDef="let c" class="celda-hex">{{ c.hexadecimal }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let c">
+                <span class="pastilla" [class.pastilla-activo]="c.activo" [class.pastilla-inactivo]="!c.activo">
+                  {{ c.activo ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef aria-label="Acciones"></th>
+              <td mat-cell *matCellDef="let c" class="celda-acciones">
+                <button
+                  matIconButton
+                  type="button"
+                  [matMenuTriggerFor]="menuColor"
+                  aria-label="Acciones del color"
+                >
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #menuColor="matMenu">
+                  <button mat-menu-item type="button" (click)="editarColor(c)">
+                    <mat-icon>edit</mat-icon>
+                    <span>Editar</span>
+                  </button>
+                  <button mat-menu-item type="button" (click)="cambiarEstadoColor(c)">
+                    <mat-icon>{{ c.activo ? 'block' : 'check_circle' }}</mat-icon>
+                    <span>{{ c.activo ? 'Desactivar' : 'Activar' }}</span>
+                  </button>
+                  <button mat-menu-item type="button" class="accion-peligro" (click)="eliminarColor(c)">
+                    <mat-icon>delete_outline</mat-icon>
+                    <span>Eliminar</span>
+                  </button>
+                </mat-menu>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnasColores"></tr>
+            <tr
+              mat-row
+              *matRowDef="let fila; columns: columnasColores"
+              [class.fila-inactiva]="!fila.activo"
+            ></tr>
+          </table>
+        </div>
+      } @else if (!cargando()) {
+        <div class="vacio">
+          <mat-icon>palette</mat-icon>
+          <p class="titulo-vacio">Todavía no hay colores</p>
+          <button matButton="filled" type="button" class="fs-boton-marca" (click)="nuevoColor()">
+            Crear el primero
+          </button>
+        </div>
+      }
+    </mat-tab>
+  </mat-tab-group>
+</mat-card>

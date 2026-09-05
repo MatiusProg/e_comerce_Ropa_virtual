@@ -417,3 +417,31 @@ CU-03, separados de `organizacion.*`. El CU-06 sigue el mismo camino con `emplea
 en subpaquetes. Cuando uno llegue solo y el paquete esté libre, puede quedarse en los archivos del
 módulo. Lo que no conviene es descubrir a mitad de camino que hay que partir un archivo que el otro
 ya está editando.
+
+### 6.11.6 Lo que la base garantiza y lo que tiene que garantizar el servicio
+
+El CU-08 dejó en claro un patrón que conviene tener presente en los ciclos siguientes: **una
+restricción de la base no siempre dice lo que parece decir**, y confiar en ella sin leerla deja
+agujeros silenciosos.
+
+**`UNIQUE` no compara valores nulos.** `uq_categoria_padre_nombre` cubre las categorías que tienen
+madre, pero no las de primer nivel: en PostgreSQL dos `NULL` no son iguales, así que la restricción
+ni siquiera compara dos filas con `categoria_padre_id` nulo. Dejaría crear dos «Ropa» de primer
+nivel. Quien valide unicidad sobre una columna anulable tiene que hacerlo también en el servicio.
+
+**`CHECK` solo ve una fila.** `ck_categoria_no_autopadre` impide que una categoría sea su propia
+madre, y con eso agota lo que puede hacer: un ciclo A→B→A involucra dos filas y ninguna restricción
+de fila lo detecta. La excepción E2 se resuelve con una consulta recursiva en el repositorio.
+
+**El nombre de una restricción escrito a mano no lo verifica nadie.** El bloque que traduce una
+violación de unicidad a un 409 busca el nombre de la restricción dentro del mensaje de
+`IntegrityError`. Si está mal escrito, el bloque no entra y lo que debería ser un 409 sale como un
+500 —y solo se descubre en una carrera real, que es justo cuando menos conviene—. Pasó: el nombre
+estaba escrito como `uq_categoria_categoria_padre_id` y la restricción se llama
+`uq_categoria_padre_nombre`. La solución fue llevar los tres nombres a constantes del servicio y
+agregar una prueba que los busca en `pg_constraint`.
+
+**Regla que queda.** Cada vez que un servicio dependa de una restricción de la base —para validar o
+para traducir su violación— hay que responder tres preguntas: ¿cubre los nulos?, ¿le alcanza con
+una sola fila?, ¿el nombre existe de verdad? Las tres tienen prueba en
+`backend/tests/test_cu08_maestros.py`.

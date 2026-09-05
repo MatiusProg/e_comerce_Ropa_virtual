@@ -1,0 +1,49 @@
+:host {
+  display: block;
+}
+
+h2 {
+  color: var(--fs-malva-oscuro);
+  // Las etiquetas flotantes de Material suben por encima del borde del campo;
+  // sin este margen el primer campo se monta sobre el título.
+  margin-bottom: 0.5rem;
+}
+
+mat-dialog-content {
+  padding-top: 1rem;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.ancho-completo {
+  width: 100%;
+}
+
+// La sangría del selector conserva la jerarquía en una lista plana. Se usa
+// espacio en blanco preservado en vez de padding para que el texto siga
+// leyéndose igual cuando el lector de pantalla lo anuncia.
+.sangria {
+  white-space: pre;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--fs-radio-chico);
+  margin-bottom: 1rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+
+  mat-icon {
+    flex: none;
+  }
+}
