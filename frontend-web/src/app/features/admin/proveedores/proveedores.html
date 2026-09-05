@@ -1,0 +1,164 @@
+<!-- CU-07 · Gestionar proveedores — «boundary» PantallaProveedores. -->
+<header class="encabezado">
+  <div>
+    <h1 class="fs-titulo">Proveedores</h1>
+    <p class="bajada">Empresas que abastecen prendas, con sus datos de contacto.</p>
+  </div>
+  <button matButton="filled" type="button" class="fs-boton-marca" (click)="nuevo()">
+    <mat-icon>add_business</mat-icon>
+    Nuevo proveedor
+  </button>
+</header>
+
+<mat-card class="tarjeta fs-filete-superior" appearance="outlined">
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <!-- Paso 2: listado con búsqueda y filtro por estado. -->
+  <div class="filtros">
+    <mat-form-field appearance="outline" class="campo-busqueda">
+      <mat-label>Buscar por razón social, identificación o contacto</mat-label>
+      <input matInput [formControl]="busqueda" />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Estado</mat-label>
+      <mat-select [formControl]="filtroEstado">
+        <mat-option value="">Todos</mat-option>
+        <mat-option value="activos">Activos</mat-option>
+        <mat-option value="inactivos">Dados de baja</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    @if (hayFiltros) {
+      <button matButton type="button" (click)="limpiarFiltros()">
+        <mat-icon>filter_alt_off</mat-icon>
+        Limpiar
+      </button>
+    }
+  </div>
+
+  @if (proveedores().length) {
+    <div class="envoltorio-tabla">
+      <table mat-table [dataSource]="proveedores()">
+        <ng-container matColumnDef="proveedor">
+          <th mat-header-cell *matHeaderCellDef>Proveedor</th>
+          <td mat-cell *matCellDef="let p">
+            <span class="celda-principal">
+              <span class="nombre">{{ p.razon_social }}</span>
+              @if (p.direccion) {
+                <span class="secundario">{{ p.direccion }}</span>
+              }
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="identificacion">
+          <th mat-header-cell *matHeaderCellDef>Identificación</th>
+          <td mat-cell *matCellDef="let p" class="celda-nowrap">
+            {{ p.identificacion_tributaria }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="contacto">
+          <th mat-header-cell *matHeaderCellDef>Contacto</th>
+          <td mat-cell *matCellDef="let p">
+            <span class="celda-principal">
+              <span>{{ p.contacto ?? '—' }}</span>
+              @if (p.correo || p.telefono) {
+                <span class="secundario">{{ p.correo ?? p.telefono }}</span>
+              }
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acceso">
+          <th mat-header-cell *matHeaderCellDef>Acceso</th>
+          <td mat-cell *matCellDef="let p">
+            @if (p.tiene_acceso) {
+              <span class="pastilla pastilla-acceso" [matTooltip]="p.correo_acceso">
+                <mat-icon inline>key</mat-icon>
+                Habilitado
+              </span>
+            } @else {
+              <span class="sin-acceso">Sin acceso</span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let p">
+            <span
+              class="pastilla"
+              [class.pastilla-activo]="p.activo"
+              [class.pastilla-inactivo]="!p.activo"
+            >
+              {{ p.activo ? 'Activo' : 'De baja' }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef aria-label="Acciones"></th>
+          <td mat-cell *matCellDef="let p" class="celda-acciones">
+            <button
+              matIconButton
+              type="button"
+              [matMenuTriggerFor]="menu"
+              aria-label="Acciones del proveedor"
+            >
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item type="button" (click)="editar(p)">
+                <mat-icon>edit</mat-icon>
+                <span>Editar</span>
+              </button>
+              <button mat-menu-item type="button" (click)="habilitarAcceso(p)">
+                <mat-icon>{{ p.tiene_acceso ? 'key' : 'key_off' }}</mat-icon>
+                <span>{{ p.tiene_acceso ? 'Ver su acceso' : 'Habilitar acceso' }}</span>
+              </button>
+              <button
+                mat-menu-item
+                type="button"
+                [class.accion-peligro]="p.activo"
+                (click)="cambiarEstado(p)"
+              >
+                <mat-icon>{{ p.activo ? 'block' : 'check_circle' }}</mat-icon>
+                <span>{{ p.activo ? 'Dar de baja' : 'Reactivar' }}</span>
+              </button>
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr
+          mat-row
+          *matRowDef="let fila; columns: columnas"
+          [class.fila-inactiva]="!fila.activo"
+        ></tr>
+      </table>
+    </div>
+  } @else if (!cargando()) {
+    <div class="vacio">
+      <mat-icon>local_shipping</mat-icon>
+      <p class="titulo-vacio">
+        {{
+          hayFiltros
+            ? 'Ningún proveedor coincide con la búsqueda'
+            : 'Todavía no hay proveedores registrados'
+        }}
+      </p>
+      @if (hayFiltros) {
+        <button matButton type="button" (click)="limpiarFiltros()">Limpiar los filtros</button>
+      } @else {
+        <p class="pista-vacio">
+          En el Ciclo 2 cada producto se asocia a su proveedor, así que conviene cargarlos ahora.
+        </p>
+      }
+    </div>
+  }
+</mat-card>
