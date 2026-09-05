@@ -78,6 +78,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/admin/maestros/maestros').then((m) => m.Maestros),
       },
+      {
+        path: 'temporadas',
+        title: 'Temporadas · FashionStore',
+        loadComponent: () =>
+          import('./features/admin/temporadas/temporadas').then((m) => m.Temporadas),
+      },
     ],
   },
   {
