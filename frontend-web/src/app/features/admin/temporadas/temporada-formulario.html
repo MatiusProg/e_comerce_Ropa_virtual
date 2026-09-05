@@ -1,0 +1,75 @@
+@if (guardando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<h2 mat-dialog-title class="fs-titulo">
+  {{ esEdicion ? 'Editar temporada' : 'Nueva temporada' }}
+</h2>
+
+<mat-dialog-content>
+  @if (error(); as e) {
+    <div class="aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ e }}</span>
+    </div>
+  }
+
+  <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate id="formulario-temporada">
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Nombre</mat-label>
+      <input matInput formControlName="nombre" />
+      <mat-hint>Por ejemplo: Primavera-Verano 2026, Escolar, Liquidación.</mat-hint>
+      @if (formulario.controls.nombre.hasError('required')) {
+        <mat-error>Ingrese el nombre de la temporada.</mat-error>
+      } @else if (formulario.controls.nombre.hasError('duplicado')) {
+        <mat-error>Ya existe una temporada con ese nombre.</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="fila">
+      <mat-form-field appearance="outline">
+        <mat-label>Desde</mat-label>
+        <input matInput type="date" formControlName="fecha_inicio" />
+        @if (formulario.controls.fecha_inicio.hasError('required')) {
+          <mat-error>Indique la fecha de inicio.</mat-error>
+        }
+      </mat-form-field>
+
+      <!-- Excepción E1: el fin tiene que ser posterior al inicio. -->
+      <mat-form-field appearance="outline">
+        <mat-label>Hasta</mat-label>
+        <input matInput type="date" formControlName="fecha_fin" />
+        @if (formulario.controls.fecha_fin.hasError('required')) {
+          <mat-error>Indique la fecha de fin.</mat-error>
+        } @else if (rangoInvalido) {
+          <mat-error>Debe ser posterior a la fecha de inicio.</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Descripción</mat-label>
+      <textarea matInput rows="2" formControlName="descripcion"></textarea>
+      <mat-hint>Opcional.</mat-hint>
+    </mat-form-field>
+
+    @if (!esEdicion) {
+      <mat-slide-toggle formControlName="activa" class="interruptor">
+        Abrirla desde ya
+      </mat-slide-toggle>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="ref.close(false)">Cancelar</button>
+  <button
+    matButton="filled"
+    type="submit"
+    form="formulario-temporada"
+    class="fs-boton-marca"
+    [disabled]="guardando()"
+  >
+    {{ esEdicion ? 'Guardar cambios' : 'Registrar temporada' }}
+  </button>
+</mat-dialog-actions>

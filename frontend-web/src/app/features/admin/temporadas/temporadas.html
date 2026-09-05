@@ -1,0 +1,294 @@
+<!-- CU-09 · Gestionar temporadas y colecciones — «boundary» PantallaTemporadas. -->
+<header class="encabezado">
+  <div>
+    <h1 class="fs-titulo">Temporadas y colecciones</h1>
+    <p class="bajada">
+      La dimensión temporal del catálogo: qué se vende en cada ventana comercial.
+    </p>
+  </div>
+  @if (pestana() === 0) {
+    <button matButton="filled" type="button" class="fs-boton-marca" (click)="nuevaTemporada()">
+      <mat-icon>event</mat-icon>
+      Nueva temporada
+    </button>
+  } @else {
+    <button matButton="filled" type="button" class="fs-boton-marca" (click)="nuevaColeccion()">
+      <mat-icon>collections_bookmark</mat-icon>
+      Nueva colección
+    </button>
+  }
+</header>
+
+<mat-card class="tarjeta fs-filete-superior" appearance="outlined">
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <mat-tab-group [selectedIndex]="pestana()" (selectedIndexChange)="cambiarPestana($event)">
+    <mat-tab label="Temporadas" />
+    <mat-tab label="Colecciones" />
+  </mat-tab-group>
+
+  <div class="filtros">
+    <mat-form-field appearance="outline" class="campo-busqueda">
+      <mat-label>
+        {{ pestana() === 0 ? 'Buscar temporada' : 'Buscar colección o temporada' }}
+      </mat-label>
+      <input matInput [formControl]="busqueda" />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    @if (pestana() === 1) {
+      <mat-form-field appearance="outline">
+        <mat-label>Temporada</mat-label>
+        <mat-select [formControl]="filtroTemporada">
+          <mat-option [value]="''">Todas</mat-option>
+          @for (t of temporadas(); track t.id) {
+            <mat-option [value]="t.id">{{ t.nombre }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>Estado</mat-label>
+      <mat-select [formControl]="filtroEstado">
+        <mat-option value="">Todas</mat-option>
+        <mat-option value="activas">{{ pestana() === 0 ? 'Abiertas' : 'Activas' }}</mat-option>
+        <mat-option value="inactivas">
+          {{ pestana() === 0 ? 'Cerradas' : 'Dadas de baja' }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    @if (hayFiltros) {
+      <button matButton type="button" (click)="limpiarFiltros()">
+        <mat-icon>filter_alt_off</mat-icon>
+        Limpiar
+      </button>
+    }
+  </div>
+
+  @if (error(); as e) {
+    <!-- Un fallo NO puede verse igual que un listado vacio. -->
+    <div class="vacio estado-error" role="alert">
+      <mat-icon>cloud_off</mat-icon>
+      <p class="titulo-vacio">No se pudo cargar el listado</p>
+      <p class="pista-vacio">{{ e }}</p>
+      <button matButton="filled" type="button" class="fs-boton-marca" (click)="cargar()">
+        <mat-icon>refresh</mat-icon>
+        Reintentar
+      </button>
+    </div>
+  } @else if (pestana() === 0) {
+    <!-- ---------- Temporadas (paso 2 del flujo principal) ---------- -->
+    @if (temporadas().length) {
+      <div class="envoltorio-tabla">
+        <table mat-table [dataSource]="temporadas()">
+          <ng-container matColumnDef="temporada">
+            <th mat-header-cell *matHeaderCellDef>Temporada</th>
+            <td mat-cell *matCellDef="let t">
+              <span class="celda-principal">
+                <span class="nombre">{{ t.nombre }}</span>
+                @if (t.descripcion) {
+                  <span class="secundario">{{ t.descripcion }}</span>
+                }
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="vigencia">
+            <th mat-header-cell *matHeaderCellDef>Vigencia</th>
+            <td mat-cell *matCellDef="let t" class="celda-nowrap">
+              {{ t.fecha_inicio | date: 'dd/MM/yyyy' }} –
+              {{ t.fecha_fin | date: 'dd/MM/yyyy' }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="colecciones">
+            <th mat-header-cell *matHeaderCellDef>Colecciones</th>
+            <td mat-cell *matCellDef="let t" class="celda-numero">
+              {{ t.colecciones || '—' }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="estado">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let t">
+              <span class="pastillas">
+                <span
+                  class="pastilla"
+                  [class.pastilla-activo]="t.activa"
+                  [class.pastilla-inactivo]="!t.activa"
+                >
+                  {{ t.activa ? 'Abierta' : 'Cerrada' }}
+                </span>
+                <!-- Vigente = abierta y corriendo hoy. La calcula el servidor. -->
+                @if (t.vigente) {
+                  <span class="pastilla pastilla-vigente" matTooltip="Corriendo hoy">
+                    <mat-icon inline>bolt</mat-icon>
+                    Vigente
+                  </span>
+                }
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef aria-label="Acciones"></th>
+            <td mat-cell *matCellDef="let t" class="celda-acciones">
+              <button
+                matIconButton
+                type="button"
+                [matMenuTriggerFor]="menu"
+                aria-label="Acciones de la temporada"
+              >
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #menu="matMenu">
+                <button mat-menu-item type="button" (click)="editarTemporada(t)">
+                  <mat-icon>edit</mat-icon>
+                  <span>Editar</span>
+                </button>
+                <button
+                  mat-menu-item
+                  type="button"
+                  [class.accion-peligro]="t.activa"
+                  (click)="cambiarEstadoTemporada(t)"
+                >
+                  <mat-icon>{{ t.activa ? 'lock' : 'lock_open' }}</mat-icon>
+                  <span>{{ t.activa ? 'Cerrar' : 'Reabrir' }}</span>
+                </button>
+                <button
+                  mat-menu-item
+                  type="button"
+                  class="accion-peligro"
+                  [matTooltip]="t.colecciones ? 'Tiene colecciones asociadas' : ''"
+                  matTooltipPosition="left"
+                  (click)="eliminarTemporada(t)"
+                >
+                  <mat-icon>delete_outline</mat-icon>
+                  <span>Eliminar</span>
+                </button>
+              </mat-menu>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columnasTemporada"></tr>
+          <tr
+            mat-row
+            *matRowDef="let fila; columns: columnasTemporada"
+            [class.fila-inactiva]="!fila.activa"
+          ></tr>
+        </table>
+      </div>
+    } @else if (!cargando()) {
+      <div class="vacio">
+        <mat-icon>event_busy</mat-icon>
+        <p class="titulo-vacio">
+          {{
+            hayFiltros
+              ? 'Ninguna temporada coincide con la búsqueda'
+              : 'Todavía no hay temporadas registradas'
+          }}
+        </p>
+        @if (hayFiltros) {
+          <button matButton type="button" (click)="limpiarFiltros()">Limpiar los filtros</button>
+        } @else {
+          <p class="pista-vacio">
+            La temporada es lo primero: una colección siempre pertenece a una.
+          </p>
+        }
+      </div>
+    }
+  } @else {
+    <!-- ---------- Colecciones (flujo alternativo 1a) ---------- -->
+    @if (colecciones().length) {
+      <div class="envoltorio-tabla">
+        <table mat-table [dataSource]="colecciones()">
+          <ng-container matColumnDef="coleccion">
+            <th mat-header-cell *matHeaderCellDef>Colección</th>
+            <td mat-cell *matCellDef="let c">
+              <span class="celda-principal">
+                <span class="nombre">{{ c.nombre }}</span>
+                @if (c.descripcion) {
+                  <span class="secundario">{{ c.descripcion }}</span>
+                }
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="temporada">
+            <th mat-header-cell *matHeaderCellDef>Temporada</th>
+            <td mat-cell *matCellDef="let c">
+              <span class="pastilla pastilla-temporada">{{ c.temporada }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="estado">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let c">
+              <span
+                class="pastilla"
+                [class.pastilla-activo]="c.activa"
+                [class.pastilla-inactivo]="!c.activa"
+              >
+                {{ c.activa ? 'Activa' : 'De baja' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef aria-label="Acciones"></th>
+            <td mat-cell *matCellDef="let c" class="celda-acciones">
+              <button
+                matIconButton
+                type="button"
+                [matMenuTriggerFor]="menuc"
+                aria-label="Acciones de la colección"
+              >
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #menuc="matMenu">
+                <button mat-menu-item type="button" (click)="editarColeccion(c)">
+                  <mat-icon>edit</mat-icon>
+                  <span>Editar</span>
+                </button>
+                <button
+                  mat-menu-item
+                  type="button"
+                  [class.accion-peligro]="c.activa"
+                  (click)="cambiarEstadoColeccion(c)"
+                >
+                  <mat-icon>{{ c.activa ? 'block' : 'check_circle' }}</mat-icon>
+                  <span>{{ c.activa ? 'Dar de baja' : 'Reactivar' }}</span>
+                </button>
+              </mat-menu>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columnasColeccion"></tr>
+          <tr
+            mat-row
+            *matRowDef="let fila; columns: columnasColeccion"
+            [class.fila-inactiva]="!fila.activa"
+          ></tr>
+        </table>
+      </div>
+    } @else if (!cargando()) {
+      <div class="vacio">
+        <mat-icon>collections_bookmark</mat-icon>
+        <p class="titulo-vacio">
+          {{
+            hayFiltros
+              ? 'Ninguna colección coincide con la búsqueda'
+              : 'Todavía no hay colecciones registradas'
+          }}
+        </p>
+        @if (hayFiltros) {
+          <button matButton type="button" (click)="limpiarFiltros()">Limpiar los filtros</button>
+        }
+      </div>
+    }
+  }
+</mat-card>
