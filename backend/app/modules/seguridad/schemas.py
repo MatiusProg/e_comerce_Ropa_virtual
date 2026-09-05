@@ -12,7 +12,14 @@ Casos de uso que realiza este paquete:
 import re
 from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 # Regla: NUNCA se expone un modelo SQLAlchemy directamente.
 # Por cada operacion se define su esquema de entrada (Create/Update)
@@ -278,4 +285,141 @@ class CambioEstadoIn(BaseModel):
     activo: bool
 
 
-# TODO CU-04: definir sus esquemas.
+# --- CU-04 Gestionar perfil del cliente ----------------------------------
+# El perfil es del usuario autenticado. Ningun esquema de entrada lleva
+# cliente_id ni usuario_id: esos salen del token. Si viajaran en el cuerpo,
+# cualquiera podria editar el perfil de otro cambiando un numero.
+
+
+class DireccionOut(BaseModel):
+    """Una direccion de entrega del cliente (paso 2)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    ciudad_id: int
+    ciudad: str
+    alias: str
+    direccion: str
+    referencia: str | None
+    predeterminada: bool
+
+
+class PerfilOut(BaseModel):
+    """El perfil completo que muestra el paso 2 del flujo principal.
+
+    Las categorias preferidas que menciona ese paso quedan fuera del Ciclo 1:
+    dependen de CU-08, que todavia no crea ninguna categoria. Ver la seccion
+    6.11.3 de docs/06-decisiones-tecnicas.md.
+    """
+
+    nombres: str
+    apellidos: str
+    correo: EmailStr
+    documento: str | None
+    telefono: str | None
+    talla_superior: str | None
+    talla_inferior: str | None
+    talla_calzado: str | None
+    direcciones: list[DireccionOut]
+
+
+class PerfilEditarIn(BaseModel):
+    """Datos personales y tallas habituales que el Cliente modifica (paso 3).
+
+    Todos los campos son opcionales, pero la ausencia y el vaciado son cosas
+    distintas: no enviar `telefono` lo deja como esta; enviarlo vacio lo borra.
+    Por eso los validadores devuelven None ante una cadena vacia y el servicio
+    distingue ambos casos con `model_fields_set`.
+    """
+
+    nombres: str | None = Field(default=None, min_length=1, max_length=80)
+    apellidos: str | None = Field(default=None, min_length=1, max_length=80)
+    correo: EmailStr | None = Field(default=None, max_length=120)
+    documento: str | None = Field(default=None, max_length=20)
+    telefono: str | None = Field(default=None, max_length=20)
+    talla_superior: str | None = Field(default=None, max_length=10)
+    talla_inferior: str | None = Field(default=None, max_length=10)
+    talla_calzado: str | None = Field(default=None, max_length=10)
+
+    @field_validator(
+        "nombres",
+        "apellidos",
+        "documento",
+        "telefono",
+        "talla_superior",
+        "talla_inferior",
+        "talla_calzado",
+    )
+    @classmethod
+    def _recortar(cls, valor: str | None) -> str | None:
+        if valor is None:
+            return None
+        return valor.strip() or None
+
+    @field_validator("correo")
+    @classmethod
+    def _correo_en_minusculas(cls, valor: str | None) -> str | None:
+        """Normaliza el correo, por el mismo motivo que en CU-01.
+
+        Sin esto la excepcion E2 (correo en uso) no se disparia para un par que
+        solo difiere en mayusculas.
+        """
+        return valor.strip().lower() if valor else None
+
+
+class DireccionIn(BaseModel):
+    """Alta de una direccion de entrega (flujo alternativo 3a)."""
+
+    ciudad_id: int
+    alias: str = Field(min_length=1, max_length=40)
+    direccion: str = Field(min_length=1, max_length=200)
+    referencia: str | None = Field(default=None, max_length=200)
+    predeterminada: bool = False
+
+    @field_validator("alias", "direccion")
+    @classmethod
+    def _obligatorio(cls, valor: str) -> str:
+        valor = valor.strip()
+        if not valor:
+            raise ValueError("Este dato no puede quedar vacío.")
+        return valor
+
+    @field_validator("referencia")
+    @classmethod
+    def _recortar(cls, valor: str | None) -> str | None:
+        if valor is None:
+            return None
+        return valor.strip() or None
+
+
+class CambioContrasenaIn(BaseModel):
+    """Cambio de contrasena del propio cliente (flujo alternativo 3c).
+
+    El flujo pide la contrasena nueva DOS veces. La confirmacion se valida aqui
+    y no solo en el navegador: un cliente de la API que no sea la web tambien
+    tiene que respetar el caso de uso.
+    """
+
+    contrasena_actual: str = Field(min_length=1, max_length=128)
+    contrasena_nueva: str = Field(
+        min_length=CONTRASENA_LONGITUD_MINIMA, max_length=128
+    )
+    contrasena_repetida: str = Field(min_length=1, max_length=128)
+
+    @field_validator("contrasena_nueva")
+    @classmethod
+    def _contrasena_fuerte(cls, valor: str) -> str:
+        if not _TIENE_LETRA.search(valor) or not _TIENE_DIGITO.search(valor):
+            raise ValueError(
+                "La contraseña debe incluir al menos una letra y un número."
+            )
+        return valor
+
+    @model_validator(mode="after")
+    def _coinciden(self) -> "CambioContrasenaIn":
+        if self.contrasena_nueva != self.contrasena_repetida:
+            raise ValueError("Las dos contraseñas nuevas no coinciden.")
+        if self.contrasena_nueva == self.contrasena_actual:
+            raise ValueError("La contraseña nueva debe ser distinta de la actual.")
+        return self

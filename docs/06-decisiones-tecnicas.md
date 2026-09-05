@@ -336,3 +336,46 @@ alta fallaría con «la sucursal indicada no existe o no está activa».
 También se movió la exigencia de rol Administrador del endpoint al *router* de `organizacion`,
 por el mismo motivo por el que el CU-03 la declara a nivel de router: endpoint por endpoint,
 olvidarla en uno solo abre un agujero sin que nada avise.
+
+### 6.11.3 Las categorías preferidas del cliente se difieren al Ciclo 2
+
+El paso 2 del flujo principal del CU-04 muestra, entre los datos del perfil, las **categorías
+preferidas** del cliente, y la tabla de clases de análisis las lista como atributo de `Cliente`.
+No son un atributo: un cliente prefiere varias categorías, de modo que exigen una tabla
+`cliente_categoria` propia —el mismo razonamiento por el que el diseño creó `direccion_cliente`—.
+No figuran en el diseño físico (§3.3.2) ni en la migración `0001_ciclo1`.
+
+**Decisión: se implementan en el Ciclo 2, junto con el CU-08.** El motivo no es el costo —la tabla
+es de dos columnas— sino la dependencia: las categorías las crea el **CU-08**, que es del Ciclo 1
+pero todavía no está implementado, y el *seed* no siembra ninguna. Construirlas ahora dejaría en el
+perfil un selector permanentemente vacío: código imposible de probar, de demostrar y de defender.
+
+**Costo de diferirlo: ninguno.** El cambio es aditivo. Cuando llegue el momento se agrega una
+migración `0002` con la tabla y un campo más al esquema del perfil, que para entonces ya existirá.
+Nada de lo que se construya en el CU-04 hay que rehacerlo.
+
+**Alcance real del CU-04 en el Ciclo 1**, por lo tanto: datos personales, tallas habituales,
+direcciones de entrega (alta, baja y predeterminada) y cambio de contraseña. Todo lo demás del
+flujo se cumple.
+
+### 6.11.4 Quién puede listar las ciudades
+
+Al integrar el CU-04 con el CU-05 apareció un choque que ninguno de los dos podía ver por separado.
+El CU-05 declaró la exigencia de rol **Administrador a nivel del *router* de `organizacion`**, que
+es la decisión correcta y la misma que toma el CU-03. Pero el formulario de direcciones del CU-04
+necesita el listado de ciudades para su selector, y su actor es el **Cliente**: con la exigencia a
+nivel de router, ese selector recibía un 403 y la dirección no se podía cargar.
+
+**Decisión: `GET /organizacion/ciudades` se declara en un *router* de consulta aparte**, dentro del
+mismo módulo, que admite Administrador **y** Cliente. El alta, la edición y la baja siguen en el
+router administrativo, con su exigencia intacta.
+
+Se evaluó y se descartó duplicar el endpoint bajo `seguridad`: expondría el mismo recurso en dos
+rutas, que es justamente lo que la §6.11.2 decidió no hacer. También se descartó bajar la
+exigencia de rol al nivel de cada endpoint: reintroduciría el agujero que el CU-05 quiso cerrar,
+porque olvidarla en uno solo pasaría inadvertido.
+
+La regla que queda para los casos de uso siguientes: **una lectura que alimenta un selector no
+tiene por qué compartir el ámbito de autorización del CRUD que la mantiene.** Cuando un módulo
+administrativo tenga que exponer un dato a otro rol, va en su router de consulta, no en el
+administrativo y no en el módulo del que consume.

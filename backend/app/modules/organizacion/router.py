@@ -40,6 +40,21 @@ router = APIRouter(
     },
 )
 
+# Excepcion a lo anterior: hay lecturas de este paquete que otro rol necesita.
+# El formulario de direcciones de CU-04 tiene que poblar su selector de ciudad,
+# y su actor es el Cliente. Van en este router aparte en vez de aflojar la
+# exigencia del administrativo endpoint por endpoint, que es como se abren los
+# agujeros. Ver la seccion 6.11.4 de docs/06-decisiones-tecnicas.md.
+consulta_router = APIRouter(
+    prefix="/organizacion",
+    tags=["Organizacion"],
+    dependencies=[Depends(requiere_roles("ADMINISTRADOR", "CLIENTE"))],
+    responses={
+        401: {"description": "Falta el token o ya no es válido."},
+        403: {"description": "El usuario no tiene un rol habilitado."},
+    },
+)
+
 
 def _traducir(error: service.ErrorDeOrganizacion) -> HTTPException:
     """Convierte los errores de negocio de CU-05 en respuestas HTTP."""
@@ -77,12 +92,20 @@ def _traducir(error: service.ErrorDeOrganizacion) -> HTTPException:
 # --- CU-05 Ciudades (flujo alternativo 3a) -------------------------------
 
 
-@router.get("/ciudades", response_model=list[CiudadOut], summary="CU-05 Listar ciudades")
+@consulta_router.get(
+    "/ciudades", response_model=list[CiudadOut], summary="CU-05 Listar ciudades"
+)
 def listar_ciudades(
     db: DbSession,
     busqueda: Annotated[str | None, Query(max_length=60)] = None,
 ) -> list[CiudadOut]:
-    """Ciudades con el recuento de sus sucursales, totales y activas."""
+    """Ciudades con el recuento de sus sucursales, totales y activas.
+
+    Lo consume el panel de administracion (CU-05) y tambien el formulario de
+    direcciones del Cliente (CU-04), por eso vive en el router de consulta. Los
+    contadores no son informacion sensible: son cuantas tiendas hay en cada
+    ciudad, que el catalogo publico del Ciclo 2 va a mostrar de todos modos.
+    """
     return service.listar_ciudades(db, busqueda=busqueda)
 
 

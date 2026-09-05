@@ -134,6 +134,7 @@ multisucursal y reservas.
 | P6 Reservas | CU-22 a CU-25 | Reserva múltiple con sucursal y horario, consulta y cancelación, atención en sucursal, expiración automática | Mateo (API) · Karen (UI web y móvil) |
 | — | — | *Seed* completo: 3 ciudades, 5 sucursales, 4 proveedores, ~60 productos con variantes, imágenes y stock distribuido | Mateo |
 | — | — | **Prototipo aislado del vestidor virtual** (cámara + detección de pose, sin integrar) | Karen |
+| P1 Seguridad | CU-04 (resto) | **Categorías preferidas del perfil del cliente**: migración `0002` con `cliente_categoria` y el selector en el perfil. Diferido del Ciclo 1 porque depende del CU-08 — ver §6.11.3 de `docs/06-decisiones-tecnicas.md` | Karen |
 
 ### Documentación
 
