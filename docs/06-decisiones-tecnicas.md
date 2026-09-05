@@ -379,3 +379,41 @@ La regla que queda para los casos de uso siguientes: **una lectura que alimenta 
 tiene por qué compartir el ámbito de autorización del CRUD que la mantiene.** Cuando un módulo
 administrativo tenga que exponer un dato a otro rol, va en su router de consulta, no en el
 administrativo y no en el módulo del que consume.
+
+### 6.11.5 CU-06 y CU-07 se separan en subpaquetes dentro de P2
+
+El CU-06 y el CU-07 se desarrollan **en paralelo** y viven los dos en el paquete P2. Con la
+estructura original —un `router.py`, un `service.py`, un `repository.py` y un `schemas.py` por
+módulo— los dos casos de uso escribirían en los mismos cuatro archivos, y cada integración
+terminaría en conflicto. Acordar que cada uno agregue su bloque *al final* no resuelve nada:
+el final del archivo es justamente donde los dos escribirían.
+
+**Decisión: cada caso de uso se implementa en un subpaquete propio**, con sus cuatro capas dentro:
+
+```
+organizacion/
+    models.py              compartido: Ciudad, Sucursal, Empleado, Proveedor
+    router.py              CU-05 (ciudades y sucursales)
+    service.py             CU-05
+    repository.py          CU-05
+    schemas.py             CU-05
+    empleados/             CU-06 — router · service · repository · schemas
+    proveedores/           CU-07 — misma forma
+```
+
+**Los modelos no se duplican.** Siguen en `organizacion/models.py`, que es de todo el paquete: son
+el esquema de la base, no de un caso de uso. Las cuatro capas de la §6.1 se respetan igual, solo
+que dentro del subpaquete; la regla de que ningún *router* toca el modelo y de que ninguna regla de
+negocio vive en el *router* no cambia.
+
+Lo único que queda compartido es la línea que registra el *router* en `app/main.py`. Un conflicto
+de una línea se resuelve en segundos; uno de cuatro archivos de trescientas líneas, no.
+
+**En la web ya era la convención.** `usuarios.models.ts` y `usuarios.service.ts` existen desde el
+CU-03, separados de `organizacion.*`. El CU-06 sigue el mismo camino con `empleados.models.ts` y
+`empleados.service.ts`.
+
+**Regla para lo que viene.** Cuando dos casos de uso del mismo paquete se desarrollen a la vez, van
+en subpaquetes. Cuando uno llegue solo y el paquete esté libre, puede quedarse en los archivos del
+módulo. Lo que no conviene es descubrir a mitad de camino que hay que partir un archivo que el otro
+ya está editando.

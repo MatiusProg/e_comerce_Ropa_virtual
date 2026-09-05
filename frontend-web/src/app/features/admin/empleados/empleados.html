@@ -1,0 +1,167 @@
+<!-- CU-06 · Gestionar empleados — «boundary» PantallaEmpleados. -->
+<header class="encabezado">
+  <div>
+    <h1 class="fs-titulo">Empleados</h1>
+    <p class="bajada">Quién trabaja en cada sucursal, con qué cargo y desde cuándo.</p>
+  </div>
+  <button matButton="filled" type="button" class="fs-boton-marca" (click)="nuevo()">
+    <mat-icon>badge</mat-icon>
+    Registrar empleado
+  </button>
+</header>
+
+<mat-card class="tarjeta fs-filete-superior" appearance="outlined">
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <!-- Paso 2: filtro por sucursal y por cargo. -->
+  <div class="filtros">
+    <mat-form-field appearance="outline" class="campo-busqueda">
+      <mat-label>Buscar por nombre o documento</mat-label>
+      <input matInput [formControl]="busqueda" />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Sucursal</mat-label>
+      <mat-select [formControl]="filtroSucursal">
+        <mat-option value="">Todas</mat-option>
+        @for (s of sucursales(); track s.id) {
+          <mat-option [value]="s.id">{{ s.nombre }} · {{ s.ciudad }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Cargo</mat-label>
+      <mat-select [formControl]="filtroCargo">
+        <mat-option value="">Todos</mat-option>
+        <mat-option value="ENCARGADO">Encargado de sucursal</mat-option>
+        <mat-option value="CAJERO">Cajero</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Estado</mat-label>
+      <mat-select [formControl]="filtroEstado">
+        <mat-option value="">Todos</mat-option>
+        <mat-option value="activos">En actividad</mat-option>
+        <mat-option value="inactivos">Dados de baja</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    @if (hayFiltros) {
+      <button matButton type="button" (click)="limpiarFiltros()">
+        <mat-icon>filter_alt_off</mat-icon>
+        Limpiar
+      </button>
+    }
+  </div>
+
+  @if (empleados().length) {
+    <div class="envoltorio-tabla">
+      <table mat-table [dataSource]="empleados()">
+        <ng-container matColumnDef="empleado">
+          <th mat-header-cell *matHeaderCellDef>Empleado</th>
+          <td mat-cell *matCellDef="let e">
+            <span class="celda-persona">
+              <span class="nombre">{{ e.nombres }} {{ e.apellidos }}</span>
+              <span class="secundario">{{ e.correo }}</span>
+              <span class="secundario">CI {{ e.documento }}</span>
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="cargo">
+          <th mat-header-cell *matHeaderCellDef>Cargo</th>
+          <td mat-cell *matCellDef="let e">
+            <span class="pastilla pastilla-cargo">{{ nombreCargo(e.cargo) }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="sucursal">
+          <th mat-header-cell *matHeaderCellDef>Sucursal</th>
+          <td mat-cell *matCellDef="let e">
+            <span class="celda-persona">
+              <span>{{ e.sucursal }}</span>
+              <span class="secundario">{{ e.ciudad }}</span>
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="ingreso">
+          <th mat-header-cell *matHeaderCellDef>Ingreso</th>
+          <td mat-cell *matCellDef="let e" class="celda-fecha">
+            {{ e.fecha_ingreso | date: 'dd/MM/yyyy' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let e">
+            @if (e.activo) {
+              <span class="pastilla pastilla-activo">En actividad</span>
+            } @else {
+              <span class="pastilla pastilla-inactivo">
+                Baja {{ e.fecha_baja | date: 'dd/MM/yyyy' }}
+              </span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef aria-label="Acciones"></th>
+          <td mat-cell *matCellDef="let e" class="celda-acciones">
+            <button
+              matIconButton
+              type="button"
+              [matMenuTriggerFor]="menu"
+              aria-label="Acciones del empleado"
+            >
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item type="button" (click)="editar(e)">
+                <mat-icon>edit</mat-icon>
+                <span>Editar o reasignar</span>
+              </button>
+
+              <!-- Flujo 3b: solo tiene sentido sobre quien sigue en actividad. -->
+              @if (e.activo) {
+                <button mat-menu-item type="button" class="accion-peligro" (click)="darDeBaja(e)">
+                  <mat-icon>person_off</mat-icon>
+                  <span>Dar de baja</span>
+                </button>
+              } @else {
+                <span class="nota-menu">Ya está dado de baja</span>
+              }
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr
+          mat-row
+          *matRowDef="let fila; columns: columnas"
+          [class.fila-inactiva]="!fila.activo"
+        ></tr>
+      </table>
+    </div>
+  } @else if (!cargando()) {
+    <div class="vacio">
+      <mat-icon>badge</mat-icon>
+      <p class="titulo-vacio">
+        {{ hayFiltros ? 'Ningún empleado coincide con la búsqueda' : 'Todavía no hay empleados' }}
+      </p>
+      @if (hayFiltros) {
+        <button matButton type="button" (click)="limpiarFiltros()">Limpiar los filtros</button>
+      } @else if (!sucursales().length) {
+        <!-- Precondición del caso de uso: sin sucursal activa no hay a quién asignar. -->
+        <p class="bajada-vacio">
+          Antes de registrar empleados hace falta al menos una sucursal activa.
+        </p>
+      }
+    </div>
+  }
+</mat-card>

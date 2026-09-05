@@ -1,0 +1,109 @@
+:host {
+  display: block;
+}
+
+h2 {
+  color: var(--fs-malva-oscuro);
+  // Las etiquetas flotantes de Material suben por encima del borde del campo;
+  // sin este margen el primer campo se monta sobre el título.
+  margin-bottom: 0.5rem;
+}
+
+mat-dialog-content {
+  padding-top: 1rem;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.fila {
+  display: flex;
+  gap: 1rem;
+
+  mat-form-field {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+.ancho-completo {
+  width: 100%;
+}
+
+// Los dos caminos del alta. Se muestran como un par de botones y no como un
+// desplegable: la elección cambia el formulario entero, así que conviene que
+// esté a la vista y no escondida.
+.selector-camino {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+
+  button {
+    flex: 1 1 0;
+    border: 1px solid var(--mat-sys-outline-variant);
+    border-radius: var(--fs-radio-chico);
+  }
+
+  .elegido {
+    border-color: var(--fs-malva);
+    background: var(--fs-rosa-palido);
+    color: var(--fs-malva-oscuro);
+    font-weight: 600;
+  }
+}
+
+.nota {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.nota-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--fs-radio-chico);
+  background: var(--fs-rosa-palido);
+  color: var(--fs-malva-oscuro);
+
+  mat-icon {
+    flex: none;
+    font-size: 1.15rem;
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+}
+
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--fs-radio-chico);
+  margin-bottom: 1rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+
+  mat-icon {
+    flex: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .fila {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .selector-camino {
+    flex-direction: column;
+  }
+}

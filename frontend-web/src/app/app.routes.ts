@@ -60,6 +60,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/admin/ciudades/ciudades').then((m) => m.Ciudades),
       },
+      {
+        path: 'empleados',
+        title: 'Empleados · FashionStore',
+        loadComponent: () =>
+          import('./features/admin/empleados/empleados').then((m) => m.Empleados),
+      },
     ],
   },
   {

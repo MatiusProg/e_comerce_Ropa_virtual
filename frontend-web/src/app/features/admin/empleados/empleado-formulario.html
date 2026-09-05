@@ -1,0 +1,219 @@
+@if (guardando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<h2 mat-dialog-title class="fs-titulo">
+  {{ esEdicion ? 'Editar empleado' : 'Registrar empleado' }}
+</h2>
+
+<mat-dialog-content>
+  @if (error(); as e) {
+    <div class="aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ e }}</span>
+    </div>
+  }
+
+  <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate id="formulario-empleado">
+    <!--
+      Los dos caminos del alta son excluyentes: o se crea una cuenta nueva o se
+      vincula una existente sin empleado asociado (flujo 3c).
+    -->
+    @if (!esEdicion) {
+      <div class="selector-camino" role="radiogroup" aria-label="Cuenta del empleado">
+        <button
+          matButton
+          type="button"
+          role="radio"
+          [attr.aria-checked]="camino() === 'nueva'"
+          [class.elegido]="camino() === 'nueva'"
+          (click)="elegirCamino('nueva')"
+        >
+          <mat-icon>person_add</mat-icon>
+          Crear una cuenta
+        </button>
+        <button
+          matButton
+          type="button"
+          role="radio"
+          [attr.aria-checked]="camino() === 'existente'"
+          [class.elegido]="camino() === 'existente'"
+          [disabled]="!vinculables().length"
+          (click)="elegirCamino('existente')"
+        >
+          <mat-icon>link</mat-icon>
+          Vincular una existente
+        </button>
+      </div>
+
+      @if (!vinculables().length) {
+        <p class="nota">No hay cuentas sin empleado asociado para vincular.</p>
+      }
+    }
+
+    <!-- Datos de la persona -->
+    @if (pideCuentaExistente()) {
+      <mat-form-field appearance="outline" class="ancho-completo">
+        <mat-label>Cuenta a vincular</mat-label>
+        <mat-select formControlName="usuario_id">
+          @for (u of vinculables(); track u.id) {
+            <mat-option [value]="u.id">
+              {{ u.nombres }} {{ u.apellidos }} · {{ u.correo }}
+            </mat-option>
+          }
+        </mat-select>
+        <mat-hint>El cargo que elijas abajo pasa a ser el rol de esa cuenta.</mat-hint>
+        @if (formulario.controls.usuario_id.hasError('required')) {
+          <mat-error>Elegí una cuenta.</mat-error>
+        } @else if (formulario.controls.usuario_id.hasError('noVinculable')) {
+          <mat-error>Esa cuenta ya no está disponible. Actualizá la lista.</mat-error>
+        }
+      </mat-form-field>
+    } @else {
+      <div class="fila">
+        <mat-form-field appearance="outline">
+          <mat-label>Nombres</mat-label>
+          <input matInput formControlName="nombres" />
+          @if (formulario.controls.nombres.hasError('required')) {
+            <mat-error>Ingresá los nombres.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Apellidos</mat-label>
+          <input matInput formControlName="apellidos" />
+          @if (formulario.controls.apellidos.hasError('required')) {
+            <mat-error>Ingresá los apellidos.</mat-error>
+          }
+        </mat-form-field>
+      </div>
+    }
+
+    @if (pideCuentaNueva()) {
+      <mat-form-field appearance="outline" class="ancho-completo">
+        <mat-label>Correo electrónico</mat-label>
+        <input matInput type="email" formControlName="correo" />
+        <mat-hint>Con este correo va a iniciar sesión.</mat-hint>
+        @if (formulario.controls.correo.hasError('required')) {
+          <mat-error>Ingresá el correo electrónico.</mat-error>
+        } @else if (formulario.controls.correo.hasError('email')) {
+          <mat-error>El correo no tiene un formato válido.</mat-error>
+        } @else if (formulario.controls.correo.hasError('duplicado')) {
+          <mat-error>Ese correo ya tiene una cuenta.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="ancho-completo">
+        <mat-label>Contraseña inicial</mat-label>
+        <input
+          matInput
+          [type]="verContrasena() ? 'text' : 'password'"
+          formControlName="contrasena"
+          autocomplete="new-password"
+        />
+        <button
+          matIconButton
+          type="button"
+          matSuffix
+          (click)="verContrasena.set(!verContrasena())"
+          [attr.aria-label]="verContrasena() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+        >
+          <mat-icon>{{ verContrasena() ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-hint>
+          Mínimo {{ longitudMinima }} caracteres, con al menos una letra y un número.
+        </mat-hint>
+        @if (formulario.controls.contrasena.hasError('required')) {
+          <mat-error>Ingresá una contraseña inicial.</mat-error>
+        } @else if (formulario.controls.contrasena.hasError('minlength')) {
+          <mat-error>Debe tener al menos {{ longitudMinima }} caracteres.</mat-error>
+        } @else if (formulario.controls.contrasena.hasError('pattern')) {
+          <mat-error>Debe incluir al menos una letra y un número.</mat-error>
+        }
+      </mat-form-field>
+    }
+
+    <!-- Datos del empleado -->
+    <div class="fila">
+      <mat-form-field appearance="outline">
+        <mat-label>Documento de identidad</mat-label>
+        <input matInput formControlName="documento" />
+        @if (formulario.controls.documento.hasError('required')) {
+          <mat-error>Ingresá el documento.</mat-error>
+        } @else if (formulario.controls.documento.hasError('duplicado')) {
+          <!-- Excepción E1. -->
+          <mat-error>Ese documento ya pertenece a otro empleado.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Teléfono</mat-label>
+        <input matInput type="tel" formControlName="telefono" />
+      </mat-form-field>
+    </div>
+
+    <div class="fila">
+      <mat-form-field appearance="outline">
+        <mat-label>Cargo</mat-label>
+        <mat-select formControlName="cargo">
+          @for (c of cargos; track c) {
+            <mat-option [value]="c">{{ etiquetaCargo[c] }}</mat-option>
+          }
+        </mat-select>
+        <mat-hint>Define el rol con el que la cuenta entra al sistema.</mat-hint>
+        @if (formulario.controls.cargo.hasError('required')) {
+          <mat-error>Elegí un cargo.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Sucursal</mat-label>
+        <mat-select formControlName="sucursal_id">
+          @for (s of datos.sucursales; track s.id) {
+            <mat-option [value]="s.id">{{ s.nombre }} · {{ s.ciudad }}</mat-option>
+          }
+        </mat-select>
+        @if (!datos.sucursales.length) {
+          <mat-hint>No hay sucursales activas cargadas todavía.</mat-hint>
+        }
+        @if (formulario.controls.sucursal_id.hasError('required')) {
+          <mat-error>Elegí una sucursal.</mat-error>
+        } @else if (formulario.controls.sucursal_id.hasError('inactiva')) {
+          <!-- Excepción E2. -->
+          <mat-error>Esa sucursal está dada de baja.</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Fecha de ingreso</mat-label>
+      <input matInput type="date" formControlName="fecha_ingreso" />
+      @if (formulario.controls.fecha_ingreso.hasError('required')) {
+        <mat-error>Indicá la fecha de ingreso.</mat-error>
+      }
+    </mat-form-field>
+
+    @if (esEdicion) {
+      <p class="nota nota-aviso">
+        <mat-icon>info_outline</mat-icon>
+        <span>
+          Cambiar el cargo o la sucursal cierra las sesiones abiertas del empleado:
+          su ámbito viaja dentro del token y tiene que volver a entrar.
+        </span>
+      </p>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="ref.close(false)">Cancelar</button>
+  <button
+    matButton="filled"
+    type="submit"
+    form="formulario-empleado"
+    class="fs-boton-marca"
+    [disabled]="guardando()"
+  >
+    {{ esEdicion ? 'Guardar cambios' : 'Registrar empleado' }}
+  </button>
+</mat-dialog-actions>
