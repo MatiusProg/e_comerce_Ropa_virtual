@@ -14,7 +14,7 @@
 # =========================================================================
 
 $ErrorActionPreference = 'Stop'
-$modelo = 'D:\UNI\Si2\PRIMER_PARCIAL\docs\diagramas\FashionStore.eapx'
+$modelo = 'D:\UNI\Si2\PRIMER_PARCIAL\docs\diagramas\VioletBoutique.eapx'
 
 if (-not (Test-Path $modelo)) { throw "No existe $modelo" }
 
@@ -83,13 +83,13 @@ function Poner($dia, $el, $l, $t, $ancho, $alto) {
 # ---------------- estructura del modelo ----------------
 
 $root     = $ea.Models.GetAt(0)
-$pFashion = Get-OCrearPaqueteModelo $root     'FashionStore'
-Registrar-Elementos $pFashion
+$pRaiz = Get-OCrearPaqueteModelo $root     'Violet Boutique'
+Registrar-Elementos $pRaiz
 Write-Output "elementos ya existentes en el modelo: $($indice.Count)"
 
-$pCap1 = Get-OCrearPaqueteModelo $pFashion 'CAP. 1 - Captura de Requisitos'
+$pCap1 = Get-OCrearPaqueteModelo $pRaiz 'CAP. 1 - Captura de Requisitos'
 $pCU   = Get-OCrearPaqueteModelo $pCap1    'Modelo de Casos de Uso'
-$pCap2 = Get-OCrearPaqueteModelo $pFashion 'CAP. 2 - Flujo de Trabajo: Analisis'
+$pCap2 = Get-OCrearPaqueteModelo $pRaiz 'CAP. 2 - Flujo de Trabajo: Analisis'
 $p21   = Get-OCrearPaqueteModelo $pCap2    '2.1 Analisis de Arquitectura'
 $p213  = Get-OCrearPaqueteModelo $p21      '2.1.3 Vista de Paquetes'
 

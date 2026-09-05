@@ -175,12 +175,12 @@ escalones de peso y el factor de demanda son supuestos para mostrar el mecanismo
 
 ---
 
-## 5. Relación con FashionStore
+## 5. Relación con Violet Boutique
 
 El delivery **está fuera del alcance** de este proyecto, y conviene decirlo con precisión para no
 generar una expectativa que el sistema no cumple.
 
-**Lo que FashionStore sí hace.** En la compra digital, el cliente elige entre **retiro en
+**Lo que Violet Boutique sí hace.** En la compra digital, el cliente elige entre **retiro en
 sucursal** y **envío a domicilio**; en el segundo caso registra su dirección y el pedido guarda un
 costo de envío. Esa información queda en el pedido y aparece en los reportes.
 
@@ -195,7 +195,7 @@ realidad aumentada y la inteligencia artificial.
 
 **Cómo se integraría, si el proyecto continuara.** La vía realista no sería construir la logística,
 sino **integrarse con una plataforma existente** —PedidosYa, Yango o un operador local— mediante
-su API: FashionStore emitiría la orden de entrega y recibiría por webhook los cambios de estado.
+su API: Violet Boutique emitiría la orden de entrega y recibiría por webhook los cambios de estado.
 Sería el mismo patrón de adaptador que ya se usa con la pasarela de pago (paquete P8): un servicio
 externo aislado tras un adaptador propio, de modo que cambiar de operador no afecte al resto del
 sistema.

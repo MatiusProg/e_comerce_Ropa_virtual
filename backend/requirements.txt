@@ -1,4 +1,4 @@
-# FashionStore - API REST (FastAPI)
+# Violet Boutique - API REST (FastAPI)
 # Python 3.13
 #
 # Instalacion:  pip install -r requirements.txt

@@ -38,7 +38,7 @@ export interface DatosColor {
       <mat-progress-bar mode="indeterminate" />
     }
 
-    <h2 mat-dialog-title class="fs-titulo">
+    <h2 mat-dialog-title class="vb-titulo">
       {{ esEdicion ? 'Editar color' : 'Nuevo color' }}
     </h2>
 
@@ -93,7 +93,7 @@ export interface DatosColor {
         matButton="filled"
         type="submit"
         form="formulario-color"
-        class="fs-boton-marca"
+        class="vb-boton-marca"
         [disabled]="guardando()"
       >
         {{ esEdicion ? 'Guardar cambios' : 'Crear color' }}
@@ -105,7 +105,7 @@ export interface DatosColor {
       display: block;
     }
     h2 {
-      color: var(--fs-malva-oscuro);
+      color: var(--vb-malva-oscuro);
       margin-bottom: 0.5rem;
     }
     mat-dialog-content {
@@ -140,7 +140,7 @@ export interface DatosColor {
       height: 3.5rem;
       padding: 0;
       border: 1px solid var(--mat-sys-outline-variant);
-      border-radius: var(--fs-radio-chico);
+      border-radius: var(--vb-radio-chico);
       background: none;
       cursor: pointer;
     }
@@ -153,7 +153,7 @@ export interface DatosColor {
       align-items: flex-start;
       gap: 0.55rem;
       padding: 0.8rem 1rem;
-      border-radius: var(--fs-radio-chico);
+      border-radius: var(--vb-radio-chico);
       margin-bottom: 1rem;
       font-size: 0.92rem;
       line-height: 1.45;

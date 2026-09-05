@@ -9,7 +9,8 @@ variable no esta definida, las pruebas que necesitan base se SALTAN: es
 preferible no probar a probar contra los datos reales.
 
     # PowerShell
-    $env:TEST_DATABASE_URL = "postgresql+psycopg://usuario:clave@localhost:5432/fashionstore_test"
+    # El PostgreSQL local escucha en el 5433: el 5432 es el de Docker.
+    $env:TEST_DATABASE_URL = "postgresql+psycopg://usuario:clave@localhost:5433/violetboutique_test"
     .venv\\Scripts\\python.exe -m pytest
 
 La base indicada se crea y se destruye entera en cada corrida, asi que tiene
@@ -64,9 +65,9 @@ TABLAS_VOLATILES = (
 
 #: Credenciales del cliente de prueba. La contrasena cumple la regla del
 #: RNF01: ocho caracteres, con letra y digito.
-CORREO_CLIENTE = "ana.cliente@fashionstore.bo"
+CORREO_CLIENTE = "ana.cliente@violetboutique.bo"
 CLAVE_CLIENTE = "Secreta123"
-CORREO_ADMIN = "admin.pruebas@fashionstore.bo"
+CORREO_ADMIN = "admin.pruebas@violetboutique.bo"
 CLAVE_ADMIN = "Admin12345"
 
 

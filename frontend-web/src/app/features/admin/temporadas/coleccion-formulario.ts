@@ -47,7 +47,7 @@ export interface DatosColeccion {
       <mat-progress-bar mode="indeterminate" />
     }
 
-    <h2 mat-dialog-title class="fs-titulo">
+    <h2 mat-dialog-title class="vb-titulo">
       {{ esEdicion ? 'Editar colección' : 'Nueva colección' }}
     </h2>
 
@@ -102,7 +102,7 @@ export interface DatosColeccion {
         matButton="filled"
         type="submit"
         form="formulario-coleccion"
-        class="fs-boton-marca"
+        class="vb-boton-marca"
         [disabled]="guardando()"
       >
         {{ esEdicion ? 'Guardar cambios' : 'Registrar colección' }}
@@ -114,7 +114,7 @@ export interface DatosColeccion {
       display: block;
     }
     h2 {
-      color: var(--fs-malva-oscuro);
+      color: var(--vb-malva-oscuro);
       margin-bottom: 0.5rem;
     }
     mat-dialog-content {
@@ -137,7 +137,7 @@ export interface DatosColeccion {
       align-items: flex-start;
       gap: 0.55rem;
       padding: 0.8rem 1rem;
-      border-radius: var(--fs-radio-chico);
+      border-radius: var(--vb-radio-chico);
       margin-bottom: 1rem;
       font-size: 0.92rem;
       line-height: 1.45;

@@ -44,9 +44,9 @@ reglas de la plataforma y —lo más importante— **el cliente es del marketpla
 sus datos de comportamiento no quedan en poder del vendedor. Una tienda propia exige generar el
 tráfico, pero conserva el margen, la identidad y los datos.
 
-### Dónde se ubica FashionStore
+### Dónde se ubica Violet Boutique
 
-FashionStore es un **B2C de tienda propia con un componente físico central**: el cliente puede
+Violet Boutique es un **B2C de tienda propia con un componente físico central**: el cliente puede
 comprar en línea, pero también reservar prendas para **probárselas en una sucursal** y comprarlas
 allí. No es un e-commerce puro ni una tienda física digitalizada, sino un modelo híbrido en el
 que el inventario de las sucursales es el mismo que se muestra en línea.
@@ -84,7 +84,7 @@ por defecto.
 - Reseñas etiquetadas por los compradores como "queda chico / justo / grande".
 - Recomendación de talla basada en compras anteriores del mismo usuario.
 - Programas de prueba antes de pagar en algunos mercados, que reconocen exactamente el problema
-  que FashionStore ataca con el vestidor virtual y la reserva.
+  que Violet Boutique ataca con el vestidor virtual y la reserva.
 
 **Recomendaciones.** Amazon personaliza a partir de historial de navegación, historial de compra,
 productos vistos juntos y valoraciones. Es el referente del filtrado colaborativo aplicado a
@@ -112,7 +112,7 @@ proveedores. Su equivalente minorista es AliExpress.
   acordado; es un mecanismo de custodia (*escrow*).
 - **Muestras** — se compran unidades de muestra antes del pedido grande.
 
-**Relevancia para FashionStore.** Alibaba es el modelo del **lado proveedor** del sistema: una
+**Relevancia para Violet Boutique.** Alibaba es el modelo del **lado proveedor** del sistema: una
 cadena de tiendas de ropa se abastece exactamente así, comprando por lote a distintos
 proveedores según temporada. El actor *Proveedor* (A5) y el caso de uso *Registrar ingreso de
 mercadería* (CU-13) reproducen la punta final de este proceso.
@@ -228,12 +228,12 @@ de seguridad.
 | Multi-tienda | Nativo | Con módulos | Con plugins |
 | Ideal para | Gran volumen, B2B | Pymes | Tiendas pequeñas y sitios de contenido |
 
-### 3.5 Por qué FashionStore no usa ninguna de estas plataformas
+### 3.5 Por qué Violet Boutique no usa ninguna de estas plataformas
 
 El enunciado las prohíbe expresamente. Pero más allá de la restricción académica, el análisis
 muestra que **ninguna resuelve de fábrica la combinación que exige este problema**:
 
-| Necesidad de FashionStore | Qué ofrecen estas plataformas |
+| Necesidad de Violet Boutique | Qué ofrecen estas plataformas |
 |---|---|
 | **Inventario por variante y por sucursal**, con disponibilidad consultable por el cliente antes de ir a la tienda | Manejan stock por variante, pero el stock multi-almacén con consulta pública por sucursal exige extensiones de pago o desarrollo propio |
 | **Reserva de varias prendas para probárselas en una sucursal**, con franja horaria, preparación por el encargado y expiración automática | No existe. Es un flujo propio de este negocio, no del comercio electrónico genérico |

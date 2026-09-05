@@ -1,4 +1,4 @@
-# FashionStore — API REST (FastAPI)
+# Violet Boutique — API REST (FastAPI)
 
 Backend de la plataforma. Sirve al mismo tiempo a la aplicación web (Angular) y
 a la aplicación móvil (Flutter): **un solo contrato, ninguna regla de negocio

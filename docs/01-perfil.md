@@ -1,6 +1,6 @@
 # 1) PERFIL DEL PROYECTO
 
-**Proyecto:** FashionStore — Plataforma Inteligente de Comercio Electrónico para Tienda de Ropa con Vestidores Virtuales vía Realidad Aumentada
+**Proyecto:** Violet Boutique — Plataforma Inteligente de Comercio Electrónico para Tienda de Ropa con Vestidores Virtuales vía Realidad Aumentada
 **Materia:** Sistemas de Información II — Examen 1, S2-2026
 **Docente:** MSc. Ing. Angélica Garzón Cuéllar
 **Grupo (2 integrantes):**
@@ -34,7 +34,7 @@ suma una fricción propia del rubro: el cliente necesita probarse la prenda ante
 que lo obliga a desplazarse a la tienda sin ninguna garantía de que la prenda le quede bien o
 esté disponible al llegar.
 
-El presente proyecto propone el desarrollo de **FashionStore**, una plataforma inteligente de
+El presente proyecto propone el desarrollo de **Violet Boutique**, una plataforma inteligente de
 comercio electrónico que integra en una sola solución el catálogo multicanal (web y móvil), la
 consulta de disponibilidad por sucursal, la reserva de prendas para prueba presencial, la venta
 digital con pasarela de pago, la venta presencial en punto de caja, la gestión de proveedores,

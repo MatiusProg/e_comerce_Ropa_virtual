@@ -21,7 +21,7 @@ export interface DatosConfirmacion {
   selector: 'app-confirmacion',
   imports: [MatButtonModule, MatDialogModule, MatIconModule],
   template: `
-    <h2 mat-dialog-title class="fs-titulo">
+    <h2 mat-dialog-title class="vb-titulo">
       <mat-icon [class.peligro]="datos.peligrosa">
         {{ datos.peligrosa ? 'warning_amber' : 'help_outline' }}
       </mat-icon>
@@ -38,7 +38,7 @@ export interface DatosConfirmacion {
         matButton="filled"
         type="button"
         [class.boton-peligro]="datos.peligrosa"
-        [class.fs-boton-marca]="!datos.peligrosa"
+        [class.vb-boton-marca]="!datos.peligrosa"
         (click)="ref.close(true)"
       >
         {{ datos.confirmar }}
@@ -50,7 +50,7 @@ export interface DatosConfirmacion {
       display: flex;
       align-items: center;
       gap: 0.55rem;
-      color: var(--fs-malva-oscuro);
+      color: var(--vb-malva-oscuro);
     }
     mat-icon.peligro {
       color: var(--mat-sys-error);

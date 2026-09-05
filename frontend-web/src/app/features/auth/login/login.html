@@ -3,7 +3,7 @@
   titulo="Iniciar sesión"
   subtitulo="Ingresá con tu correo y contraseña."
 >
-  <mat-card class="tarjeta fs-filete-superior" appearance="outlined">
+  <mat-card class="tarjeta vb-filete-superior" appearance="outlined">
     @if (enviando()) {
       <mat-progress-bar mode="indeterminate" />
     }
@@ -53,7 +53,7 @@
         <button
           matButton="filled"
           type="submit"
-          class="fs-boton-marca boton-principal"
+          class="vb-boton-marca boton-principal"
           [disabled]="enviando()"
         >
           Entrar

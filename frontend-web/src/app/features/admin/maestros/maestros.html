@@ -1,14 +1,14 @@
 <!-- CU-08 · Gestionar categorías, tallas y colores — «boundary» PantallaMaestros. -->
 <header class="encabezado">
   <div>
-    <h1 class="fs-titulo">Maestros del catálogo</h1>
+    <h1 class="vb-titulo">Maestros del catálogo</h1>
     <p class="bajada">
       La taxonomía sin la cual no puede existir una variante de producto.
     </p>
   </div>
 </header>
 
-<mat-card class="tarjeta fs-filete-superior" appearance="outlined">
+<mat-card class="tarjeta vb-filete-superior" appearance="outlined">
   @if (cargando()) {
     <mat-progress-bar mode="indeterminate" />
   }
@@ -20,7 +20,7 @@
         <p class="explicacion">
           Jerarquía de prendas. Una categoría puede colgar de otra.
         </p>
-        <button matButton="filled" type="button" class="fs-boton-marca" (click)="nuevaCategoria()">
+        <button matButton="filled" type="button" class="vb-boton-marca" (click)="nuevaCategoria()">
           <mat-icon>add</mat-icon>
           Nueva categoría
         </button>
@@ -115,7 +115,7 @@
           <p class="bajada-vacio">
             Sin categorías no se pueden registrar productos en el Ciclo 2.
           </p>
-          <button matButton="filled" type="button" class="fs-boton-marca" (click)="nuevaCategoria()">
+          <button matButton="filled" type="button" class="vb-boton-marca" (click)="nuevaCategoria()">
             Crear la primera
           </button>
         </div>
@@ -128,7 +128,7 @@
         <p class="explicacion">
           El orden decide cómo se muestran en la ficha de producto.
         </p>
-        <button matButton="filled" type="button" class="fs-boton-marca" (click)="nuevaTalla()">
+        <button matButton="filled" type="button" class="vb-boton-marca" (click)="nuevaTalla()">
           <mat-icon>add</mat-icon>
           Nueva talla
         </button>
@@ -203,7 +203,7 @@
         <div class="vacio">
           <mat-icon>straighten</mat-icon>
           <p class="titulo-vacio">Todavía no hay tallas</p>
-          <button matButton="filled" type="button" class="fs-boton-marca" (click)="nuevaTalla()">
+          <button matButton="filled" type="button" class="vb-boton-marca" (click)="nuevaTalla()">
             Crear la primera
           </button>
         </div>
@@ -216,7 +216,7 @@
         <p class="explicacion">
           El valor hexadecimal es el que pinta la muestra en la ficha.
         </p>
-        <button matButton="filled" type="button" class="fs-boton-marca" (click)="nuevoColor()">
+        <button matButton="filled" type="button" class="vb-boton-marca" (click)="nuevoColor()">
           <mat-icon>add</mat-icon>
           Nuevo color
         </button>
@@ -291,7 +291,7 @@
         <div class="vacio">
           <mat-icon>palette</mat-icon>
           <p class="titulo-vacio">Todavía no hay colores</p>
-          <button matButton="filled" type="button" class="fs-boton-marca" (click)="nuevoColor()">
+          <button matButton="filled" type="button" class="vb-boton-marca" (click)="nuevoColor()">
             Crear el primero
           </button>
         </div>

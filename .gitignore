@@ -73,3 +73,7 @@ Desktop.ini
 # .docx no se pueden fusionar. La fuente del contenido son los .md de docs/.
 # Ver docs/00-indice-oficial.md
 /SI2 Ex1 Grupo 16.docx
+
+# Archivo de bloqueo que crea Enterprise Architect al abrir el .eapx.
+# Queda tirado si el proceso EA no cierra limpio; nunca se versiona.
+*.ldb

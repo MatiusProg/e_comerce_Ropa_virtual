@@ -143,9 +143,9 @@ son **doce diagramas** para el Ciclo 1, contando los nueve de secuencia como uno
 | **1.1.4 Requisitos No Funcionales** | `03-captura-requisitos.md` §3.4 | ✔ RNF01–RNF13 |
 | **1.2 Priorización** (los tres ciclos) | `03-captura-requisitos.md` §3.2 | ✔ redactado · falta volcarlo al `.docx` |
 | **1.3.1 Tabla Detalle** · Ciclo 1 | `entregas/ciclo-1/cap-1-captura-requisitos.md` | ✔ las 9 tablas, listas para volcar |
-| **1.3.2 Diseñar Casos de Uso** · Ciclo 1 | `diagramas/FashionStore.eapx` · PNG en `diagramas/casos-de-uso/` | ✔ los 9 diagramas, uno por caso de uso |
+| **1.3.2 Diseñar Casos de Uso** · Ciclo 1 | `diagramas/VioletBoutique.eapx` · PNG en `diagramas/casos-de-uso/` | ✔ los 9 diagramas, uno por caso de uso |
 | **1.4 Prototipar Interfaz** · Ciclo 1 | `prototipos/` (vacío) | ✘ **falta** — ~12 pantallas |
-| **1.5 Estructurar Modelo de CU** · Ciclo 1 | `entregas/ciclo-1/cap-1-captura-requisitos.md` · `diagramas/FashionStore.eapx` | ✔ texto y diagrama |
+| **1.5 Estructurar Modelo de CU** · Ciclo 1 | `entregas/ciclo-1/cap-1-captura-requisitos.md` · `diagramas/VioletBoutique.eapx` | ✔ texto y diagrama |
 | 2.1.1 Identificar Paquetes | `04-analisis-arquitectura.md` §4.1.1 | ✔ los 11 |
 | 2.1.2 Relacionar Paquetes y CU | `04-analisis-arquitectura.md` §4.1.2 | ✔ |
 | 2.1.3 Vista de Paquetes | `04-analisis-arquitectura.md` §4.1.3 | ◐ texto ✔ · **falta el diagrama** |

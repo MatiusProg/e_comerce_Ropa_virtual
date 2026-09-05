@@ -1,4 +1,4 @@
-# FashionStore — aplicación móvil (Flutter)
+# Violet Boutique — aplicación móvil (Flutter)
 
 Aplicación del **Cliente**: catálogo, disponibilidad por sucursal, **vestidor
 virtual con realidad aumentada**, reservas, compra y asistente.
@@ -15,7 +15,7 @@ comando **completa** el proyecto respetando lo que ya existe (`pubspec.yaml` y
 
 ```bash
 cd mobile
-flutter create . --org bo.edu.uagrm.fashionstore --platforms android --project-name fashionstore
+flutter create . --org bo.edu.uagrm.violetboutique --platforms android --project-name violetboutique
 flutter pub get
 ```
 

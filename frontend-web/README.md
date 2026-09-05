@@ -1,4 +1,4 @@
-# FashionStore — aplicación web (Angular)
+# Violet Boutique — aplicación web (Angular)
 
 Angular **22** con componentes *standalone*. Una sola aplicación que sirve a
 cuatro roles, cada uno con su área y sus guardas de ruta.
