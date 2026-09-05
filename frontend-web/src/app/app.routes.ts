@@ -66,6 +66,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/admin/empleados/empleados').then((m) => m.Empleados),
       },
+      {
+        path: 'proveedores',
+        title: 'Proveedores · FashionStore',
+        loadComponent: () =>
+          import('./features/admin/proveedores/proveedores').then((m) => m.Proveedores),
+      },
     ],
   },
   {

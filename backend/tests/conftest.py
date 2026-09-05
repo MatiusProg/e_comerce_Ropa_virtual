@@ -52,6 +52,7 @@ TABLAS_VOLATILES = (
     "sesion_token",
     "cliente",
     "empleado",
+    "proveedor",
     "sucursal",
     "usuario",
 )

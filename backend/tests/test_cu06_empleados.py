@@ -538,3 +538,61 @@ def test_un_cargo_inventado_se_rechaza(
         },
     )
     assert respuesta.status_code == 422
+
+
+def test_una_cuenta_de_proveedor_no_es_vinculable_como_empleado(
+    api: TestClient, cabeceras_admin: dict[str, str], sucursal: int
+) -> None:
+    """Integración con el CU-07.
+
+    El CU-07 crea cuentas con rol Proveedor y las vincula a una ficha. Si el
+    flujo 3c las ofreciera, asignarla como empleado le cambiaría el rol y
+    dejaría al proveedor sin acceso a lo suyo — sin que nada avisara.
+    """
+    proveedor = api.post(
+        "/api/v1/organizacion/proveedores",
+        headers=cabeceras_admin,
+        json={
+            "razon_social": "Telas del Oriente",
+            "identificacion_tributaria": "1234567890",
+            "contacto": "Marta Rojas",
+            "telefono": "70011122",
+            "correo": "ventas@telasoriente.bo",
+            "direccion": "Parque Industrial 45",
+            "activo": True,
+        },
+    )
+    assert proveedor.status_code == 201, proveedor.text
+
+    acceso = api.post(
+        f"/api/v1/organizacion/proveedores/{proveedor.json()['id']}/acceso",
+        headers=cabeceras_admin,
+        json={
+            "nombres": "Marta",
+            "apellidos": "Rojas",
+            "correo": "marta.rojas@telasoriente.bo",
+            "contrasena": "Proveedor1",
+        },
+    )
+    assert acceso.status_code in (200, 201), acceso.text
+
+    vinculables = api.get(f"{EMPLEADOS}/usuarios-vinculables", headers=cabeceras_admin)
+    correos = [u["correo"] for u in vinculables.json()]
+    assert "marta.rojas@telasoriente.bo" not in correos
+
+    # Y aunque se fuerce el identificador, el servidor lo rechaza.
+    usuario_id = acceso.json().get("usuario_id")
+    if usuario_id is not None:
+        respuesta = api.post(
+            EMPLEADOS,
+            headers=cabeceras_admin,
+            json={
+                "documento": "3334445",
+                "telefono": None,
+                "cargo": "CAJERO",
+                "sucursal_id": sucursal,
+                "fecha_ingreso": INGRESO,
+                "usuario_id": usuario_id,
+            },
+        )
+        assert respuesta.status_code == 422

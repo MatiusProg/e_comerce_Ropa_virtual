@@ -17,7 +17,7 @@ from datetime import date
 from sqlalchemy import Row, and_, exists, or_, select
 from sqlalchemy.orm import Session
 
-from app.modules.organizacion.models import Ciudad, Empleado, Sucursal
+from app.modules.organizacion.models import Ciudad, Empleado, Proveedor, Sucursal
 from app.modules.seguridad.models import Rol, Usuario
 
 
@@ -129,41 +129,65 @@ def existe_sucursal(db: Session, sucursal_id: int) -> bool:
     return db.scalar(select(Sucursal.id).where(Sucursal.id == sucursal_id)) is not None
 
 
-def listar_usuarios_vinculables(db: Session) -> list[Row]:
-    """Usuarios sin ficha de empleado, candidatos del flujo alternativo 3c.
+#: Roles cuyas cuentas no pueden convertirse en empleado.
+#:
+#: Un Cliente es la cuenta con la que alguien compra; un Proveedor es la cuenta
+#: con la que una empresa consulta sus propios productos (CU-07). Vincular
+#: cualquiera de las dos a una ficha de empleado le cambiaria el rol y le
+#: quitaria el acceso a lo suyo, sin avisar.
+ROLES_NO_VINCULABLES = ("CLIENTE", "PROVEEDOR")
 
-    Se excluyen los clientes: un empleado no puede ser la misma cuenta con la
-    que alguien compra, porque su rol y su ambito de sucursal son otros. Se
-    excluyen tambien las cuentas desactivadas, que no tendria sentido vincular.
+
+def _condiciones_de_vinculable():
+    """Que hace que una cuenta pueda convertirse en empleado (flujo 3c).
+
+    Se comparte entre el listado y la verificacion del alta: si las dos no
+    dijeran exactamente lo mismo, la interfaz ofreceria candidatos que el
+    servidor despues rechaza.
     """
     tiene_empleado = exists().where(Empleado.usuario_id == Usuario.id)
+    # El CU-07 vincula la ficha de proveedor a una cuenta propia. Sin esta
+    # condicion, esa cuenta apareceria como disponible y asignarla como
+    # empleado le cambiaria el rol, dejando al proveedor sin acceso a su ficha.
+    tiene_proveedor = exists().where(Proveedor.usuario_id == Usuario.id)
 
+    return (
+        ~tiene_empleado,
+        ~tiene_proveedor,
+        Usuario.activo.is_(True),
+        Rol.nombre.not_in(ROLES_NO_VINCULABLES),
+    )
+
+
+def listar_usuarios_vinculables(db: Session) -> list[Row]:
+    """Cuentas que pueden convertirse en empleado (flujo alternativo 3c)."""
     return list(
         db.execute(
-            select(Usuario.id, Usuario.correo, Usuario.nombres, Usuario.apellidos, Rol.nombre.label("rol"))
-            .join(Rol, Rol.id == Usuario.rol_id)
-            .where(
-                ~tiene_empleado,
-                Usuario.activo.is_(True),
-                Rol.nombre != "CLIENTE",
+            select(
+                Usuario.id,
+                Usuario.correo,
+                Usuario.nombres,
+                Usuario.apellidos,
+                Rol.nombre.label("rol"),
             )
+            .join(Rol, Rol.id == Usuario.rol_id)
+            .where(*_condiciones_de_vinculable())
             .order_by(Usuario.apellidos, Usuario.nombres)
         ).all()
     )
 
 
 def obtener_usuario_vinculable(db: Session, usuario_id: int) -> Usuario | None:
-    """El usuario del flujo 3c, solo si sigue estando libre.
+    """El usuario del flujo 3c, solo si sigue cumpliendo las condiciones.
 
     Se vuelve a comprobar aunque la interfaz haya ofrecido una lista ya
     filtrada: entre que se muestra el formulario y se confirma, otro
-    administrador pudo haberlo vinculado.
+    administrador pudo haberlo vinculado o haberle dado acceso como proveedor.
     """
-    tiene_empleado = exists().where(Empleado.usuario_id == Usuario.id)
     return db.scalar(
-        select(Usuario).where(
-            and_(Usuario.id == usuario_id, Usuario.activo.is_(True), ~tiene_empleado)
-        )
+        select(Usuario)
+        .join(Rol, Rol.id == Usuario.rol_id)
+        .where(and_(Usuario.id == usuario_id, *_condiciones_de_vinculable()))
     )
 
 

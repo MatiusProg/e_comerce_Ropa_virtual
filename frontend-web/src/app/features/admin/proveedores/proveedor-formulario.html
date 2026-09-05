@@ -1,0 +1,85 @@
+@if (guardando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<h2 mat-dialog-title class="fs-titulo">
+  {{ esEdicion ? 'Editar proveedor' : 'Nuevo proveedor' }}
+</h2>
+
+<mat-dialog-content>
+  @if (error(); as e) {
+    <div class="aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ e }}</span>
+    </div>
+  }
+
+  <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate id="formulario-proveedor">
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Razón social</mat-label>
+      <input matInput formControlName="razon_social" />
+      @if (formulario.controls.razon_social.hasError('required')) {
+        <mat-error>Ingrese la razón social.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Identificación tributaria</mat-label>
+      <input matInput formControlName="identificacion_tributaria" />
+      <mat-hint>NIT o su equivalente. No puede repetirse.</mat-hint>
+      @if (formulario.controls.identificacion_tributaria.hasError('required')) {
+        <mat-error>Ingrese la identificación tributaria.</mat-error>
+      } @else if (formulario.controls.identificacion_tributaria.hasError('duplicado')) {
+        <mat-error>Ya hay un proveedor con esa identificación.</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="fila">
+      <mat-form-field appearance="outline">
+        <mat-label>Persona de contacto</mat-label>
+        <input matInput formControlName="contacto" />
+        <mat-hint>Opcional.</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Teléfono</mat-label>
+        <input matInput formControlName="telefono" />
+        <mat-hint>Opcional.</mat-hint>
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Correo de contacto</mat-label>
+      <input matInput type="email" formControlName="correo" />
+      <mat-hint>Opcional. No sirve para iniciar sesión.</mat-hint>
+      @if (formulario.controls.correo.hasError('email')) {
+        <mat-error>El correo no tiene un formato válido.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Dirección</mat-label>
+      <input matInput formControlName="direccion" />
+      <mat-hint>Opcional.</mat-hint>
+    </mat-form-field>
+
+    @if (!esEdicion) {
+      <mat-slide-toggle formControlName="activo" class="interruptor">
+        Disponible para asociarle productos desde ya
+      </mat-slide-toggle>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="ref.close(false)">Cancelar</button>
+  <button
+    matButton="filled"
+    type="submit"
+    form="formulario-proveedor"
+    class="fs-boton-marca"
+    [disabled]="guardando()"
+  >
+    {{ esEdicion ? 'Guardar cambios' : 'Registrar proveedor' }}
+  </button>
+</mat-dialog-actions>
