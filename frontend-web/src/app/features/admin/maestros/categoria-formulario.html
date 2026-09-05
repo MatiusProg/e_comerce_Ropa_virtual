@@ -1,0 +1,81 @@
+@if (guardando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<h2 mat-dialog-title class="fs-titulo">
+  {{ esEdicion ? 'Editar categoría' : 'Nueva categoría' }}
+</h2>
+
+<mat-dialog-content>
+  @if (error(); as e) {
+    <div class="aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ e }}</span>
+    </div>
+  }
+
+  <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate id="formulario-categoria">
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Nombre</mat-label>
+      <input matInput formControlName="nombre" />
+      @if (formulario.controls.nombre.hasError('required')) {
+        <mat-error>Ingresá el nombre.</mat-error>
+      } @else if (formulario.controls.nombre.hasError('duplicado')) {
+        <!-- Excepción E1. -->
+        <mat-error>Ya existe una categoría con ese nombre en el mismo nivel.</mat-error>
+      } @else if (formulario.controls.nombre.hasError('maxlength')) {
+        <mat-error>Como máximo 60 caracteres.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Categoría madre</mat-label>
+      <mat-select formControlName="categoria_padre_id">
+        <mat-option [value]="null">— Ninguna (categoría de primer nivel) —</mat-option>
+        @for (c of candidatas(); track c.categoria.id) {
+          <mat-option [value]="c.categoria.id">
+            <span class="sangria">{{ sangria(c.nivel) }}</span>{{ c.categoria.nombre }}
+          </mat-option>
+        }
+      </mat-select>
+      <mat-hint>
+        @if (esEdicion) {
+          No se ofrecen sus propias subcategorías: colgarla de una de ellas dejaría
+          la rama fuera del árbol.
+        } @else {
+          Dejala en «ninguna» para que sea una categoría de primer nivel.
+        }
+      </mat-hint>
+      @if (formulario.controls.categoria_padre_id.hasError('ciclo')) {
+        <!-- Excepción E2. -->
+        <mat-error>Esa categoría cuelga de la que estás editando.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Orden de presentación</mat-label>
+      <input matInput type="number" formControlName="orden" min="0" />
+      <mat-hint>
+        Decide en qué posición aparece entre sus hermanas. Menor va primero.
+      </mat-hint>
+      @if (formulario.controls.orden.hasError('required')) {
+        <mat-error>Indicá un orden.</mat-error>
+      } @else if (formulario.controls.orden.hasError('min')) {
+        <mat-error>No puede ser negativo.</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="ref.close(false)">Cancelar</button>
+  <button
+    matButton="filled"
+    type="submit"
+    form="formulario-categoria"
+    class="fs-boton-marca"
+    [disabled]="guardando()"
+  >
+    {{ esEdicion ? 'Guardar cambios' : 'Crear categoría' }}
+  </button>
+</mat-dialog-actions>

@@ -72,7 +72,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/admin/proveedores/proveedores').then((m) => m.Proveedores),
       },
-      // CU-08 (categorias, tallas y colores) entra aquí, antes de temporadas.
+      {
+        path: 'maestros',
+        title: 'Maestros del catálogo · FashionStore',
+        loadComponent: () =>
+          import('./features/admin/maestros/maestros').then((m) => m.Maestros),
+      },
       {
         path: 'temporadas',
         title: 'Temporadas · FashionStore',

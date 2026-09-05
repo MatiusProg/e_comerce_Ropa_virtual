@@ -22,6 +22,7 @@ from app.modules.organizacion.proveedores_router import (
     router_proveedor as proveedores_mi_ficha_router,
 )
 from app.modules.catalogo.router import router as catalogo_router
+from app.modules.catalogo.maestros.router import router as catalogo_maestros_router
 from app.modules.catalogo.temporadas_router import router as catalogo_temporadas_router
 
 # --- Ciclo 2 -------------------------------------------------------------
@@ -99,6 +100,7 @@ app.include_router(empleados_router, prefix=API)
 app.include_router(proveedores_router, prefix=API)
 app.include_router(proveedores_mi_ficha_router, prefix=API)
 app.include_router(catalogo_router, prefix=API)
+app.include_router(catalogo_maestros_router, prefix=API)
 app.include_router(catalogo_temporadas_router, prefix=API)
 
 # --- Ciclo 2 -------------------------------------------------------------
