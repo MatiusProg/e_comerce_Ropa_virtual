@@ -2,7 +2,7 @@
   <mat-progress-bar mode="indeterminate" />
 }
 
-<h2 mat-dialog-title class="fs-titulo">
+<h2 mat-dialog-title class="vb-titulo">
   {{ esEdicion ? 'Editar empleado' : 'Registrar empleado' }}
 </h2>
 
@@ -211,7 +211,7 @@
     matButton="filled"
     type="submit"
     form="formulario-empleado"
-    class="fs-boton-marca"
+    class="vb-boton-marca"
     [disabled]="guardando()"
   >
     {{ esEdicion ? 'Guardar cambios' : 'Registrar empleado' }}

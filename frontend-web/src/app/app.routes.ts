@@ -19,12 +19,12 @@ export const routes: Routes = [
   // --- Público (sin sesión) ---------------------------------------------
   {
     path: 'login',
-    title: 'Iniciar sesión · FashionStore',
+    title: 'Iniciar sesión · Violet Boutique',
     loadComponent: () => import('./features/auth/login/login').then((m) => m.Login),
   },
   {
     path: 'registro',
-    title: 'Crear cuenta · FashionStore',
+    title: 'Crear cuenta · Violet Boutique',
     loadComponent: () => import('./features/auth/registro/registro').then((m) => m.Registro),
   },
 
@@ -38,49 +38,49 @@ export const routes: Routes = [
       {
         path: '',
         pathMatch: 'full',
-        title: 'Administración · FashionStore',
+        title: 'Administración · Violet Boutique',
         loadComponent: () =>
           import('./shared/bienvenida/bienvenida').then((m) => m.Bienvenida),
       },
       {
         path: 'usuarios',
-        title: 'Usuarios · FashionStore',
+        title: 'Usuarios · Violet Boutique',
         loadComponent: () =>
           import('./features/admin/usuarios/usuarios').then((m) => m.Usuarios),
       },
       {
         path: 'sucursales',
-        title: 'Sucursales · FashionStore',
+        title: 'Sucursales · Violet Boutique',
         loadComponent: () =>
           import('./features/admin/sucursales/sucursales').then((m) => m.Sucursales),
       },
       {
         path: 'ciudades',
-        title: 'Ciudades · FashionStore',
+        title: 'Ciudades · Violet Boutique',
         loadComponent: () =>
           import('./features/admin/ciudades/ciudades').then((m) => m.Ciudades),
       },
       {
         path: 'empleados',
-        title: 'Empleados · FashionStore',
+        title: 'Empleados · Violet Boutique',
         loadComponent: () =>
           import('./features/admin/empleados/empleados').then((m) => m.Empleados),
       },
       {
         path: 'proveedores',
-        title: 'Proveedores · FashionStore',
+        title: 'Proveedores · Violet Boutique',
         loadComponent: () =>
           import('./features/admin/proveedores/proveedores').then((m) => m.Proveedores),
       },
       {
         path: 'maestros',
-        title: 'Maestros del catálogo · FashionStore',
+        title: 'Maestros del catálogo · Violet Boutique',
         loadComponent: () =>
           import('./features/admin/maestros/maestros').then((m) => m.Maestros),
       },
       {
         path: 'temporadas',
-        title: 'Temporadas · FashionStore',
+        title: 'Temporadas · Violet Boutique',
         loadComponent: () =>
           import('./features/admin/temporadas/temporadas').then((m) => m.Temporadas),
       },
@@ -88,26 +88,26 @@ export const routes: Routes = [
   },
   {
     path: 'mi-cuenta',
-    title: 'Mi perfil · FashionStore',
+    title: 'Mi perfil · Violet Boutique',
     canActivate: [sesionGuard, rolGuard('CLIENTE')],
     loadComponent: () =>
       import('./features/cliente/perfil/perfil').then((m) => m.Perfil),
   },
   {
     path: 'sucursal',
-    title: 'Sucursal · FashionStore',
+    title: 'Sucursal · Violet Boutique',
     canActivate: [sesionGuard, rolGuard('ENCARGADO')],
     loadComponent: inicio,
   },
   {
     path: 'caja',
-    title: 'Caja · FashionStore',
+    title: 'Caja · Violet Boutique',
     canActivate: [sesionGuard, rolGuard('CAJERO')],
     loadComponent: inicio,
   },
   {
     path: 'proveedor',
-    title: 'Proveedor · FashionStore',
+    title: 'Proveedor · Violet Boutique',
     canActivate: [sesionGuard, rolGuard('PROVEEDOR')],
     loadComponent: inicio,
   },

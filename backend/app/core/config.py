@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     # y la web. En produccion se carga la cadena del SESSION POOLER de Supabase
     # (puerto 5432), no la conexion directa. En local apunta al contenedor de
     # docker-compose. Ver backend/.env.example.
-    DATABASE_URL: str = "postgresql+psycopg://fashionstore:fashionstore@localhost:5432/fashionstore"
+    DATABASE_URL: str = "postgresql+psycopg://violetboutique:violetboutique@localhost:5432/violetboutique"
 
     # --- Seguridad (RNF01) -----------------------------------------------
     JWT_SECRET_KEY: str = "cambiar-esta-clave-en-produccion"
@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     IA_MAX_PETICIONES_DIA: int = 50       # tope por usuario, control de costo
 
     # --- Datos iniciales (app/db/seed.py) --------------------------------
-    ADMIN_EMAIL: str = "admin@fashionstore.bo"
+    ADMIN_EMAIL: str = "admin@violetboutique.bo"
     ADMIN_PASSWORD: str = ""      # sin valor por defecto: ver seed.py
 
     # --- Almacenamiento de imagenes --------------------------------------

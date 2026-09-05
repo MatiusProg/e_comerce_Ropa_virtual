@@ -192,7 +192,7 @@ No cobra costo de alta, ni mensualidad, ni cargos ocultos por cierre de cuenta.
    y solicita a Stripe una Checkout Session
        ↓
 3. Stripe devuelve una URL; el cliente es redirigido allí
-   e ingresa la tarjeta de prueba          ← los datos NUNCA pasan por FashionStore
+   e ingresa la tarjeta de prueba          ← los datos NUNCA pasan por Violet Boutique
        ↓
 4. Stripe notifica el resultado al backend por WEBHOOK FIRMADO
        ↓

@@ -1,6 +1,30 @@
-﻿$ErrorActionPreference = 'Stop'
-$modelo = 'D:\UNI\Si2\PRIMER_PARCIAL\docs\diagramas\FashionStore.eapx'
+﻿param(
+    # Confirma que se quiere DESTRUIR el modelo y volver a crearlo desde cero.
+    [switch]$Recrear
+)
+
+# =========================================================================
+# CAP. 1 - 1.5 Modelo de Casos de Uso Estructurado y 1.3.2 un diagrama por
+# caso de uso.
+#
+# ESTE ES EL UNICO GENERADOR QUE NO ES ADITIVO: crea el modelo desde la
+# plantilla vacia de EA. Los otros diez esperan que el .eapx ya exista y solo
+# le agregan lo que falta.
+#
+# Por eso exige el modificador -Recrear: se invoca igual que los demas, y sin
+# la barrera un tipeo distraido borraria TODOS los diagramas de los cuatro
+# capitulos --- incluidos los acomodados a mano, que no se recuperan.
+# =========================================================================
+
+$ErrorActionPreference = 'Stop'
+$modelo = 'D:\UNI\Si2\PRIMER_PARCIAL\docs\diagramas\VioletBoutique.eapx'
 $base   = 'C:\Program Files (x86)\Sparx Systems\EA Trial\EABase.eapx'
+
+if ((Test-Path $modelo) -and -not $Recrear) {
+    throw ("$modelo ya existe y este script lo BORRA para rehacerlo desde cero. " +
+           "Si es lo que querés, volvé a correrlo con -Recrear. " +
+           "Los diagramas del resto de los capitulos NO se recuperan.")
+}
 
 if (Test-Path $modelo) { Remove-Item $modelo -Force }
 Copy-Item $base $modelo
@@ -29,8 +53,8 @@ function New-Conector($src, $dst, $tipo, $estereotipo) {
 }
 
 $root     = $ea.Models.GetAt(0)
-$pFashion = New-Paquete $root     'FashionStore'
-$pCap1    = New-Paquete $pFashion 'CAP. 1 - Captura de Requisitos'
+$pRaiz = New-Paquete $root     'Violet Boutique'
+$pCap1    = New-Paquete $pRaiz 'CAP. 1 - Captura de Requisitos'
 $pCiclo1  = New-Paquete $pCap1    'Ciclo 1'
 
 $dia = $pCiclo1.Diagrams.AddNew('1.5 Modelo de Casos de Uso Estructurado - CICLO #1', 'UseCase')

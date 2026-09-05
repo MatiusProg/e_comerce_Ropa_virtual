@@ -11,9 +11,9 @@
 .tarjeta {
   width: 100%;
   max-width: 44rem;
-  border-radius: var(--fs-radio);
+  border-radius: var(--vb-radio);
   border: 1px solid var(--mat-sys-outline-variant);
-  box-shadow: var(--fs-sombra-suave);
+  box-shadow: var(--vb-sombra-suave);
   overflow: hidden;
   background: var(--mat-sys-surface);
 }
@@ -35,8 +35,8 @@
   width: 5rem;
   height: 5rem;
   border-radius: 50%;
-  background: var(--fs-degradado-suave);
-  border: 1px solid var(--fs-oro-rosa);
+  background: var(--vb-degradado-suave);
+  border: 1px solid var(--vb-oro-rosa);
   box-shadow: 0 6px 18px rgb(142 74 103 / 12%);
   margin-bottom: 0.5rem;
 }
@@ -45,21 +45,21 @@
   width: 2.4rem;
   height: 2.4rem;
   font-size: 2.4rem;
-  color: var(--fs-malva);
+  color: var(--vb-malva);
 }
 
 h1 {
   margin: 0.35rem 0 0;
   font-size: 1.9rem;
   font-weight: 600;
-  color: var(--fs-malva-oscuro);
+  color: var(--vb-malva-oscuro);
 }
 
 .area {
   margin: 0.25rem 0 0.5rem;
   font-weight: 600;
   letter-spacing: 0.02em;
-  color: var(--fs-malva);
+  color: var(--vb-malva);
 }
 
 .detalle {

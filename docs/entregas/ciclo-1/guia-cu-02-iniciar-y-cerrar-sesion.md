@@ -127,7 +127,7 @@ La pantalla de login ya está esbozada en
 
 Sobre el **sistema desplegado**, no en local:
 
-1. Iniciar sesión con `admin@fashionstore.bo` devuelve 200 y un token.
+1. Iniciar sesión con `admin@violetboutique.bo` devuelve 200 y un token.
 2. Ese token abre un endpoint protegido.
 3. Una contraseña incorrecta devuelve 401, sin decir qué campo falló.
 4. Cerrar sesión devuelve 204 y **el mismo token deja de servir** — éste es el

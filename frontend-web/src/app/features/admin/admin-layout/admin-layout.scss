@@ -1,13 +1,13 @@
 :host {
   display: block;
   min-height: 100dvh;
-  background: var(--fs-marfil);
+  background: var(--vb-marfil);
 }
 
 .barra {
-  background: var(--fs-degradado);
+  background: var(--vb-degradado);
   color: #fff;
-  box-shadow: var(--fs-sombra-suave);
+  box-shadow: var(--vb-sombra-suave);
   gap: 0.85rem;
 }
 
@@ -98,12 +98,12 @@
   }
 
   a:hover {
-    color: var(--fs-malva);
+    color: var(--vb-malva);
   }
 
   a.activo {
-    color: var(--fs-malva);
-    border-bottom-color: var(--fs-malva);
+    color: var(--vb-malva);
+    border-bottom-color: var(--vb-malva);
   }
 
   // Secciones que todavía no existen: se ven, pero no engañan.

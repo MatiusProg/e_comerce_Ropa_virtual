@@ -140,7 +140,7 @@ discontinua), mensaje asíncrono (flecha abierta), y **fragmentos combinados**: 
 | **Implementación** | Componentes | ¿En qué partes se materializa? |
 | **Pruebas** | Actividad (escenarios) | ¿Cómo se verifica? |
 
-## 5. Los diagramas que se elaboran en FashionStore
+## 5. Los diagramas que se elaboran en Violet Boutique
 
 | # | Diagrama | Dónde | Ciclo |
 |---|---|---|---|

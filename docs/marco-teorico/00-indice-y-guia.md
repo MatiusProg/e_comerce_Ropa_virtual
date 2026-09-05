@@ -54,7 +54,7 @@ Definición de comercio electrónico; modelos de negocio (B2C, B2B, C2C, marketp
 que componen una tienda en línea (catálogo, carrito, checkout, pasarela, logística, postventa);
 diferencias entre tienda propia y marketplace.
 
-**Conectar con el proyecto:** FashionStore es un B2C de tienda propia con retiro y prueba en
+**Conectar con el proyecto:** Violet Boutique es un B2C de tienda propia con retiro y prueba en
 sucursal — un modelo híbrido físico-digital que no es el de un e-commerce puro. Conviene decirlo
 explícitamente, porque justifica por qué no se usa un framework de e-commerce.
 
@@ -73,7 +73,7 @@ Por cada plataforma, responder:
 - Cómo resuelven la **talla y la variante** en indumentaria (es el problema central de este
   proyecto): guías de talla, reseñas con talle, recomendación de talla.
 - Qué hacen con las **recomendaciones** y en qué se basan.
-- Qué elementos de su experiencia **se replican en FashionStore** y cuáles no, y por qué.
+- Qué elementos de su experiencia **se replican en Violet Boutique** y cuáles no, y por qué.
 
 > Shopify aparece acá como usuario y también en la lista de frameworks **prohibidos** por el
 > enunciado (junto con PrestaShop, Magento y WooCommerce). Estudiarlo sí; usarlo no.
@@ -159,7 +159,7 @@ Explicar cómo influye cada uno y cómo se combinan en una tarifa:
 - **Tamaño**: si entra en una mochila, si exige vehículo, si permite agrupar varias entregas.
 - Otros: tiempo de espera en el comercio, zona, propina.
 
-**Cierre.** El delivery propio está **fuera del alcance** de FashionStore
+**Cierre.** El delivery propio está **fuera del alcance** de Violet Boutique
 (`docs/01-perfil.md` §1.4.2): el sistema registra el envío a domicilio como modalidad de entrega
 con dirección y costo, pero no asigna repartidores ni calcula rutas. Decirlo explícitamente
 evita que la docente asuma que se prometió algo que no está.
@@ -179,7 +179,7 @@ evita que la docente asuma que se prometió algo que no está.
 - Artefactos que produce cada flujo.
 - Comparación breve con un método ágil, y por qué para este proyecto se usa PUDS.
 
-**Conectar con el proyecto:** los tres ciclos de FashionStore (`docs/05-plan-y-cronograma.md`
+**Conectar con el proyecto:** los tres ciclos de Violet Boutique (`docs/05-plan-y-cronograma.md`
 §5.2) son iteraciones del PUDS, una por presentación. Mostrar la tabla de ciclos como aplicación
 concreta de la teoría.
 

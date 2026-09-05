@@ -1,4 +1,4 @@
-"""Punto de entrada de la API REST de FashionStore.
+"""Punto de entrada de la API REST de Violet Boutique.
 
 Monta un router por cada paquete de analisis (ver docs/04-analisis-arquitectura.md).
 Los paquetes se activan por ciclo: los del ciclo 1 ya estan montados, los de los
@@ -39,7 +39,7 @@ from app.modules.catalogo.temporadas_router import router as catalogo_temporadas
 
 
 app = FastAPI(
-    title="FashionStore API",
+    title="Violet Boutique API",
     description=(
         "Plataforma inteligente de comercio electronico para tienda de ropa "
         "con vestidores virtuales via realidad aumentada. "
@@ -69,7 +69,7 @@ def raiz() -> dict:
     un 404 seco, que se confunde con un despliegue roto.
     """
     return {
-        "servicio": "fashionstore-api",
+        "servicio": "violetboutique-api",
         "version": app.version,
         "documentacion": "/docs",
         "salud": "/health",
@@ -82,7 +82,7 @@ def health() -> dict:
     """Sonda de salud. La usa Railway para saber si el servicio esta vivo."""
     return {
         "status": "ok",
-        "servicio": "fashionstore-api",
+        "servicio": "violetboutique-api",
         "version": app.version,
         "entorno": settings.ENTORNO,
     }

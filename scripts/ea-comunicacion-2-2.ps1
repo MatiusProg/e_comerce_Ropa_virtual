@@ -36,7 +36,7 @@
 # =========================================================================
 
 $ErrorActionPreference = 'Stop'
-$modelo = 'D:\UNI\Si2\PRIMER_PARCIAL\docs\diagramas\FashionStore.eapx'
+$modelo = 'D:\UNI\Si2\PRIMER_PARCIAL\docs\diagramas\VioletBoutique.eapx'
 if (-not (Test-Path $modelo)) { throw "No existe $modelo" }
 
 $ea = New-Object -ComObject EA.Repository
@@ -109,10 +109,10 @@ function New-Mensaje($src, $dst, $nombre) {
 # ---------------- estructura ----------------
 
 $root     = $ea.Models.GetAt(0)
-$pFashion = Get-OCrearPaqueteModelo $root 'FashionStore'
-Registrar-Elementos $pFashion
+$pRaiz = Get-OCrearPaqueteModelo $root 'Violet Boutique'
+Registrar-Elementos $pRaiz
 
-$pCap2 = Get-OCrearPaqueteModelo $pFashion 'CAP. 2 - Flujo de Trabajo: Analisis'
+$pCap2 = Get-OCrearPaqueteModelo $pRaiz 'CAP. 2 - Flujo de Trabajo: Analisis'
 $p22   = Get-OCrearPaqueteModelo $pCap2    '2.2 Analizar Casos de Uso'
 $pClas = Get-OCrearPaqueteModelo $p22      'Clases de Analisis'
 

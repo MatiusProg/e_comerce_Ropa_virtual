@@ -63,7 +63,7 @@ def _alta(
     sucursal_id: int,
     documento: str = "5551234",
     cargo: str = "ENCARGADO",
-    correo: str = "encargado.centro@fashionstore.bo",
+    correo: str = "encargado.centro@violetboutique.bo",
 ) -> dict:
     respuesta = api.post(
         EMPLEADOS,
@@ -122,7 +122,7 @@ def test_registrar_un_empleado_crea_su_cuenta_con_el_rol_del_cargo(
     # La cuenta existe y entra con el rol del cargo.
     entrada = api.post(
         "/api/v1/auth/login",
-        json={"correo": "encargado.centro@fashionstore.bo", "contrasena": "Trabajo123"},
+        json={"correo": "encargado.centro@violetboutique.bo", "contrasena": "Trabajo123"},
     )
     assert entrada.status_code == 200
     assert entrada.json()["usuario"]["rol"] == "ENCARGADO"
@@ -146,7 +146,7 @@ def test_excepcion_e1_documento_ya_registrado(
             "fecha_ingreso": INGRESO,
             "nombres": "Otro",
             "apellidos": "Distinto",
-            "correo": "otro.distinto@fashionstore.bo",
+            "correo": "otro.distinto@violetboutique.bo",
             "contrasena": "Trabajo123",
         },
     )
@@ -169,7 +169,7 @@ def test_excepcion_e2_no_se_asigna_personal_a_una_sucursal_dada_de_baja(
             "fecha_ingreso": INGRESO,
             "nombres": "Nadie",
             "apellidos": "Aqui",
-            "correo": "nadie.aqui@fashionstore.bo",
+            "correo": "nadie.aqui@violetboutique.bo",
             "contrasena": "Trabajo123",
         },
     )
@@ -200,7 +200,7 @@ def test_excepcion_e3_si_falla_el_alta_no_queda_la_cuenta_a_medias(
             "fecha_ingreso": INGRESO,
             "nombres": "Nuevo",
             "apellidos": "Cajero",
-            "correo": "nuevo.cajero@fashionstore.bo",
+            "correo": "nuevo.cajero@violetboutique.bo",
             "contrasena": "Trabajo123",
         },
     )
@@ -217,7 +217,7 @@ def test_excepcion_e3_si_falla_el_alta_no_queda_la_cuenta_a_medias(
             "fecha_ingreso": INGRESO,
             "nombres": "Nuevo",
             "apellidos": "Cajero",
-            "correo": "nuevo.cajero@fashionstore.bo",
+            "correo": "nuevo.cajero@violetboutique.bo",
             "contrasena": "Trabajo123",
         },
     )
@@ -238,7 +238,7 @@ def test_flujo_3c_vincular_una_cuenta_existente(
     rol_cajero = db.scalar(select(Rol).where(Rol.nombre == "CAJERO"))
     db.add(
         Usuario(
-            correo="suelto@fashionstore.bo",
+            correo="suelto@violetboutique.bo",
             hash_contrasena=hash_password("Trabajo123"),
             nombres="Cuenta",
             apellidos="Suelta",
@@ -250,7 +250,7 @@ def test_flujo_3c_vincular_una_cuenta_existente(
     vinculables = api.get(f"{EMPLEADOS}/usuarios-vinculables", headers=cabeceras_admin)
     assert vinculables.status_code == 200
     candidato = next(
-        u for u in vinculables.json() if u["correo"] == "suelto@fashionstore.bo"
+        u for u in vinculables.json() if u["correo"] == "suelto@violetboutique.bo"
     )
 
     respuesta = api.post(
@@ -266,12 +266,12 @@ def test_flujo_3c_vincular_una_cuenta_existente(
         },
     )
     assert respuesta.status_code == 201, respuesta.text
-    assert respuesta.json()["correo"] == "suelto@fashionstore.bo"
+    assert respuesta.json()["correo"] == "suelto@violetboutique.bo"
 
     # El cargo mandó sobre el rol que tenía la cuenta.
     entrada = api.post(
         "/api/v1/auth/login",
-        json={"correo": "suelto@fashionstore.bo", "contrasena": "Trabajo123"},
+        json={"correo": "suelto@violetboutique.bo", "contrasena": "Trabajo123"},
     )
     assert entrada.json()["usuario"]["rol"] == "ENCARGADO"
     assert entrada.json()["usuario"]["sucursal_id"] == sucursal
@@ -283,7 +283,7 @@ def test_los_clientes_no_aparecen_como_vinculables(
     """Un empleado no puede ser la misma cuenta con la que alguien compra."""
     respuesta = api.get(f"{EMPLEADOS}/usuarios-vinculables", headers=cabeceras_admin)
     correos = [u["correo"] for u in respuesta.json()]
-    assert "ana.cliente@fashionstore.bo" not in correos
+    assert "ana.cliente@violetboutique.bo" not in correos
 
 
 def test_una_cuenta_que_ya_es_empleado_deja_de_ser_vinculable(
@@ -309,7 +309,7 @@ def test_no_se_admiten_los_dos_caminos_del_alta_a_la_vez(
             "sucursal_id": sucursal,
             "fecha_ingreso": INGRESO,
             "usuario_id": 1,
-            "correo": "ambiguo@fashionstore.bo",
+            "correo": "ambiguo@violetboutique.bo",
             "nombres": "Ambi",
             "apellidos": "Guo",
             "contrasena": "Trabajo123",
@@ -331,7 +331,7 @@ def test_reasignar_de_sucursal_revoca_el_token_del_empleado(
     """
     empleado = _alta(api, cabeceras_admin, sucursal_id=sucursal)
     suyo = {
-        "Authorization": f"Bearer {_token(api, 'encargado.centro@fashionstore.bo', 'Trabajo123')}"
+        "Authorization": f"Bearer {_token(api, 'encargado.centro@violetboutique.bo', 'Trabajo123')}"
     }
     # El token sirve antes de la reasignación.
     assert api.get("/api/v1/auth/yo", headers=suyo).status_code == 200
@@ -351,7 +351,7 @@ def test_reasignar_de_sucursal_revoca_el_token_del_empleado(
     # Al volver a entrar, el ámbito nuevo ya viaja en el token.
     entrada = api.post(
         "/api/v1/auth/login",
-        json={"correo": "encargado.centro@fashionstore.bo", "contrasena": "Trabajo123"},
+        json={"correo": "encargado.centro@violetboutique.bo", "contrasena": "Trabajo123"},
     )
     assert entrada.json()["usuario"]["sucursal_id"] == otra
 
@@ -369,7 +369,7 @@ def test_cambiar_el_cargo_cambia_el_rol_de_la_cuenta(
 
     entrada = api.post(
         "/api/v1/auth/login",
-        json={"correo": "encargado.centro@fashionstore.bo", "contrasena": "Trabajo123"},
+        json={"correo": "encargado.centro@violetboutique.bo", "contrasena": "Trabajo123"},
     )
     assert entrada.json()["usuario"]["rol"] == "CAJERO"
 
@@ -380,7 +380,7 @@ def test_editar_datos_sin_tocar_el_ambito_no_revoca_la_sesion(
     """Corregir un teléfono no tiene por qué echar al empleado del sistema."""
     empleado = _alta(api, cabeceras_admin, sucursal_id=sucursal)
     suyo = {
-        "Authorization": f"Bearer {_token(api, 'encargado.centro@fashionstore.bo', 'Trabajo123')}"
+        "Authorization": f"Bearer {_token(api, 'encargado.centro@violetboutique.bo', 'Trabajo123')}"
     }
 
     respuesta = api.patch(
@@ -428,7 +428,7 @@ def test_dar_de_baja_desactiva_la_cuenta_y_corta_el_acceso(
 ) -> None:
     empleado = _alta(api, cabeceras_admin, sucursal_id=sucursal)
     suyo = {
-        "Authorization": f"Bearer {_token(api, 'encargado.centro@fashionstore.bo', 'Trabajo123')}"
+        "Authorization": f"Bearer {_token(api, 'encargado.centro@violetboutique.bo', 'Trabajo123')}"
     }
 
     respuesta = api.patch(
@@ -446,7 +446,7 @@ def test_dar_de_baja_desactiva_la_cuenta_y_corta_el_acceso(
     # ...y tampoco puede volver a entrar.
     entrada = api.post(
         "/api/v1/auth/login",
-        json={"correo": "encargado.centro@fashionstore.bo", "contrasena": "Trabajo123"},
+        json={"correo": "encargado.centro@violetboutique.bo", "contrasena": "Trabajo123"},
     )
     assert entrada.status_code == 403
 
@@ -490,7 +490,7 @@ def test_el_listado_filtra_por_sucursal_cargo_y_estado(
         sucursal_id=otra,
         documento="2223334",
         cargo="CAJERO",
-        correo="cajero.norte@fashionstore.bo",
+        correo="cajero.norte@violetboutique.bo",
     )
 
     por_sucursal = api.get(
@@ -533,7 +533,7 @@ def test_un_cargo_inventado_se_rechaza(
             "fecha_ingreso": INGRESO,
             "nombres": "Falso",
             "apellidos": "Cargo",
-            "correo": "falso.cargo@fashionstore.bo",
+            "correo": "falso.cargo@violetboutique.bo",
             "contrasena": "Trabajo123",
         },
     )

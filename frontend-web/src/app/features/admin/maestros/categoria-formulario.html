@@ -2,7 +2,7 @@
   <mat-progress-bar mode="indeterminate" />
 }
 
-<h2 mat-dialog-title class="fs-titulo">
+<h2 mat-dialog-title class="vb-titulo">
   {{ esEdicion ? 'Editar categoría' : 'Nueva categoría' }}
 </h2>
 
@@ -73,7 +73,7 @@
     matButton="filled"
     type="submit"
     form="formulario-categoria"
-    class="fs-boton-marca"
+    class="vb-boton-marca"
     [disabled]="guardando()"
   >
     {{ esEdicion ? 'Guardar cambios' : 'Crear categoría' }}

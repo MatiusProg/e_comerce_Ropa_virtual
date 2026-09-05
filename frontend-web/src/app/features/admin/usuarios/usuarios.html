@@ -1,16 +1,16 @@
 <!-- CU-03 · Gestionar usuarios y roles — «boundary» PantallaUsuarios. -->
 <header class="encabezado">
   <div>
-    <h1 class="fs-titulo">Usuarios</h1>
+    <h1 class="vb-titulo">Usuarios</h1>
     <p class="bajada">Cuentas del sistema, sus roles y su ámbito de sucursal.</p>
   </div>
-  <button matButton="filled" type="button" class="fs-boton-marca" (click)="nuevo()">
+  <button matButton="filled" type="button" class="vb-boton-marca" (click)="nuevo()">
     <mat-icon>person_add</mat-icon>
     Nuevo usuario
   </button>
 </header>
 
-<mat-card class="tarjeta fs-filete-superior" appearance="outlined">
+<mat-card class="tarjeta vb-filete-superior" appearance="outlined">
   @if (cargando()) {
     <mat-progress-bar mode="indeterminate" />
   }

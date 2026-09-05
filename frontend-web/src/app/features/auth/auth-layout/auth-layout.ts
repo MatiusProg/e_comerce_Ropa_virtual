@@ -16,7 +16,7 @@ import { Component, input } from '@angular/core';
     <div class="marco">
       <aside class="marca">
         <div class="marca-contenido">
-          <p class="logotipo">FashionStore</p>
+          <p class="logotipo">Violet Boutique</p>
           <p class="lema">Tu estilo, a tu medida.</p>
           <p class="detalle">
             Reservá para probar en sucursal, probate las prendas con el vestidor
@@ -30,7 +30,7 @@ import { Component, input } from '@angular/core';
       <section class="panel">
         <div class="tarjeta-envoltorio">
           <p class="encabezado">
-            <span class="titulo fs-titulo">{{ titulo() }}</span>
+            <span class="titulo vb-titulo">{{ titulo() }}</span>
             @if (subtitulo()) {
               <span class="subtitulo">{{ subtitulo() }}</span>
             }

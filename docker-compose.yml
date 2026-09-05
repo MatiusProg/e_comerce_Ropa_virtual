@@ -8,22 +8,27 @@
 #   docker compose logs -f db     ver el arranque
 #   docker compose down           apagar (los datos sobreviven en el volumen)
 #   docker compose down -v        apagar Y BORRAR los datos
+#
+# 05/09/2026 - el proyecto paso de llamarse FashionStore a Violet Boutique.
+# POSTGRES_DB, POSTGRES_USER y POSTGRES_PASSWORD solo se aplican cuando el
+# volumen pgdata se crea VACIO. Si ya levantaste la base con los nombres
+# viejos, hay que rehacer el volumen:  docker compose down -v && docker compose up -d
 
 services:
   db:
     image: postgres:16-alpine
-    container_name: fashionstore_db
+    container_name: violetboutique_db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: fashionstore
-      POSTGRES_PASSWORD: fashionstore
-      POSTGRES_DB: fashionstore
+      POSTGRES_USER: violetboutique
+      POSTGRES_PASSWORD: violetboutique
+      POSTGRES_DB: violetboutique
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U fashionstore -d fashionstore"]
+      test: ["CMD-SHELL", "pg_isready -U violetboutique -d violetboutique"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -34,14 +39,14 @@ services:
   api:
     profiles: ["api"]
     build: ./backend
-    container_name: fashionstore_api
+    container_name: violetboutique_api
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
     environment:
       PORT: 8000
-      DATABASE_URL: postgresql+psycopg://fashionstore:fashionstore@db:5432/fashionstore
+      DATABASE_URL: postgresql+psycopg://violetboutique:violetboutique@db:5432/violetboutique
     env_file:
       - ./backend/.env
     ports:

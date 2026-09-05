@@ -67,7 +67,7 @@ def test_el_perfil_muestra_los_datos_del_cliente(
     perfil = respuesta.json()
     assert perfil["nombres"] == "Ana"
     assert perfil["apellidos"] == "Quiroga"
-    assert perfil["correo"] == "ana.cliente@fashionstore.bo"
+    assert perfil["correo"] == "ana.cliente@violetboutique.bo"
     assert perfil["documento"] == "9876543"
     assert perfil["telefono"] == "70011223"
     # Todavia no cargo ninguna talla ni ninguna direccion.
@@ -141,14 +141,14 @@ def test_excepcion_e2_el_correo_ya_esta_en_uso(
             "apellidos": "Vaca",
             "documento": None,
             "telefono": None,
-            "correo": "luis.vaca@fashionstore.bo",
+            "correo": "luis.vaca@violetboutique.bo",
             "contrasena": "Otra12345",
         },
     )
     assert otro.status_code == 201
 
     respuesta = api.patch(
-        PERFIL, headers=cabeceras_cliente, json={"correo": "luis.vaca@fashionstore.bo"}
+        PERFIL, headers=cabeceras_cliente, json={"correo": "luis.vaca@violetboutique.bo"}
     )
     assert respuesta.status_code == 409
 
@@ -158,10 +158,10 @@ def test_el_correo_se_normaliza_a_minusculas(
 ) -> None:
     """Sin normalizar, 'Ana@x.com' y 'ana@x.com' serian dos cuentas distintas."""
     respuesta = api.patch(
-        PERFIL, headers=cabeceras_cliente, json={"correo": "ANA.NUEVA@Fashionstore.BO"}
+        PERFIL, headers=cabeceras_cliente, json={"correo": "ANA.NUEVA@Violetboutique.BO"}
     )
     assert respuesta.status_code == 200
-    assert respuesta.json()["correo"] == "ana.nueva@fashionstore.bo"
+    assert respuesta.json()["correo"] == "ana.nueva@violetboutique.bo"
 
 
 # --- Flujo alternativo 3a: agregar direccion -----------------------------
@@ -268,13 +268,13 @@ def test_no_se_puede_borrar_la_direccion_de_otro_cliente(
             "apellidos": "Vaca",
             "documento": None,
             "telefono": None,
-            "correo": "luis.vaca@fashionstore.bo",
+            "correo": "luis.vaca@violetboutique.bo",
             "contrasena": "Otra12345",
         },
     )
     entrada = api.post(
         "/api/v1/auth/login",
-        json={"correo": "luis.vaca@fashionstore.bo", "contrasena": "Otra12345"},
+        json={"correo": "luis.vaca@violetboutique.bo", "contrasena": "Otra12345"},
     )
     intruso = {"Authorization": f"Bearer {entrada.json()['access_token']}"}
 
@@ -340,7 +340,7 @@ def test_cambiar_la_contrasena_revoca_las_sesiones_abiertas(
     # Y la contrasena nueva si permite entrar.
     entrada = api.post(
         "/api/v1/auth/login",
-        json={"correo": "ana.cliente@fashionstore.bo", "contrasena": "NuevaClave1"},
+        json={"correo": "ana.cliente@violetboutique.bo", "contrasena": "NuevaClave1"},
     )
     assert entrada.status_code == 200
 

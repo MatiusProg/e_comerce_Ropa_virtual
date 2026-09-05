@@ -1,6 +1,6 @@
-name: fashionstore
+name: violetboutique
 description: >
-  FashionStore - aplicacion movil de la plataforma inteligente de comercio
+  Violet Boutique - aplicacion movil de la plataforma inteligente de comercio
   electronico para tienda de ropa, con vestidor virtual via realidad aumentada.
 publish_to: "none"
 version: 0.1.0+1

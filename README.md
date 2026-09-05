@@ -1,4 +1,4 @@
-# FashionStore
+# Violet Boutique
 
 Plataforma inteligente de comercio electrónico para una cadena de tiendas de
 ropa, con **vestidores virtuales vía realidad aumentada**, reservas para prueba

@@ -1,6 +1,6 @@
 <!-- CU-04 · Gestionar perfil del cliente — «boundary» PantallaPerfil. -->
 <mat-toolbar class="barra">
-  <span class="logotipo fs-titulo">FashionStore</span>
+  <span class="logotipo vb-titulo">Violet Boutique</span>
   <span class="etiqueta-area">Mi cuenta</span>
 
   <span class="separador"></span>
@@ -22,7 +22,7 @@
 <main class="contenido">
   <header class="encabezado">
     <div>
-      <h1 class="fs-titulo">Mi perfil</h1>
+      <h1 class="vb-titulo">Mi perfil</h1>
       <p class="bajada">
         Tus datos, tus tallas habituales y las direcciones a las que te entregamos.
       </p>
@@ -43,7 +43,7 @@
   @if (perfil()) {
     <!-- Pasos 2 a 5: datos personales y tallas habituales. -->
     <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
-      <mat-card class="tarjeta fs-filete-superior" appearance="outlined">
+      <mat-card class="tarjeta vb-filete-superior" appearance="outlined">
         <mat-card-header>
           <mat-card-title class="titulo-seccion">
             <mat-icon>badge</mat-icon>
@@ -106,7 +106,7 @@
         </mat-card-content>
       </mat-card>
 
-      <mat-card class="tarjeta fs-filete-superior" appearance="outlined">
+      <mat-card class="tarjeta vb-filete-superior" appearance="outlined">
         <mat-card-header>
           <mat-card-title class="titulo-seccion">
             <mat-icon>straighten</mat-icon>
@@ -159,7 +159,7 @@
         <button
           matButton="filled"
           type="submit"
-          class="fs-boton-marca"
+          class="vb-boton-marca"
           [disabled]="guardando()"
         >
           <mat-icon>save</mat-icon>
@@ -169,7 +169,7 @@
     </form>
 
     <!-- Flujos alternativos 3a y 3b. -->
-    <mat-card class="tarjeta fs-filete-superior" appearance="outlined">
+    <mat-card class="tarjeta vb-filete-superior" appearance="outlined">
       <mat-card-header class="encabezado-tarjeta">
         <mat-card-title class="titulo-seccion">
           <mat-icon>local_shipping</mat-icon>
@@ -236,7 +236,7 @@
             <p class="bajada-vacio">
               Necesitás al menos una para que podamos entregarte tus pedidos.
             </p>
-            <button matButton="filled" type="button" class="fs-boton-marca" (click)="agregarDireccion()">
+            <button matButton="filled" type="button" class="vb-boton-marca" (click)="agregarDireccion()">
               Agregar la primera
             </button>
           </div>
@@ -245,7 +245,7 @@
     </mat-card>
 
     <!-- Flujo alternativo 3c. -->
-    <mat-card class="tarjeta fs-filete-superior" appearance="outlined">
+    <mat-card class="tarjeta vb-filete-superior" appearance="outlined">
       <mat-card-header>
         <mat-card-title class="titulo-seccion">
           <mat-icon>lock</mat-icon>

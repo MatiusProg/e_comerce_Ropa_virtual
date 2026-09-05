@@ -1,4 +1,4 @@
-# FashionStore - aplicacion web (Angular)
+# Violet Boutique - aplicacion web (Angular)
 # Compila la SPA y la sirve con nginx. Es la imagen que despliega Railway.
 
 # --- Etapa 1: compilacion -----------------------------------------------

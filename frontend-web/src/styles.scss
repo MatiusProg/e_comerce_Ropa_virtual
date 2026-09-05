@@ -1,4 +1,4 @@
-// FashionStore — tema visual
+// Violet Boutique — tema visual
 //
 // Paleta: malva + oro rosa. Es una decisión de marca: la tienda vende
 // principalmente prendas femeninas, y la identidad busca leerse como boutique
@@ -30,28 +30,28 @@ html {
 
 :root {
   // --- Marca -------------------------------------------------------------
-  --fs-malva: #8e4a67;
-  --fs-malva-oscuro: #6d3550;
-  --fs-malva-claro: #b57f9a;
-  --fs-oro: #c9a227;
-  --fs-oro-rosa: #e7bfa8;
-  --fs-rosa-palido: #f6e6ec;
-  --fs-marfil: #fbf6f4;
-  --fs-tinta: #2e1f28;
+  --vb-malva: #8e4a67;
+  --vb-malva-oscuro: #6d3550;
+  --vb-malva-claro: #b57f9a;
+  --vb-oro: #c9a227;
+  --vb-oro-rosa: #e7bfa8;
+  --vb-rosa-palido: #f6e6ec;
+  --vb-marfil: #fbf6f4;
+  --vb-tinta: #2e1f28;
 
   // Degradado de marca. Se usa en encabezados y en el botón principal; es lo
   // que da el "brillo" sin recurrir a imágenes.
-  --fs-degradado: linear-gradient(135deg, #8e4a67 0%, #a85b7d 45%, #c98da5 100%);
-  --fs-degradado-suave: linear-gradient(135deg, #f6e6ec 0%, #fbf6f4 55%, #f3e3d8 100%);
+  --vb-degradado: linear-gradient(135deg, #8e4a67 0%, #a85b7d 45%, #c98da5 100%);
+  --vb-degradado-suave: linear-gradient(135deg, #f6e6ec 0%, #fbf6f4 55%, #f3e3d8 100%);
 
   // Filete metálico oro rosa: un borde de 1px que atraviesa la tarjeta.
-  --fs-filete: linear-gradient(90deg, #e7bfa8 0%, #c9a227 35%, #e7bfa8 70%, #f3d9c6 100%);
+  --vb-filete: linear-gradient(90deg, #e7bfa8 0%, #c9a227 35%, #e7bfa8 70%, #f3d9c6 100%);
 
-  --fs-sombra-suave: 0 1px 2px rgb(46 31 40 / 6%), 0 8px 24px rgb(142 74 103 / 8%);
-  --fs-sombra-elevada: 0 2px 4px rgb(46 31 40 / 8%), 0 18px 40px rgb(142 74 103 / 14%);
+  --vb-sombra-suave: 0 1px 2px rgb(46 31 40 / 6%), 0 8px 24px rgb(142 74 103 / 8%);
+  --vb-sombra-elevada: 0 2px 4px rgb(46 31 40 / 8%), 0 18px 40px rgb(142 74 103 / 14%);
 
-  --fs-radio: 16px;
-  --fs-radio-chico: 10px;
+  --vb-radio: 16px;
+  --vb-radio-chico: 10px;
 
   // --- Reemplazo de las variables de sistema de Material -----------------
   --mat-sys-primary: #8e4a67;
@@ -99,7 +99,7 @@ body {
 
   margin: 0;
   height: 100%;
-  background-color: var(--fs-marfil);
+  background-color: var(--vb-marfil);
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-body-medium);
   -webkit-font-smoothing: antialiased;
@@ -110,7 +110,7 @@ body {
 // revista de moda; el cuerpo sigue en Roboto, que es más legible en formulario.
 h1,
 h2,
-.fs-titulo {
+.vb-titulo {
   font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
   letter-spacing: -0.01em;
 }
@@ -118,7 +118,7 @@ h2,
 // --- Utilidades compartidas ----------------------------------------------
 
 // Filete metálico superior de una tarjeta.
-.fs-filete-superior {
+.vb-filete-superior {
   position: relative;
 
   &::before {
@@ -126,14 +126,14 @@ h2,
     position: absolute;
     inset: 0 0 auto;
     height: 3px;
-    background: var(--fs-filete);
+    background: var(--vb-filete);
     z-index: 1;
   }
 }
 
 // Botón principal con el degradado de marca.
-.fs-boton-marca.mat-mdc-unelevated-button:not(:disabled) {
-  background: var(--fs-degradado);
+.vb-boton-marca.mat-mdc-unelevated-button:not(:disabled) {
+  background: var(--vb-degradado);
   color: #fff;
   box-shadow: 0 4px 14px rgb(142 74 103 / 30%);
   transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;

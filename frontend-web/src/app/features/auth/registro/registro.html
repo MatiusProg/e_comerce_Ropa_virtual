@@ -6,7 +6,7 @@
   titulo="Crear cuenta"
   subtitulo="Registrate para reservar prendas y comprar en línea."
 >
-  <mat-card class="tarjeta fs-filete-superior" appearance="outlined">
+  <mat-card class="tarjeta vb-filete-superior" appearance="outlined">
     @if (enviando()) {
       <mat-progress-bar mode="indeterminate" />
     }
@@ -15,12 +15,12 @@
       <!-- Paso 8: confirmación. -->
       <mat-card-content class="confirmacion">
         <mat-icon class="icono-ok">check_circle</mat-icon>
-        <h1 class="fs-titulo">Tu cuenta fue creada</h1>
+        <h1 class="vb-titulo">Tu cuenta fue creada</h1>
         <p>Ya podés iniciar sesión con tu correo y contraseña.</p>
         <button
           matButton="filled"
           type="button"
-          class="fs-boton-marca boton-principal"
+          class="vb-boton-marca boton-principal"
           (click)="irALogin()"
         >
           Iniciar sesión
@@ -138,7 +138,7 @@
           <button
             matButton="filled"
             type="submit"
-            class="fs-boton-marca boton-principal"
+            class="vb-boton-marca boton-principal"
             [disabled]="enviando()"
           >
             Crear cuenta

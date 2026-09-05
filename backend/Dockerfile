@@ -1,4 +1,4 @@
-# FashionStore - API REST
+# Violet Boutique - API REST
 # Imagen usada tanto en local (docker compose) como en Railway.
 
 FROM python:3.13-slim

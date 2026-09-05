@@ -16,7 +16,7 @@
     margin: 0;
     font-size: 1.85rem;
     font-weight: 600;
-    color: var(--fs-malva-oscuro);
+    color: var(--vb-malva-oscuro);
   }
 
   .bajada {
@@ -26,9 +26,9 @@
 }
 
 .tarjeta {
-  border-radius: var(--fs-radio);
+  border-radius: var(--vb-radio);
   border: 1px solid var(--mat-sys-outline-variant);
-  box-shadow: var(--fs-sombra-suave);
+  box-shadow: var(--vb-sombra-suave);
   overflow: hidden;
   background: var(--mat-sys-surface);
 }
@@ -149,7 +149,7 @@ th {
     width: 2.75rem;
     height: 2.75rem;
     font-size: 2.75rem;
-    color: var(--fs-malva-claro);
+    color: var(--vb-malva-claro);
   }
 
   .titulo-vacio {

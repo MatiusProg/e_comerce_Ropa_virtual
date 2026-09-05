@@ -157,7 +157,7 @@ se modela y se documenta antes de codificar**.
 4. **Ordena el trabajo de un equipo de dos**: los paquetes de análisis definen quién toca qué y
    minimizan los conflictos de integración.
 
-## 6. Aplicación concreta en FashionStore
+## 6. Aplicación concreta en Violet Boutique
 
 | Ciclo | Fase PUDS | Período | Casos de uso | Flujos predominantes |
 |---|---|---|---|---|

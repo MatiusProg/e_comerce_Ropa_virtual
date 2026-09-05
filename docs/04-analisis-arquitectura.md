@@ -243,7 +243,7 @@ sin interrumpir la operación.
 │ «dispositivo»          │        │ «dispositivo»            │
 │ Teléfono Android       │        │ PC / Navegador           │
 │ ┌────────────────────┐ │        │ ┌──────────────────────┐ │
-│ │ App FashionStore   │ │        │ │ SPA Angular          │ │
+│ │ App VioletBoutique │ │        │ │ SPA Angular          │ │
 │ │ (Flutter/Dart)     │ │        │ │ (cliente / admin /   │ │
 │ │  + Vestidor Virtual│ │        │ │  encargado / cajero) │ │
 │ └────────────────────┘ │        │ └──────────────────────┘ │

@@ -1,25 +1,25 @@
 <!-- CU-09 · Gestionar temporadas y colecciones — «boundary» PantallaTemporadas. -->
 <header class="encabezado">
   <div>
-    <h1 class="fs-titulo">Temporadas y colecciones</h1>
+    <h1 class="vb-titulo">Temporadas y colecciones</h1>
     <p class="bajada">
       La dimensión temporal del catálogo: qué se vende en cada ventana comercial.
     </p>
   </div>
   @if (pestana() === 0) {
-    <button matButton="filled" type="button" class="fs-boton-marca" (click)="nuevaTemporada()">
+    <button matButton="filled" type="button" class="vb-boton-marca" (click)="nuevaTemporada()">
       <mat-icon>event</mat-icon>
       Nueva temporada
     </button>
   } @else {
-    <button matButton="filled" type="button" class="fs-boton-marca" (click)="nuevaColeccion()">
+    <button matButton="filled" type="button" class="vb-boton-marca" (click)="nuevaColeccion()">
       <mat-icon>collections_bookmark</mat-icon>
       Nueva colección
     </button>
   }
 </header>
 
-<mat-card class="tarjeta fs-filete-superior" appearance="outlined">
+<mat-card class="tarjeta vb-filete-superior" appearance="outlined">
   @if (cargando()) {
     <mat-progress-bar mode="indeterminate" />
   }
@@ -75,7 +75,7 @@
       <mat-icon>cloud_off</mat-icon>
       <p class="titulo-vacio">No se pudo cargar el listado</p>
       <p class="pista-vacio">{{ e }}</p>
-      <button matButton="filled" type="button" class="fs-boton-marca" (click)="cargar()">
+      <button matButton="filled" type="button" class="vb-boton-marca" (click)="cargar()">
         <mat-icon>refresh</mat-icon>
         Reintentar
       </button>
