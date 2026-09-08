@@ -124,6 +124,14 @@ proyecto arrancado, con seguridad y organización funcionando y **desplegado en 
 **Objetivo:** el corazón del sistema funcionando en la nube — catálogo con variantes, inventario
 multisucursal y reservas.
 
+> **El reparto de este ciclo cambió: ya no se divide por capa, sino por caso de uso completo.**
+> Los dos integrantes trabajan *full stack*, de modo que quien toma un caso de uso entrega su
+> migración, su backend, su pantalla web, su pantalla móvil y su sección del documento, y es dueño
+> de las tablas que ese caso de uso estrena. El acuerdo está en
+> [`docs/entregas/ciclo-2/00-organizacion-por-caso-de-uso.md`](entregas/ciclo-2/00-organizacion-por-caso-de-uso.md),
+> que **sustituye a la columna «Responsable» de la tabla siguiente y a la §5.7** mientras dure el
+> Ciclo 2. La tabla se conserva porque el alcance por paquete no cambió.
+
 ### Alcance funcional — paquetes P3 (productos), P4, P5 y P6
 
 | Paquete | Casos de uso | Alcance | Responsable |

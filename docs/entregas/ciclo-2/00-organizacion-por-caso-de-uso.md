@@ -1,0 +1,285 @@
+# CICLO 2 · Organización del trabajo por caso de uso
+
+> **Documento de acuerdo entre los dos integrantes.** Fija quién hace qué, quién es dueño de qué
+> tabla y en qué orden se ataca el ciclo. Reemplaza el reparto por capas de la tabla de
+> responsabilidades de [`docs/05-plan-y-cronograma.md`](../../05-plan-y-cronograma.md) §5.4 para
+> lo que dure el Ciclo 2.
+>
+> **Rama de trabajo:** `Ciclo2`. Período: **06/09 – 13/09/2026** (8 días). Entrega: Presentación #2.
+
+---
+
+## 1. Qué cambia respecto del Ciclo 1
+
+En el Ciclo 1 el trabajo se dividió **por capa**: Mateo la API, Karen la web. Funcionó para nueve
+CRUD, pero tuvo un costo visible en el propio historial del repositorio: cada caso de uso necesitó
+dos commits de dos personas distintas (`feat(seguridad): ... en la API` / `... en la web`), y entre
+uno y otro hubo una espera. Con trece casos de uso, reglas de negocio reales y una aplicación móvil
+que todavía no existe, esa espera ya no cabe en el cronograma.
+
+**Regla nueva del Ciclo 2: el caso de uso es la unidad de trabajo, y es vertical.**
+
+Quien toma un caso de uso lo entrega **completo y funcionando**:
+
+| Capa | Qué incluye |
+|---|---|
+| **Datos** | Modelo SQLAlchemy y migración Alembic de las tablas que el caso de uso estrena |
+| **Backend** | `schemas.py`, `repository.py`, `service.py`, `router.py` y el montaje en `main.py` |
+| **Pruebas** | Al menos una prueba por flujo alternativo del caso de uso, en `backend/tests/` |
+| **Web** | Componentes Angular, servicio HTTP, modelos TypeScript y ruta con su guarda de rol |
+| **Móvil** | Pantalla Flutter, si el caso de uso tiene actor Cliente (los de Administrador y Encargado son solo web) |
+| **Documento** | Detalle 1.3.1, diagrama 1.3.2, comunicación 2.2, secuencia 3.2 y prototipo 1.4 de **ese** caso de uso |
+
+**Corolario — cada uno es dueño de sus tablas.** El que estrena una tabla escribe su modelo, su
+migración y es el único que la modifica durante el ciclo. Nadie hace `autogenerate` sobre tablas
+ajenas ni edita el `models.py` de un módulo que no le toca. Es la misma regla que el Ciclo 1 aplicó
+sobre `models.py`, ahora repartida en vez de centralizada.
+
+---
+
+## 2. Reparto de los trece casos de uso
+
+**Criterio del corte:** no se repartieron casos de uso sueltos, sino **bloques cerrados por tabla**.
+Un bloque agrupa todos los casos de uso que escriben sobre las mismas tablas, para que ninguna tabla
+tenga dos dueños. De ahí salen dos mitades con sentido propio: **Karen es dueña del producto y de su
+vitrina**; **Mateo es dueño del stock y de la reserva**.
+
+### 2.1 Karen — Catálogo y vitrina (P3 productos + P5)
+
+| CU | Nombre | Paq. | Tablas propias | Web | Móvil |
+|---|---|:---:|---|:---:|:---:|
+| **CU-10** | Gestionar productos y variantes | P3 | `producto`, `variante_producto` | ✔ Admin | — |
+| **CU-11** | Gestionar imágenes de producto | P3 | `imagen_producto` | ✔ Admin | — |
+| **CU-17** | Consultar catálogo | P5 | — (solo lectura) | ✔ Cliente | ✔ |
+| **CU-18** | Consultar ficha de producto | P5 | — (solo lectura) | ✔ Cliente | ✔ |
+| **CU-19** | Consultar disponibilidad por sucursal | P5 | — (lee `existencia`) | ✔ Cliente | ✔ |
+| **CU-04** *(resto)* | Categorías preferidas del perfil | P1 | `cliente_categoria` | ✔ Cliente | — |
+
+**Por qué este bloque es coherente:** es la cadena completa `producto → variante → imagen → vitrina
+→ ficha`. Karen crea las tres tablas del catálogo y después es la única que las consume desde el
+lado del cliente; no hay ida y vuelta con nadie. Además `imagen_producto` incluye la imagen con
+fondo transparente que necesita el vestidor virtual, que también es suyo.
+
+### 2.2 Mateo — Stock y reservas (P4 + P6)
+
+| CU | Nombre | Paq. | Tablas propias | Web | Móvil |
+|---|---|:---:|---|:---:|:---:|
+| **CU-13** | Registrar ingreso de mercadería | P4 | `existencia`, `movimiento_inventario` | ✔ Admin/Enc. | — |
+| **CU-14** | Consultar inventario consolidado | P4 | — | ✔ Admin | — |
+| **CU-15** | Registrar movimiento de inventario | P4 | — | ✔ Admin | — |
+| **CU-16** | Gestionar disponibilidad de la sucursal | P4 | — | ✔ Encargado | — |
+| **CU-22** | Crear reserva de prendas | P6 | `reserva`, `reserva_detalle` | ✔ Cliente | ✔ |
+| **CU-23** | Consultar y cancelar reserva | P6 | — | ✔ Cliente | ✔ |
+| **CU-24** | Atender reserva en sucursal | P6 | — | ✔ Encargado | — |
+| **CU-25** | Expirar reservas vencidas | P6 | — | — (tarea programada) | — |
+
+**Por qué este bloque es coherente:** cada transición de una reserva produce un movimiento de
+inventario (§4.1.1, P6). Reserva y existencia son la misma regla de negocio vista dos veces
+—incluido el `SELECT ... FOR UPDATE` del riesgo R5— y separarlas entre dos personas sería repartir
+una transacción en dos cabezas.
+
+### 2.3 Balance
+
+| | Casos de uso | Trabajo adicional |
+|---|:---:|---|
+| **Karen** | 6 | Bootstrap de la app Flutter · Prototipo del vestidor virtual (R3) · Diagramas en EA · Consolidación del `.docx` |
+| **Mateo** | 8 | *Seed* completo (3 ciudades, 5 sucursales, 4 proveedores, ~60 productos con variantes, imágenes y stock) |
+
+Mateo lleva dos casos de uso más porque Karen carga con las dos piezas de infraestructura del ciclo
+—la app móvil, que hoy está en cero, y el prototipo de realidad aumentada, que es el riesgo técnico
+más alto del proyecto— más la consolidación del documento.
+
+---
+
+## 3. Propiedad de las tablas
+
+Ocho tablas nuevas. Ninguna tiene dos dueños.
+
+| Tabla | La estrena | Dueño | Migración |
+|---|:---:|:---:|:---:|
+| `producto` | CU-10 | **Karen** | `0002` |
+| `variante_producto` | CU-10 | **Karen** | `0002` |
+| `imagen_producto` | CU-11 | **Karen** | `0002` |
+| `cliente_categoria` | CU-04 | **Karen** | `0002` |
+| `existencia` | CU-13 | **Mateo** | `0003` |
+| `movimiento_inventario` | CU-13 | **Mateo** | `0003` |
+| `reserva` | CU-22 | **Mateo** | `0003` |
+| `reserva_detalle` | CU-22 | **Mateo** | `0003` |
+
+Las catorce tablas del Ciclo 1 quedan **congeladas**: si un caso de uso del Ciclo 2 necesita una
+columna nueva en una tabla del Ciclo 1, se acuerda entre los dos antes de tocarla y se registra en
+`docs/06-decisiones-tecnicas.md`.
+
+### 3.1 Archivos de modelo — sin colisión
+
+Cada módulo ya tiene su propio `models.py`, así que las dos personas escriben en archivos distintos:
+
+```
+Karen                                     Mateo
+  app/modules/catalogo/models.py            app/modules/inventario/models.py
+  app/modules/seguridad/models.py           app/modules/reservas/models.py
+```
+
+`app/modules/catalogo_publico/models.py` **queda vacío**: P5 no tiene entidades propias, solo lee
+las de P3 y P4.
+
+---
+
+## 4. Migraciones — cadena y acuerdo previo
+
+Alembic es lineal: `0003` declara `down_revision = "0002_ciclo2_catalogo"`. Eso haría que Mateo
+tuviera que esperar a que la migración de Karen esté en la rama antes de escribir la suya.
+
+**Se evita acordando los identificadores de revisión el primer día, antes de escribir nada:**
+
+| Archivo | `revision` | `down_revision` | Autor |
+|---|---|---|:---:|
+| `0002_ciclo2_catalogo.py` | `0002_ciclo2_catalogo` | `0001_ciclo1` | Karen |
+| `0003_ciclo2_inventario_reservas.py` | `0003_ciclo2_inv_res` | `0002_ciclo2_catalogo` | Mateo |
+
+Con los identificadores fijados, **las dos migraciones se escriben en paralelo desde el día 1** y se
+integran en ese orden. Mateo puede declarar la clave foránea `existencia.variante_id →
+variante_producto.id` sin que la tabla exista todavía en su copia, porque el nombre está acordado en
+§6.4.
+
+**Regla:** las migraciones del Ciclo 2 se escriben **a mano**, no con `--autogenerate`. Autogenerar
+con los modelos del otro a medio escribir produce migraciones que borran tablas ajenas.
+
+---
+
+## 5. Archivos compartidos y protocolo para no chocar
+
+Hay cinco archivos que las dos personas tocan. Cuatro ya vienen preparados con las líneas escritas y
+comentadas desde el Ciclo 1, así que cada uno **descomenta solo su línea** y el conflicto es nulo:
+
+| Archivo | Karen descomenta | Mateo descomenta |
+|---|---|---|
+| `backend/alembic/env.py` | línea 28 (`catalogo_publico`) | líneas 27 y 29 (`inventario`, `reservas`) |
+| `backend/app/main.py` — imports | línea 30 (`catalogo_publico_router`) | líneas 29 y 31 (`inventario`, `reservas`) |
+| `backend/app/main.py` — `include_router` | línea 108 | líneas 107 y 109 |
+| `frontend-web/src/app/app.routes.ts` | rutas `tienda/**` y `mi-cuenta/**` | rutas `admin/inventario`, `sucursal/**`, `mi-cuenta/reservas` |
+| `mobile/lib/core/enrutado/router.dart` | rutas de catálogo | rutas de reservas |
+
+Los dos únicos con riesgo real son `app.routes.ts` y el router de Flutter. Protocolo: **cada uno
+agrega su bloque de rutas al final de su sección y nunca reordena las ajenas**; `git pull --rebase`
+antes de cada push.
+
+`backend/app/db/seed.py` es **exclusivo de Mateo** durante este ciclo.
+
+---
+
+## 6. Las costuras — los tres puntos donde uno depende del otro
+
+Solo hay tres. Cada uno se resuelve con un contrato acordado el día 1, no con una espera.
+
+### C1 · `existencia` ← CU-19 (Karen consume de Mateo)
+
+CU-19 muestra al cliente en qué sucursales hay stock de una variante. La tabla es de Mateo.
+
+**Contrato:** Mateo expone en `app/modules/inventario/service.py` una función de consulta que Karen
+importa desde `catalogo_publico/service.py` — no una llamada HTTP interna, no un `SELECT` de Karen
+sobre una tabla ajena:
+
+```python
+def disponibilidad_por_sucursal(db: Session, variante_id: int) -> list[DisponibilidadSucursal]
+# -> [{sucursal_id, sucursal_nombre, ciudad_nombre, cantidad_disponible}]
+```
+
+Mientras no exista, Karen maqueta CU-19 contra un *stub* que devuelve esa forma.
+
+### C2 · `variante_producto` ← CU-22 (Mateo consume de Karen)
+
+La reserva referencia variantes. **Contrato:** Karen fija y publica el nombre de la tabla, el de su
+clave primaria y el del campo `sku` **el día 1**, en §6.4, antes de escribir el modelo. Mateo
+escribe su clave foránea contra ese nombre.
+
+### C3 · *Seed* ← productos (Mateo consume de Karen)
+
+El *seed* de ~60 productos con variantes es de Mateo, pero siembra tablas de Karen. **Contrato:** el
+*seed* se escribe **después** de que la migración `0002` esté integrada en `Ciclo2` (día 2), y Karen
+no cambia la forma de esas tablas después de ese punto sin avisar.
+
+### 6.4 Nombres acordados — a completar el día 1
+
+> Se llena en el primer commit del ciclo y a partir de ahí es vinculante para los dos.
+
+```
+producto              (id, codigo, nombre, descripcion, categoria_id, proveedor_id,
+                       temporada_id, coleccion_id, precio_base, activo, ...)
+variante_producto     (id, producto_id, talla_id, color_id, sku, precio, activo, ...)
+imagen_producto       (id, producto_id, variante_id?, url, orden, es_transparente, ...)
+cliente_categoria     (cliente_id, categoria_id)   -- clave primaria compuesta
+existencia            (id, variante_id, sucursal_id, cantidad_disponible,
+                       cantidad_reservada, ...)
+movimiento_inventario (id, existencia_id, tipo, cantidad, motivo, usuario_id, creado_en)
+reserva               (id, cliente_id, sucursal_id, franja_inicio, franja_fin, estado, ...)
+reserva_detalle       (id, reserva_id, variante_id, cantidad, resultado_prueba?)
+```
+
+---
+
+## 7. Trabajo que no es un caso de uso
+
+| # | Tarea | Responsable | Fecha límite | Por qué importa |
+|---|---|:---:|:---:|---|
+| I1 | **Bootstrap de la app Flutter**: `flutter create`, cliente Dio con interceptor de JWT, `go_router`, `flutter_secure_storage`, y **login + registro contra la API ya desplegada** | Karen | **día 3 (08/09)** | `mobile/lib/` hoy solo tiene `.gitkeep`. Bloquea las pantallas móviles de **los dos** (CU-17/18/19 de Karen y CU-22/23 de Mateo) |
+| I2 | *Seed* completo con ~60 productos, variantes, imágenes y stock distribuido | Mateo | día 4 (09/09) | Sin datos no hay catálogo demostrable ni reserva que probar |
+| I3 | **Prototipo aislado del vestidor virtual** (cámara + detección de pose, sin integrar) | Karen | día 7 (12/09) | Riesgo **R3**. El cronograma es explícito: se construye en el Ciclo 2, no en el 3 |
+| I4 | Diagramas UML del ciclo en Enterprise Architect (`scripts/ea-*.ps1`) | Karen | continuo | — |
+| I5 | Consolidación del `.docx`, índice con F9, portada | Karen | día 8 (13/09) | — |
+| I6 | Redespliegue en Railway al cierre de cada bloque | Ambos | continuo | Riesgo **R2** |
+
+**Documentación: cada uno redacta la de sus propios casos de uso**, el mismo día que cierra el caso
+de uso — no al final. Karen dibuja en EA y consolida; Mateo revisa y valida, como en el Ciclo 1.
+El CAP. 4 (Implementación), la Bibliografía y los Anexos, que se estrenan en este ciclo, se
+reparten: 4.1 Selección de plataforma y 4.2 Arquitectura principal para Mateo; 4.3 Arquitectura de
+subsistemas y los Anexos para Karen.
+
+---
+
+## 8. Orden de arranque
+
+| Día | Karen | Mateo |
+|:---:|---|---|
+| **1** · 06/09 | Acordar §6.4 · modelos `producto`/`variante`/`imagen`/`cliente_categoria` · migración `0002` | Acordar §6.4 · modelos `existencia`/`movimiento`/`reserva`/`detalle` · migración `0003` |
+| **2** · 07/09 | **CU-10** backend + web | **CU-13** backend + web (ingreso de mercadería) |
+| **3** · 08/09 | **CU-11** backend + web · **I1 bootstrap Flutter** | **CU-15** + **CU-14** backend + web |
+| **4** · 09/09 | **CU-17** + **CU-18** backend (`/tienda`) | **I2 seed** · **CU-16** backend + web |
+| **5** · 10/09 | **CU-17** + **CU-18** web y móvil | **CU-22** backend (con `FOR UPDATE`, riesgo R5) |
+| **6** · 11/09 | **CU-19** (costura C1) · **CU-04** categorías preferidas | **CU-22** + **CU-23** web y móvil |
+| **7** · 12/09 | **I3 prototipo del vestidor virtual** | **CU-24** + **CU-25** backend + web |
+| **8** · 13/09 | Diagramas, consolidación del `.docx`, despliegue | CAP. 4, revisión, despliegue |
+
+**Congelamiento de código: 13/09 a las 18:00**, para dejar margen al despliegue y al documento.
+
+---
+
+## 9. Definición de «hecho» de un caso de uso
+
+Un caso de uso no se declara terminado hasta que las ocho casillas están marcadas:
+
+- [ ] Migración escrita a mano y aplicada sin error, con su `downgrade`
+- [ ] `schemas` · `repository` · `service` · `router`, montado en `main.py`
+- [ ] Exigencia de rol declarada en el *router* (y `consulta_router` aparte si otro rol necesita leer — ver §6.11.4 de decisiones técnicas)
+- [ ] Pruebas del flujo principal y de los alternativos en `backend/tests/`
+- [ ] Pantalla web con su ruta y su guarda de rol
+- [ ] Pantalla móvil, si el actor es Cliente
+- [ ] Sección del documento redactada y diagramas generados
+- [ ] Desplegado en Railway y probado sobre la URL pública
+
+**Un commit por caso de uso completo**, con el mismo formato del Ciclo 1:
+`feat(<paquete>): <nombre del caso de uso> (CU-NN)`.
+
+---
+
+## 10. Si el reparto no convence — el corte alternativo
+
+El punto discutible es **CU-19**, que es de Karen pero lee la tabla de Mateo (costura C1). Si esa
+dependencia molesta, se mueve CU-19 a Mateo: desaparece la única costura de lectura cruzada, pero el
+reparto queda 5 contra 9 y la ficha de producto (CU-18, Karen) y su bloque de disponibilidad
+(CU-19, Mateo) pasan a ser dos personas en la misma pantalla — una costura de UI, que es más cara de
+integrar que una de datos. **Por eso se eligió dejar CU-19 con Karen.**
+
+El otro ajuste posible, si el día 5 Karen va retrasada por el bootstrap de Flutter, es pasarle
+**CU-11** (imágenes) a Mateo: es el caso de uso más aislado de los seis y el único que no forma
+parte de la cadena de la vitrina.
