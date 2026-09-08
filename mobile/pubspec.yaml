@@ -11,6 +11,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations: # textos de Material en castellano
+    sdk: flutter
   cupertino_icons: ^1.0.8
 
   # --- Comunicacion con la API ------------------------------------------
