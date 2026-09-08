@@ -3,28 +3,47 @@
 Aplicación del **Cliente**: catálogo, disponibilidad por sucursal, **vestidor
 virtual con realidad aumentada**, reservas, compra y asistente.
 
-> **Estado:** solo está el esqueleto de `lib/` y el `pubspec.yaml`. Las carpetas
-> de plataforma (`android/`, `ios/`, `web/`) todavía no existen porque Flutter
-> no está instalado en la máquina donde se generó la estructura.
+> **Estado:** el proyecto Android está generado y el *shell* funciona: registro
+> (CU-01), inicio y cierre de sesión (CU-02) contra la API desplegada.
 
-## Cómo completar el proyecto
+## Versiones — las mismas en las dos máquinas
 
-Flutter no estaba instalado al crear esta carpeta. Una vez instalado, este
-comando **completa** el proyecto respetando lo que ya existe (`pubspec.yaml` y
-`lib/` no se sobrescriben):
+| | Versión | Por qué está fijada |
+|---|---|---|
+| Flutter | **3.47.2** (`stable`), Dart **3.13.2** | El `pubspec.yaml` exige `sdk >=3.5.0`, y `go_router 18`, `flutter_riverpod 3.4` y `dio 5.11` son de la era Dart 3. Nada anterior a la serie 3.4x resuelve las dependencias. |
+| `compileSdk` | **37** | `flutter_secure_storage` 11 lo exige: contra la 36 el build falla en `CheckAarMetadata`. Está fijado a mano en `android/app/build.gradle.kts`, no vía `flutter.compileSdkVersion`, que hoy resuelve a 36. |
+
+Antes de escribir código, `flutter --version` en las dos máquinas. Si no
+coinciden, se iguala primero: dos versiones producen dos `pubspec.lock`
+distintos y el problema aparece recién cuando el otro no puede compilar. El
+`pubspec.lock` se versiona.
+
+## Cómo arrancar
 
 ```bash
 cd mobile
-flutter create . --org bo.edu.uagrm.violetboutique --platforms android --project-name violetboutique
 flutter pub get
+flutter run                     # contra la API de Railway, por defecto
 ```
 
-Verificación:
+Para apuntar al backend local, la IP de la PC en la red — para el teléfono
+`localhost` es el teléfono:
 
 ```bash
-flutter doctor          # todo en verde para Android
-flutter run             # con un emulador o un teléfono conectado
+flutter run --dart-define=API_URL=http://192.168.0.10:8000/api/v1
 ```
+
+### Teléfonos Xiaomi / HyperOS
+
+`adb install` falla con `INSTALL_FAILED_USER_RESTRICTED` hasta que se habilita
+**Opciones de desarrollador › Instalar vía USB**. Es un ajuste del teléfono, no
+del proyecto.
+
+### Si el build falla con «Could not close incremental caches»
+
+Ya está resuelto: `android/gradle.properties` desactiva la caché incremental de
+Kotlin, que en Windows no libera sus archivos mapeados en memoria y rompe el
+build en un plugin distinto cada vez.
 
 ## Estructura de `lib/`
 
@@ -34,7 +53,7 @@ lib/
 │                            enrutado (go_router), constantes
 ├── data/                    Modelos del contrato de la API y repositorios
 └── features/
-    ├── auth/                Registro e inicio de sesión           · ciclo 1
+    ├── auth/                Registro e inicio de sesión           · hecho
     ├── catalogo/            Catálogo, ficha, disponibilidad        · ciclo 2
     ├── reservas/            Crear, consultar y cancelar reservas   · ciclo 2
     ├── vestidor_virtual/    P9 · cámara + pose + superposición     · ciclo 3
@@ -66,11 +85,15 @@ tienen que estar cargadas antes de empezar el ciclo 3.
 
 ## Permisos de Android
 
-Agregar en `android/app/src/main/AndroidManifest.xml` una vez generado:
+`INTERNET` ya está declarado en `android/app/src/main/AndroidManifest.xml`.
+Hacía falta agregarlo a mano: Flutter solo lo pone en los manifiestos de
+`debug` y `profile`, así que sin esa línea la versión de *release* compila pero
+no puede hacer una sola petición.
+
+`CAMERA` se agrega al construir el prototipo del vestidor virtual:
 
 ```xml
 <uses-permission android:name="android.permission.CAMERA" />
-<uses-permission android:name="android.permission.INTERNET" />
 ```
 
 ## Distribución
