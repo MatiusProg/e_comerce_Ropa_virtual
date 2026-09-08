@@ -1,8 +1,10 @@
 # CICLO 2 · Contrapropuesta al reparto por caso de uso
 
 > **Respuesta de Mateo a [`00-organizacion-por-caso-de-uso.md`](00-organizacion-por-caso-de-uso.md).**
-> El reparto de fondo se acepta: lo que cambia es **quién carga la infraestructura**, más el
-> adelanto de RA e IA a este ciclo y la autoridad de Karen sobre el esquema del perfil del cliente.
+> El reparto de fondo se acepta: lo que cambia es **quién carga la infraestructura**, más el cierre
+> de las deudas móviles del Ciclo 1, el adelanto del prototipo de RA y la autoridad de Karen sobre
+> el esquema del perfil del cliente. La elección del modelo de IA se posterga y se decide entre los
+> dos.
 >
 > Escrito el **08/09/2026**. Sustituye a las §2.3, §7 y §8 del documento de Karen y a la última
 > línea de su §5; todo lo demás de ese documento queda vigente tal cual.
@@ -42,6 +44,19 @@ teniendo tres carpetas sin un solo `.dart`. Tres razones para moverlo:
 todavía que «las carpetas de plataforma no existen porque Flutter no está instalado en la máquina
 donde se generó la estructura»; eso ya no es cierto acá. Un `flutter create .` seguido de
 `flutter run` sobre el teléfono real se puede hacer esta noche.
+
+> **Versión de Flutter — la misma en las dos máquinas: `3.47.2` (canal `stable`), Dart `3.13.2`.**
+>
+> No es una preferencia, es una restricción del proyecto: el `pubspec.yaml` ya declara
+> `sdk: ">=3.5.0 <4.0.0"`, y `go_router ^18.0.0`, `flutter_riverpod ^3.4.2` y `dio ^5.11.0` son de
+> la era Dart 3. Cualquier Flutter anterior a la serie 3.4x —**3.7 incluido, que trae Dart
+> 2.19**— no resuelve las dependencias: falla en `flutter pub get`, antes de compilar una sola
+> pantalla.
+>
+> Antes de escribir código, los dos corren `flutter --version` y pegan la salida. Si no coincide,
+> se iguala primero: dos versiones distintas producen dos `pubspec.lock` distintos y el conflicto
+> aparece recién cuando el otro no puede compilar. El `pubspec.lock` **se versiona** y no se
+> regenera por gusto.
 
 **b) El *shell* sin sesión no sirve para nada.** Un *bootstrap* que solo arranca una pantalla vacía
 no desbloquea a nadie: todo lo que viene después —catálogo, ficha, disponibilidad, reservas,
@@ -128,12 +143,10 @@ de Mateo. El *seed* debe incluir, para al menos diez variantes, la **imagen PNG 
 transparente** que el vestidor virtual necesita (requisito S5 de §6.5): sin ella el prototipo de RA
 se prueba con un activo de mentira.
 
-### 2.5 · La IA arranca en este ciclo — y §6.6 hoy está en contra de la decisión ya tomada
+### 2.5 · La RA arranca ahora; el modelo de IA se decide entre los dos, más adelante
 
-El plan pone P10 entero en el Ciclo 3. Se adelanta **el inicio**, no los casos de uso: lo que se
-construye ahora es el adaptador de proveedor y la elección del modelo, para que en el Ciclo 3 los
-CU-33, CU-34 y CU-35 sean lógica de negocio y no una investigación de proveedores a cinco días de
-la defensa.
+De las dos mitades de «la IA del proyecto», **solo una arranca en este ciclo**, y es la que no
+necesita que nadie elija nada.
 
 **Hay una contradicción abierta en el repositorio que hay que cerrar.** El 04/09 se decidió que el
 modelo de IA tiene que ser **gratuito, sin costo por uso** —el riesgo **R9** es justamente quedarse
@@ -156,28 +169,27 @@ La RA **no necesita ningún proveedor de IA**: la detección de pose es un model
 Kit ejecuta en el dispositivo. Eso ya elimina de raíz el costo del riesgo técnico más alto, y es el
 motivo por el que las dos mitades de «la IA del proyecto» se resuelven con tecnologías distintas.
 
-**I7 (nuevo) · Prueba de concepto del proveedor de LLM — Mateo, día 4 (12/09).**
+**La elección del proveedor de LLM queda pendiente, y se decide entre los dos.** No entra en el
+Ciclo 2. Los candidatos sobre la mesa son **Gemini** (plan gratuito de AI Studio) y **DeepSeek**, y
+la conversación se abre cuando toque construir P10, no ahora — la prioridad de estos cinco días son
+las deudas móviles del Ciclo 1 y los casos de uso del núcleo del negocio.
 
-Candidatos: **Gemini** (plan gratuito de AI Studio) y **DeepSeek**. Se elige por prueba, no por
-catálogo, y contra tres criterios en este orden:
+Lo único que se deja anotado desde ya, para que la decisión no se tome a ciegas cuando llegue:
 
-1. **Uso de herramientas (*function calling*).** Es eliminatorio. El CU-34 y el CU-35 están
+1. **El uso de herramientas (*function calling*) es eliminatorio.** El CU-34 y el CU-35 están
    diseñados en §6.6 sobre herramientas declaradas —`buscar_productos`,
    `consultar_disponibilidad`, `generar_reporte`…—, no sobre generación de SQL. Un proveedor que no
-   las soporte de forma fiable obliga a rediseñar dos casos de uso.
-2. **Cuota gratuita suficiente para una demostración en vivo** el 22/09, verificada en el momento de
-   la prueba —los planes gratuitos cambian de condiciones y no se dan por sabidos—.
-3. Latencia aceptable y SDK de Python o API REST simple.
+   las soporte de forma fiable obliga a rediseñar dos casos de uso, así que es lo primero que hay
+   que probar.
+2. **La cuota gratuita tiene que alcanzar para una demostración en vivo** el 22/09, y hay que
+   verificarla en el momento de elegir: los planes gratuitos cambian de condiciones y no se dan por
+   sabidos.
+3. Si ninguno sirve, la degradación de §6.6 punto 3 —recomendador determinista por SQL, sin
+   modelo— sigue siendo la red de seguridad y el proyecto no se cae.
 
-**Lo que se entrega:** `backend/app/modules/ia/proveedor.py` con una interfaz única
-—`completar(mensajes, herramientas)`— y **una** implementación concreta detrás; el resto del
-sistema nunca ve el nombre del proveedor. Más las variables `IA_PROVEEDOR`, `IA_API_KEY` e
-`IA_MODELO` en `.env.example` reemplazando a `ANTHROPIC_API_KEY`, un endpoint de diagnóstico y una
-prueba de humo que hace una llamada real con una herramienta declarada.
-
-**No entra nada de CU-33, CU-34 ni CU-35.** Solo el adaptador, el proveedor elegido y §6.6
-reescrito. Si la prueba falla con los dos candidatos, la degradación de §6.6 punto 3 —recomendador
-determinista por SQL, sin modelo— sigue siendo la red de seguridad y el proyecto no se cae.
+Lo que sí conviene hacer al escribir P10 es meter una interfaz única
+—`completar(mensajes, herramientas)`— entre el sistema y el proveedor, para que cambiar de modelo
+sea cambiar una clase y no reescribir tres casos de uso. Pero eso es trabajo del Ciclo 3.
 
 ---
 
@@ -233,17 +245,22 @@ reservas, que es el argumento de §2.2 del documento de Karen y sigue siendo vá
 | I4 | Diagramas UML en EA | Karen | **Mateo** | continuo |
 | I5 | Consolidación del `.docx`, índice, portada | Karen | Karen | día 5 · 13/09 |
 | I6 | Redespliegue en Railway | Ambos | Ambos | continuo |
-| **I7** | **Prueba y adaptador del proveedor de LLM** | — | **Mateo** | día 4 · 12/09 |
+| ~~I7~~ | *Elección del proveedor de LLM* | — | **Diferida**, se decide entre los dos | antes del Ciclo 3 |
 
 **CAP. 4 del documento:** 4.1 y 4.2 para Mateo, 4.3 y Anexos para Karen. Sin cambios.
 
-### 4.3 El balance, dicho con franqueza
+### 4.3 El balance
 
-Mateo queda con **cuatro** piezas de infraestructura (I1, I3, I4, I7) contra **dos** de Karen
-(I2, I5), aunque los casos de uso queden 7 a 7. Es deliberado —las cuatro dependen del teléfono
-conectado o de los *scripts* de EA, y ninguna se puede hacer del otro lado sin pagar un costo de
-transferencia—, pero es una carga real y hay que decirla en voz alta, no esconderla en un empate
-de tabla.
+Mateo queda con **tres** piezas de infraestructura (I1, I3, I4) contra **dos** de Karen (I2, I5),
+aunque los casos de uso queden 7 a 7. Es deliberado —las tres dependen del teléfono conectado o de
+los *scripts* de EA, y ninguna se puede hacer del otro lado sin pagar un costo de transferencia—,
+pero es una carga real y conviene decirla, no esconderla en un empate de tabla.
+
+**Esto es un orden de arranque, no un muro.** El reparto existe para que nadie espere a nadie y
+para que ninguna tabla tenga dos dueños, no para dejar a cada uno solo con lo suyo: el que termina
+antes se mete en el bloque del otro, y quien se traba pide ayuda el mismo día, no el día del cierre.
+Lo único que no se hace sin avisar es tocar la migración o el `models.py` del otro, porque eso sí
+rompe en silencio.
 
 **Válvula de escape, en este orden:** si el día 3 (11/09) Mateo va retrasado, pasa **CU-16**
 (disponibilidad de la sucursal) a Karen; si sigue retrasado, pasa **CU-15**. Los dos escriben sobre
@@ -295,8 +312,13 @@ antes de acordarse. Quedan **cinco días** hasta el domingo **13/09 a las 23:59*
 | **1** · 09/09 | Fijar §6.4 · modelos del catálogo y del perfil · migración `0002` | Fijar §6.4 · modelos `existencia`/`movimiento`/`reserva`/`detalle` · migración `0003` · **I1 *shell* móvil + CU-01 y CU-02 móviles** |
 | **2** · 10/09 | **CU-10** completo · **I2 *seed*** | **CU-13** completo · **CU-15** |
 | **3** · 11/09 | **CU-11** · **CU-04** preferencias | **CU-16** · **CU-22** *backend* (con `FOR UPDATE`, riesgo R5) · **CU-04 móvil** |
-| **4** · 12/09 | **CU-17** + **CU-18** web y móvil | **CU-22** + **CU-23** web y móvil · **I3 prototipo RA** · **I7 proveedor de LLM** |
+| **4** · 12/09 | **CU-17** + **CU-18** web y móvil | **CU-22** + **CU-23** web y móvil · **I3 prototipo RA** |
 | **5** · 13/09 | **CU-19** + **CU-14** (costura C1) · **I5 consolidación del `.docx`** | **CU-24** + **CU-25** · diagramas EA · CAP. 4.1 y 4.2 |
+
+**Lo primero que se toca son las deudas móviles del Ciclo 1**, antes que cualquier caso de uso del
+Ciclo 2: el *shell* con sesión viva más CU-01 y CU-02 el día 1, y CU-04 móvil el día 3. Mientras
+eso no exista, ninguna casilla «pantalla móvil» de este ciclo se puede marcar, ni las de Karen ni
+las de Mateo.
 
 **Congelamiento de código: 13/09 a las 18:00.** Se mantiene, para dejar margen al despliegue y al
 documento.
@@ -323,26 +345,42 @@ completo que esté su *backend*.
 
 ## 9. Lo que hay que cambiar en el repositorio si esto se acepta
 
+**Durante este ciclo:**
+
 | Archivo | Cambio |
 |---|---|
-| `docs/06-decisiones-tecnicas.md` §6.6 | Reescribir: proveedor gratuito por decidir en I7, no Claude ni `claude-opus-5` |
-| `backend/.env.example` | `ANTHROPIC_API_KEY` e `IA_MODELO=claude-opus-5` → `IA_PROVEEDOR`, `IA_API_KEY`, `IA_MODELO` |
+| `mobile/README.md` | Quitar «Flutter no está instalado»; fijar **3.47.2 / Dart 3.13.2** y documentar el arranque sobre el teléfono |
+| `mobile/pubspec.lock` | Se versiona, generado con esa versión, para que los dos resuelvan igual |
 | `docs/06-decisiones-tecnicas.md` §6.11.3 | Cerrar el diferimiento: las categorías preferidas se implementan, con la autoridad de §3 |
-| `mobile/README.md` | Quitar «Flutter no está instalado»; documentar el *shell* y el arranque sobre el teléfono |
+| `docs/06-decisiones-tecnicas.md` §6.4 | Anotar la versión de Flutter fijada |
 | `docs/05-plan-y-cronograma.md` §5.4 | Apuntar también a este documento, junto al de Karen |
 | `docs/entregas/ciclo-2/00-organizacion-por-caso-de-uso.md` | Nota al inicio remitiendo a este documento en §2.3, §5, §7 y §8 |
+
+**Cuando se elija el proveedor de LLM, antes del Ciclo 3** — queda anotado para no olvidarlo:
+
+| Archivo | Cambio |
+|---|---|
+| `docs/06-decisiones-tecnicas.md` §6.6 | Reescribir: hoy dice «API de Claude (Anthropic), `claude-opus-5`», que es de pago por *token* y contradice la decisión del 04/09 |
+| `backend/.env.example` | `ANTHROPIC_API_KEY` e `IA_MODELO=claude-opus-5` → `IA_PROVEEDOR`, `IA_API_KEY`, `IA_MODELO` |
 
 ---
 
 ## 10. Qué hace falta de Karen para cerrar el acuerdo
 
-Tres cosas, hoy:
+Nada de esto es un ultimátum: es una propuesta para discutir, y los cinco movimientos de §2 se
+pueden dar vuelta si a Karen le cierra distinto. Cuatro cosas, hoy:
 
-1. **Aceptar o discutir los cinco movimientos de §2.** El más discutible es el 2.3 (EA); los otros
+1. **Pegar la salida de `flutter --version`.** Es lo más urgente de los cuatro. Si las dos máquinas
+   no tienen `3.47.2` estable, se iguala antes de escribir la primera pantalla; después es tarde,
+   porque el `pubspec.lock` ya divergió y el problema aparece recién cuando el otro no compila.
+2. **Aceptar o discutir los cinco movimientos de §2.** El más discutible es el 2.3 (EA); los otros
    cuatro se apoyan en dónde está el hardware o en quién es dueño de las tablas.
-2. **Llenar §6.4 del documento de organización** con los nombres definitivos de `producto`,
+3. **Llenar §6.4 del documento de organización** con los nombres definitivos de `producto`,
    `variante_producto`, `imagen_producto` y de lo que agregue al perfil. Mateo necesita el nombre
    de la tabla de variantes y el de su clave primaria para escribir la clave foránea de
    `reserva_detalle` — es la costura **C2** y es lo único que lo bloquea el día 1.
-3. **Confirmar que toma el *seed* (I2)** con los PNG de fondo transparente incluidos, porque de eso
+4. **Confirmar que toma el *seed* (I2)** con los PNG de fondo transparente incluidos, porque de eso
    depende que el prototipo de RA del día 4 se pruebe con prendas de verdad.
+
+Mientras tanto Mateo arranca con las **deudas móviles del Ciclo 1** (§2.1), que es lo único de todo
+este documento que no depende de ninguna respuesta.
