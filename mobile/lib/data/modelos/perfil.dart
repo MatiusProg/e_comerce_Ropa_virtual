@@ -97,6 +97,22 @@ class Perfil {
   bool get tieneTallas =>
       tallaSuperior != null || tallaInferior != null || tallaCalzado != null;
 
+  /// El mismo perfil con otra lista de direcciones. Los tres endpoints de
+  /// direcciones devuelven la lista completa ya reordenada, así que alcanza
+  /// con reemplazarla: pedir el perfil entero de nuevo sería una llamada de
+  /// red por cada alta, baja o cambio de predeterminada.
+  Perfil conDirecciones(List<Direccion> nuevas) => Perfil(
+    nombres: nombres,
+    apellidos: apellidos,
+    correo: correo,
+    documento: documento,
+    telefono: telefono,
+    tallaSuperior: tallaSuperior,
+    tallaInferior: tallaInferior,
+    tallaCalzado: tallaCalzado,
+    direcciones: nuevas,
+  );
+
   factory Perfil.desdeJson(Map<String, dynamic> json) => Perfil(
     nombres: json['nombres'] as String,
     apellidos: json['apellidos'] as String,

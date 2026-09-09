@@ -41,12 +41,19 @@ class RepositorioPerfil {
   }
 
   /// CU-04 flujo alternativo 3a · `POST /perfil/direcciones`.
-  Future<void> agregarDireccion(NuevaDireccion datos) async {
+  ///
+  /// Los tres endpoints de direcciones devuelven **la lista completa ya
+  /// reordenada**, no la fila afectada. Está bien pensado: la marca de
+  /// predeterminada se mueve entre filas, así que devolver una sola dejaría a
+  /// la app rearmando un orden que el servidor ya calculó. Por eso se usa lo
+  /// que responden y no se vuelve a pedir el perfil entero.
+  Future<List<Direccion>> agregarDireccion(NuevaDireccion datos) async {
     try {
-      await _dio.post<Map<String, dynamic>>(
+      final respuesta = await _dio.post<List<dynamic>>(
         '/perfil/direcciones',
         data: datos.aJson(),
       );
+      return _direcciones(respuesta.data!);
     } on DioException catch (fallo) {
       throw traducirError(fallo);
     }
@@ -56,24 +63,34 @@ class RepositorioPerfil {
   ///
   /// Marcar una quita la marca de la anterior; eso lo resuelve el servicio, no
   /// esta app.
-  Future<void> marcarPredeterminada(int direccionId) async {
+  Future<List<Direccion>> marcarPredeterminada(int direccionId) async {
     try {
-      await _dio.patch<void>('/perfil/direcciones/$direccionId/predeterminada');
+      final respuesta = await _dio.patch<List<dynamic>>(
+        '/perfil/direcciones/$direccionId/predeterminada',
+      );
+      return _direcciones(respuesta.data!);
     } on DioException catch (fallo) {
       throw traducirError(fallo);
     }
   }
 
   /// CU-04 · `DELETE /perfil/direcciones/{id}`.
-  Future<void> eliminarDireccion(int direccionId) async {
+  Future<List<Direccion>> eliminarDireccion(int direccionId) async {
     try {
-      await _dio.delete<void>('/perfil/direcciones/$direccionId');
+      final respuesta = await _dio.delete<List<dynamic>>(
+        '/perfil/direcciones/$direccionId',
+      );
+      return _direcciones(respuesta.data!);
     } on DioException catch (fallo) {
       throw traducirError(fallo);
     }
   }
 
   /// CU-04 flujo alternativo 3c · `PUT /perfil/contrasena`.
+  ///
+  /// Responde 204 y **revoca todas las sesiones abiertas, incluida la que hizo
+  /// esta petición**. El token que la app tiene guardado queda muerto en el
+  /// mismo momento en que esta llamada termina bien.
   Future<void> cambiarContrasena(CambioContrasena datos) async {
     try {
       await _dio.put<void>('/perfil/contrasena', data: datos.aJson());
@@ -100,4 +117,8 @@ class RepositorioPerfil {
       throw traducirError(fallo);
     }
   }
+
+  static List<Direccion> _direcciones(List<dynamic> crudo) => crudo
+      .map((e) => Direccion.desdeJson(e as Map<String, dynamic>))
+      .toList();
 }

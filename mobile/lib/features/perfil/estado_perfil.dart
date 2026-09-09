@@ -48,35 +48,34 @@ class ControlPerfil extends AsyncNotifier<Perfil> {
   }
 
   /// Flujo alternativo 3a · agrega una dirección de entrega.
-  ///
-  /// El endpoint responde 201 sin cuerpo, así que hay que volver a pedir el
-  /// perfil para ver la lista con la dirección nueva y su identificador.
   Future<void> agregarDireccion(NuevaDireccion datos) async {
-    await _repositorio.agregarDireccion(datos);
-    await _recargar();
+    _aplicar(await _repositorio.agregarDireccion(datos));
   }
 
   Future<void> marcarPredeterminada(int direccionId) async {
-    await _repositorio.marcarPredeterminada(direccionId);
-    await _recargar();
+    _aplicar(await _repositorio.marcarPredeterminada(direccionId));
   }
 
+  /// Flujo alternativo 3b · elimina una dirección.
   Future<void> eliminarDireccion(int direccionId) async {
-    await _repositorio.eliminarDireccion(direccionId);
-    await _recargar();
+    _aplicar(await _repositorio.eliminarDireccion(direccionId));
   }
 
   /// Flujo alternativo 3c · cambio de contraseña.
   ///
-  /// No toca el estado: la contraseña no forma parte del perfil que se muestra.
-  /// Y no cierra la sesión, porque el backend no revoca el token al cambiarla.
+  /// No toca el perfil: la contraseña no forma parte de lo que se muestra.
+  /// Quien llama tiene que cerrar la sesión después, porque el backend revoca
+  /// todas las sesiones abiertas —incluida esta— al cambiarla.
   Future<void> cambiarContrasena(CambioContrasena datos) {
     return _repositorio.cambiarContrasena(datos);
   }
 
-  /// Vuelve a pedir el perfil dejando a la vista los datos viejos mientras
-  /// llega el nuevo, en vez de vaciar la pantalla y hacerla saltar.
-  Future<void> _recargar() async {
-    state = await AsyncValue.guard(_repositorio.obtener);
+  /// Reemplaza la lista de direcciones con la que devolvió el servidor.
+  ///
+  /// Si el perfil todavía no está cargado no hay nada que actualizar; no puede
+  /// pasar, porque estas acciones salen de la pantalla que ya lo muestra.
+  void _aplicar(List<Direccion> direcciones) {
+    final actual = state.value;
+    if (actual != null) state = AsyncData(actual.conDirecciones(direcciones));
   }
 }

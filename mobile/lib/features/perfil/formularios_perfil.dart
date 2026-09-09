@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/red/excepciones.dart';
 import '../../data/modelos/perfil.dart';
 import '../../data/repositorios/repositorio_auth.dart' show contrasenaLongitudMinima;
+import '../auth/estado_sesion.dart';
 import '../auth/pantalla_login.dart' show AvisoError, validarCorreo;
 import 'estado_perfil.dart';
 
@@ -455,9 +456,10 @@ class _FormularioContrasenaState extends ConsumerState<_FormularioContrasena> {
       );
       if (!mounted) return;
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Su contraseña quedó cambiada.')),
-      );
+      // El backend acaba de revocar todas las sesiones, esta incluida. Se
+      // cierra la sesion aqui mismo en vez de esperar a que la proxima
+      // peticion falle con 401 y saque al usuario sin explicarle por que.
+      await ref.read(sesionProvider.notifier).cerrarPorCambioDeContrasena();
     } on ErrorApi catch (fallo) {
       // La contraseña actual incorrecta llega como 400 con su mensaje.
       if (mounted) setState(() => _error = fallo.mensaje);
