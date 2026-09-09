@@ -1,0 +1,172 @@
+:host {
+  display: block;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.encabezado {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.85rem;
+    font-weight: 600;
+    color: var(--vb-malva-oscuro);
+  }
+
+  .bajada {
+    margin: 0.25rem 0 0;
+    max-width: 46rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.tarjeta {
+  border-radius: var(--vb-radio);
+  border: 1px solid var(--mat-sys-outline-variant);
+  box-shadow: var(--vb-sombra-suave);
+  overflow: hidden;
+  background: var(--mat-sys-surface);
+}
+
+.filtros {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  padding: 1.25rem 1.25rem 0;
+
+  .campo-busqueda {
+    flex: 1 1 20rem;
+    min-width: 15rem;
+  }
+
+  mat-form-field {
+    min-width: 11rem;
+  }
+}
+
+// La tabla se desplaza dentro de su contenedor; la pagina nunca lo hace.
+.envoltorio-tabla {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  background: transparent;
+}
+
+code {
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
+// Los importes en columna se leen mejor con cifras de ancho fijo.
+.numero {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+// Un producto desactivado se atenua: se distingue de un vistazo sin leer.
+.fila-inactiva {
+  opacity: 0.62;
+}
+
+.pastilla {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.pastilla-activo {
+  background: #e7f4ec;
+  color: #1c5334;
+}
+
+.pastilla-inactivo {
+  background: var(--mat-sys-surface-container-highest);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// «Sin variantes» no es un dato neutro: ese producto no se puede inventariar
+// ni reservar, asi que se marca en ambar y no como una cifra mas.
+.sin-variantes {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: #8a5a00;
+
+  mat-icon {
+    width: 1.05rem;
+    height: 1.05rem;
+    font-size: 1.05rem;
+  }
+}
+
+.cuenta-variantes {
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin: 1rem 1.25rem 0;
+  padding: 0.8rem 1rem;
+  border-radius: var(--vb-radio-chico);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+
+  mat-icon {
+    flex: none;
+  }
+}
+
+.vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 3.5rem 1.5rem;
+  text-align: center;
+
+  mat-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+    font-size: 2.75rem;
+    color: var(--vb-malva-claro);
+  }
+
+  p {
+    margin: 0;
+    font-weight: 500;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+@media (max-width: 700px) {
+  .filtros {
+    padding: 1rem 1rem 0;
+
+    mat-form-field,
+    .campo-busqueda {
+      flex: 1 1 100%;
+      min-width: 0;
+    }
+  }
+}
