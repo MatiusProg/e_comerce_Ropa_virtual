@@ -127,10 +127,16 @@ multisucursal y reservas.
 > **El reparto de este ciclo cambió: ya no se divide por capa, sino por caso de uso completo.**
 > Los dos integrantes trabajan *full stack*, de modo que quien toma un caso de uso entrega su
 > migración, su backend, su pantalla web, su pantalla móvil y su sección del documento, y es dueño
-> de las tablas que ese caso de uso estrena. El acuerdo está en
-> [`docs/entregas/ciclo-2/00-organizacion-por-caso-de-uso.md`](entregas/ciclo-2/00-organizacion-por-caso-de-uso.md),
-> que **sustituye a la columna «Responsable» de la tabla siguiente y a la §5.7** mientras dure el
-> Ciclo 2. La tabla se conserva porque el alcance por paquete no cambió.
+> de las tablas que ese caso de uso estrena. El acuerdo son **dos documentos que se leen juntos**:
+> [`ciclo-2/00-organizacion-por-caso-de-uso.md`](entregas/ciclo-2/00-organizacion-por-caso-de-uso.md),
+> que fija el reparto y los nombres de las tablas, y
+> [`ciclo-2/01-contrapropuesta-de-mateo.md`](entregas/ciclo-2/01-contrapropuesta-de-mateo.md),
+> acatado el 09/09/2026, que mueve la infraestructura y recomprime el calendario a cinco días.
+>
+> Los dos **sustituyen a la columna «Responsable» de la tabla siguiente y a la §5.7** mientras dure
+> el Ciclo 2; la tabla se conserva porque el alcance por paquete no cambió. Donde difieran, manda la
+> contrapropuesta: en particular el *seed* es de **Karen** y el prototipo del vestidor virtual es de
+> **Mateo**, al revés de lo que dicen las dos filas sin paquete.
 
 ### Alcance funcional — paquetes P3 (productos), P4, P5 y P6
 

@@ -5,7 +5,24 @@
 > responsabilidades de [`docs/05-plan-y-cronograma.md`](../../05-plan-y-cronograma.md) §5.4 para
 > lo que dure el Ciclo 2.
 >
-> **Rama de trabajo:** `Ciclo2`. Período: **06/09 – 13/09/2026** (8 días). Entrega: Presentación #2.
+> **Rama de trabajo:** `Ciclo2`. Entrega: Presentación #2.
+>
+> ---
+>
+> **Este documento ya no se lee solo.** Mateo respondió con una contrapropuesta —
+> [`01-contrapropuesta-de-mateo.md`](01-contrapropuesta-de-mateo.md) — que Karen **acató el
+> 09/09/2026**. Acepta el fondo de este documento (§1, §2, §3, §4, §5 y §6) y **sustituye** cuatro
+> partes suyas:
+>
+> | Sección de acá | Qué la reemplaza |
+> |---|---|
+> | **§2.3** Balance | §4.1 y §4.3 de la contrapropuesta — casos de uso 7 a 7; **CU-14 pasa a Karen** |
+> | **§5**, última línea (`seed.py` de Mateo) | §2.4 — el *seed* es de **Karen**, y con eso la costura **C3 desaparece** |
+> | **§7** Trabajo que no es un caso de uso | §4.2 — **I1, I3 e I4 son de Mateo**; I2 e I5 de Karen |
+> | **§8** Orden de arranque | §7 — calendario recomprimido a **cinco días: 09/09 – 13/09/2026** |
+>
+> Todo lo demás de este documento sigue vigente tal cual, incluida la **§6.4**, que es la única
+> sección que se llenó después: los nombres de las tablas quedaron fijados el 09/09.
 
 ---
 
@@ -199,22 +216,126 @@ El *seed* de ~60 productos con variantes es de Mateo, pero siembra tablas de Kar
 *seed* se escribe **después** de que la migración `0002` esté integrada en `Ciclo2` (día 2), y Karen
 no cambia la forma de esas tablas después de ese punto sin avisar.
 
-### 6.4 Nombres acordados — a completar el día 1
+### 6.4 Nombres acordados — fijados el 09/09/2026
 
-> Se llena en el primer commit del ciclo y a partir de ahí es vinculante para los dos.
+> **Vinculante para los dos.** Karen fija acá las cuatro tablas del catálogo y del perfil; las
+> cuatro de Mateo quedan como estaban. Lo que Mateo necesita para desbloquear la costura **C2** es
+> la primera línea de la segunda tabla: **`variante_producto`, clave primaria `id` (`BIGINT`)**, y
+> el campo **`sku VARCHAR(40)`**. A partir de acá, cambiar un nombre de esta sección se avisa;
+> agregar columnas nuevas, no.
+
+**Convenciones heredadas del Ciclo 1**, que estas tablas respetan:
+
+- Nombres de tabla en **singular y minúscula**; la clave primaria siempre se llama `id`.
+- **`BIGINT`** en las entidades que crecen con el uso (`usuario`, `cliente`, `empleado`,
+  `proveedor`); **`INTEGER`** en los catálogos chicos (`categoria`, `talla`, `color`, `ciudad`,
+  `sucursal`). Producto, variante e imagen son de las primeras.
+- Mixin `Auditoria` (`creado_en`, `actualizado_en`) en todo lo que se edita.
+- Los nombres de índices y restricciones los genera la convención de `app/db/base.py`; las que
+  llevan nombre propio se declaran en `__table_args__`.
+
+#### Tablas de Karen — migración `0002_ciclo2_catalogo`
 
 ```
-producto              (id, codigo, nombre, descripcion, categoria_id, proveedor_id,
-                       temporada_id, coleccion_id, precio_base, activo, ...)
-variante_producto     (id, producto_id, talla_id, color_id, sku, precio, activo, ...)
-imagen_producto       (id, producto_id, variante_id?, url, orden, es_transparente, ...)
-cliente_categoria     (cliente_id, categoria_id)   -- clave primaria compuesta
+producto              id              BIGINT        PK
+                      codigo          VARCHAR(30)   UNIQUE, codigo interno de la prenda
+                      nombre          VARCHAR(120)
+                      descripcion     VARCHAR(500)  NULL
+                      categoria_id    INTEGER       FK categoria.id, indexado
+                      proveedor_id    BIGINT        FK proveedor.id, NULL, indexado
+                      temporada_id    INTEGER       FK temporada.id, NULL, indexado
+                      coleccion_id    INTEGER       FK coleccion.id, NULL, indexado
+                      precio_base     NUMERIC(10,2) precio sugerido de las variantes
+                      activo          BOOLEAN       default true
+                      + creado_en, actualizado_en
+
+variante_producto     id              BIGINT        PK        <-- lo que pide la costura C2
+                      producto_id     BIGINT        FK producto.id ON DELETE CASCADE, indexado
+                      talla_id        INTEGER       FK talla.id, indexado
+                      color_id        INTEGER       FK color.id, indexado
+                      sku             VARCHAR(40)   UNIQUE     <-- codigo propio de la variante
+                      precio          NUMERIC(10,2) NOT NULL
+                      activa          BOOLEAN       default true
+                      + creado_en, actualizado_en
+                      UNIQUE (producto_id, talla_id, color_id)
+
+imagen_producto       id              BIGINT        PK
+                      producto_id     BIGINT        FK producto.id ON DELETE CASCADE, indexado
+                      variante_id     BIGINT        FK variante_producto.id ON DELETE CASCADE,
+                                                    NULL, indexado
+                      ruta            VARCHAR(255)  ruta en el volumen, no la imagen (§6.8)
+                      es_principal    BOOLEAN       default false
+                      es_transparente BOOLEAN       default false  <-- PNG del vestidor (S5)
+                      orden           SMALLINT      default 0
+                      + creado_en, actualizado_en
+                      indice parcial UNIQUE (producto_id) WHERE es_principal
+                      indice parcial UNIQUE (variante_id) WHERE es_transparente
+
+cliente_categoria     cliente_id      BIGINT        FK cliente.id ON DELETE CASCADE
+                      categoria_id    INTEGER       FK categoria.id ON DELETE CASCADE
+                      PK compuesta (cliente_id, categoria_id), sin columnas propias
+```
+
+#### Tablas de Mateo — migración `0003_ciclo2_inv_res`
+
+Sin cambios; se repiten para que esta sección sea el único lugar que hay que mirar.
+
+```
 existencia            (id, variante_id, sucursal_id, cantidad_disponible,
                        cantidad_reservada, ...)
 movimiento_inventario (id, existencia_id, tipo, cantidad, motivo, usuario_id, creado_en)
 reserva               (id, cliente_id, sucursal_id, franja_inicio, franja_fin, estado, ...)
 reserva_detalle       (id, reserva_id, variante_id, cantidad, resultado_prueba?)
 ```
+
+`existencia.variante_id` y `reserva_detalle.variante_id` son **`BIGINT`** y apuntan a
+`variante_producto.id`.
+
+#### Las cinco decisiones que no se leen en la tabla
+
+1. **La variante lleva `precio` obligatorio, y `producto.precio_base` es solo el sugerido.** Lo pide
+   la decisión **D1** de §4.2.1: la variante es la unidad de negocio y es la que tiene precio,
+   existencia, reserva y venta. Al generar las variantes de un producto, el servicio copia
+   `precio_base` en cada una; después cada variante se mueve sola. Cambiar `precio_base` no
+   repropaga hacia atrás, a propósito: si lo hiciera, cambiaría el precio de variantes ya vendidas.
+
+2. **`producto` guarda `temporada_id` y `coleccion_id` a la vez, y las dos admiten nulo.** Es
+   redundante —una colección ya pertenece a una temporada— pero un producto puede estar en una
+   temporada sin pertenecer a ninguna colección, y la rotación por temporada es lo que justifica
+   `temporada` en el modelo. La coherencia entre las dos la valida el servicio: si vienen las dos,
+   `coleccion.temporada_id` tiene que coincidir con `producto.temporada_id`. Es el único punto del
+   esquema donde se aceptó una redundancia, y queda anotado para que no parezca un descuido.
+
+3. **`imagen_producto.variante_id` admite nulo, y eso distingue los dos tipos de imagen.** Con nulo,
+   la imagen es del producto en general y sirve para el listado del catálogo; con valor, es de una
+   combinación talla × color concreta. El índice parcial sobre `es_transparente` garantiza **como
+   máximo un PNG transparente por variante**, que es el activo del que depende el vestidor virtual
+   (§6.5, supuesto S5): si el prototipo de RA no encuentra imagen, es un dato que falta y no un
+   error de código. Los dos índices parciales copian el patrón que el Ciclo 1 ya usa en
+   `uq_direccion_predeterminada`.
+
+4. **La imagen guarda `ruta`, no `url`.** §6.8 decidió el volumen persistente de Railway montado en
+   `/app/media`, con la base guardando únicamente la ruta. Poner `url` invitaría a escribir el
+   dominio en la base y ataría los datos al despliegue actual; si algún día se pasa a Supabase
+   Storage o a Cloudinary, se cambia quién sirve el archivo y no todas las filas.
+
+5. **`cliente_categoria` no lleva mixin de auditoría ni `id` propio.** Es una tabla puente sin
+   atributos, igual que `rol_permiso` del Ciclo 1, y se declara con `Table(...)` y no con una
+   clase. Cierra el diferimiento de §6.11.3 de las decisiones técnicas, que dejó las categorías
+   preferidas para este ciclo porque en el Ciclo 1 todavía no existían categorías que elegir.
+
+#### Lo que la autoridad de §3 de la contrapropuesta **no** hace falta usar todavía
+
+El perfil del cliente no necesita más tablas que `cliente_categoria`. Los otros tres bloques que
+promete el flujo principal del CU-04 —datos personales, tallas habituales y direcciones— ya están
+modelados en `cliente` y `direccion_cliente` desde el Ciclo 1, y Mateo los cubrió en la pantalla
+móvil. Si al implementar aparece algo más, se agrega a la `0002` sin consultar y se anota acá.
+
+**Una arruga conocida, que no se toca en este ciclo:** `cliente.talla_superior`, `talla_inferior` y
+`talla_calzado` son `VARCHAR(10)` de texto libre, de cuando `talla` todavía no era una entidad.
+Ahora lo es, y el recomendador del CU-33 va a querer cruzarlas con `talla.id`. Convertirlas en
+claves foráneas **no es un cambio aditivo**, así que queda fuera del alcance del Ciclo 2 y se
+decide entre los dos antes del Ciclo 3.
 
 ---
 
