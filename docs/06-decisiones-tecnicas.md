@@ -73,7 +73,7 @@ administración, panel de sucursal (reservas e inventario) y punto de venta (caj
 
 | Aspecto | Decisión |
 |---|---|
-| Versión | Flutter 3.x / Dart 3.x |
+| Versión | **Flutter 3.47.2 (canal `stable`) / Dart 3.13.2**, fijada el 08/09/2026 e igual en las dos máquinas. No es preferencia: `go_router`, `flutter_riverpod` y `dio` en las versiones declaradas son de la era Dart 3, y un Flutter anterior a la serie 3.4x falla en `flutter pub get`. El `pubspec.lock` se versiona |
 | Cliente HTTP | **Dio** con interceptor de token y manejo centralizado de errores |
 | Estado | **Riverpod** |
 | Cámara | Paquete **`camera`** |
@@ -404,6 +404,11 @@ Nada de lo que se construya en el CU-04 hay que rehacerlo.
 **Alcance real del CU-04 en el Ciclo 1**, por lo tanto: datos personales, tallas habituales,
 direcciones de entrega (alta, baja y predeterminada) y cambio de contraseña. Todo lo demás del
 flujo se cumple.
+
+**Cerrado el 09/09/2026.** El Ciclo 2 implementa las categorías preferidas: la tabla
+`cliente_categoria` entra en la migración `0002_ciclo2_catalogo`, con la forma fijada en la §6.4
+de [`docs/entregas/ciclo-2/00-organizacion-por-caso-de-uso.md`](entregas/ciclo-2/00-organizacion-por-caso-de-uso.md).
+Se cumplió lo previsto: el cambio fue aditivo y no hubo que rehacer nada del CU-04 del Ciclo 1.
 
 ### 6.11.4 Quién puede listar las ciudades
 
