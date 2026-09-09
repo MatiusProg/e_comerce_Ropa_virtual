@@ -134,3 +134,42 @@ export interface VarianteEditar {
   precio?: string;
   activa?: boolean;
 }
+
+// --- CU-11 · Imágenes de producto ----------------------------------------
+// Van en este archivo y no en uno propio porque CU-10 y CU-11 son de la misma
+// persona y se consumen desde la misma pantalla: separarlos solo agregaría un
+// segundo servicio HTTP contra el mismo árbol de recursos.
+
+/** Una imagen del producto o de una de sus variantes. */
+export interface Imagen {
+  id: number;
+  producto_id: number;
+  variante_id: number | null;
+  /** Ruta relativa dentro del volumen, tal como la guarda la base (§6.8). */
+  ruta: string;
+  /** La misma ruta ya prefijada con MEDIA_URL. Es la que se usa en el `src`. */
+  url: string;
+  es_principal: boolean;
+  /** PNG con fondo transparente: el activo del vestidor virtual (S5). */
+  es_transparente: boolean;
+  orden: number;
+  variante_sku: string | null;
+  /** «M · Negro», resuelto por el servidor para rotular la miniatura. */
+  variante_etiqueta: string | null;
+}
+
+/**
+ * Asociar a una variante o cambiar el orden (3a, 3d).
+ *
+ * `variante_id` en `null` **desasocia**; no enviarlo lo deja como está. El
+ * componente arma el cuerpo campo por campo por eso mismo.
+ */
+export interface ImagenEditar {
+  variante_id?: number | null;
+  orden?: number;
+}
+
+/** Reordenar: la lista completa de una sola vez, no un movimiento por vez. */
+export interface ReordenarImagenes {
+  imagenes: number[];
+}

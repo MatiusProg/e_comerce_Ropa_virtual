@@ -170,3 +170,19 @@ code {
     }
   }
 }
+
+// La marca del vestidor va junto al conteo de imagenes y no en columna propia:
+// es un dato de preparacion, no una magnitud que se compare entre filas.
+.marca-vestidor {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+  margin-left: 0.45rem;
+  color: #1c5334;
+
+  mat-icon {
+    width: 0.95rem;
+    height: 0.95rem;
+    font-size: 0.95rem;
+  }
+}

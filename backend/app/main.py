@@ -5,8 +5,11 @@ Los paquetes se activan por ciclo: los del ciclo 1 ya estan montados, los de los
 ciclos 2 y 3 se descomentan a medida que se implementan.
 """
 
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 
@@ -59,6 +62,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# --- Imagenes del catalogo (CU-11) ---------------------------------------
+# El volumen persistente de MEDIA_ROOT se sirve tal cual, sin pasar por la API
+# ni exigir token: las fotos del catalogo son publicas --- las muestran la
+# vitrina (CU-17, CU-18) y la app movil --- y hacerlas pasar por un endpoint
+# autenticado obligaria a la app a llevar el token en cada miniatura.
+#
+# La base guarda solo la ruta relativa; el prefijo es este (seccion 6.8).
+_MEDIA = Path(settings.MEDIA_ROOT)
+_MEDIA.mkdir(parents=True, exist_ok=True)
+app.mount(settings.MEDIA_URL, StaticFiles(directory=_MEDIA), name="media")
 
 
 @app.get("/", tags=["Infraestructura"], include_in_schema=False)

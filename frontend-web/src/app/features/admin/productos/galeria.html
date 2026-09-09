@@ -1,0 +1,157 @@
+@if (cargando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<h2 mat-dialog-title class="vb-titulo">
+  Imágenes de {{ producto.codigo }}
+  <small>{{ producto.nombre }}</small>
+</h2>
+
+<mat-dialog-content>
+  @if (error(); as e) {
+    <div class="aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ e }}</span>
+    </div>
+  }
+
+  <div class="barra">
+    <p class="explicacion">
+      La <strong>principal</strong> es la que representa al producto en el
+      catálogo. El <strong>PNG del vestidor</strong> es otra cosa: pertenece a
+      una variante concreta y necesita fondo transparente de verdad.
+    </p>
+    <label class="boton-subir">
+      <input
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        multiple
+        hidden
+        (change)="elegirArchivos($event)"
+      />
+      <span matButton="filled" class="vb-boton-marca">
+        <mat-icon>upload</mat-icon>
+        Subir imágenes
+      </span>
+    </label>
+  </div>
+
+  @if (imagenes().length === 0) {
+    <div class="vacio">
+      <mat-icon>image</mat-icon>
+      <p>Este producto todavía no tiene imágenes.</p>
+      <p class="detalle">
+        Sin una imagen principal no aparece con foto en el catálogo, y sin un PNG
+        transparente por variante el vestidor virtual no lo puede probar.
+      </p>
+    </div>
+  } @else {
+    <ul class="galeria">
+      @for (imagen of imagenes(); track imagen.id; let primera = $first, ultima = $last) {
+        <li class="tarjeta" [class.es-principal]="imagen.es_principal">
+          <div class="miniatura" [class.fondo-damero]="imagen.es_transparente">
+            <img [src]="url(imagen)" [alt]="producto.nombre" loading="lazy" />
+            @if (imagen.es_principal) {
+              <span class="distintivo principal" matTooltip="Se muestra en el catálogo">
+                <mat-icon>star</mat-icon> Principal
+              </span>
+            }
+            @if (imagen.es_transparente) {
+              <span class="distintivo vestidor" matTooltip="La usa el vestidor virtual">
+                <mat-icon>checkroom</mat-icon> Vestidor
+              </span>
+            }
+          </div>
+
+          <div class="pie">
+            <span class="variante">
+              @if (imagen.variante_etiqueta) {
+                {{ imagen.variante_etiqueta }}
+              } @else {
+                <em>Del producto</em>
+              }
+            </span>
+
+            <span class="acciones">
+              <button
+                matIconButton
+                type="button"
+                [disabled]="primera || cargando()"
+                (click)="mover(imagen, -1)"
+                matTooltip="Mover antes"
+              >
+                <mat-icon>arrow_back</mat-icon>
+              </button>
+              <button
+                matIconButton
+                type="button"
+                [disabled]="ultima || cargando()"
+                (click)="mover(imagen, 1)"
+                matTooltip="Mover después"
+              >
+                <mat-icon>arrow_forward</mat-icon>
+              </button>
+              <button
+                matIconButton
+                type="button"
+                [matMenuTriggerFor]="menu"
+                aria-label="Más acciones"
+              >
+                <mat-icon>more_vert</mat-icon>
+              </button>
+            </span>
+
+            <mat-menu #menu="matMenu">
+              <button
+                mat-menu-item
+                type="button"
+                [disabled]="imagen.es_principal"
+                (click)="marcarPrincipal(imagen)"
+              >
+                <mat-icon>star</mat-icon>
+                <span>Usar como principal</span>
+              </button>
+
+              <button mat-menu-item type="button" (click)="alternarVestidor(imagen)">
+                <mat-icon>checkroom</mat-icon>
+                <span>
+                  {{ imagen.es_transparente ? 'Quitar del vestidor' : 'Usar en el vestidor' }}
+                </span>
+              </button>
+
+              <button mat-menu-item type="button" [matMenuTriggerFor]="variantesMenu">
+                <mat-icon>style</mat-icon>
+                <span>Asociar a…</span>
+              </button>
+
+              <button mat-menu-item type="button" (click)="eliminar(imagen)">
+                <mat-icon>delete_outline</mat-icon>
+                <span>Eliminar</span>
+              </button>
+            </mat-menu>
+
+            <mat-menu #variantesMenu="matMenu">
+              <button mat-menu-item type="button" (click)="asociar(imagen, null)">
+                <span><em>Del producto (sin variante)</em></span>
+              </button>
+              @for (v of variantes; track v.id) {
+                <button mat-menu-item type="button" (click)="asociar(imagen, v.id)">
+                  <span>{{ etiquetaDeVariante(v) }}</span>
+                </button>
+              }
+              @if (variantes.length === 0) {
+                <span class="nota-menu">
+                  Este producto no tiene variantes todavía.
+                </span>
+              }
+            </mat-menu>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cerrar()">Cerrar</button>
+</mat-dialog-actions>

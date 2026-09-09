@@ -161,6 +161,9 @@ def _producto_out(db: Session, producto: Producto) -> ProductoOut:
     salida.variantes = [_variante_out(v) for v in variantes]
     salida.variantes_totales = len(variantes)
     salida.variantes_activas = sum(1 for v in variantes if v.activa)
+    salida.imagenes_totales, salida.variantes_con_vestidor = (
+        repository.conteo_de_imagenes(db, [producto.id]).get(producto.id, (0, 0))
+    )
     return salida
 
 
@@ -238,6 +241,7 @@ def listar_productos(
 
     ids = [p.id for p in productos]
     conteos = repository.conteo_de_variantes(db, ids)
+    imagenes = repository.conteo_de_imagenes(db, ids)
     categorias = repository.nombres_de_categorias(db, [p.categoria_id for p in productos])
 
     items = []
@@ -245,6 +249,7 @@ def listar_productos(
         fila = ProductoResumenOut.model_validate(producto, from_attributes=True)
         fila.categoria_nombre = categorias.get(producto.categoria_id)
         fila.variantes_totales, fila.variantes_activas = conteos.get(producto.id, (0, 0))
+        fila.imagenes_totales, fila.variantes_con_vestidor = imagenes.get(producto.id, (0, 0))
         items.append(fila)
 
     return PaginaProductos(total=total, pagina=pagina, tamano=tamano, items=items)

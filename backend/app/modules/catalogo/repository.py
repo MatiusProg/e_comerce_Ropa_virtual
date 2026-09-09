@@ -7,13 +7,14 @@ Caso de uso: CU-10 Gestionar productos y variantes
 Regla: aqui solo van consultas. Ninguna regla de negocio, ninguna validacion de
 permisos, ningun commit: el control de la transaccion vive en el servicio.
 """
-from sqlalchemy import Select, func, or_, select
+from sqlalchemy import Select, distinct, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.modules.catalogo.models import (
     Categoria,
     Coleccion,
     Color,
+    ImagenProducto,
     Producto,
     Talla,
     Temporada,
@@ -123,6 +124,30 @@ def conteo_de_variantes(db: Session, producto_ids: list[int]) -> dict[int, tuple
         .group_by(VarianteProducto.producto_id)
     ).all()
     return {fila.producto_id: (fila.total, fila.activas) for fila in filas}
+
+
+def conteo_de_imagenes(db: Session, producto_ids: list[int]) -> dict[int, tuple[int, int]]:
+    """Imagenes por producto y cuantas de sus variantes tienen PNG de vestidor.
+
+    Una sola consulta agregada para toda la pagina, igual que el conteo de
+    variantes. El segundo numero cuenta variantes DISTINTAS y no imagenes: el
+    indice parcial ya garantiza una transparente por variante, pero contar filas
+    daria lo mismo solo por accidente.
+    """
+    if not producto_ids:
+        return {}
+    filas = db.execute(
+        select(
+            ImagenProducto.producto_id,
+            func.count().label("total"),
+            func.count(distinct(ImagenProducto.variante_id))
+            .filter(ImagenProducto.es_transparente)
+            .label("vestidor"),
+        )
+        .where(ImagenProducto.producto_id.in_(producto_ids))
+        .group_by(ImagenProducto.producto_id)
+    ).all()
+    return {fila.producto_id: (fila.total, fila.vestidor) for fila in filas}
 
 
 def obtener_producto(db: Session, producto_id: int) -> Producto | None:

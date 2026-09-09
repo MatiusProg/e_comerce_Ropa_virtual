@@ -286,3 +286,7 @@ class ImagenProducto(Auditoria, Base):
     orden: Mapped[int] = mapped_column(SmallInteger, server_default=text("0"))
 
     producto: Mapped[Producto] = relationship(back_populates="imagenes")
+    # Sin back_populates: la variante no necesita conocer sus imagenes --- lo que
+    # se consulta siempre es la galeria del producto --- y declararlo obligaria
+    # a cargar una coleccion mas en cada lectura de variantes.
+    variante: Mapped["VarianteProducto | None"] = relationship()

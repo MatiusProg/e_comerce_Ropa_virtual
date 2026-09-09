@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 
 from app.core.dependencies import DbSession, requiere_roles
 from app.modules.catalogo import service
+from app.modules.catalogo.imagenes_router import router as imagenes_router
 from app.modules.catalogo.schemas import (
     CambioEstadoIn,
     GenerarVariantesIn,
@@ -42,6 +43,12 @@ router = APIRouter(
         403: {"description": "El usuario no es Administrador."},
     },
 )
+
+
+# CU-11 cuelga de este mismo router y hereda su exigencia de rol. Se incluye
+# aqui y no en main.py para no tocar un archivo compartido: ver la cabecera de
+# imagenes_router.py.
+router.include_router(imagenes_router)
 
 
 def _traducir(error: service.ErrorDeProductos) -> HTTPException:

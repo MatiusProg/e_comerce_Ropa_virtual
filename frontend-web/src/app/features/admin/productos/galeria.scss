@@ -1,0 +1,201 @@
+:host {
+  display: block;
+}
+
+h2 {
+  color: var(--vb-malva-oscuro);
+  margin-bottom: 0.5rem;
+
+  small {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+mat-dialog-content {
+  padding-top: 1rem;
+  max-height: 72vh;
+}
+
+.barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.explicacion {
+  flex: 1 1 24rem;
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// El input de archivo va oculto dentro de la etiqueta: asi el boton de Material
+// dispara el selector sin que haya que reproducir su aspecto en un input.
+.boton-subir {
+  cursor: pointer;
+
+  > span {
+    pointer-events: none;
+  }
+}
+
+.galeria {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tarjeta {
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--vb-radio-chico);
+  overflow: hidden;
+  background: var(--mat-sys-surface);
+}
+
+// La principal se distingue por el borde y no solo por la etiqueta: es la que
+// va a salir en el catalogo y conviene verla de un vistazo.
+.tarjeta.es-principal {
+  border-color: var(--vb-malva-oscuro);
+  box-shadow: 0 0 0 1px var(--vb-malva-oscuro);
+}
+
+.miniatura {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  background: var(--mat-sys-surface-container-low);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+}
+
+// Damero detras de las transparentes: sobre un fondo liso, un PNG recortado y
+// uno con fondo blanco se ven igual, que es justo lo que hay que distinguir.
+.fondo-damero {
+  background-image:
+    linear-gradient(45deg, #d9d4d8 25%, transparent 25%),
+    linear-gradient(-45deg, #d9d4d8 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #d9d4d8 75%),
+    linear-gradient(-45deg, transparent 75%, #d9d4d8 75%);
+  background-size: 14px 14px;
+  background-position: 0 0, 0 7px, 7px -7px, -7px 0;
+}
+
+.distintivo {
+  position: absolute;
+  left: 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  mat-icon {
+    width: 0.85rem;
+    height: 0.85rem;
+    font-size: 0.85rem;
+  }
+}
+
+.distintivo.principal {
+  top: 0.4rem;
+  background: var(--vb-malva-oscuro);
+  color: #fff;
+}
+
+.distintivo.vestidor {
+  bottom: 0.4rem;
+  background: #1c5334;
+  color: #fff;
+}
+
+.pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  padding: 0.3rem 0.25rem 0.3rem 0.6rem;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+.variante {
+  font-size: 0.78rem;
+  color: var(--mat-sys-on-surface-variant);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.acciones {
+  display: inline-flex;
+  flex: none;
+}
+
+.nota-menu {
+  display: block;
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 3rem 1.5rem;
+  text-align: center;
+
+  mat-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+    font-size: 2.75rem;
+    color: var(--vb-malva-claro);
+  }
+
+  p {
+    margin: 0;
+    font-weight: 500;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .detalle {
+    max-width: 32rem;
+    font-weight: 400;
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+}
+
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--vb-radio-chico);
+  margin-bottom: 1rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+
+  mat-icon {
+    flex: none;
+  }
+}

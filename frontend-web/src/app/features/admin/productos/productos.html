@@ -126,6 +126,35 @@
             </td>
           </ng-container>
 
+          <!--
+            Un producto sin imágenes sale sin foto en el catálogo; uno sin PNG
+            de vestidor no se puede probar en realidad aumentada. Las dos cosas
+            se ven acá y no abriendo producto por producto.
+          -->
+          <ng-container matColumnDef="imagenes">
+            <th mat-header-cell *matHeaderCellDef>Imágenes</th>
+            <td mat-cell *matCellDef="let f">
+              @if (f.imagenes_totales === 0) {
+                <span class="sin-variantes" matTooltip="En el catálogo aparecería sin foto">
+                  <mat-icon>warning_amber</mat-icon>
+                  ninguna
+                </span>
+              } @else {
+                <span class="cuenta-variantes">
+                  {{ f.imagenes_totales }}
+                  @if (f.variantes_con_vestidor > 0) {
+                    <span
+                      class="marca-vestidor"
+                      [matTooltip]="f.variantes_con_vestidor + ' variante(s) listas para el vestidor virtual'"
+                    >
+                      <mat-icon>checkroom</mat-icon>{{ f.variantes_con_vestidor }}
+                    </span>
+                  }
+                </span>
+              }
+            </td>
+          </ng-container>
+
           <ng-container matColumnDef="estado">
             <th mat-header-cell *matHeaderCellDef>Estado</th>
             <td mat-cell *matCellDef="let f">
@@ -150,6 +179,15 @@
               >
                 <mat-icon>style</mat-icon>
                 Variantes
+              </button>
+              <button
+                matButton
+                type="button"
+                (click)="verImagenes(f)"
+                matTooltip="Subir y organizar las fotos del producto"
+              >
+                <mat-icon>image</mat-icon>
+                Imágenes
               </button>
               <button matIconButton type="button" [matMenuTriggerFor]="menu" aria-label="Más acciones">
                 <mat-icon>more_vert</mat-icon>

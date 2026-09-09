@@ -33,6 +33,7 @@ import {
 import type { Coleccion, Temporada } from '../../../core/models/temporadas.models';
 import type { Proveedor } from '../../../core/models/proveedores.models';
 import { Confirmacion, type DatosConfirmacion } from '../../../shared/confirmacion/confirmacion';
+import { Galeria, type DatosGaleria } from './galeria';
 import { ProductoFormulario, type DatosProductoFormulario } from './producto-formulario';
 import { Variantes, type DatosVariantes } from './variantes';
 
@@ -87,6 +88,7 @@ export class Productos implements OnInit {
     'categoria',
     'precio',
     'variantes',
+    'imagenes',
     'estado',
     'acciones',
   ];
@@ -272,6 +274,32 @@ export class Productos implements OnInit {
           .subscribe((hubocambios) => {
             // Solo se recarga si algo cambió: el conteo de variantes de la
             // tabla es lo único que pudo quedar viejo.
+            if (hubocambios) this.cargar();
+          });
+      },
+      error: (e: ErrorProductos) => {
+        this.cargando.set(false);
+        this.mostrar(e.mensaje);
+      },
+    });
+  }
+
+  /** CU-11 · la galería del producto. */
+  protected verImagenes(fila: ProductoResumen): void {
+    // Se pide el detalle para que el diálogo pueda ofrecer las variantes a las
+    // que asociar cada imagen; el listado no las trae.
+    this.cargando.set(true);
+    this.api.obtener(fila.id).subscribe({
+      next: (producto) => {
+        this.cargando.set(false);
+        this.dialogo
+          .open(Galeria, {
+            data: { producto } satisfies DatosGaleria,
+            width: '960px',
+            maxWidth: '95vw',
+          })
+          .afterClosed()
+          .subscribe((hubocambios) => {
             if (hubocambios) this.cargar();
           });
       },

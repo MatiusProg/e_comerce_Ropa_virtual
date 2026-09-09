@@ -120,6 +120,13 @@ class ProductoResumenOut(BaseModel):
     categoria_nombre: str | None = None
     variantes_totales: int = 0
     variantes_activas: int = 0
+    #: Cuantas imagenes tiene. Cero significa que en el catalogo sale sin foto.
+    imagenes_totales: int = 0
+    #: Cuantas de sus variantes ya tienen el PNG transparente del vestidor
+    #: virtual. Viaja en el listado porque es la dependencia del prototipo de
+    #: realidad aumentada (supuesto S5) y conviene poder ver de un vistazo
+    #: cuanto falta, en vez de abrir producto por producto.
+    variantes_con_vestidor: int = 0
 
 
 class ProductoOut(ProductoResumenOut):

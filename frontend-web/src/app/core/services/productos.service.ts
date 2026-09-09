@@ -7,10 +7,13 @@ import { environment } from '../../../environments/environment';
 import {
   FiltrosProductos,
   GenerarVariantes,
+  Imagen,
+  ImagenEditar,
   PaginaProductos,
   Producto,
   ProductoCrear,
   ProductoEditar,
+  ReordenarImagenes,
   ResultadoGeneracion,
   Variante,
   VarianteCrear,
@@ -32,6 +35,8 @@ export type ErrorProductos =
   | { tipo: 'coleccion-ajena'; mensaje: string }
   | { tipo: 'sku-largo'; mensaje: string }
   | { tipo: 'con-dependencias'; mensaje: string }
+  | { tipo: 'archivo-invalido'; mensaje: string }
+  | { tipo: 'sin-transparencia'; mensaje: string }
   | { tipo: 'no-encontrado'; mensaje: string }
   | { tipo: 'validacion'; mensaje: string }
   | { tipo: 'sistema'; mensaje: string };
@@ -123,6 +128,84 @@ export class ProductosService {
       .pipe(catchError((e) => throwError(() => this.traducir(e))));
   }
 
+  // --- Imágenes (CU-11) --------------------------------------------------
+
+  /**
+   * La URL absoluta con la que se pinta una imagen.
+   *
+   * El servidor devuelve una ruta que cuelga del **origen** de la API
+   * (`/media/...`), no de `apiUrl`, que además lleva `/api/v1`. Y en desarrollo
+   * el origen de la API no es el de Angular: dejar la ruta relativa haría que
+   * el navegador pidiera la foto al servidor de desarrollo del :4200 y todas
+   * las miniaturas saldrían rotas.
+   */
+  urlDeImagen(imagen: Imagen): string {
+    return `${new URL(environment.apiUrl).origin}${imagen.url}`;
+  }
+
+  listarImagenes(productoId: number): Observable<Imagen[]> {
+    return this.http
+      .get<Imagen[]>(`${this.base}/productos/${productoId}/imagenes`)
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
+
+  /**
+   * Pasos 3 y 4: sube el archivo.
+   *
+   * Va como `FormData` y NO se le pone `Content-Type` a mano: el navegador
+   * tiene que generarlo él para incluir el `boundary` del multipart. Fijarlo
+   * produce un cuerpo que el servidor no puede separar.
+   */
+  subirImagen(
+    productoId: number,
+    archivo: File,
+    varianteId?: number | null,
+  ): Observable<Imagen> {
+    const cuerpo = new FormData();
+    cuerpo.append('archivo', archivo);
+    let params = new HttpParams();
+    if (varianteId != null) params = params.set('variante_id', varianteId);
+    return this.http
+      .post<Imagen>(`${this.base}/productos/${productoId}/imagenes`, cuerpo, { params })
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
+
+  /** Flujos 3a y 3d sobre una imagen. */
+  editarImagen(id: number, datos: ImagenEditar): Observable<Imagen> {
+    return this.http
+      .patch<Imagen>(`${this.base}/imagenes/${id}`, datos)
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
+
+  /** Flujo 3b. Devuelve la galería entera: marcar una desmarca la anterior. */
+  marcarPrincipal(id: number, esPrincipal: boolean): Observable<Imagen[]> {
+    return this.http
+      .patch<Imagen[]>(`${this.base}/imagenes/${id}/principal`, { es_principal: esPrincipal })
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
+
+  /** Flujo 3c: el PNG del vestidor virtual. El servidor verifica el alfa. */
+  marcarTransparente(id: number, esTransparente: boolean): Observable<Imagen[]> {
+    return this.http
+      .patch<Imagen[]>(`${this.base}/imagenes/${id}/transparente`, {
+        es_transparente: esTransparente,
+      })
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
+
+  /** Flujo 3d: el orden completo de una sola vez. */
+  reordenarImagenes(productoId: number, datos: ReordenarImagenes): Observable<Imagen[]> {
+    return this.http
+      .put<Imagen[]>(`${this.base}/productos/${productoId}/imagenes/orden`, datos)
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
+
+  eliminarImagen(id: number): Observable<void> {
+    return this.http
+      .delete<void>(`${this.base}/imagenes/${id}`)
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
+
   // --- Traducción de errores ---------------------------------------------
 
   private traducir(error: HttpErrorResponse): ErrorProductos {
@@ -152,6 +235,19 @@ export class ProductosService {
       }
       if (detalle.includes('SKU')) {
         return { tipo: 'sku-largo', mensaje: detalle };
+      }
+      // CU-11. Se separan porque llevan a acciones distintas: «sin
+      // transparencia» manda a conseguir otro archivo, y el resto son
+      // problemas del archivo que se acaba de elegir.
+      if (detalle.includes('transparente') || detalle.includes('vestidor')) {
+        return { tipo: 'sin-transparencia', mensaje: detalle };
+      }
+      if (
+        detalle.includes('imagen') ||
+        detalle.includes('MB') ||
+        detalle.includes('píxeles')
+      ) {
+        return { tipo: 'archivo-invalido', mensaje: detalle };
       }
       // FastAPI manda `detail` como lista en los errores de validación de
       // esquema, así que `detalle` queda vacío y se usa el genérico.
