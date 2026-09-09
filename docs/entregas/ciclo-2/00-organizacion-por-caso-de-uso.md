@@ -302,9 +302,19 @@ reserva_detalle       (id, reserva_id, variante_id, cantidad, resultado_prueba?)
 2. **`producto` guarda `temporada_id` y `coleccion_id` a la vez, y las dos admiten nulo.** Es
    redundante —una colección ya pertenece a una temporada— pero un producto puede estar en una
    temporada sin pertenecer a ninguna colección, y la rotación por temporada es lo que justifica
-   `temporada` en el modelo. La coherencia entre las dos la valida el servicio: si vienen las dos,
-   `coleccion.temporada_id` tiene que coincidir con `producto.temporada_id`. Es el único punto del
-   esquema donde se aceptó una redundancia, y queda anotado para que no parezca un descuido.
+   `temporada` en el modelo. **Se evaluó derivar la temporada de la colección y se decidió
+   conservar la redundancia** (Karen, 09/09/2026): derivarla obligaría a crear una colección
+   ficticia para cada producto suelto, o a dejar sin temporada a los productos que no pertenecen a
+   ninguna colección, y son justamente los que el reporte de rotación no puede perder.
+
+   El precio de conservarla es que las dos columnas pueden contradecirse, así que la coherencia se
+   vuelve responsabilidad explícita del servicio de CU-10: **si vienen las dos,
+   `coleccion.temporada_id` tiene que coincidir con `producto.temporada_id`**, y si viene solo la
+   colección, la temporada se completa a partir de ella en vez de quedar nula. No se declara como
+   restricción en la base porque exigiría una clave foránea compuesta sobre `coleccion` y un
+   `trigger` para cada cambio de la colección; con dos columnas y una regla de servicio se resuelve
+   igual y se lee mejor. Es el único punto del esquema donde se aceptó una redundancia, y queda
+   anotado para que no parezca un descuido.
 
 3. **`imagen_producto.variante_id` admite nulo, y eso distingue los dos tipos de imagen.** Con nulo,
    la imagen es del producto en general y sirve para el listado del catálogo; con valor, es de una
