@@ -18,6 +18,14 @@ library;
 ///
 /// Nota: en el emulador de Android `localhost` es el propio emulador, no la
 /// maquina anfitriona. La direccion del anfitrion es `10.0.2.2`.
+///
+/// En un **telefono fisico** conectado por USB, `10.0.2.2` tampoco sirve: hay
+/// que usar la IP de la PC en la red local, y el backend tiene que escuchar
+/// en `0.0.0.0` y no en `127.0.0.1`.
+///
+/// ```bash
+/// flutter run --dart-define=API_URL=http://192.168.0.10:8000/api/v1
+/// ```
 const String apiUrlBase = String.fromEnvironment(
   'API_URL',
   defaultValue: 'https://ecomerceropavirtual-production.up.railway.app/api/v1',

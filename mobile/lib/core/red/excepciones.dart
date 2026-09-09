@@ -39,18 +39,18 @@ ErrorApi traducirError(DioException fallo) {
     // respuesta, no esperandola. Para el usuario es lo mismo que un timeout.
     case DioExceptionType.transformTimeout:
       return const ErrorApi(
-        'El servidor esta tardando demasiado en responder. '
+        'El servidor está tardando demasiado en responder. '
         'Vuelva a intentarlo en unos segundos.',
       );
     case DioExceptionType.connectionError:
     case DioExceptionType.unknown:
       return const ErrorApi(
-        'No se pudo conectar con el servidor. Revise su conexion a internet.',
+        'No se pudo conectar con el servidor. Revise su conexión a internet.',
       );
     case DioExceptionType.cancel:
-      return const ErrorApi('La operacion fue cancelada.');
+      return const ErrorApi('La operación fue cancelada.');
     case DioExceptionType.badCertificate:
-      return const ErrorApi('El certificado del servidor no es valido.');
+      return const ErrorApi('El certificado del servidor no es válido.');
     case DioExceptionType.badResponse:
       break;
   }
@@ -79,7 +79,7 @@ ErrorApi traducirError(DioException fallo) {
     if (detalle is List && detalle.isNotEmpty) {
       return ErrorApi(
         'Revise los datos ingresados: hay ${detalle.length} '
-        '${detalle.length == 1 ? "campo invalido" : "campos invalidos"}.',
+        '${detalle.length == 1 ? "campo inválido" : "campos inválidos"}.',
         codigo: codigo,
       );
     }
@@ -90,12 +90,12 @@ ErrorApi traducirError(DioException fallo) {
 
 String _mensajePorCodigo(int? codigo) {
   return switch (codigo) {
-    400 => 'La solicitud no es valida.',
-    401 => 'Su sesion expiro. Vuelva a iniciar sesion.',
-    403 => 'No tiene permiso para realizar esta accion.',
-    404 => 'No se encontro lo que buscaba.',
+    400 => 'La solicitud no es válida.',
+    401 => 'Su sesión expiró. Vuelva a iniciar sesión.',
+    403 => 'No tiene permiso para realizar esta acción.',
+    404 => 'No se encontró lo que buscaba.',
     409 => 'El dato ya existe.',
-    503 => 'El servicio no esta disponible en este momento.',
-    _ => 'Ocurrio un error inesperado. Intentelo de nuevo.',
+    503 => 'El servicio no está disponible en este momento.',
+    _ => 'Ocurrió un error inesperado. Inténtelo de nuevo.',
   };
 }

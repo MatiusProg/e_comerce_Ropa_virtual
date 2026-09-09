@@ -3,20 +3,15 @@
 Aplicación del **Cliente**: catálogo, disponibilidad por sucursal, **vestidor
 virtual con realidad aumentada**, reservas, compra y asistente.
 
-> **Estado: base de arranque, sin compilar todavía.** Están la carpeta
-> `android/`, el cliente HTTP con interceptor de token, el enrutado con guarda de
-> sesión y las pantallas de **registro (CU-01)** e **inicio de sesión (CU-02)**
-> contra la API desplegada. Falta todo el Ciclo 2: catálogo (CU-17 a CU-19) y
-> reservas (CU-22, CU-23).
+> **Estado: compila y corre en un teléfono real.** Están la carpeta `android/`,
+> el cliente HTTP con interceptor de token, el enrutado con guarda de sesión y
+> las pantallas de **registro (CU-01)** e **inicio de sesión (CU-02)** contra la
+> API desplegada. Falta todo el Ciclo 2: catálogo (CU-17 a CU-19) y reservas
+> (CU-22, CU-23).
 >
-> **Verificado:** `flutter analyze` sin problemas, `flutter test` pasa y el
-> contrato de `/auth` se contrastó campo por campo contra el `openapi.json` de la
-> API desplegada.
->
-> **Sin verificar: el APK nunca se compiló.** La máquina donde se escribió tiene
-> 8 GB de RAM y `flutter build apk --debug` no llegó a terminar; el ajuste de
-> `android/gradle.properties` que se hizo para eso está sin validar. Ninguna
-> pantalla se ha visto corriendo en un dispositivo real.
+> **Verificado:** `flutter analyze` sin observaciones, `flutter test` pasa, el
+> contrato de `/auth` contrastado campo por campo contra el `openapi.json` de la
+> API desplegada, y el APK instalado y corriendo en un Xiaomi con Android 16.
 
 ## Versión de Flutter
 
@@ -47,12 +42,42 @@ flutter run --dart-define=API_URL=http://10.0.2.2:8000/api/v1
 En el emulador de Android `localhost` es el propio emulador; la máquina
 anfitriona es `10.0.2.2`.
 
+En un **teléfono físico** `10.0.2.2` tampoco sirve: hay que usar la IP de la PC
+en la red local, y el backend tiene que escuchar en `0.0.0.0`, no en
+`127.0.0.1`.
+
 Verificación sin dispositivo:
 
 ```bash
 flutter analyze         # sin errores
 flutter test            # prueba de arranque y redirección al login
 ```
+
+## Tres cosas que hacen fallar el build, y ya están resueltas
+
+Las tres se encontraron al compilar el APK por primera vez. Quedan documentadas
+porque ninguna se deduce leyendo el código.
+
+**1 · `compileSdk` tiene que ser 37, fijado a mano.** `flutter_secure_storage`
+11 exige compilar contra la API 37; `flutter.compileSdkVersion` hoy resuelve a
+36 y el build muere en `CheckAarMetadata` antes de compilar una sola clase. No
+es un problema de memoria: con 8 GB o con 64 el resultado es el mismo. Está
+fijado en `android/app/build.gradle.kts` con el motivo comentado.
+
+**2 · Sin caché incremental de Kotlin.** Recortar la memoria de la JVM (que sí
+hace falta en máquinas de 8 GB) era necesario pero no suficiente: con esos
+límites puestos, el build sigue fallando con *«Could not close incremental
+caches»* en un plugin distinto cada vez. Windows no libera los archivos que el
+compilador de Kotlin mapea en memoria. `kotlin.incremental=false` en
+`android/gradle.properties` lo resuelve: compila entero cada vez, más lento pero
+determinista.
+
+**3 · Teléfonos Xiaomi / HyperOS rechazan `adb install`** con
+`INSTALL_FAILED_USER_RESTRICTED` hasta que se habilita **Opciones de
+desarrollador › Instalar vía USB**, y hay que aceptar una ventana flotante que
+aparece en el teléfono durante unos segundos. Es un ajuste del dispositivo, no
+del proyecto. HyperOS además bloquea `adb shell input`, así que las pruebas de
+interfaz se hacen a mano: no se pueden guionar desde la PC.
 
 ## Estructura de `lib/`
 

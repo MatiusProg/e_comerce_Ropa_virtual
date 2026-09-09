@@ -31,7 +31,7 @@ class PantallaInicio extends ConsumerWidget {
         title: const Text('Violet Boutique'),
         actions: [
           IconButton(
-            tooltip: 'Cerrar sesion',
+            tooltip: 'Cerrar sesión',
             icon: const Icon(Icons.logout),
             onPressed: () => ref.read(sesionProvider.notifier).cerrarSesion(),
           ),
@@ -120,7 +120,7 @@ class _PendientesDelCiclo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const pendientes = [
-      ('Catalogo', 'CU-17 · CU-18 · CU-19', Icons.storefront_outlined),
+      ('Catálogo', 'CU-17 · CU-18 · CU-19', Icons.storefront_outlined),
       ('Reservas', 'CU-22 · CU-23', Icons.event_available_outlined),
       ('Vestidor virtual', 'Prototipo · CU-21', Icons.camera_alt_outlined),
     ];

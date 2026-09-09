@@ -6,7 +6,10 @@ plugins {
 
 android {
     namespace = "bo.edu.uagrm.violetboutique"
-    compileSdk = flutter.compileSdkVersion
+    // Fijado a mano, no `flutter.compileSdkVersion` (que hoy resuelve a 36):
+    // flutter_secure_storage 11 exige compilar contra la API 37 o el build
+    // falla en CheckAarMetadata antes de compilar una sola clase.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

@@ -149,7 +149,7 @@ class ControlSesion extends Notifier<EstadoSesion> {
     if (state is SesionCerrada) return;
     await _almacen.borrar();
     state = const SesionCerrada(
-      aviso: 'Su sesion expiro. Vuelva a iniciar sesion.',
+      aviso: 'Su sesión expiró. Vuelva a iniciar sesión.',
     );
   }
 }

@@ -92,7 +92,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Mateo: reservas (CU-22, CU-23).
     ],
     errorBuilder: (context, estado) => Scaffold(
-      appBar: AppBar(title: const Text('Pagina no encontrada')),
+      appBar: AppBar(title: const Text('Página no encontrada')),
       body: Center(child: Text('No existe la ruta ${estado.uri}')),
     ),
   );
