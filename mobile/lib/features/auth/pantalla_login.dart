@@ -96,7 +96,7 @@ class _PantallaLoginState extends ConsumerState<PantallaLogin> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               Text(
-                                'Iniciar sesion',
+                                'Iniciar sesión',
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context).textTheme.titleLarge
                                     ?.copyWith(fontWeight: FontWeight.w600),
@@ -109,7 +109,7 @@ class _PantallaLoginState extends ConsumerState<PantallaLogin> {
                                 textInputAction: TextInputAction.next,
                                 autofillHints: const [AutofillHints.email],
                                 decoration: const InputDecoration(
-                                  labelText: 'Correo electronico',
+                                  labelText: 'Correo electrónico',
                                   prefixIcon: Icon(Icons.mail_outline),
                                 ),
                                 validator: validarCorreo,
@@ -123,7 +123,7 @@ class _PantallaLoginState extends ConsumerState<PantallaLogin> {
                                 autofillHints: const [AutofillHints.password],
                                 onFieldSubmitted: (_) => _entrar(),
                                 decoration: InputDecoration(
-                                  labelText: 'Contrasena',
+                                  labelText: 'Contraseña',
                                   prefixIcon: const Icon(Icons.lock_outline),
                                   suffixIcon: IconButton(
                                     onPressed: () => setState(
@@ -136,13 +136,13 @@ class _PantallaLoginState extends ConsumerState<PantallaLogin> {
                                           : Icons.visibility_off_outlined,
                                     ),
                                     tooltip: _ocultarContrasena
-                                        ? 'Mostrar contrasena'
-                                        : 'Ocultar contrasena',
+                                        ? 'Mostrar contraseña'
+                                        : 'Ocultar contraseña',
                                   ),
                                 ),
                                 validator: (valor) =>
                                     (valor == null || valor.isEmpty)
-                                    ? 'Ingrese su contrasena'
+                                    ? 'Ingrese su contraseña'
                                     : null,
                               ),
                               if (_error != null) ...[
@@ -250,9 +250,9 @@ class AvisoError extends StatelessWidget {
 /// campo vacio o sin arroba.
 String? validarCorreo(String? valor) {
   final texto = valor?.trim() ?? '';
-  if (texto.isEmpty) return 'Ingrese su correo electronico';
+  if (texto.isEmpty) return 'Ingrese su correo electrónico';
   if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(texto)) {
-    return 'El correo no tiene un formato valido';
+    return 'El correo no tiene un formato válido';
   }
   return null;
 }

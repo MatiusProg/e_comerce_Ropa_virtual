@@ -56,7 +56,7 @@ void main() {
 
     // Resuelta la comprobacion, la redireccion lleva al login.
     await tester.pumpAndSettle();
-    expect(find.text('Iniciar sesion'), findsOneWidget);
-    expect(find.text('Correo electronico'), findsOneWidget);
+    expect(find.text('Iniciar sesión'), findsOneWidget);
+    expect(find.text('Correo electrónico'), findsOneWidget);
   });
 }

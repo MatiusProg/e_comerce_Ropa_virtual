@@ -79,7 +79,7 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Cuenta creada. Ya puede iniciar sesion.'),
+          content: Text('Cuenta creada. Ya puede iniciar sesión.'),
           backgroundColor: ColoresVB.malva,
         ),
       );
@@ -137,14 +137,14 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                         ),
                         _campo(
                           controlador: _telefono,
-                          etiqueta: 'Telefono (opcional)',
+                          etiqueta: 'Teléfono (opcional)',
                           icono: Icons.phone_outlined,
                           teclado: TextInputType.phone,
                           maximo: 20,
                         ),
                         _campo(
                           controlador: _correo,
-                          etiqueta: 'Correo electronico',
+                          etiqueta: 'Correo electrónico',
                           icono: Icons.mail_outline,
                           teclado: TextInputType.emailAddress,
                           validador: validarCorreo,
@@ -152,10 +152,10 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                         ),
                         _campoContrasena(
                           controlador: _contrasena,
-                          etiqueta: 'Contrasena',
+                          etiqueta: 'Contraseña',
                           validador: (valor) {
                             final texto = valor ?? '';
-                            if (texto.isEmpty) return 'Ingrese una contrasena';
+                            if (texto.isEmpty) return 'Ingrese una contraseña';
                             if (texto.length < contrasenaLongitudMinima) {
                               return 'Debe tener al menos '
                                   '$contrasenaLongitudMinima caracteres';
@@ -165,9 +165,9 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                         ),
                         _campoContrasena(
                           controlador: _repetir,
-                          etiqueta: 'Repetir contrasena',
+                          etiqueta: 'Repetir contraseña',
                           validador: (valor) => valor != _contrasena.text
-                              ? 'Las contrasenas no coinciden'
+                              ? 'Las contraseñas no coinciden'
                               : null,
                         ),
                         if (_error != null) ...[
@@ -192,7 +192,7 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                           onPressed: _enviando
                               ? null
                               : () => context.go(Rutas.login),
-                          child: const Text('Ya tengo cuenta — Iniciar sesion'),
+                          child: const Text('Ya tengo cuenta — Iniciar sesión'),
                         ),
                       ],
                     ),
