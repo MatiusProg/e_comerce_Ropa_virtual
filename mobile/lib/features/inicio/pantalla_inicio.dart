@@ -8,8 +8,10 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/constantes.dart';
+import '../../core/enrutado/router.dart';
 import '../../core/tema.dart';
 import '../auth/estado_sesion.dart';
 
@@ -97,6 +99,8 @@ class PantallaInicio extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 20),
+          const _MiCuenta(),
+          const SizedBox(height: 20),
           const _PendientesDelCiclo(),
           const SizedBox(height: 20),
           Center(
@@ -107,6 +111,42 @@ class PantallaInicio extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Lo que ya se puede usar. Hoy es solo el perfil (CU-04); el catalogo y las
+/// reservas se suman aqui cuando cada uno cierre su caso de uso.
+class _MiCuenta extends StatelessWidget {
+  const _MiCuenta();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          children: [
+            const ListTile(
+              dense: true,
+              title: Text(
+                'Mi cuenta',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.person_outline,
+                color: ColoresVB.malva,
+              ),
+              title: const Text('Mi perfil'),
+              subtitle: const Text('Datos, tallas, direcciones y contraseña'),
+              trailing: const Icon(Icons.chevron_right, size: 20),
+              onTap: () => context.push(Rutas.perfil),
+            ),
+          ],
+        ),
       ),
     );
   }
