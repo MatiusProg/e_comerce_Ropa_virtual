@@ -130,10 +130,19 @@ def obtener_producto(db: Session, producto_id: int) -> Producto | None:
 
     `selectinload` trae todo en tres consultas fijas. Sin el, dibujar la tabla
     de variantes dispara una consulta por talla y otra por color de cada fila.
+
+    `populate_existing` NO es decorativo. La sesion se abre con
+    `expire_on_commit=False`, asi que despues de un commit el Producto sigue en
+    el mapa de identidad con su coleccion `variantes` tal como se cargo. Volver
+    a consultarlo devuelve ESA instancia y, si la coleccion ya estaba cargada,
+    SQLAlchemy no la reemplaza: el detalle que se lee justo despues de generar
+    variantes salia sin ninguna. Con esto, la consulta siempre refresca lo que
+    trae.
     """
     return db.scalar(
         select(Producto)
         .where(Producto.id == producto_id)
+        .execution_options(populate_existing=True)
         .options(
             selectinload(Producto.variantes).selectinload(VarianteProducto.talla),
             selectinload(Producto.variantes).selectinload(VarianteProducto.color),

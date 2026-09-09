@@ -98,8 +98,17 @@ def _sin_tildes(texto: str) -> str:
     return "".join(c for c in descompuesto if not unicodedata.combining(c))
 
 
-def _parte_de_sku(texto: str, largo: int) -> str:
-    limpio = "".join(c for c in _sin_tildes(texto).upper() if c.isalnum())
+def _parte_de_sku(texto: str, largo: int, *, con_guiones: bool = False) -> str:
+    """Normaliza un trozo del SKU: mayusculas, sin tildes y sin separadores.
+
+    El codigo del producto conserva sus guiones --- 'CAM-001' es como lo escribe
+    y lo busca el Administrador, y comerselos daria 'CAM001', que no es el
+    codigo de nada ---. La talla y el color no: ahi el guion es el separador
+    entre las tres partes, y dejarlo pasar permitiria que un color llamado
+    'Rojo-Azul' partiera el SKU en cuatro.
+    """
+    permitido = (lambda c: c.isalnum() or (con_guiones and c == "-"))
+    limpio = "".join(c for c in _sin_tildes(texto).upper() if permitido(c))
     return limpio[:largo]
 
 
@@ -116,7 +125,7 @@ def armar_sku(codigo_producto: str, codigo_talla: str, nombre_color: str) -> str
     avisa y se pide acortar el codigo del producto.
     """
     sku = (
-        f"{_parte_de_sku(codigo_producto, len(codigo_producto))}"
+        f"{_parte_de_sku(codigo_producto, len(codigo_producto), con_guiones=True)}"
         f"-{_parte_de_sku(codigo_talla, len(codigo_talla))}"
         f"-{_parte_de_sku(nombre_color, LARGO_COLOR_EN_SKU)}"
     )

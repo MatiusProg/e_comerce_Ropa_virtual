@@ -53,16 +53,20 @@ def _color(api: TestClient, admin: dict[str, str], nombre: str, hexa: str = "#10
     return r.json()["id"]
 
 
-def _temporada(api: TestClient, admin: dict[str, str], nombre: str = "Verano 2026") -> int:
+def _temporada(
+    api: TestClient,
+    admin: dict[str, str],
+    nombre: str = "Verano 2026",
+    *,
+    desde: str = "2026-01-01",
+    hasta: str = "2026-03-31",
+) -> int:
+    """Las fechas son parametro porque CU-09 avisa si dos temporadas abiertas se
+    solapan: dos llamadas con el mismo rango devuelven 409, no 201."""
     r = api.post(
         TEMPORADAS,
         headers=admin,
-        json={
-            "nombre": nombre,
-            "fecha_inicio": "2026-01-01",
-            "fecha_fin": "2026-03-31",
-            "activa": True,
-        },
+        json={"nombre": nombre, "fecha_inicio": desde, "fecha_fin": hasta, "activa": True},
     )
     assert r.status_code == 201, r.text
     return r.json()["id"]
@@ -192,7 +196,9 @@ def test_excepcion_e2_la_coleccion_debe_pertenecer_a_la_temporada(
     temporada de su colección se contradigan.
     """
     verano = _temporada(api, cabeceras_admin, "Verano 2026")
-    invierno = _temporada(api, cabeceras_admin, "Invierno 2026")
+    invierno = _temporada(
+        api, cabeceras_admin, "Invierno 2026", desde="2026-06-01", hasta="2026-08-31"
+    )
     coleccion_de_verano = _coleccion(api, cabeceras_admin, verano, "Playa")
 
     r = api.post(
@@ -535,7 +541,12 @@ def test_la_paginacion_cuenta_el_total_con_los_mismos_filtros(
     categoria = _categoria(api, cabeceras_admin)
     for i in range(3):
         _producto(api, cabeceras_admin, codigo=f"CAM-00{i}", categoria_id=categoria)
-    _producto(api, cabeceras_admin, codigo="PAN-100", categoria_id=categoria)
+    # El nombre por omision es "Camisa Oxford...", que tambien contiene "CAM":
+    # la busqueda mira codigo Y nombre, asi que este cuarto producto necesita
+    # un nombre que no case, o el total daria cuatro.
+    _producto(
+        api, cabeceras_admin, codigo="PAN-100", categoria_id=categoria, nombre="Pantalon chino"
+    )
 
     r = api.get(
         PRODUCTOS, headers=cabeceras_admin, params={"busqueda": "CAM", "tamano": 2, "pagina": 1}
