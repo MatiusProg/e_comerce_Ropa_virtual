@@ -28,6 +28,25 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/registro/registro').then((m) => m.Registro),
   },
 
+  // --- Ciclo 2 · Karen · La vitrina, también sin sesión ------------------
+  // CU-17 y CU-18 son públicos a propósito: el flujo principal no tiene
+  // precondición de sesión y el RF07 pide que el cliente consulte el catálogo
+  // desde la web y el móvil. Exigir token obligaría a registrarse para mirar
+  // una prenda. Lo que se ofrece ya está acotado en el servidor —solo producto
+  // activo con variantes activas— y los esquemas públicos no exponen proveedor
+  // ni precio base.
+  {
+    path: 'tienda',
+    title: 'Catálogo · Violet Boutique',
+    loadComponent: () =>
+      import('./features/tienda/catalogo/catalogo').then((m) => m.Catalogo),
+  },
+  {
+    path: 'tienda/producto/:id',
+    title: 'Prenda · Violet Boutique',
+    loadComponent: () => import('./features/tienda/ficha/ficha').then((m) => m.Ficha),
+  },
+
   // --- Con sesión, una por rol ------------------------------------------
   {
     path: 'admin',

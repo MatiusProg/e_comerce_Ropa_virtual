@@ -1,0 +1,139 @@
+<!-- CU-18 · Consultar ficha de producto — «boundary» PantallaFichaProducto. -->
+<a matButton routerLink="/tienda" class="volver">
+  <mat-icon>arrow_back</mat-icon>
+  Volver al catálogo
+</a>
+
+@if (cargando()) {
+  <mat-progress-bar mode="indeterminate" />
+} @else if (error(); as mensaje) {
+  <mat-card class="panel vb-filete-superior" appearance="outlined">
+    <p class="aviso error">
+      <mat-icon>error_outline</mat-icon>
+      {{ mensaje }}
+    </p>
+  </mat-card>
+} @else if (ficha(); as producto) {
+  <mat-card class="panel vb-filete-superior" appearance="outlined">
+    <div class="ficha">
+      <!-- Galería -->
+      <section class="galeria">
+        <div class="principal">
+          @if (producto.imagenes.length) {
+            <img
+              [src]="urlDe(producto.imagenes[fotoActiva()].url)"
+              [alt]="producto.nombre"
+            />
+          } @else {
+            <div class="sin-foto">
+              <mat-icon>checkroom</mat-icon>
+            </div>
+          }
+        </div>
+
+        @if (producto.imagenes.length > 1) {
+          <div class="miniaturas">
+            @for (imagen of producto.imagenes; track imagen.id; let i = $index) {
+              <button
+                type="button"
+                class="miniatura"
+                [class.activa]="i === fotoActiva()"
+                (click)="verFoto(i)"
+              >
+                <img [src]="urlDe(imagen.url)" [alt]="producto.nombre" loading="lazy" />
+              </button>
+            }
+          </div>
+        }
+      </section>
+
+      <!-- Datos y selección -->
+      <section class="datos">
+        <p class="categoria">{{ producto.categoria_nombre }}</p>
+        <h1 class="nombre">{{ producto.nombre }}</h1>
+        <p class="precio">{{ precio() }}</p>
+
+        @if (producto.descripcion) {
+          <p class="descripcion">{{ producto.descripcion }}</p>
+        }
+
+        <mat-divider />
+
+        <!-- Paso 3: elegir talla y color. Las opciones se restringen entre sí:
+             no toda combinación talla × color existe. -->
+        <div class="seleccion">
+          <h2 class="rotulo">Talla</h2>
+          <mat-chip-listbox [hideSingleSelectionIndicator]="true">
+            @for (talla of producto.tallas; track talla.id) {
+              @let disponible = tallasOfrecidas().includes(talla);
+              <mat-chip-option
+                [selected]="tallaElegida() === talla.id"
+                [disabled]="!disponible"
+                (click)="elegirTalla(talla.id)"
+                [matTooltip]="disponible ? '' : 'No disponible en el color elegido'"
+              >
+                {{ talla.codigo }}
+              </mat-chip-option>
+            }
+          </mat-chip-listbox>
+
+          <h2 class="rotulo">Color</h2>
+          <div class="colores">
+            @for (color of producto.colores; track color.id) {
+              @let disponible = coloresOfrecidos().includes(color);
+              <button
+                type="button"
+                class="color"
+                [class.elegido]="colorElegido() === color.id"
+                [class.agotado]="!disponible"
+                [disabled]="!disponible"
+                [style.background]="color.hexadecimal"
+                [matTooltip]="
+                  disponible ? color.nombre : color.nombre + ' — no disponible en esa talla'
+                "
+                (click)="elegirColor(color.id)"
+              ></button>
+            }
+          </div>
+        </div>
+
+        @if (variante(); as elegida) {
+          <p class="sku">
+            <mat-icon>qr_code_2</mat-icon>
+            <span>{{ elegida.sku }}</span>
+          </p>
+        } @else {
+          <p class="pendiente">Elija talla y color para ver el precio y la disponibilidad.</p>
+        }
+
+        <mat-divider />
+
+        <!-- CU-19 llega con la costura C1: hasta que el servicio de inventario
+             exponga `disponibilidad_por_sucursal`, la ficha no puede decir en
+             qué tienda hay stock. Se anuncia en vez de mostrar un bloque vacío. -->
+        <p class="proximamente">
+          <mat-icon>store</mat-icon>
+          La disponibilidad por sucursal se muestra acá en cuanto esté el
+          inventario (CU-19).
+        </p>
+
+        <!-- El vestidor virtual es de la app móvil (RF13): la cámara y la
+             detección de pose corren en el teléfono. -->
+        <button
+          matButton="filled"
+          type="button"
+          class="vb-boton-marca vestidor"
+          [disabled]="!producto.tiene_vestidor"
+          [matTooltip]="
+            producto.tiene_vestidor
+              ? 'Disponible en la app móvil: la cámara y la detección de pose son del teléfono'
+              : 'Esta prenda todavía no tiene su imagen para el vestidor virtual'
+          "
+        >
+          <mat-icon>view_in_ar</mat-icon>
+          Probar en el vestidor virtual
+        </button>
+      </section>
+    </div>
+  </mat-card>
+}

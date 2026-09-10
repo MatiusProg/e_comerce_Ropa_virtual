@@ -1,0 +1,163 @@
+<!-- CU-17 · Consultar catálogo — «boundary» PantallaCatalogo. -->
+<header class="encabezado">
+  <div>
+    <h1 class="vb-titulo">Catálogo</h1>
+    <p class="bajada">
+      Todas las prendas de la temporada. Elija una para ver sus tallas, sus
+      colores y en qué sucursales está disponible.
+    </p>
+  </div>
+  <a matButton routerLink="/login" class="acceso">
+    <mat-icon>person</mat-icon>
+    Ingresar
+  </a>
+</header>
+
+<mat-card class="panel vb-filete-superior" appearance="outlined">
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <!-- Paso 2: búsqueda y filtros. Las opciones son las que el catálogo
+       realmente ofrece, no los maestros completos. -->
+  <div class="filtros">
+    <mat-form-field appearance="outline" class="campo-busqueda">
+      <mat-label>Buscar prendas</mat-label>
+      <input matInput [formControl]="busqueda" placeholder="Nombre o descripción" />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    @if (filtros(); as opciones) {
+      <mat-form-field appearance="outline">
+        <mat-label>Categoría</mat-label>
+        <mat-select [formControl]="filtroCategoria">
+          <mat-option [value]="''">Todas</mat-option>
+          @for (c of opciones.categorias; track c.id) {
+            <mat-option [value]="c.id">{{ c.nombre }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Talla</mat-label>
+        <mat-select [formControl]="filtroTalla">
+          <mat-option [value]="''">Todas</mat-option>
+          @for (t of opciones.tallas; track t.id) {
+            <mat-option [value]="t.id">{{ t.codigo }} · {{ t.tipo_prenda }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Color</mat-label>
+        <mat-select [formControl]="filtroColor">
+          <mat-option [value]="''">Todos</mat-option>
+          @for (c of opciones.colores; track c.id) {
+            <mat-option [value]="c.id">
+              <span class="muestra" [style.background]="c.hexadecimal"></span>
+              {{ c.nombre }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Temporada</mat-label>
+        <mat-select [formControl]="filtroTemporada">
+          <mat-option [value]="''">Todas</mat-option>
+          @for (t of opciones.temporadas; track t.id) {
+            <mat-option [value]="t.id">{{ t.nombre }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>Ordenar por</mat-label>
+      <mat-select [formControl]="orden">
+        <mat-option value="novedades">Novedades</mat-option>
+        <mat-option value="precio_asc">Menor precio</mat-option>
+        <mat-option value="precio_desc">Mayor precio</mat-option>
+        <mat-option value="nombre">Nombre</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    @if (hayFiltros()) {
+      <button matButton type="button" (click)="limpiar()">
+        <mat-icon>filter_alt_off</mat-icon>
+        Limpiar filtros
+      </button>
+    }
+  </div>
+
+  @if (error(); as mensaje) {
+    <p class="aviso error">
+      <mat-icon>error_outline</mat-icon>
+      {{ mensaje }}
+    </p>
+  } @else if (pagina(); as resultado) {
+    @if (resultado.items.length === 0) {
+      <!-- El cartel distingue los dos vacíos: no es lo mismo un catálogo sin
+           prendas que una combinación de filtros sin resultados. -->
+      <p class="aviso">
+        <mat-icon>search_off</mat-icon>
+        @if (hayFiltros()) {
+          No encontramos prendas con esos filtros. Pruebe quitando alguno.
+        } @else {
+          Todavía no hay prendas publicadas en el catálogo.
+        }
+      </p>
+    } @else {
+      <div class="vitrina">
+        @for (producto of resultado.items; track producto.id) {
+          <article class="tarjeta" (click)="abrir(producto)">
+            <div class="foto">
+              @if (foto(producto); as url) {
+                <img [src]="url" [alt]="producto.nombre" loading="lazy" />
+              } @else {
+                <div class="sin-foto">
+                  <mat-icon>checkroom</mat-icon>
+                </div>
+              }
+              @if (producto.tiene_vestidor) {
+                <span
+                  class="insignia"
+                  matTooltip="Puede probarse en el vestidor virtual desde la app móvil"
+                >
+                  <mat-icon>view_in_ar</mat-icon>
+                  Vestidor virtual
+                </span>
+              }
+            </div>
+
+            <div class="cuerpo">
+              <p class="categoria">{{ producto.categoria_nombre }}</p>
+              <h2 class="nombre">{{ producto.nombre }}</h2>
+              <p class="precio">{{ precio(producto) }}</p>
+
+              @if (producto.colores.length) {
+                <div class="colores">
+                  @for (color of producto.colores; track color.id) {
+                    <span
+                      class="muestra"
+                      [style.background]="color.hexadecimal"
+                      [matTooltip]="color.nombre"
+                    ></span>
+                  }
+                </div>
+              }
+            </div>
+          </article>
+        }
+      </div>
+
+      <mat-paginator
+        [length]="resultado.total"
+        [pageIndex]="resultado.pagina - 1"
+        [pageSize]="resultado.tamano"
+        [pageSizeOptions]="[12, 24, 48]"
+        (page)="paginar($event)"
+      />
+    }
+  }
+</mat-card>
