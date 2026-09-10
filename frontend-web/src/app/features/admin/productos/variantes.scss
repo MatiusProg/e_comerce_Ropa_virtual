@@ -1,0 +1,156 @@
+:host {
+  display: block;
+}
+
+h2 {
+  color: var(--vb-malva-oscuro);
+  margin-bottom: 0.5rem;
+
+  small {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+mat-dialog-content {
+  padding-top: 1rem;
+  // Sin esto, un producto con veinte variantes empuja los botones del pie
+  // fuera de la pantalla.
+  max-height: 70vh;
+}
+
+// --- Generador (paso 7) ---------------------------------------------------
+
+.generador {
+  padding: 1rem;
+  border-radius: var(--vb-radio-chico);
+  background: var(--mat-sys-surface-container-low);
+  margin-bottom: 1.5rem;
+
+  h3 {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+    color: var(--vb-malva-oscuro);
+  }
+}
+
+.explicacion {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.fila {
+  display: flex;
+  gap: 1rem;
+
+  mat-form-field {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .precio {
+    flex: 0 0 11rem;
+  }
+}
+
+.acciones-generador {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.cuenta {
+  font-size: 0.88rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// --- Tabla ----------------------------------------------------------------
+
+.tabla {
+  width: 100%;
+  background: transparent;
+}
+
+code {
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
+// La muestra de color: sin borde, un color claro sobre fondo claro no se ve.
+.muestra {
+  display: inline-block;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  margin-right: 0.45rem;
+  vertical-align: -0.1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+}
+
+// Una variante inactiva sigue en la tabla pero se lee como apagada: aparece en
+// el historial de existencias y reservas, asi que ocultarla seria mentir.
+tr.inactiva {
+  opacity: 0.55;
+}
+
+.precio-boton {
+  font-variant-numeric: tabular-nums;
+}
+
+.editor-precio {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+
+  input {
+    width: 6rem;
+    padding: 0.3rem 0.45rem;
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+    border: 1px solid var(--mat-sys-outline);
+    border-radius: var(--vb-radio-chico);
+    background: var(--mat-sys-surface);
+    color: var(--mat-sys-on-surface);
+  }
+}
+
+.vacio {
+  padding: 1.5rem;
+  text-align: center;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--vb-radio-chico);
+  margin-bottom: 1rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+
+  mat-icon {
+    flex: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .fila {
+    flex-direction: column;
+    gap: 0;
+
+    .precio {
+      flex: 1 1 auto;
+    }
+  }
+}

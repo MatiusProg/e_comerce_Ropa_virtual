@@ -5,7 +5,8 @@ donde opera la cadena. Es el minimo para que alguien pueda iniciar sesion en el
 sistema recien desplegado y empezar a dar de alta sucursales, que es el criterio
 de cierre del ciclo.
 
-Ciclo 2: se amplia con proveedores, catalogo, variantes e inventario.
+Ciclo 2: se amplia con sucursales, proveedores, catalogo, variantes e
+imagenes. Esa parte vive en app/db/seed_catalogo.py (tarea I2 del ciclo).
 
 Es idempotente: se puede correr las veces que haga falta sin duplicar nada, lo
 que importa porque se ejecuta contra la base desplegada.
@@ -26,6 +27,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.security import hash_password
+from app.db import seed_catalogo
 from app.db.session import SessionLocal
 from app.modules.organizacion.models import Ciudad
 from app.modules.seguridad.models import Rol, Usuario
@@ -100,6 +102,13 @@ def main() -> None:
         roles = _sembrar_roles(db)
         _sembrar_ciudades(db)
         _sembrar_administrador(db, roles)
+        db.commit()
+
+        # El catalogo del Ciclo 2 va en su propio modulo: son ~400 lineas de
+        # datos y de generacion de imagenes, y mezclarlas aqui esconderia lo
+        # unico que el Ciclo 1 necesita para arrancar --- roles, ciudades y el
+        # administrador --- entre sesenta productos de demostracion.
+        seed_catalogo.sembrar(db)
         db.commit()
     print("Listo.")
 
