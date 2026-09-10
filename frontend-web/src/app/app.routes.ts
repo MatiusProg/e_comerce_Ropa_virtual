@@ -84,6 +84,15 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/admin/temporadas/temporadas').then((m) => m.Temporadas),
       },
+      // --- Ciclo 2 · Karen -------------------------------------------------
+      // Se agrega al final del bloque y sin reordenar lo anterior, que es el
+      // protocolo de archivos compartidos del ciclo (§5 del acuerdo).
+      {
+        path: 'productos',
+        title: 'Productos · Violet Boutique',
+        loadComponent: () =>
+          import('./features/admin/productos/productos').then((m) => m.Productos),
+      },
     ],
   },
   {

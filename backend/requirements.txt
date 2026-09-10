@@ -32,6 +32,13 @@ python-jose[cryptography]==3.5.0
 # --- Tareas programadas (CU-25: expiracion de reservas) ------------------
 APScheduler==3.11.3
 
+# --- Imagenes (CU-11) ----------------------------------------------------
+# Se declara explicito aunque reportlab ya lo arrastre: CU-11 lo usa de forma
+# directa para saber si un archivo es de verdad una imagen --- la extension y
+# el content-type los pone quien sube --- y para comprobar que un PNG tenga
+# transparencia real, que es de lo que depende el vestidor virtual (S5).
+pillow==12.3.0
+
 # --- Reportes (CU-37) ----------------------------------------------------
 reportlab==5.0.1                # PDF
 openpyxl==3.1.5                 # Excel

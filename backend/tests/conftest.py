@@ -48,11 +48,20 @@ from app.modules.seguridad import models as modelos_seguridad  # noqa: E402,F401
 #: (ciudad_id, nombre) haria fallar a la segunda. `empleado` cascadearia con
 #: usuario, pero se nombra igual: depender de un CASCADE para la limpieza
 #: hace que la prueba dependa de un detalle del esquema.
+#:
+#: El ORDEN importa: se vacian en esta secuencia, asi que cada tabla va antes
+#: que aquellas a las que apunta. Las del Ciclo 2 se intercalaron por eso y no
+#: al final --- producto referencia a proveedor, categoria, temporada y
+#: coleccion, y variante_producto a talla y color.
 TABLAS_VOLATILES = (
+    "cliente_categoria",
     "direccion_cliente",
     "sesion_token",
     "cliente",
     "empleado",
+    "imagen_producto",
+    "variante_producto",
+    "producto",
     "proveedor",
     "sucursal",
     "usuario",

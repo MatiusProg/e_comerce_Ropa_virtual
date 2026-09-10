@@ -1,0 +1,240 @@
+<!-- CU-10 · Gestionar productos y variantes — «boundary» PantallaProductos. -->
+<header class="encabezado">
+  <div>
+    <h1 class="vb-titulo">Productos</h1>
+    <p class="bajada">
+      Las prendas del catálogo y sus variantes de talla y color. La variante es
+      la que tiene existencia, reserva y venta.
+    </p>
+  </div>
+  <button matButton="filled" type="button" class="vb-boton-marca" (click)="nuevo()">
+    <mat-icon>add</mat-icon>
+    Nuevo producto
+  </button>
+</header>
+
+<mat-card class="tarjeta vb-filete-superior" appearance="outlined">
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <!-- Paso 2: búsqueda por código o nombre y filtros. -->
+  <div class="filtros">
+    <mat-form-field appearance="outline" class="campo-busqueda">
+      <mat-label>Buscar por código o nombre</mat-label>
+      <input matInput [formControl]="busqueda" />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Categoría</mat-label>
+      <mat-select [formControl]="filtroCategoria">
+        <mat-option [value]="''">Todas</mat-option>
+        @for (fila of categorias(); track fila.categoria.id) {
+          <mat-option [value]="fila.categoria.id">
+            <span [style.padding-left.rem]="fila.nivel * 1">{{ fila.categoria.nombre }}</span>
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Temporada</mat-label>
+      <mat-select [formControl]="filtroTemporada">
+        <mat-option [value]="''">Todas</mat-option>
+        @for (t of temporadas(); track t.id) {
+          <mat-option [value]="t.id">{{ t.nombre }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Proveedor</mat-label>
+      <mat-select [formControl]="filtroProveedor">
+        <mat-option [value]="''">Todos</mat-option>
+        @for (p of proveedores(); track p.id) {
+          <mat-option [value]="p.id">{{ p.razon_social }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Estado</mat-label>
+      <mat-select [formControl]="filtroEstado">
+        <mat-option value="">Todos</mat-option>
+        <mat-option value="activos">Activos</mat-option>
+        <mat-option value="inactivos">Inactivos</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    @if (hayFiltros) {
+      <button matButton type="button" (click)="limpiarFiltros()">
+        <mat-icon>filter_alt_off</mat-icon>
+        Limpiar
+      </button>
+    }
+  </div>
+
+  @if (error(); as e) {
+    <div class="aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ e }}</span>
+    </div>
+  }
+
+  @if (pagina(); as p) {
+    @if (p.items.length) {
+      <div class="envoltorio-tabla">
+        <table mat-table [dataSource]="p.items">
+          <ng-container matColumnDef="codigo">
+            <th mat-header-cell *matHeaderCellDef>Código</th>
+            <td mat-cell *matCellDef="let f"><code>{{ f.codigo }}</code></td>
+          </ng-container>
+
+          <ng-container matColumnDef="nombre">
+            <th mat-header-cell *matHeaderCellDef>Producto</th>
+            <td mat-cell *matCellDef="let f">{{ f.nombre }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="categoria">
+            <th mat-header-cell *matHeaderCellDef>Categoría</th>
+            <td mat-cell *matCellDef="let f">{{ f.categoria_nombre }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="precio">
+            <th mat-header-cell *matHeaderCellDef>Precio base</th>
+            <td mat-cell *matCellDef="let f" class="numero">Bs {{ f.precio_base }}</td>
+          </ng-container>
+
+          <!--
+            Sin variantes, un producto no se puede inventariar ni reservar. La
+            columna lo dice en vez de dejar que se descubra en el CU-13.
+          -->
+          <ng-container matColumnDef="variantes">
+            <th mat-header-cell *matHeaderCellDef>Variantes</th>
+            <td mat-cell *matCellDef="let f">
+              @if (f.variantes_totales === 0) {
+                <span class="sin-variantes" matTooltip="Sin variantes no se le puede cargar existencia">
+                  <mat-icon>warning_amber</mat-icon>
+                  ninguna
+                </span>
+              } @else {
+                <span class="cuenta-variantes">
+                  {{ f.variantes_activas }} / {{ f.variantes_totales }} activas
+                </span>
+              }
+            </td>
+          </ng-container>
+
+          <!--
+            Un producto sin imágenes sale sin foto en el catálogo; uno sin PNG
+            de vestidor no se puede probar en realidad aumentada. Las dos cosas
+            se ven acá y no abriendo producto por producto.
+          -->
+          <ng-container matColumnDef="imagenes">
+            <th mat-header-cell *matHeaderCellDef>Imágenes</th>
+            <td mat-cell *matCellDef="let f">
+              @if (f.imagenes_totales === 0) {
+                <span class="sin-variantes" matTooltip="En el catálogo aparecería sin foto">
+                  <mat-icon>warning_amber</mat-icon>
+                  ninguna
+                </span>
+              } @else {
+                <span class="cuenta-variantes">
+                  {{ f.imagenes_totales }}
+                  @if (f.variantes_con_vestidor > 0) {
+                    <span
+                      class="marca-vestidor"
+                      [matTooltip]="f.variantes_con_vestidor + ' variante(s) listas para el vestidor virtual'"
+                    >
+                      <mat-icon>checkroom</mat-icon>{{ f.variantes_con_vestidor }}
+                    </span>
+                  }
+                </span>
+              }
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="estado">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let f">
+              <span
+                class="pastilla"
+                [class.pastilla-activo]="f.activo"
+                [class.pastilla-inactivo]="!f.activo"
+              >
+                {{ f.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef aria-label="Acciones"></th>
+            <td mat-cell *matCellDef="let f">
+              <button
+                matButton
+                type="button"
+                (click)="verVariantes(f)"
+                matTooltip="Generar y editar las variantes de talla y color"
+              >
+                <mat-icon>style</mat-icon>
+                Variantes
+              </button>
+              <button
+                matButton
+                type="button"
+                (click)="verImagenes(f)"
+                matTooltip="Subir y organizar las fotos del producto"
+              >
+                <mat-icon>image</mat-icon>
+                Imágenes
+              </button>
+              <button matIconButton type="button" [matMenuTriggerFor]="menu" aria-label="Más acciones">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #menu="matMenu">
+                <button mat-menu-item type="button" (click)="editar(f)">
+                  <mat-icon>edit</mat-icon>
+                  <span>Editar</span>
+                </button>
+                <button mat-menu-item type="button" (click)="cambiarEstado(f)">
+                  <mat-icon>{{ f.activo ? 'visibility_off' : 'visibility' }}</mat-icon>
+                  <span>{{ f.activo ? 'Desactivar' : 'Activar' }}</span>
+                </button>
+                <button mat-menu-item type="button" (click)="eliminar(f)">
+                  <mat-icon>delete_outline</mat-icon>
+                  <span>Eliminar</span>
+                </button>
+              </mat-menu>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+          <tr mat-row *matRowDef="let fila; columns: columnas" [class.fila-inactiva]="!fila.activo"></tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [length]="p.total"
+        [pageSize]="p.tamano"
+        [pageIndex]="p.pagina - 1"
+        [pageSizeOptions]="[10, 20, 50]"
+        (page)="paginar($event)"
+        aria-label="Paginación de productos"
+      />
+    } @else {
+      <div class="vacio">
+        <mat-icon>inventory_2</mat-icon>
+        @if (hayFiltros) {
+          <p>Ningún producto coincide con los filtros.</p>
+          <button matButton type="button" (click)="limpiarFiltros()">Limpiar filtros</button>
+        } @else {
+          <p>Todavía no hay productos cargados.</p>
+          <button matButton="filled" type="button" class="vb-boton-marca" (click)="nuevo()">
+            Registrar el primero
+          </button>
+        }
+      </div>
+    }
+  }
+</mat-card>

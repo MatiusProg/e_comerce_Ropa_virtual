@@ -3,12 +3,15 @@ P3 - Catalogo  |  capa: modelo (SQLAlchemy)
 
 Ciclo de desarrollo: 1 (maestros) / 2 (productos y variantes) / 3 (promociones)
 
-Casos de uso del Ciclo 1 que realiza este paquete:
-  CU-08 Gestionar categorias, tallas y colores
-  CU-09 Gestionar temporadas y colecciones
+Casos de uso que realiza este paquete:
+  CU-08 Gestionar categorias, tallas y colores      [ciclo 1]
+  CU-09 Gestionar temporadas y colecciones          [ciclo 1]
+  CU-10 Gestionar productos y variantes             [ciclo 2]
+  CU-11 Gestionar imagenes de producto              [ciclo 2]
 
-Este archivo contiene solo los MAESTROS. Producto, VarianteProducto,
-ImagenProducto y Promocion llegan en los ciclos 2 y 3.
+Ciclo 1: los maestros --- Categoria, Talla, Color, Temporada y Coleccion.
+Ciclo 2: Producto, VarianteProducto e ImagenProducto (CU-10 y CU-11).
+Promocion llega en el ciclo 3.
 
 Talla y Color son entidades propias, no texto libre: en el Ciclo 2 la variante
 se define como producto x talla x color y necesita referenciarlas. Como texto
@@ -16,13 +19,17 @@ seria imposible filtrar el catalogo por talla, que es el RF07.
 """
 
 from datetime import date
+from decimal import Decimal
 
 from sqlalchemy import (
     CHAR,
+    BigInteger,
     Boolean,
     CheckConstraint,
     Date,
     ForeignKey,
+    Index,
+    Numeric,
     SmallInteger,
     String,
     UniqueConstraint,
@@ -137,3 +144,149 @@ class Coleccion(Auditoria, Base):
     activa: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
 
     temporada: Mapped[Temporada] = relationship(back_populates="colecciones")
+
+
+# ================= Ciclo 2 - Productos, variantes e imagenes =============
+# Nombres, tipos y restricciones fijados en la seccion 6.4 de
+# docs/entregas/ciclo-2/00-organizacion-por-caso-de-uso.md. Esa seccion es un
+# acuerdo entre los dos integrantes: cambiar un nombre de aqui se avisa.
+
+
+class Producto(Auditoria, Base):
+    """La prenda como concepto: "Camisa Oxford manga larga".
+
+    No es la unidad de negocio. La decision D1 de docs/04-analisis-arquitectura
+    seccion 4.2.1 dice que la unidad es la VARIANTE (talla x color): es ella la
+    que tiene codigo propio, precio, existencia, reserva y venta. Producto solo
+    agrupa variantes y guarda lo que todas comparten.
+
+    Sobre temporada_id y coleccion_id juntos: es redundante --- una coleccion ya
+    pertenece a una temporada --- y se decidio conservarlo (09/09/2026). Un
+    producto puede estar en una temporada sin pertenecer a ninguna coleccion, y
+    derivar la temporada de la coleccion dejaria sin temporada justo a esos
+    productos, que son los que el reporte de rotacion no puede perder. El precio
+    es que las dos columnas pueden contradecirse: la coherencia la garantiza el
+    servicio de CU-10, no la base. Ver la seccion 6.4, decision 2.
+    """
+
+    __tablename__ = "producto"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    codigo: Mapped[str] = mapped_column(String(30), unique=True)
+    nombre: Mapped[str] = mapped_column(String(120))
+    descripcion: Mapped[str | None] = mapped_column(String(500))
+    categoria_id: Mapped[int] = mapped_column(ForeignKey("categoria.id"), index=True)
+    proveedor_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("proveedor.id"), index=True
+    )
+    temporada_id: Mapped[int | None] = mapped_column(
+        ForeignKey("temporada.id"), index=True
+    )
+    coleccion_id: Mapped[int | None] = mapped_column(
+        ForeignKey("coleccion.id"), index=True
+    )
+    precio_base: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    activo: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
+
+    variantes: Mapped[list["VarianteProducto"]] = relationship(
+        back_populates="producto", cascade="all, delete-orphan", passive_deletes=True
+    )
+    imagenes: Mapped[list["ImagenProducto"]] = relationship(
+        back_populates="producto", cascade="all, delete-orphan", passive_deletes=True
+    )
+
+
+class VarianteProducto(Auditoria, Base):
+    """La combinacion concreta producto x talla x color. Es el SKU.
+
+    Todo el inventario, las reservas y las ventas apuntan aqui, nunca a
+    Producto: es la decision D1 y es lo que hace posible cumplir RF05, RF08 y
+    RF21. La costura C2 del ciclo depende de esta clase: Mateo declara
+    existencia.variante_id y reserva_detalle.variante_id contra `id`.
+
+    `precio` es obligatorio y propio. Al generar las variantes de un producto el
+    servicio copia `producto.precio_base` en cada una, y a partir de ahi cada
+    variante se mueve sola; cambiar el precio base no repropaga hacia atras, a
+    proposito, porque si lo hiciera cambiaria el precio de variantes ya vendidas.
+    """
+
+    __tablename__ = "variante_producto"
+    __table_args__ = (
+        # Una combinacion talla x color no se repite dentro del mismo producto.
+        # Es lo que vuelve segura la generacion automatica de variantes del
+        # paso 6 de CU-10: reintentar no duplica.
+        UniqueConstraint(
+            "producto_id", "talla_id", "color_id", name="uq_variante_producto_talla_color"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    producto_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("producto.id", ondelete="CASCADE"), index=True
+    )
+    talla_id: Mapped[int] = mapped_column(ForeignKey("talla.id"), index=True)
+    color_id: Mapped[int] = mapped_column(ForeignKey("color.id"), index=True)
+    sku: Mapped[str] = mapped_column(String(40), unique=True)
+    precio: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    activa: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
+
+    producto: Mapped[Producto] = relationship(back_populates="variantes")
+    talla: Mapped[Talla] = relationship()
+    color: Mapped[Color] = relationship()
+
+
+class ImagenProducto(Auditoria, Base):
+    """Una fotografia del producto o de una de sus variantes (CU-11).
+
+    Guarda la RUTA, no la imagen ni su URL completa. La seccion 6.8 de las
+    decisiones tecnicas eligio un volumen persistente de Railway montado en
+    /app/media y dejo la base con la ruta sola: escribir el dominio ataria las
+    filas al despliegue actual, y mudarse a Supabase Storage o Cloudinary
+    obligaria a reescribir la tabla entera en vez de cambiar quien sirve el
+    archivo.
+
+    `variante_id` nulo distingue los dos tipos de imagen: sin variante es una
+    foto del producto en general, la que se ve en el listado del catalogo; con
+    variante es de una combinacion talla x color concreta.
+    """
+
+    __tablename__ = "imagen_producto"
+    __table_args__ = (
+        # Una sola imagen principal por producto: es la que muestra el listado
+        # del catalogo (CU-17) y no puede haber dos candidatas.
+        Index(
+            "uq_imagen_principal_producto",
+            "producto_id",
+            unique=True,
+            postgresql_where=text("es_principal"),
+        ),
+        # Un solo PNG transparente por variante. Es el activo del que depende el
+        # vestidor virtual (seccion 6.5, supuesto S5): si el prototipo de
+        # realidad aumentada no encuentra imagen, es un dato que falta y no un
+        # error de codigo. Los dos indices parciales copian el patron que el
+        # Ciclo 1 usa en uq_direccion_predeterminada.
+        Index(
+            "uq_imagen_transparente_variante",
+            "variante_id",
+            unique=True,
+            postgresql_where=text("es_transparente"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    producto_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("producto.id", ondelete="CASCADE"), index=True
+    )
+    variante_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("variante_producto.id", ondelete="CASCADE"), index=True
+    )
+    ruta: Mapped[str] = mapped_column(String(255))
+    es_principal: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    es_transparente: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    orden: Mapped[int] = mapped_column(SmallInteger, server_default=text("0"))
+
+    producto: Mapped[Producto] = relationship(back_populates="imagenes")
+    # Sin back_populates: la variante no necesita conocer sus imagenes --- lo que
+    # se consulta siempre es la galeria del producto --- y declararlo obligaria
+    # a cargar una coleccion mas en cada lectura de variantes.
+    variante: Mapped["VarianteProducto | None"] = relationship()

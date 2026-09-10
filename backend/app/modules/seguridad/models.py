@@ -24,6 +24,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    Integer,
     SmallInteger,
     String,
     Table,
@@ -43,6 +44,32 @@ rol_permiso = Table(
     Base.metadata,
     Column("rol_id", SmallInteger, ForeignKey("rol.id", ondelete="CASCADE"), primary_key=True),
     Column("permiso_id", SmallInteger, ForeignKey("permiso.id", ondelete="CASCADE"), primary_key=True),
+)
+
+
+# Las categorias preferidas del cliente son el mismo caso: relacion muchos a
+# muchos sin atributos propios, asi que tabla intermedia y no clase.
+#
+# Se difirieron en el Ciclo 1 --- seccion 6.11.3 de docs/06-decisiones-tecnicas
+# --- porque las categorias las crea el CU-08 y entonces no existia ninguna que
+# elegir: el selector del perfil habria quedado permanentemente vacio. Ahora
+# existen. La forma esta fijada en la seccion 6.4 de
+# docs/entregas/ciclo-2/00-organizacion-por-caso-de-uso.md.
+cliente_categoria = Table(
+    "cliente_categoria",
+    Base.metadata,
+    Column(
+        "cliente_id",
+        BigInteger,
+        ForeignKey("cliente.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "categoria_id",
+        Integer,
+        ForeignKey("categoria.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
 )
 
 
@@ -126,6 +153,11 @@ class Cliente(Auditoria, Base):
     usuario: Mapped[Usuario] = relationship(back_populates="cliente")
     direcciones: Mapped[list["DireccionCliente"]] = relationship(
         back_populates="cliente", cascade="all, delete-orphan", passive_deletes=True
+    )
+    # Sin cascade: borrar un cliente borra sus filas de cliente_categoria por el
+    # ON DELETE CASCADE de la tabla puente, pero NUNCA la categoria en si.
+    categorias_preferidas: Mapped[list["Categoria"]] = relationship(
+        "Categoria", secondary=cliente_categoria, lazy="selectin"
     )
 
 
