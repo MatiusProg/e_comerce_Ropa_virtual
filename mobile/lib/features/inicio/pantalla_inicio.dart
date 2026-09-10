@@ -8,8 +8,10 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/constantes.dart';
+import '../../core/enrutado/router.dart';
 import '../../core/tema.dart';
 import '../auth/estado_sesion.dart';
 
@@ -119,10 +121,23 @@ class _PendientesDelCiclo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const pendientes = [
-      ('Catálogo', 'CU-17 · CU-18 · CU-19', Icons.storefront_outlined),
-      ('Reservas', 'CU-22 · CU-23', Icons.event_available_outlined),
-      ('Vestidor virtual', 'Prototipo · CU-21', Icons.camera_alt_outlined),
+    // El cuarto elemento es la ruta, o `null` si todavia no existe: lo que
+    // esta hecho se abre desde aca y lo que no, se lista igual para que se vea
+    // que falta sin ir a buscarlo al cronograma.
+    const modulos = [
+      (
+        'Catálogo',
+        'CU-17 · CU-18',
+        Icons.storefront_outlined,
+        Rutas.catalogo,
+      ),
+      ('Reservas', 'CU-22 · CU-23', Icons.event_available_outlined, null),
+      (
+        'Vestidor virtual',
+        'Prototipo · CU-21',
+        Icons.camera_alt_outlined,
+        null,
+      ),
     ];
 
     return Card(
@@ -133,19 +148,24 @@ class _PendientesDelCiclo extends StatelessWidget {
             const ListTile(
               dense: true,
               title: Text(
-                'Pendiente del Ciclo 2',
+                'Ciclo 2',
                 style: TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
-            for (final (titulo, casos, icono) in pendientes)
+            for (final (titulo, casos, icono, ruta) in modulos)
               ListTile(
-                leading: Icon(icono, color: ColoresVB.malvaClaro),
+                leading: Icon(
+                  icono,
+                  color: ruta == null ? ColoresVB.malvaClaro : ColoresVB.malva,
+                ),
                 title: Text(titulo),
                 subtitle: Text(casos),
-                trailing: const Icon(
-                  Icons.circle_outlined,
+                enabled: ruta != null,
+                onTap: ruta == null ? null : () => context.push(ruta),
+                trailing: Icon(
+                  ruta == null ? Icons.circle_outlined : Icons.chevron_right,
                   size: 18,
-                  color: Color(0xFFD6C4CC),
+                  color: const Color(0xFFD6C4CC),
                 ),
               ),
           ],
