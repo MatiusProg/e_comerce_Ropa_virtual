@@ -104,6 +104,9 @@ def upgrade() -> None:
         sa.Column("tipo", sa.String(length=15), nullable=False),
         sa.Column("cantidad", sa.Integer(), nullable=False),
         sa.Column("motivo", sa.String(length=200), nullable=True),
+        # Procedencia del lote (CU-13). Nula en todo tipo que no sea INGRESO.
+        sa.Column("proveedor_id", sa.BigInteger(), nullable=True),
+        sa.Column("referencia", sa.String(length=40), nullable=True),
         sa.Column("usuario_id", sa.BigInteger(), nullable=True),
         sa.Column(
             "creado_en",
@@ -123,6 +126,13 @@ def upgrade() -> None:
             ["usuario_id"],
             ["usuario.id"],
             name="fk_movimiento_inventario_usuario_id_usuario",
+        ),
+        # Mismo criterio: un proveedor se da de baja, no se borra (CU-07), y el
+        # ingreso tiene que seguir diciendo de donde vino la mercaderia.
+        sa.ForeignKeyConstraint(
+            ["proveedor_id"],
+            ["proveedor.id"],
+            name="fk_movimiento_inventario_proveedor_id_proveedor",
         ),
         sa.CheckConstraint(
             "tipo IN ('INGRESO', 'RESERVA', 'LIBERACION', 'VENTA', "
@@ -146,6 +156,12 @@ def upgrade() -> None:
         "ix_movimiento_inventario_usuario_id",
         "movimiento_inventario",
         ["usuario_id"],
+        unique=False,
+    )
+    op.create_index(
+        "ix_movimiento_inventario_proveedor_id",
+        "movimiento_inventario",
+        ["proveedor_id"],
         unique=False,
     )
 

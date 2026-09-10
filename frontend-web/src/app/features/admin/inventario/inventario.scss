@@ -1,0 +1,216 @@
+:host {
+  display: block;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.encabezado {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.85rem;
+    font-weight: 600;
+    color: var(--vb-malva-oscuro);
+  }
+
+  .bajada {
+    margin: 0.25rem 0 0;
+    max-width: 46rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.acciones-cabecera {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.tarjeta {
+  border-radius: var(--vb-radio);
+  border: 1px solid var(--mat-sys-outline-variant);
+  box-shadow: var(--vb-sombra-suave);
+  overflow: hidden;
+  background: var(--mat-sys-surface);
+}
+
+.filtros {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  padding: 1.25rem 1.25rem 0;
+
+  mat-form-field {
+    min-width: 13rem;
+  }
+}
+
+// Cada pestaña trae sus propios filtros; sin este relleno quedan pegados al
+// borde de la tarjeta, que no es el mismo margen que el de la cabecera.
+.panel {
+  padding-bottom: 0.5rem;
+
+  .filtros {
+    padding-top: 1rem;
+  }
+}
+
+.envoltorio-tabla {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  background: transparent;
+}
+
+code {
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
+// Las cantidades se comparan de un vistazo entre filas, así que van alineadas
+// a la derecha y con cifras de ancho fijo. Sin `tabular-nums`, un 9 y un 1
+// ocupan distinto y la columna deja de leerse como columna.
+.numerica {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.destacado {
+  font-weight: 600;
+}
+
+// El color refuerza el signo, no lo reemplaza: el `+` y el `−` siguen escritos,
+// porque quien no distingue los dos verdes tiene que poder leerlo igual.
+.entra {
+  color: #2e7d32;
+}
+
+.sale {
+  color: var(--mat-sys-error);
+}
+
+// La talla y el color van junto al producto pero atenuados: son lo que
+// distingue una variante de otra, no un dato aparte.
+.detalle {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.motivo {
+  max-width: 22rem;
+  font-size: 0.88rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.acciones {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.etiqueta-tipo {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  background: var(--mat-sys-surface-variant);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// Los tres tipos que una persona origina se distinguen del resto, que los
+// genera el sistema: en el historial mezclado es lo que separa «alguien hizo
+// esto» de «esto pasó solo».
+.tipo-ingreso {
+  background: var(--vb-rosa-palido);
+  color: var(--vb-malva-oscuro);
+}
+
+.tipo-transferencia {
+  background: #e6eef7;
+  color: #2c4f76;
+}
+
+.tipo-ajuste {
+  background: #fdf0d5;
+  color: #8a6100;
+}
+
+.fila-pulsable {
+  cursor: pointer;
+
+  &:hover {
+    background: var(--vb-marfil);
+  }
+
+  &.abierta {
+    background: var(--vb-rosa-palido);
+  }
+}
+
+.detalle-ingreso {
+  margin: 0 1.25rem 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--vb-radio-chico);
+  background: var(--vb-marfil);
+  border: 1px solid var(--mat-sys-outline-variant);
+
+  h3 {
+    margin: 0 0 0.75rem;
+    font-size: 0.95rem;
+    color: var(--vb-malva-oscuro);
+  }
+
+  .remito {
+    margin-left: 0.5rem;
+    font-weight: 400;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  strong {
+    margin-left: 0.4rem;
+    color: #2e7d32;
+  }
+}
+
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin: 1rem 1.25rem 0;
+  padding: 0.8rem 1rem;
+  border-radius: var(--vb-radio-chico);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+
+  mat-icon {
+    flex: none;
+  }
+}
+
+.vacio {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+}

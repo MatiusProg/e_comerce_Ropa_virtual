@@ -124,6 +124,28 @@ class MovimientoInventario(Base):
     `TRANSFERENCIA` y unidas por el texto del motivo. Asi cada fila sigue
     perteneciendo a una sola existencia y el saldo de cada sucursal se
     reconstruye mirando solo sus propios movimientos.
+
+    POR QUE NO HAY TABLA `ingreso` (CU-13)
+    --------------------------------------
+    Un ingreso de mercaderia es una cabecera -proveedor, sucursal, remito- con
+    varias lineas, y la primera intencion es modelarlo con dos tablas. No se
+    hizo: la seccion 3 del documento de organizacion congelo el ciclo en ocho
+    tablas nuevas y una cabecera de ingreso seria la novena, con dos duenios
+    discutiendo el mismo esquema a mitad de ciclo.
+
+    En su lugar el ingreso **se reconstruye** desde estas filas. Las lineas de
+    un mismo ingreso comparten `proveedor_id`, `referencia`, `usuario_id` y
+    `creado_en`, y ese ultimo dato las agrupa sin ambiguedad aunque no se haya
+    cargado un remito: `now()` en PostgreSQL devuelve el instante de la
+    **transaccion**, no el de cada fila, y las lineas de un ingreso se escriben
+    en una sola transaccion. Dos ingresos distintos son dos transacciones y
+    llevan dos marcas de tiempo distintas.
+
+    El precio de la decision es que no se puede anular «el ingreso» de un tiro,
+    solo corregirlo con un `AJUSTE` -que es como se corrige cualquier otra cosa
+    en esta tabla, por D4-. Si en el Ciclo 3 la recepcion de mercaderia crece
+    -estados, recepcion parcial, costo por linea-, ahi si merece su propia
+    cabecera; hoy no la necesita.
     """
 
     __tablename__ = "movimiento_inventario"
@@ -143,7 +165,25 @@ class MovimientoInventario(Base):
     tipo: Mapped[str] = mapped_column(String(15))
     #: Con signo: positiva entra, negativa sale.
     cantidad: Mapped[int] = mapped_column(Integer)
+    #: Por que se movio. En CU-15 es obligatorio -es la trazabilidad que pide
+    #: el RF28-; en CU-13 lo compone el servicio con el nombre del proveedor.
     motivo: Mapped[str | None] = mapped_column(String(200))
+
+    # Solo lo llena CU-13: quien mando la mercaderia. Nulo en todos los demas
+    # tipos, porque un ajuste por conteo o una reserva no vienen de nadie.
+    #
+    # Es el unico lugar donde queda registrada la procedencia de una prenda, y
+    # sin el la relacion "producto <- proveedor" que exige el RF06 se quedaria
+    # solo en `producto.proveedor_id`, que es de quien PROVEE el modelo y no de
+    # quien mando ESTE lote. No son lo mismo: un mismo producto puede llegar de
+    # dos proveedores distintos.
+    proveedor_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("proveedor.id"), index=True
+    )
+    #: Numero de remito, guia o factura del ingreso. Es del papel que llego con
+    #: la mercaderia, asi que no se valida su forma ni se exige unico: dos
+    #: proveedores pueden numerar igual.
+    referencia: Mapped[str | None] = mapped_column(String(40))
 
     # Queda nulo cuando el movimiento lo genera el sistema y no una persona:
     # la expiracion de reservas de CU-25 es una tarea programada, sin usuario.

@@ -1,0 +1,104 @@
+<!-- CU-15 · Ajuste por conteo físico — flujo principal. -->
+<h2 mat-dialog-title>Ajuste por conteo físico</h2>
+
+@if (guardando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<mat-dialog-content>
+  <div class="prenda">
+    <code>{{ datos.existencia.sku }}</code>
+    <div>
+      <strong>{{ datos.existencia.producto }}</strong>
+      <span class="detalle">
+        {{ datos.existencia.talla }} · {{ datos.existencia.color }} ·
+        {{ datos.existencia.sucursal }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Lo que el sistema cree que hay, antes de contar. -->
+  <div class="saldos">
+    <div>
+      <span class="rotulo">Disponible</span>
+      <span class="cifra">{{ datos.existencia.cantidad_disponible }}</span>
+    </div>
+    <div>
+      <span class="rotulo">Reservada</span>
+      <span class="cifra">{{ datos.existencia.cantidad_reservada }}</span>
+    </div>
+    <div class="fisica">
+      <span class="rotulo">En el local</span>
+      <span class="cifra">{{ datos.existencia.cantidad_fisica }}</span>
+    </div>
+  </div>
+
+  <p class="explicacion">
+    Cuente <strong>todas</strong> las prendas que hay en el local, incluidas las
+    apartadas para reservas: siguen estando en la percha.
+  </p>
+
+  <mat-form-field appearance="outline" class="contada">
+    <mat-label>Unidades contadas</mat-label>
+    <input matInput type="number" min="0" [formControl]="contada" />
+  </mat-form-field>
+
+  <!-- La diferencia se calcula acá solo para mostrarla; la que se guarda la
+       calcula el servidor, que es quien sabe el saldo en ese instante. -->
+  @if (diferencia() !== null) {
+    @if (menorQueLoReservado()) {
+      <div class="aviso" role="alert">
+        <mat-icon>error_outline</mat-icon>
+        <span>
+          Hay {{ datos.existencia.cantidad_reservada }} unidades comprometidas en
+          reservas. Un conteo menor dejaría una reserva sin prenda que entregar:
+          cancele la reserva antes de ajustar.
+        </span>
+      </div>
+    } @else if (sinDiferencia()) {
+      <div class="nota">
+        <mat-icon>check_circle_outline</mat-icon>
+        <span>El conteo coincide con el saldo registrado. No hay nada que ajustar.</span>
+      </div>
+    } @else {
+      <div class="nota" [class.faltante]="diferencia()! < 0">
+        <mat-icon>{{ diferencia()! > 0 ? 'trending_up' : 'trending_down' }}</mat-icon>
+        <span>
+          Se va a registrar un ajuste de
+          <strong>{{ diferencia()! > 0 ? '+' : '' }}{{ diferencia() }}</strong>
+          unidades sobre la cantidad disponible.
+        </span>
+      </div>
+    }
+  }
+
+  <mat-form-field appearance="outline" class="motivo">
+    <mat-label>Motivo del ajuste</mat-label>
+    <textarea matInput rows="2" maxlength="200" [formControl]="motivo"></textarea>
+    <mat-hint>
+      Es lo único que va a explicar este cambio dentro de seis meses.
+    </mat-hint>
+  </mat-form-field>
+
+  @if (error(); as e) {
+    <div class="aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ e }}</span>
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" [disabled]="guardando()" (click)="cancelar()">
+    Cancelar
+  </button>
+  <button
+    matButton="filled"
+    type="button"
+    class="vb-boton-marca"
+    [disabled]="guardando() || sinDiferencia() || menorQueLoReservado()"
+    (click)="confirmar()"
+  >
+    Registrar ajuste
+  </button>
+</mat-dialog-actions>
