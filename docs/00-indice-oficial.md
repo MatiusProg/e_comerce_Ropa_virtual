@@ -210,25 +210,25 @@ El detalle con responsables y estado está en `05-plan-y-cronograma.md` §5.3.
 
 ---
 
-## 0.5 La cuestión de los 30 casos de uso
+## 0.5 La cuestión de los 30 casos de uso — cerrada
 
-**Estado: no confirmado.** Varios compañeros afirman que la ingeniera pidió 30 casos de uso. Se
-consulta el 04/09/2026.
+**Estado: resuelta el 10/09/2026. Era falso.** La ingeniera **nunca pidió una cantidad de casos de
+uso**, ni por ciclo ni por proyecto. La versión que circulaba entre los compañeros —que había
+pedido 30— no era cierta, y con ella cae la única razón externa que había para tocar el conteo.
 
-Con la estructura por ciclo el riesgo bajó bastante:
+Lo que queda en pie de esta sección:
 
-- **1.1.2 y 1.2 van completos**, o sea que se entregan **37 casos de uso identificados y
-  priorizados** — por encima de 30 en la lectura más común.
-- La única lectura que todavía muerde es "30 **con tabla de detalle**". Ahí la subdivisión por
-  ciclo juega a favor: detallar solo los del ciclo en curso es ortodoxia PUDS y se defiende sola.
-- **Cobertura barata:** la tabla de detalle es el único artefacto que no depende de ningún otro.
-  Si al terminar las nueve del Ciclo 1 se sigue de corrido con las de prioridad Alta del Ciclo 2,
-  se llega a veintitantas sin tocar el camino crítico. Si mañana la respuesta es "30 detallados",
-  se está cerca; si es "los del ciclo", el trabajo adelantado va igual en la entrega siguiente.
-- **No confundir con implementación.** Detallar es trabajo documental. El Ciclo 1 sigue
-  implementando CU-01 a CU-09.
+- **1.1.2 y 1.2 se entregan completos**, con los **37 casos de uso identificados y priorizados**.
+- **Detallar solo los del ciclo en curso** (1.3.1) es ortodoxia PUDS y se defiende sola. No hay que
+  correr detrás de ningún número.
+- **No confundir detallar con implementar.** La tabla de detalle es trabajo documental y no depende
+  de ningún otro artefacto; el alcance implementado sigue siendo el del ciclo en curso.
 
----
+El alcance sí se revisó, pero por cobertura y no por conteo: la revisión del 10/09 encontró tres
+agujeros reales —el actor Proveedor sin ningún caso de uso que lo tenga como iniciador, el RF11 sin
+mecanismo de notificación y la ausencia de recuperación de contraseña— y propone **cuatro casos de
+uso nuevos, CU-38 a CU-41**, numerados a continuación y sin renumerar los 37. Está todo en
+[`entregas/ciclo-2/02-analisis-de-alcance-y-vestidor-virtual.md`](entregas/ciclo-2/02-analisis-de-alcance-y-vestidor-virtual.md).
 
 ## 0.6 Revisión del `.docx` — estado de los encabezados por ciclo
 
