@@ -30,7 +30,7 @@ from app.modules.catalogo.temporadas_router import router as catalogo_temporadas
 
 # --- Ciclo 2 -------------------------------------------------------------
 # from app.modules.inventario.router import router as inventario_router
-# from app.modules.catalogo_publico.router import router as catalogo_publico_router
+from app.modules.catalogo_publico.router import router as catalogo_publico_router
 # from app.modules.reservas.router import router as reservas_router
 
 # --- Ciclo 3 -------------------------------------------------------------
@@ -120,7 +120,7 @@ app.include_router(catalogo_temporadas_router, prefix=API)
 
 # --- Ciclo 2 -------------------------------------------------------------
 # app.include_router(inventario_router, prefix=API)
-# app.include_router(catalogo_publico_router, prefix=API)
+app.include_router(catalogo_publico_router, prefix=API)
 # app.include_router(reservas_router, prefix=API)
 
 # --- Ciclo 3 -------------------------------------------------------------
