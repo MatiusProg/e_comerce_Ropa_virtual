@@ -9,7 +9,7 @@ Casos de uso que realiza este paquete:
   CU-24 Atender reserva en sucursal
   CU-25 Expirar reservas vencidas (proceso automatico)
 
-Implementado en este archivo: CU-22.
+Implementados en este archivo: CU-22 y CU-23.
 
 Los nombres y tipos replican el esquema fisico de la seccion 6.4 de
 docs/entregas/ciclo-2/00-organizacion-por-caso-de-uso.md y las columnas de
@@ -60,15 +60,21 @@ class ReservaCrearIn(BaseModel):
     sucursal_id: int
     franja_inicio: datetime
     franja_fin: datetime
-    observacion: str | None = Field(default=None, max_length=200)
     lineas: list[LineaReservaIn] = Field(min_length=1, max_length=MAXIMO_LINEAS)
 
-    @field_validator("observacion")
-    @classmethod
-    def _recortar(cls, valor: str | None) -> str | None:
-        if valor is None:
-            return None
-        return valor.strip() or None
+    # NO hay `observacion` acá, y es a proposito.
+    #
+    # El 11/09 este esquema la aceptaba al crear, y al escribir CU-23 quedo a la
+    # vista que eso rompia el modelo: `reserva.observacion` esta declarada en
+    # models.py como la nota de CIERRE --- «lo escribe CU-23 cuando la cancela
+    # el cliente y CU-24 cuando el Encargado la cierra» ---. Con las dos cosas
+    # en la misma columna, el motivo de la cancelacion pisaria la nota que el
+    # cliente dejo al reservar, y se perderia justo el dato que explica por que
+    # se cancelo.
+    #
+    # Una nota del cliente al reservar es util, pero no la pide ningun RF y
+    # necesita columna propia. Si se agrega, se agrega como `nota_cliente` y con
+    # su migracion; no compartiendo esta.
 
     @field_validator("franja_inicio", "franja_fin")
     @classmethod
@@ -105,6 +111,25 @@ class ReservaCrearIn(BaseModel):
                 )
             vistas.add(linea.variante_id)
         return self
+
+
+class CancelarReservaIn(BaseModel):
+    """Cancelacion de una reserva por el cliente (CU-23).
+
+    El motivo es **opcional**: cancelar no es un tramite y exigir una
+    justificacion para no ir a probarse ropa solo consigue que la gente escriba
+    «asdf». Lo que si se guarda siempre es QUIEN y CUANDO, que es lo que le
+    sirve a la sucursal.
+    """
+
+    motivo: str | None = Field(default=None, max_length=150)
+
+    @field_validator("motivo")
+    @classmethod
+    def _recortar(cls, valor: str | None) -> str | None:
+        if valor is None:
+            return None
+        return valor.strip() or None
 
 
 # --- Salida --------------------------------------------------------------

@@ -91,6 +91,38 @@ def contar_reservas_solapadas(
     )
 
 
+def obtener_reserva_entidad(
+    db: Session, reserva_id: int, *, bloquear: bool = False
+) -> Reserva | None:
+    """La entidad, para cambiarle el estado.
+
+    Con `bloquear=True` toma un `SELECT ... FOR UPDATE` sobre la fila de la
+    reserva. Hace falta en CU-23 por un motivo parecido al del riesgo R5 pero
+    del otro lado: si el cliente pulsa «cancelar» dos veces --- o lo hace desde
+    la web y el telefono a la vez ---, las dos peticiones leerian la reserva en
+    PENDIENTE, las dos pasarian la comprobacion de estado, y las dos liberarian
+    el stock. El saldo terminaria con MAS unidades de las que hay.
+
+    Con el bloqueo, la segunda espera, vuelve a leer --- ahora CANCELADA --- y
+    se rechaza sola.
+    """
+    consulta = select(Reserva).where(Reserva.id == reserva_id)
+    if bloquear:
+        consulta = consulta.with_for_update()
+    return db.scalar(consulta)
+
+
+def detalles_de(db: Session, reserva_id: int) -> list[DetalleReserva]:
+    """Las lineas como entidades, para recorrerlas al liberar el stock."""
+    return list(
+        db.scalars(
+            select(DetalleReserva)
+            .where(DetalleReserva.reserva_id == reserva_id)
+            .order_by(DetalleReserva.id)
+        ).all()
+    )
+
+
 # --- Escritura -----------------------------------------------------------
 
 def agregar_reserva(

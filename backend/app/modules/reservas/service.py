@@ -9,7 +9,7 @@ Casos de uso que realiza este paquete:
   CU-24 Atender reserva en sucursal
   CU-25 Expirar reservas vencidas (proceso automatico)
 
-Implementado en este archivo: CU-22.
+Implementados en este archivo: CU-22 y CU-23.
 
 Regla: aqui viven las reglas de negocio y el control de la transaccion. El
 servicio orquesta repositorios; nunca conoce el objeto Request de HTTP.
@@ -35,9 +35,11 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.modules.inventario import service as inventario
 from app.modules.reservas import repository
+from app.modules.reservas.repository import ESTADOS_VIVOS
 from app.modules.reservas.schemas import (
     DURACION_MAXIMA_MINUTOS,
     DURACION_MINIMA_MINUTOS,
+    CancelarReservaIn,
     LineaReservaOut,
     PaginaReservas,
     ReservaCrearIn,
@@ -137,6 +139,19 @@ class ReservaInexistente(ErrorDeReservas):
 
 class ReservaAjena(ErrorDeReservas):
     """La reserva existe pero es de otro cliente."""
+
+
+class ReservaNoCancelable(ErrorDeReservas):
+    """Excepcion E10: la reserva ya no esta viva.
+
+    Lleva el estado en el que quedo para que el mensaje pueda decir POR QUE no
+    se puede: «ya fue atendida» y «ya la cancelaste» llevan a acciones
+    distintas.
+    """
+
+    def __init__(self, estado: str):
+        self.estado = estado
+        super().__init__(f"Estado {estado}")
 
 
 # --- Validacion de la franja ---------------------------------------------
@@ -297,7 +312,9 @@ def crear_reserva(
         franja_inicio=datos.franja_inicio,
         franja_fin=datos.franja_fin,
         estado=ESTADO_INICIAL,
-        observacion=datos.observacion,
+        # Nace sin observacion: esa columna es la nota de CIERRE, y la escriben
+        # CU-23 al cancelar y CU-24 al atender. Ver la nota en `schemas.py`.
+        observacion=None,
     )
 
     motivo = f"Reserva #{reserva.id} de {sucursal.nombre}"[:200]
@@ -329,6 +346,70 @@ def crear_reserva(
         raise
 
     db.commit()
+    return _armar_reserva(db, reserva.id)
+
+
+# =====================================================================
+# CU-23 - Consultar y cancelar reserva
+# =====================================================================
+
+def cancelar_reserva(
+    db: Session, reserva_id: int, datos: CancelarReservaIn, *, usuario_id: int
+) -> ReservaOut:
+    """Cancela una reserva propia y devuelve el stock apartado.
+
+    Realiza el **RF29**: sin cancelacion, el stock queda retenido hasta que la
+    franja venza y CU-25 la expire --- o sea, hasta un dia entero de mercaderia
+    inmovilizada porque alguien cambio de planes.
+
+    LA RESERVA SE TOMA CON `FOR UPDATE`, Y NO ES DECORATIVO
+    ------------------------------------------------------
+    Si el cliente pulsa «cancelar» dos veces, o lo hace desde la web y el
+    telefono a la vez, las dos peticiones leerian la reserva en PENDIENTE, las
+    dos pasarian la comprobacion de estado y las dos liberarian el stock: el
+    saldo terminaria con MAS unidades de las que hay en la tienda. Es el riesgo
+    R5 visto del otro lado --- alli era vender de mas, aqui es inventar
+    mercaderia --- y se resuelve con el mismo mecanismo.
+
+    Con el bloqueo, la segunda peticion espera a que la primera confirme, vuelve
+    a leer --- ahora CANCELADA --- y se rechaza sola con la excepcion E10.
+    """
+    cliente = repository.obtener_cliente_de_usuario(db, usuario_id)
+    if cliente is None:
+        raise ClienteSinFicha()
+
+    reserva = repository.obtener_reserva_entidad(db, reserva_id, bloquear=True)
+    if reserva is None:
+        raise ReservaInexistente()
+    if reserva.cliente_id != cliente.id:
+        raise ReservaAjena()
+
+    # E10. Se comprueba DESPUES de tomar el bloqueo, no antes: comprobarlo antes
+    # seria leer un estado que puede cambiar entre la lectura y la escritura,
+    # que es exactamente el agujero que el bloqueo viene a cerrar.
+    if reserva.estado not in ESTADOS_VIVOS:
+        raise ReservaNoCancelable(reserva.estado)
+
+    motivo = f"Cancelacion de la reserva #{reserva.id}"
+    if datos.motivo:
+        motivo = f"{motivo}. {datos.motivo}"
+
+    # Se libera prenda por prenda. Cada llamada toma el FOR UPDATE de SU
+    # existencia y escribe su movimiento de LIBERACION.
+    for detalle in repository.detalles_de(db, reserva.id):
+        inventario.liberar_de_reserva(
+            db,
+            variante_id=detalle.variante_id,
+            sucursal_id=reserva.sucursal_id,
+            cantidad=detalle.cantidad,
+            usuario_id=usuario_id,
+            motivo=motivo[:200],
+        )
+
+    reserva.estado = "CANCELADA"
+    reserva.observacion = (datos.motivo or "Cancelada por el cliente")[:200]
+    db.commit()
+
     return _armar_reserva(db, reserva.id)
 
 

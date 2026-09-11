@@ -9,7 +9,7 @@ Casos de uso que realiza este paquete:
   CU-24 Atender reserva en sucursal
   CU-25 Expirar reservas vencidas (proceso automatico)
 
-Implementado en este archivo: CU-22.
+Implementados en este archivo: CU-22 y CU-23.
 
 Regla: el router valida la entrada, resuelve la autorizacion y delega en el
 servicio. Ninguna regla de negocio vive aqui.
@@ -37,6 +37,7 @@ from app.modules.inventario import service as inventario
 from app.modules.reservas import service
 from app.modules.reservas.models import ESTADOS_RESERVA
 from app.modules.reservas.schemas import (
+    CancelarReservaIn,
     PaginaReservas,
     ReservaCrearIn,
     ReservaOut,
@@ -125,6 +126,18 @@ def _traducir(error: Exception) -> HTTPException:
         return HTTPException(404, "No encontramos esa reserva.")
     if isinstance(error, service.ReservaInexistente):
         return HTTPException(404, "No encontramos esa reserva.")
+    if isinstance(error, service.ReservaNoCancelable):
+        # Excepcion E10. El mensaje distingue POR QUE no se puede, porque cada
+        # motivo lleva a algo distinto: si ya fue atendida no hay nada que
+        # hacer; si ya estaba cancelada, la pantalla solo tiene que refrescar.
+        motivos = {
+            "ATENDIDA": "Esa reserva ya fue atendida en la sucursal.",
+            "CANCELADA": "Esa reserva ya estaba cancelada.",
+            "EXPIRADA": "Esa reserva venció y el stock ya se liberó.",
+        }
+        return HTTPException(
+            409, motivos.get(error.estado, "Esa reserva ya no se puede cancelar.")
+        )
 
     # --- Errores que vienen de P4, al apartar el stock ------------------
     if isinstance(error, inventario.StockInsuficiente):
@@ -221,4 +234,38 @@ def obtener_reserva(
             db, reserva_id, usuario_id=usuario.id
         )
     except service.ErrorDeReservas as error:
+        raise _traducir(error)
+
+
+@router.patch(
+    "/{reserva_id}/cancelacion",
+    response_model=ReservaOut,
+    summary="CU-23 Cancelar una reserva",
+    responses={
+        404: {"description": "No existe, o es de otro cliente."},
+        409: {"description": "Ya fue atendida, cancelada o expiró (E10)."},
+    },
+)
+def cancelar_reserva(
+    reserva_id: int,
+    datos: CancelarReservaIn,
+    db: DbSession,
+    usuario: Usuario,
+) -> ReservaOut:
+    """Cancela una reserva propia y devuelve el stock apartado.
+
+    Realiza el **RF29**: sin cancelación, el stock queda retenido hasta que la
+    franja venza y CU-25 la expire — o sea, hasta un día entero de mercadería
+    inmovilizada porque alguien cambió de planes.
+
+    Es `PATCH` sobre un sub-recurso y no `DELETE` sobre la reserva: cancelar
+    **no** la borra. La reserva cancelada se conserva —con su motivo, su fecha y
+    sus prendas— porque es historia del cliente y de la sucursal, y porque los
+    movimientos de `LIBERACION` que deja apuntan a ella.
+    """
+    try:
+        return service.cancelar_reserva(
+            db, reserva_id, datos, usuario_id=usuario.id
+        )
+    except (service.ErrorDeReservas, inventario.ErrorDeInventario) as error:
         raise _traducir(error)
