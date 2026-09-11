@@ -110,4 +110,17 @@ export class PerfilService {
 
     return { tipo: 'sistema', mensaje: detalle || 'No se pudo completar la operación.' };
   }
+
+  /**
+   * Guarda las categorías preferidas (paso 3d).
+   *
+   * Es `PUT` con la **selección completa**: la operación reemplaza el recurso
+   * entero, así que repetirla no cambia nada y no existe un «a medio aplicar».
+   * Devuelve el perfil completo, para refrescar con una sola respuesta.
+   */
+  guardarPreferencias(categorias: number[]): Observable<Perfil> {
+    return this.http
+      .put<Perfil>(`${this.base}/categorias`, { categorias })
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
 }

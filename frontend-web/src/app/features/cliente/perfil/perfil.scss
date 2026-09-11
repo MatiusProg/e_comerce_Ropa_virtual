@@ -334,3 +334,22 @@ mat-card-content {
     align-self: flex-end;
   }
 }
+
+/* --- Categorías preferidas (Ciclo 2) ----------------------------------- */
+
+.preferencias {
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+.conteo {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.vacio {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
