@@ -34,6 +34,7 @@ import type {
 import type { SucursalBreve } from '../../../core/models/organizacion.models';
 import type { Proveedor } from '../../../core/models/proveedores.models';
 import { AjusteFormulario } from './ajuste-formulario';
+import { MinimoFormulario, type DatosMinimoFormulario } from './minimo-formulario';
 import { IngresoFormulario, type DatosIngresoFormulario } from './ingreso-formulario';
 import {
   TransferenciaFormulario,
@@ -41,11 +42,11 @@ import {
 } from './transferencia-formulario';
 
 /**
- * CU-13 y CU-15 · Inventario — «boundary» PantallaInventario.
+ * CU-13, CU-15 y CU-16 · Inventario — «boundary» PantallaInventario.
  *
  * Una sola pantalla para los dos casos de uso, con tres vistas:
  *
- *   - **Existencias**: cuánto hay y dónde. Es el punto de partida de los dos.
+ *   - **Existencias**: cuánto hay y dónde. Es el punto de partida de los tres.
  *   - **Ingresos** (CU-13, paso 2): los remitos ya recibidos.
  *   - **Movimientos** (CU-15): la trazabilidad completa que pide el RF22.
  *
@@ -103,6 +104,7 @@ export class Inventario implements OnInit {
     'disponible',
     'reservada',
     'fisica',
+    'minimo',
     'acciones',
   ];
   protected readonly columnasIngresos = [
@@ -319,6 +321,30 @@ export class Inventario implements OnInit {
           `Ajuste registrado: ${signo}${ajuste.diferencia} unidades.`,
           'Cerrar',
           { duration: 6000 },
+        );
+        this.refrescarTodo();
+      });
+  }
+
+  /**
+   * CU-16 desde el ámbito del Administrador, que alcanza a toda la red.
+   *
+   * Es el mismo diálogo que usa el Encargado en `/sucursal/disponibilidad`: la
+   * operación es una sola y lo que cambia es sobre qué sucursales se puede.
+   */
+  protected fijarMinimo(existencia: Existencia): void {
+    const datos: DatosMinimoFormulario = { existencia };
+    this.dialogo
+      .open(MinimoFormulario, { data: datos, width: '520px', disableClose: true })
+      .afterClosed()
+      .subscribe((actualizada) => {
+        if (!actualizada) return;
+        this.aviso.open(
+          actualizada.stock_minimo === 0
+            ? `${actualizada.sku} deja de vigilarse.`
+            : `${actualizada.sku} avisará cuando queden ${actualizada.stock_minimo} o menos.`,
+          'Cerrar',
+          { duration: 5000 },
         );
         this.refrescarTodo();
       });

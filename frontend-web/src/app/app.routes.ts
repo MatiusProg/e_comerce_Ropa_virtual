@@ -109,14 +109,28 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/cliente/perfil/perfil').then((m) => m.Perfil),
   },
-  // --- Ciclo 2 · P4 Inventario para el Encargado (CU-13) ---
+  // --- Ciclo 2 · P4 para el Encargado (CU-13 y CU-16) ---
   //
-  // Va ANTES de 'sucursal' a propósito: esa ruta no declara hijos, así que si
-  // quedara primero consumiría el prefijo y esta no se resolvería nunca.
+  // Van ANTES de 'sucursal' a propósito: esa ruta no declara hijos, así que si
+  // quedara primero consumiría el prefijo y estas no se resolverían nunca.
   //
-  // Es la MISMA pantalla que la del Administrador. El alcance no lo decide la
-  // ruta sino el servidor: el ámbito de sucursal viaja en el token, y la
-  // pantalla oculta las acciones de CU-15, que son solo del Administrador.
+  // `disponibilidad` es CU-16 y tiene pantalla propia: está organizada
+  // alrededor del saldo de un local —alertas arriba, listado abajo—, mientras
+  // que la del Administrador lo está alrededor del movimiento. Comparten los
+  // diálogos y el servicio, que es donde vive lo que de verdad se repite.
+  //
+  // `inventario` reusa la pantalla del Administrador para que el Encargado
+  // registre sus ingresos (CU-13) y lea su historial. El alcance no lo decide
+  // la ruta sino el servidor: el ámbito viaja en el token.
+  {
+    path: 'sucursal/disponibilidad',
+    title: 'Disponibilidad · Violet Boutique',
+    canActivate: [sesionGuard, rolGuard('ENCARGADO')],
+    loadComponent: () =>
+      import('./features/sucursal/disponibilidad/disponibilidad').then(
+        (m) => m.Disponibilidad,
+      ),
+  },
   {
     path: 'sucursal/inventario',
     title: 'Inventario de la sucursal · Violet Boutique',

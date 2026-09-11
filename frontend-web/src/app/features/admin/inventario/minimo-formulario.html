@@ -1,0 +1,71 @@
+<!-- CU-16 · Fijar el punto de reposición de una prenda. -->
+<h2 mat-dialog-title>Punto de reposición</h2>
+
+@if (guardando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<mat-dialog-content>
+  <div class="prenda">
+    <code>{{ datos.existencia.sku }}</code>
+    <div>
+      <strong>{{ datos.existencia.producto }}</strong>
+      <span class="detalle">
+        {{ datos.existencia.talla }} · {{ datos.existencia.color }} ·
+        {{ datos.existencia.sucursal }}
+      </span>
+    </div>
+  </div>
+
+  <p class="explicacion">
+    Hoy hay <strong>{{ datos.existencia.cantidad_disponible }}</strong> unidades
+    disponibles para vender. El sistema va a avisar cuando queden esa cantidad o
+    menos.
+  </p>
+
+  <mat-form-field appearance="outline" class="ancho">
+    <mat-label>Avisar cuando queden</mat-label>
+    <input matInput type="number" min="0" [formControl]="minimo" />
+    <span matTextSuffix>unidades o menos</span>
+    <mat-hint>Cero apaga la alerta de esta prenda.</mat-hint>
+  </mat-form-field>
+
+  @if (apagado()) {
+    <div class="nota">
+      <mat-icon>notifications_off</mat-icon>
+      <span>Esta prenda deja de vigilarse: no va a aparecer en las alertas.</span>
+    </div>
+  } @else if (quedaEnAlerta()) {
+    <!-- Se avisa antes de guardar: escribir un número alto sin ver que deja la
+         prenda avisando desde ya es la forma de llenar la pantalla sin querer. -->
+    <div class="nota alerta">
+      <mat-icon>warning_amber</mat-icon>
+      <span>
+        Con ese umbral la prenda queda en alerta desde ahora mismo, porque
+        quedan {{ datos.existencia.cantidad_disponible }}.
+      </span>
+    </div>
+  }
+
+  @if (error(); as e) {
+    <div class="aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ e }}</span>
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" [disabled]="guardando()" (click)="cancelar()">
+    Cancelar
+  </button>
+  <button
+    matButton="filled"
+    type="button"
+    class="vb-boton-marca"
+    [disabled]="guardando()"
+    (click)="confirmar()"
+  >
+    Guardar
+  </button>
+</mat-dialog-actions>

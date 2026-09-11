@@ -9,7 +9,7 @@ Casos de uso que realiza este paquete:
   CU-15 Registrar movimiento de inventario
   CU-16 Gestionar disponibilidad de la sucursal
 
-Implementados en este archivo: CU-13 y CU-15.
+Implementados en este archivo: CU-13, CU-15 y CU-16.
 
 Las longitudes maximas replican el esquema fisico de la seccion 6.4 de
 docs/entregas/ciclo-2/00-organizacion-por-caso-de-uso.md y las columnas de
@@ -78,6 +78,15 @@ class ExistenciaOut(VarianteResumenOut):
     #: contra el que se compara un conteo fisico (CU-15) y la interfaz no
     #: deberia tener que deducir esa regla por su cuenta.
     cantidad_fisica: int
+
+    #: Umbral de reposicion que fijo el Encargado (CU-16). Cero = sin alerta.
+    stock_minimo: int
+    #: Si esta prenda esta en alerta. Viaja calculado por el mismo motivo que
+    #: `cantidad_fisica`: la regla —hay alerta cuando el umbral es mayor que
+    #: cero y el disponible no lo supera— es del negocio, no de la pantalla, y
+    #: si cada cliente la dedujera por su cuenta, la web y el movil terminarian
+    #: avisando cosas distintas.
+    bajo_minimo: bool
 
 
 # =====================================================================
@@ -196,8 +205,32 @@ class PaginaIngresos(BaseModel):
 
 
 # =====================================================================
+# CU-16 - Gestionar disponibilidad de la sucursal
+# =====================================================================
+
+class StockMinimoIn(BaseModel):
+    """CU-16: el Encargado fija el punto de reposicion de una prenda.
+
+    Se envia solo el umbral y no la existencia entera: es el unico campo de
+    `existencia` que una persona edita a mano. Las dos cantidades no se tocan
+    nunca por esta puerta —ni por ninguna otra que no genere un movimiento—,
+    que es la regla que concentra P4.
+    """
+
+    #: Cero apaga la alerta de esa prenda. El tope evita que un dedazo deje una
+    #: sucursal entera en alerta permanente.
+    stock_minimo: int = Field(ge=0, le=100_000)
+
+
+# =====================================================================
 # CU-15 - Registrar movimiento de inventario
 # =====================================================================
+#
+# El AJUSTE lo comparten CU-15 y CU-16: es la misma operacion vista desde dos
+# roles. El Administrador ajusta cualquier sucursal (CU-15); el Encargado, solo
+# la suya (CU-16). Un unico esquema y un unico endpoint, con el ambito resuelto
+# por el token --- exponer el mismo recurso dos veces es justo lo que la
+# seccion 6.11.2 de docs/06-decisiones-tecnicas.md decidio no hacer.
 
 class AjusteIn(BaseModel):
     """Ajuste por conteo fisico (flujo principal de CU-15).

@@ -84,6 +84,7 @@ class Existencia(Auditoria, Base):
         UniqueConstraint("variante_id", "sucursal_id", name="uq_existencia_variante_sucursal"),
         CheckConstraint("cantidad_disponible >= 0", name="disponible_no_negativa"),
         CheckConstraint("cantidad_reservada >= 0", name="reservada_no_negativa"),
+        CheckConstraint("stock_minimo >= 0", name="stock_minimo_no_negativo"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -97,6 +98,22 @@ class Existencia(Auditoria, Base):
         Integer, server_default=text("0")
     )
     cantidad_reservada: Mapped[int] = mapped_column(Integer, server_default=text("0"))
+
+    #: Umbral de reposicion, lo fija el Encargado de la sucursal (CU-16).
+    #:
+    #: Va POR EXISTENCIA y no como una constante del sistema porque el punto de
+    #: reposicion no es una propiedad del sistema sino del par (prenda,
+    #: sucursal): de una camiseta negra basica la sucursal del centro necesita
+    #: veinte, y de un vestido de fiesta, dos. Un umbral unico llenaria la
+    #: pantalla de alertas falsas sobre los vestidos y no avisaria nunca de las
+    #: camisetas, que es exactamente al reves de para lo que sirve una alerta.
+    #:
+    #: Cero significa «sin alerta», y es el valor por defecto a proposito: una
+    #: existencia recien creada por un ingreso no deberia empezar a avisar sola
+    #: con un numero que nadie eligio.
+    stock_minimo: Mapped[int] = mapped_column(
+        Integer, server_default=text("0")
+    )
 
     movimientos: Mapped[list["MovimientoInventario"]] = relationship(
         back_populates="existencia"

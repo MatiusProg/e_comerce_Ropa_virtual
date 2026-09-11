@@ -9,8 +9,8 @@ Casos de uso que realiza este paquete:
   CU-15 Registrar movimiento de inventario
   CU-16 Gestionar disponibilidad de la sucursal
 
-Implementados en este archivo: CU-13 y CU-15, mas las dos funciones de la
-costura C1 que consumen CU-14 y CU-19 (que son de Karen).
+Implementados en este archivo: CU-13, CU-15 y CU-16, mas las dos funciones
+de la costura C1 que consumen CU-14 y CU-19 (que son de Karen).
 
 Regla: aqui viven las reglas de negocio y el control de la transaccion. El
 servicio orquesta repositorios; nunca conoce el objeto Request de HTTP.
@@ -231,6 +231,8 @@ def _fila_a_existencia(fila) -> ExistenciaOut:
         cantidad_disponible=fila.cantidad_disponible,
         cantidad_reservada=fila.cantidad_reservada,
         cantidad_fisica=fila.cantidad_fisica,
+        stock_minimo=fila.stock_minimo,
+        bajo_minimo=fila.bajo_minimo,
     )
 
 
@@ -567,6 +569,54 @@ def listar_movimientos(
         tamano=tamano,
         items=[_fila_a_movimiento(fila) for fila in filas],
     )
+
+
+# =====================================================================
+# CU-16 - Gestionar disponibilidad de la sucursal
+# =====================================================================
+
+def existencia_por_id(db: Session, existencia_id: int) -> ExistenciaOut | None:
+    """Una existencia, o None. La usa el router para resolver el ambito.
+
+    Devuelve el esquema y no la entidad: el router no deberia tocar objetos de
+    SQLAlchemy, porque tenerlos a mano invita a modificarlos ahi mismo y la
+    regla de este paquete es que las cantidades solo cambian por el servicio.
+    """
+    fila = repository.obtener_existencia_con_detalle(db, existencia_id)
+    return _fila_a_existencia(fila) if fila is not None else None
+
+
+def fijar_stock_minimo(
+    db: Session, existencia_id: int, valor: int
+) -> ExistenciaOut:
+    """Fija el punto de reposicion de una prenda en una sucursal.
+
+    NO genera movimiento, y es la unica escritura de este paquete que no lo
+    hace. No es una excepcion a la regla: la regla dice que ninguna CANTIDAD se
+    modifica sin movimiento, y el umbral no es una cantidad de mercaderia --- es
+    una preferencia de quien administra el local. No hay nada que auditar
+    porque no cambio el stock, solo cuando avisar sobre el.
+    """
+    existencia = repository.obtener_existencia_por_id(db, existencia_id)
+    if existencia is None:
+        raise ExistenciaInexistente()
+
+    existencia.stock_minimo = valor
+    db.commit()
+
+    return _fila_a_existencia(
+        repository.obtener_existencia_con_detalle(db, existencia_id)
+    )
+
+
+def alertas_de_stock(
+    db: Session, *, sucursal_id: int | None = None
+) -> list[ExistenciaOut]:
+    """Las prendas que llegaron a su punto de reposicion, de peor a mejor."""
+    return [
+        _fila_a_existencia(fila)
+        for fila in repository.listar_alertas(db, sucursal_id=sucursal_id)
+    ]
 
 
 # =====================================================================

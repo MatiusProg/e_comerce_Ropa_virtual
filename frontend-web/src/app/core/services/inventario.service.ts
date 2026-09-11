@@ -17,13 +17,14 @@ import {
   Movimiento,
   PaginaIngresos,
   PaginaMovimientos,
+  StockMinimoCrear,
   TipoManual,
   TransferenciaCrear,
   TransferenciaRegistrada,
 } from '../models/inventario.models';
 
 /**
- * Errores previstos de CU-13 y CU-15, traducidos desde el código HTTP.
+ * Errores previstos de CU-13, CU-15 y CU-16, traducidos desde el código HTTP.
  *
  * Se distinguen y no se colapsan en «error» porque cada uno lleva a una acción
  * distinta en la pantalla:
@@ -123,6 +124,32 @@ export class InventarioService {
   tiposManuales(): Observable<TipoManual[]> {
     return this.http
       .get<TipoManual[]>(`${this.base}/tipos-movimiento`)
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
+
+  // --- CU-16 · Disponibilidad de la sucursal -----------------------------
+
+  /**
+   * Las prendas que llegaron a su punto de reposición, de peor a mejor.
+   *
+   * No se ordena en la pantalla: el orden por urgencia lo resuelve el servidor
+   * en la misma consulta que filtra, porque ordenar acá obligaría a traerlas
+   * todas para quedarse con las diez que importan.
+   */
+  listarAlertas(sucursal_id?: number): Observable<Existencia[]> {
+    let params = new HttpParams();
+    if (sucursal_id) params = params.set('sucursal_id', sucursal_id);
+    return this.http
+      .get<Existencia[]>(`${this.base}/alertas`, { params })
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
+
+  fijarStockMinimo(
+    existencia_id: number,
+    datos: StockMinimoCrear,
+  ): Observable<Existencia> {
+    return this.http
+      .patch<Existencia>(`${this.base}/existencias/${existencia_id}/stock-minimo`, datos)
       .pipe(catchError((e) => throwError(() => this.traducir(e))));
   }
 

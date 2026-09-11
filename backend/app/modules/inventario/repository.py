@@ -25,7 +25,7 @@ P5 consulte estas tablas por su cuenta.
 """
 from datetime import datetime
 
-from sqlalchemy import Row, Select, func, select
+from sqlalchemy import Row, Select, and_, func, select
 from sqlalchemy.orm import Session
 
 from app.modules.catalogo.models import Color, Producto, Talla, VarianteProducto
@@ -60,6 +60,24 @@ def _unir_variante(consulta: Select) -> Select:
 
 # --- Existencias ---------------------------------------------------------
 
+def _bajo_minimo():
+    """Cuando una prenda esta en alerta de reposicion (CU-16).
+
+    Dos condiciones, y las dos hacen falta: que haya umbral --- cero significa
+    «sin alerta» y es el valor por defecto --- y que el disponible no lo supere.
+    Se compara contra el DISPONIBLE y no contra el fisico: lo reservado ya tiene
+    dueño y no sirve para atender al proximo cliente que entre, que es
+    justamente lo que la alerta quiere evitar que pase.
+
+    Se usa `<=` y no `<`: estar exactamente en el minimo ya es estar en el punto
+    de reposicion. Ese es el sentido de la palabra «minimo».
+    """
+    return and_(
+        Existencia.stock_minimo > 0,
+        Existencia.cantidad_disponible <= Existencia.stock_minimo,
+    )
+
+
 def _seleccion_existencia() -> Select:
     """Saldo de una variante en una sucursal, con todo ya resuelto."""
     return _unir_variante(
@@ -73,6 +91,12 @@ def _seleccion_existencia() -> Select:
             (Existencia.cantidad_disponible + Existencia.cantidad_reservada).label(
                 "cantidad_fisica"
             ),
+            Existencia.stock_minimo,
+            # La regla de la alerta se resuelve en SQL y no en Python porque
+            # tambien hace falta para FILTRAR (CU-16 lista solo las que estan
+            # en alerta) y para ORDENAR por urgencia. Calcularla despues, sobre
+            # las filas ya traidas, obligaria a traerlas todas.
+            _bajo_minimo().label("bajo_minimo"),
         )
         .join(VarianteProducto, VarianteProducto.id == Existencia.variante_id)
         .join(Sucursal, Sucursal.id == Existencia.sucursal_id)
@@ -411,6 +435,34 @@ def obtener_sucursal(db: Session, sucursal_id: int) -> Sucursal | None:
 
 def obtener_proveedor(db: Session, proveedor_id: int) -> Proveedor | None:
     return db.scalar(select(Proveedor).where(Proveedor.id == proveedor_id))
+
+
+# --- CU-16: disponibilidad de la sucursal --------------------------------
+
+def listar_alertas(db: Session, *, sucursal_id: int | None = None) -> list[Row]:
+    """Las prendas que llegaron a su punto de reposicion.
+
+    Ordenadas por lo lejos que estan del umbral, de peor a mejor: una prenda en
+    cero con minimo diez urge mas que una en nueve con el mismo minimo, y quien
+    abre esta pantalla a primera hora necesita ver arriba lo que tiene que
+    pedir hoy.
+    """
+    consulta = _seleccion_existencia().where(_bajo_minimo())
+    if sucursal_id is not None:
+        consulta = consulta.where(Existencia.sucursal_id == sucursal_id)
+    return list(
+        db.execute(
+            consulta.order_by(
+                (Existencia.cantidad_disponible - Existencia.stock_minimo).asc(),
+                Producto.nombre,
+            )
+        ).all()
+    )
+
+
+def obtener_existencia_por_id(db: Session, existencia_id: int) -> Existencia | None:
+    """La entidad, para fijarle el umbral."""
+    return db.scalar(select(Existencia).where(Existencia.id == existencia_id))
 
 
 # --- Costura C1: lo que P5 le consume a P4 -------------------------------

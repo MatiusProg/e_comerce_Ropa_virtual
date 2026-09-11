@@ -1,0 +1,163 @@
+:host {
+  display: block;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.encabezado {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.85rem;
+    font-weight: 600;
+    color: var(--vb-malva-oscuro);
+  }
+
+  .bajada {
+    margin: 0.25rem 0 0;
+    max-width: 46rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.tarjeta {
+  border-radius: var(--vb-radio);
+  border: 1px solid var(--mat-sys-outline-variant);
+  box-shadow: var(--vb-sombra-suave);
+  overflow: hidden;
+  background: var(--mat-sys-surface);
+  margin-bottom: 1.5rem;
+}
+
+.titulo-panel {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 1.15rem 1.25rem 0.5rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--vb-malva-oscuro);
+  }
+
+  // Sin alertas el icono se atenua; con alertas toma el color de error. El
+  // icono CAMBIA ademas de color -campana contra tilde-, porque el color solo
+  // no alcanza para quien no lo distingue.
+  mat-icon {
+    color: var(--mat-sys-on-surface-variant);
+
+    &.hay {
+      color: var(--mat-sys-error);
+    }
+  }
+}
+
+.pie {
+  margin: 0.25rem 1.25rem 1.25rem;
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.filtros {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  padding: 1.25rem 1.25rem 0;
+
+  .campo-busqueda {
+    flex: 1 1 20rem;
+    min-width: 15rem;
+  }
+
+  mat-form-field {
+    min-width: 13rem;
+  }
+}
+
+.envoltorio-tabla {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  background: transparent;
+}
+
+code {
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
+.numerica {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.destacado {
+  font-weight: 600;
+}
+
+.sale {
+  color: var(--mat-sys-error);
+}
+
+.detalle {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.acciones {
+  text-align: right;
+  white-space: nowrap;
+}
+
+// Una prenda sin minimo no esta «bien», esta SIN VIGILAR, y son dos cosas
+// distintas. El guion atenuado lo dice sin gritarlo.
+.sin-vigilar {
+  color: var(--mat-sys-outline);
+}
+
+.en-alerta {
+  font-weight: 600;
+  color: var(--mat-sys-error);
+}
+
+// La fila entera se tine ademas de la celda: en una tabla de siete columnas, un
+// numero rojo al medio se pierde al recorrerla de arriba abajo.
+.fila-alerta {
+  background: #fdf0d5;
+}
+
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin-bottom: 1.5rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--vb-radio-chico);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+
+  mat-icon {
+    flex: none;
+  }
+}
+
+.vacio {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+}
