@@ -1,0 +1,168 @@
+<!-- CU-18 · Consultar ficha de producto — «boundary» PantallaFichaProducto. -->
+<a matButton routerLink="/tienda" class="volver">
+  <mat-icon>arrow_back</mat-icon>
+  Volver al catálogo
+</a>
+
+@if (cargando()) {
+  <mat-progress-bar mode="indeterminate" />
+} @else if (error(); as mensaje) {
+  <mat-card class="panel vb-filete-superior" appearance="outlined">
+    <p class="aviso error">
+      <mat-icon>error_outline</mat-icon>
+      {{ mensaje }}
+    </p>
+  </mat-card>
+} @else if (ficha(); as producto) {
+  <mat-card class="panel vb-filete-superior" appearance="outlined">
+    <div class="ficha">
+      <!-- Galería -->
+      <section class="galeria">
+        <div class="principal">
+          @if (producto.imagenes.length) {
+            <img
+              [src]="urlDe(producto.imagenes[fotoActiva()].url)"
+              [alt]="producto.nombre"
+            />
+          } @else {
+            <div class="sin-foto">
+              <mat-icon>checkroom</mat-icon>
+            </div>
+          }
+        </div>
+
+        @if (producto.imagenes.length > 1) {
+          <div class="miniaturas">
+            @for (imagen of producto.imagenes; track imagen.id; let i = $index) {
+              <button
+                type="button"
+                class="miniatura"
+                [class.activa]="i === fotoActiva()"
+                (click)="verFoto(i)"
+              >
+                <img [src]="urlDe(imagen.url)" [alt]="producto.nombre" loading="lazy" />
+              </button>
+            }
+          </div>
+        }
+      </section>
+
+      <!-- Datos y selección -->
+      <section class="datos">
+        <p class="categoria">{{ producto.categoria_nombre }}</p>
+        <h1 class="nombre">{{ producto.nombre }}</h1>
+        <p class="precio">{{ precio() }}</p>
+
+        @if (producto.descripcion) {
+          <p class="descripcion">{{ producto.descripcion }}</p>
+        }
+
+        <mat-divider />
+
+        <!-- Paso 3: elegir talla y color. Las opciones se restringen entre sí:
+             no toda combinación talla × color existe. -->
+        <div class="seleccion">
+          <h2 class="rotulo">Talla</h2>
+          <mat-chip-listbox [hideSingleSelectionIndicator]="true">
+            @for (talla of producto.tallas; track talla.id) {
+              @let disponible = tallasOfrecidas().includes(talla);
+              <mat-chip-option
+                [selected]="tallaElegida() === talla.id"
+                [disabled]="!disponible"
+                (click)="elegirTalla(talla.id)"
+                [matTooltip]="disponible ? '' : 'No disponible en el color elegido'"
+              >
+                {{ talla.codigo }}
+              </mat-chip-option>
+            }
+          </mat-chip-listbox>
+
+          <h2 class="rotulo">Color</h2>
+          <div class="colores">
+            @for (color of producto.colores; track color.id) {
+              @let disponible = coloresOfrecidos().includes(color);
+              <button
+                type="button"
+                class="color"
+                [class.elegido]="colorElegido() === color.id"
+                [class.agotado]="!disponible"
+                [disabled]="!disponible"
+                [style.background]="color.hexadecimal"
+                [matTooltip]="
+                  disponible ? color.nombre : color.nombre + ' — no disponible en esa talla'
+                "
+                (click)="elegirColor(color.id)"
+              ></button>
+            }
+          </div>
+        </div>
+
+        @if (variante(); as elegida) {
+          <p class="sku">
+            <mat-icon>qr_code_2</mat-icon>
+            <span>{{ elegida.sku }}</span>
+          </p>
+        } @else {
+          <p class="pendiente">Elija talla y color para ver el precio y la disponibilidad.</p>
+        }
+
+        <mat-divider />
+
+        <!-- CU-19 · disponibilidad por sucursal. Se consulta al completar la
+             selección, porque la existencia es por variante. -->
+        <section class="stock">
+          <h2 class="rotulo">Dónde encontrarla</h2>
+
+          @if (!variante()) {
+            <p class="pendiente">Elija talla y color para ver en qué sucursales hay.</p>
+          } @else if (consultandoStock()) {
+            <p class="pendiente">Consultando disponibilidad…</p>
+          } @else if (disponibilidad(); as stock) {
+            @if (stock.sucursales.length === 0) {
+              <!-- No es un error: la prenda existe y se ofrece, lo que no hay es
+                   stock. Decirlo así evita que parezca que desapareció. -->
+              <p class="sin-stock">
+                <mat-icon>info_outline</mat-icon>
+                Sin unidades disponibles por ahora en ninguna sucursal.
+              </p>
+            } @else {
+              <ul class="sucursales">
+                @for (sucursal of stock.sucursales; track sucursal.sucursal_id) {
+                  <li>
+                    <mat-icon>store</mat-icon>
+                    <span class="nombre">{{ sucursal.sucursal_nombre }}</span>
+                    <span class="ciudad">{{ sucursal.ciudad_nombre }}</span>
+                    <span class="cantidad">
+                      {{ sucursal.cantidad_disponible }}
+                      {{ sucursal.cantidad_disponible === 1 ? 'unidad' : 'unidades' }}
+                    </span>
+                  </li>
+                }
+              </ul>
+              <p class="total">{{ stock.total_disponible }} en total en la red</p>
+            }
+          } @else {
+            <p class="pendiente">No se pudo consultar la disponibilidad.</p>
+          }
+        </section>
+
+        <!-- El vestidor virtual es de la app móvil (RF13): la cámara y la
+             detección de pose corren en el teléfono. -->
+        <button
+          matButton="filled"
+          type="button"
+          class="vb-boton-marca vestidor"
+          [disabled]="!producto.tiene_vestidor"
+          [matTooltip]="
+            producto.tiene_vestidor
+              ? 'Disponible en la app móvil: la cámara y la detección de pose son del teléfono'
+              : 'Esta prenda todavía no tiene su imagen para el vestidor virtual'
+          "
+        >
+          <mat-icon>view_in_ar</mat-icon>
+          Probar en el vestidor virtual
+        </button>
+      </section>
+    </div>
+  </mat-card>
+}

@@ -33,7 +33,12 @@ from app.modules.inventario.router import router as inventario_router
 from app.modules.inventario.router import (
     operacion_router as inventario_operacion_router,
 )
-# from app.modules.catalogo_publico.router import router as catalogo_publico_router
+# CU-14 es de Karen y vive en archivos propios dentro del paquete de Mateo,
+# con el mismo patron que catalogo/ usa para imagenes_* y temporadas_*.
+from app.modules.inventario.consolidado_router import (
+    router as inventario_consolidado_router,
+)
+from app.modules.catalogo_publico.router import router as catalogo_publico_router
 from app.modules.reservas.router import router as reservas_router
 from app.modules.reservas.router import (
     mantenimiento_router as reservas_mantenimiento_router,
@@ -130,7 +135,8 @@ app.include_router(catalogo_temporadas_router, prefix=API)
 # --- Ciclo 2 -------------------------------------------------------------
 app.include_router(inventario_router, prefix=API)
 app.include_router(inventario_operacion_router, prefix=API)
-# app.include_router(catalogo_publico_router, prefix=API)
+app.include_router(inventario_consolidado_router, prefix=API)
+app.include_router(catalogo_publico_router, prefix=API)
 app.include_router(reservas_router, prefix=API)
 app.include_router(reservas_sucursal_router, prefix=API)
 app.include_router(reservas_mantenimiento_router, prefix=API)

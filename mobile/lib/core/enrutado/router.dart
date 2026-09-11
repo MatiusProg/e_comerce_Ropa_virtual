@@ -12,6 +12,8 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/estado_sesion.dart';
 import '../../features/auth/pantalla_login.dart';
 import '../../features/auth/pantalla_registro.dart';
+import '../../features/catalogo/pantalla_catalogo.dart';
+import '../../features/catalogo/pantalla_ficha.dart';
 import '../../features/inicio/pantalla_carga.dart';
 import '../../features/inicio/pantalla_inicio.dart';
 import '../../features/perfil/pantalla_perfil.dart';
@@ -32,6 +34,15 @@ class Rutas {
   // Mateo agrega aqui las rutas de reservas (CU-22, CU-23).
   // Cada uno agrega al final de su bloque y no reordena las ajenas; ver
   // docs/entregas/ciclo-2/00-organizacion-por-caso-de-uso.md, seccion 5.
+
+  // Karen:
+  /// CU-17 · la vitrina.
+  static const String catalogo = '/catalogo';
+
+  /// CU-18 · la ficha. Se navega como `/catalogo/5`; el identificador va en
+  /// la ruta y no como parametro de consulta para que la pantalla sea
+  /// enlazable y el boton de volver del telefono la deje bien apilada.
+  static const String fichaProducto = '/catalogo/:id';
 }
 
 /// Rutas accesibles sin sesion: el registro (CU-01) y el login (CU-02).
@@ -96,6 +107,25 @@ final routerProvider = Provider<GoRouter>((ref) {
       // --- CICLO 2 --------------------------------------------------------
       // Karen: catalogo (CU-17, CU-18, CU-19).
       // Mateo: reservas (CU-22, CU-23).
+      GoRoute(
+        path: Rutas.catalogo,
+        builder: (context, estado) => const PantallaCatalogo(),
+        routes: [
+          GoRoute(
+            // Anidada y no suelta: asi el boton de volver del telefono lleva de
+            // la ficha a la vitrina y no a la pantalla de inicio.
+            path: ':id',
+            builder: (context, estado) {
+              // El identificador llega como texto desde la URL. Si no es un
+              // entero se manda a la vitrina en vez de reventar al construir:
+              // la ruta la puede escribir cualquiera.
+              final id = int.tryParse(estado.pathParameters['id'] ?? '');
+              if (id == null) return const PantallaCatalogo();
+              return PantallaFicha(productoId: id);
+            },
+          ),
+        ],
+      ),
     ],
     errorBuilder: (context, estado) => Scaffold(
       appBar: AppBar(title: const Text('Página no encontrada')),

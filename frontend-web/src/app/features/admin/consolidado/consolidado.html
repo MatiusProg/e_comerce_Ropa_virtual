@@ -1,0 +1,178 @@
+<!-- CU-14 · Consultar inventario consolidado — «boundary» PantallaConsolidado. -->
+<header class="encabezado">
+  <div>
+    <h1 class="vb-titulo">Inventario consolidado</h1>
+    <p class="bajada">
+      Las existencias de toda la red, una fila por prenda con su reparto entre
+      sucursales. Sirve para ver dónde está concentrado el stock, no para
+      operar sobre él: eso es Inventario.
+    </p>
+  </div>
+  <button matButton type="button" (click)="recargar()">
+    <mat-icon>refresh</mat-icon>
+    Actualizar
+  </button>
+</header>
+
+<mat-card class="tarjeta vb-filete-superior" appearance="outlined">
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <div class="filtros">
+    <mat-form-field appearance="outline" class="campo-busqueda">
+      <mat-label>Buscar por SKU, prenda o color</mat-label>
+      <input matInput [formControl]="busqueda" />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Sucursal</mat-label>
+      <mat-select [formControl]="filtroSucursal">
+        <mat-option [value]="''">Toda la red</mat-option>
+        @for (s of sucursales(); track s.id) {
+          <mat-option [value]="s.id">{{ s.nombre }} · {{ s.ciudad }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Estado</mat-label>
+      <mat-select [formControl]="filtroEstado">
+        <mat-option [value]="''">Todos</mat-option>
+        <mat-option value="disponible">Disponible</mat-option>
+        <mat-option value="reservada">Reservada</mat-option>
+        <mat-option value="agotada">Agotada</mat-option>
+        <mat-option
+          value="proxima_a_ingresar"
+          matTooltip="Ningún caso de uso anuncia todavía la mercadería en camino (CU-39 propuesto)"
+        >
+          Próxima a ingresar
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Ordenar por</mat-label>
+      <mat-select [formControl]="orden">
+        <mat-option value="prenda">Prenda</mat-option>
+        <mat-option value="disponible_desc">Más stock</mat-option>
+        <mat-option value="disponible_asc">Menos stock</mat-option>
+        <mat-option value="sucursales">Menos sucursales</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    @if (hayFiltros()) {
+      <button matButton type="button" (click)="limpiar()">
+        <mat-icon>filter_alt_off</mat-icon>
+        Limpiar
+      </button>
+    }
+  </div>
+
+  @if (error(); as mensaje) {
+    <p class="aviso error">
+      <mat-icon>error_outline</mat-icon>
+      {{ mensaje }}
+    </p>
+  } @else if (datos(); as datos) {
+    <!-- El resumen suma todo lo filtrado, no la página. -->
+    <div class="resumen">
+      <div class="dato">
+        <span class="numero">{{ datos.resumen.variantes }}</span>
+        <span class="rotulo">prendas</span>
+      </div>
+      <div class="dato">
+        <span class="numero">{{ datos.resumen.total_disponible }}</span>
+        <span class="rotulo">disponibles</span>
+      </div>
+      <div class="dato">
+        <span class="numero">{{ datos.resumen.total_reservado }}</span>
+        <span class="rotulo">reservadas</span>
+      </div>
+      <div class="dato" [class.alerta]="datos.resumen.agotadas > 0">
+        <span class="numero">{{ datos.resumen.agotadas }}</span>
+        <span class="rotulo">agotadas</span>
+      </div>
+      @if (sucursalElegida(); as sucursal) {
+        <p class="ambito">
+          <mat-icon>store</mat-icon>
+          Totales de <strong>{{ sucursal }}</strong>, no de la red.
+        </p>
+      }
+    </div>
+
+    @if (datos.listado.items.length === 0) {
+      <p class="aviso">
+        <mat-icon>inventory</mat-icon>
+        @if (hayFiltros()) {
+          Ninguna prenda coincide con esos filtros.
+        } @else {
+          Todavía no hay existencias registradas. Se cargan con un ingreso de
+          mercadería.
+        }
+      </p>
+    } @else {
+      <mat-accordion class="listado" multi>
+        @for (fila of datos.listado.items; track fila.variante_id) {
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span class="prenda">
+                  {{ fila.producto }}
+                  <span class="variante">{{ fila.talla }} · {{ fila.color }}</span>
+                </span>
+              </mat-panel-title>
+              <mat-panel-description>
+                <span class="sku">{{ fila.sku }}</span>
+
+                <span class="estado" [class]="'estado-' + fila.estado">
+                  {{ rotuloEstado(fila.estado) }}
+                </span>
+
+                @if (estaConcentrada(fila)) {
+                  <mat-icon
+                    class="concentrada"
+                    matTooltip="Todo el stock está en una sola sucursal"
+                  >
+                    warning_amber
+                  </mat-icon>
+                }
+
+                <span class="saldo">
+                  <strong>{{ fila.total_disponible }}</strong> disp.
+                  @if (fila.total_reservado > 0) {
+                    · {{ fila.total_reservado }} res.
+                  }
+                </span>
+              </mat-panel-description>
+            </mat-expansion-panel-header>
+
+            <ul class="sucursales">
+              @for (s of fila.sucursales; track s.sucursal_id) {
+                <li [class.vacia]="s.cantidad_disponible === 0 && s.cantidad_reservada === 0">
+                  <mat-icon>store</mat-icon>
+                  <span class="nombre">{{ s.sucursal }}</span>
+                  <span class="cantidad">
+                    {{ s.cantidad_disponible }} disponibles
+                    @if (s.cantidad_reservada > 0) {
+                      · {{ s.cantidad_reservada }} reservadas
+                    }
+                  </span>
+                </li>
+              }
+            </ul>
+          </mat-expansion-panel>
+        }
+      </mat-accordion>
+
+      <mat-paginator
+        [length]="datos.listado.total"
+        [pageIndex]="datos.listado.pagina - 1"
+        [pageSize]="datos.listado.tamano"
+        [pageSizeOptions]="[20, 50, 100]"
+        (page)="paginar($event)"
+      />
+    }
+  }
+</mat-card>

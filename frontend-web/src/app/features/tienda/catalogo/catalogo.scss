@@ -1,0 +1,194 @@
+:host {
+  display: block;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 3rem;
+}
+
+.encabezado {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.85rem;
+    font-weight: 600;
+    color: var(--vb-malva-oscuro);
+  }
+
+  .bajada {
+    margin: 0.25rem 0 0;
+    max-width: 46rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.panel {
+  border-radius: var(--vb-radio);
+  border: 1px solid var(--mat-sys-outline-variant);
+  box-shadow: var(--vb-sombra-suave);
+  overflow: hidden;
+  background: var(--mat-sys-surface);
+}
+
+.filtros {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  padding: 1.25rem 1.25rem 0;
+
+  mat-form-field {
+    min-width: 11rem;
+  }
+
+  .campo-busqueda {
+    flex: 1 1 18rem;
+  }
+}
+
+/* La muestra de color: un círculo del color real. En el selector va en línea
+   con el nombre; en la tarjeta, sola. */
+.muestra {
+  display: inline-block;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  border: 1px solid rgb(46 31 40 / 18%);
+  vertical-align: middle;
+  margin-right: 0.4rem;
+}
+
+.aviso {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+
+  &.error {
+    color: var(--mat-sys-error);
+  }
+}
+
+/* La vitrina. `auto-fill` y no `auto-fit`: con `auto-fit`, una sola prenda se
+   estira hasta ocupar el ancho entero y la tarjeta queda deformada. */
+.vitrina {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 1.25rem;
+  padding: 1.25rem;
+}
+
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--vb-radio-chico);
+  overflow: hidden;
+  background: var(--mat-sys-surface);
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+
+  &:hover,
+  &:focus-visible {
+    transform: translateY(-3px);
+    box-shadow: var(--vb-sombra-elevada);
+  }
+}
+
+.foto {
+  position: relative;
+  /* Proporción fija para que la cuadrícula no se descuadre cuando una foto
+     viene más alta que otra. */
+  aspect-ratio: 3 / 4;
+  background: var(--vb-marfil);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .sin-foto {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    color: var(--vb-malva-claro);
+
+    mat-icon {
+      font-size: 3rem;
+      width: 3rem;
+      height: 3rem;
+    }
+  }
+}
+
+/* La insignia del vestidor virtual: es el diferenciador del proyecto y se ve
+   desde la vitrina, sin abrir la ficha. */
+.insignia {
+  position: absolute;
+  left: 0.6rem;
+  bottom: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--vb-malva);
+  box-shadow: var(--vb-sombra-suave);
+
+  mat-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+.cuerpo {
+  padding: 0.85rem 0.95rem 1rem;
+
+  .categoria {
+    margin: 0;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .nombre {
+    margin: 0.2rem 0 0.4rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--vb-tinta);
+  }
+
+  .precio {
+    margin: 0;
+    font-weight: 600;
+    color: var(--vb-malva-oscuro);
+  }
+
+  .colores {
+    display: flex;
+    gap: 0.3rem;
+    margin-top: 0.6rem;
+
+    .muestra {
+      margin-right: 0;
+    }
+  }
+}
