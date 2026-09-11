@@ -16,6 +16,7 @@ import '../../features/catalogo/pantalla_catalogo.dart';
 import '../../features/catalogo/pantalla_ficha.dart';
 import '../../features/inicio/pantalla_carga.dart';
 import '../../features/inicio/pantalla_inicio.dart';
+import '../../features/perfil/pantalla_perfil.dart';
 
 /// Rutas de la aplicacion. Constantes y no cadenas sueltas: un error de tipeo
 /// en un `context.go('/lgin')` no lo detecta nadie hasta que se ejecuta.
@@ -26,6 +27,7 @@ class Rutas {
   static const String login = '/login';
   static const String registro = '/registro';
   static const String inicio = '/inicio';
+  static const String perfil = '/perfil';
 
   // --- CICLO 2 ------------------------------------------------------------
   // Karen agrega aqui las rutas de catalogo (CU-17, CU-18, CU-19).
@@ -96,6 +98,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Rutas.inicio,
         builder: (context, estado) => const PantallaInicio(),
+      ),
+      GoRoute(
+        path: Rutas.perfil,
+        builder: (context, estado) => const PantallaPerfil(),
       ),
 
       // --- CICLO 2 --------------------------------------------------------

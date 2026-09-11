@@ -279,6 +279,53 @@ datos durante la defensa.
   + Railway). La demostración y la defensa se realizan siempre sobre producción (RNF13).
 - Cada ciclo cierra con un despliegue verificado, no con código sin desplegar.
 
+## 6.9.1 Dos herramientas que se evaluaron y no se adoptaron
+
+Durante el Ciclo 2 se puso sobre la mesa incorporar **MinIO** para las imágenes y **Keycloak** para
+la autenticación. Las dos son herramientas correctas y de uso extendido; ninguna encaja en este
+proyecto. Queda escrito por qué, porque descartar con motivo es parte del diseño.
+
+### MinIO — almacenamiento de objetos
+
+MinIO es un servidor de almacenamiento de objetos compatible con la API de S3 que **se hospeda uno
+mismo**. Ese es exactamente el punto que lo descarta: hospedarlo significa un **tercer servicio**
+corriendo las 24 horas junto a la API y la web, y Railway cobra por uso con un crédito finito hasta
+el 22/09 — es el **riesgo R9**, el mismo que en su momento movió la base de datos a Supabase (§6.9).
+
+Y no hace falta: si el volumen persistente de §6.8 resultara insuficiente, la alternativa ya
+evaluada allí es **Supabase Storage**, que da lo mismo que MinIO —almacenamiento de objetos, API
+compatible con S3, URLs públicas— con tres ventajas para este caso: no agrega un servicio, está en
+el proveedor que ya hospeda la base, y sirve las imágenes por CDN sin que pasen por la API, que es
+mejor para el **RNF02**. MinIO ofrecería lo mismo a cambio de administrarlo.
+
+**Cuándo sí correspondería:** si los archivos no pudieran salir de una infraestructura propia por
+una exigencia normativa, o para emular S3 en desarrollo local sin cuenta en la nube. Ninguna de las
+dos condiciones se da acá.
+
+### Keycloak — servidor de identidad
+
+Keycloak es un servidor de identidad completo: OIDC, SAML, federación de proveedores externos y
+*single sign-on* entre varias aplicaciones. El proyecto no necesita ninguna de esas cuatro cosas.
+El enunciado pide autenticación por roles dentro de **una** aplicación, y eso ya está construido:
+CU-01, CU-02 y CU-03 cerrados, con sus pruebas, sus diagramas en Enterprise Architect y los
+capítulos del documento redactados sobre ellos.
+
+Tres motivos concretos para no cambiarlo:
+
+1. **Costo de reemplazo.** El módulo `seguridad` son unas 2200 líneas entre modelo, repositorio,
+   servicio, esquemas y *router*, más las pantallas web y móviles y trece diagramas de los casos de
+   uso de autenticación. Todo eso habría que rehacerlo y volver a documentarlo.
+2. **Consumo.** Keycloak necesita su propia JVM y su propia base de datos. Es la pieza más pesada
+   que se podría agregar al despliegue, otra vez contra el riesgo R9.
+3. **El modelo de roles no es genérico.** `ENCARGADO` y `CAJERO` están acotados a una sucursal
+   (`ROLES_CON_SUCURSAL`, `usuario.sucursal_id`), y esa restricción se aplica en el *router* y en
+   las consultas. En Keycloak eso se resuelve con *claims* y *mappers* a medida: más trabajo que el
+   que ahorra.
+
+**Cuándo sí correspondería:** si hubiera que autenticar contra la cuenta institucional de la UAGRM,
+ofrecer inicio de sesión con proveedores sociales, o compartir sesión entre varias aplicaciones del
+mismo dominio. No está en los requisitos.
+
 ## 6.10 Trabajo con Git y GitHub
 
 | Aspecto | Decisión |

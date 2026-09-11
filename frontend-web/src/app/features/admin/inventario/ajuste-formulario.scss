@@ -1,0 +1,122 @@
+:host {
+  display: block;
+}
+
+h2 {
+  color: var(--vb-malva-oscuro);
+  margin-bottom: 0.5rem;
+}
+
+mat-dialog-content {
+  padding-top: 1rem;
+}
+
+.prenda {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--vb-radio-chico);
+  background: var(--vb-rosa-palido);
+
+  code {
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+  }
+
+  .detalle {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+// Los tres saldos juntos y con el mismo peso visual: la confusion que arruina
+// un conteo es no saber cual de los tres hay que igualar, asi que se muestran
+// los tres y se destaca el que importa.
+.saldos {
+  display: flex;
+  gap: 1rem;
+  margin: 1rem 0;
+
+  > div {
+    flex: 1 1 0;
+    padding: 0.7rem 0.9rem;
+    border-radius: var(--vb-radio-chico);
+    border: 1px solid var(--mat-sys-outline-variant);
+    text-align: center;
+  }
+
+  .fisica {
+    border-color: var(--vb-malva-claro);
+    background: var(--vb-marfil);
+  }
+
+  .rotulo {
+    display: block;
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .cifra {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: 1.4rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--vb-malva-oscuro);
+  }
+}
+
+.explicacion {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.contada,
+.motivo {
+  width: 100%;
+}
+
+.nota {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin-bottom: 1rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--vb-radio-chico);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  background: var(--vb-marfil);
+  border: 1px solid var(--mat-sys-outline-variant);
+
+  mat-icon {
+    flex: none;
+  }
+
+  &.faltante {
+    background: #fdf0d5;
+    border-color: #e0c07a;
+  }
+}
+
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin-bottom: 1rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--vb-radio-chico);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+
+  mat-icon {
+    flex: none;
+  }
+}
