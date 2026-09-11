@@ -103,6 +103,20 @@ class StockInsuficiente(ErrorDeInventario):
         super().__init__(f"Disponible {disponible}, solicitado {solicitado}")
 
 
+class ReservadaNegativa(ErrorDeInventario):
+    """Se quiso liberar mas de lo que estaba apartado.
+
+    Es un error de programa, no del usuario: significa que P6 pidio liberar
+    unidades que nunca reservo. Se declara igual para que el CHECK de la base no
+    sea la primera linea de defensa.
+    """
+
+    def __init__(self, reservada: int, delta: int):
+        self.reservada = reservada
+        self.delta = delta
+        super().__init__(f"Reservada {reservada}, delta {delta}")
+
+
 class ConteoSinDiferencia(ErrorDeInventario):
     """Excepcion E7: lo contado coincide con lo registrado.
 
@@ -135,6 +149,7 @@ def _aplicar_movimiento(
     *,
     tipo: str,
     cantidad: int,
+    reservada_delta: int = 0,
     motivo: str | None = None,
     proveedor_id: int | None = None,
     referencia: str | None = None,
@@ -146,16 +161,62 @@ def _aplicar_movimiento(
     se deduce del tipo porque AJUSTE y TRANSFERENCIA van en las dos
     direcciones.
 
+    `reservada_delta` mueve la OTRA cantidad, y solo lo usan RESERVA y
+    LIBERACION. Ver la nota de abajo.
+
     Verifica que el saldo no quede negativo **antes** de tocarlo. El CHECK de la
     base tambien lo impide, pero un CHECK aborta la transaccion entera con un
     mensaje de PostgreSQL: eso convierte «no hay tantas unidades en la sucursal
     de origen» en un error 500 sin nombre. Comprobarlo aqui deja un mensaje que
     la persona puede leer y una transferencia que no se escribio a medias.
+
+    EL INVARIANTE, Y POR QUE RESERVA VALE -n
+    ----------------------------------------
+    El invariante del paquete es uno y se puede escribir:
+
+        cantidad_disponible == suma(movimientos.cantidad)
+
+    Es lo que afirma D4 y lo que comprueba
+    `test_el_saldo_es_la_suma_de_sus_movimientos`. Con ese invariante a la
+    vista, el signo de cada tipo deja de ser una convencion y pasa a ser una
+    consecuencia:
+
+      INGRESO      +n   entra mercaderia
+      AJUSTE       +-d  el conteo fisico difiere
+      TRANSFERENCIA+-n  sale de un local y entra en otro
+      RESERVA      -n   sale de disponible y pasa a reservada (D3)
+      LIBERACION   +n   vuelve de reservada a disponible
+      VENTA        -n   sale definitivamente
+      DEVOLUCION   +n   vuelve una prenda vendida
+
+    El caso que obliga a pensar es **la venta de una reserva atendida** (CU-24,
+    resultado LLEVA): esas unidades ya salieron de `cantidad_disponible` cuando
+    se creo la reserva, asi que una VENTA de -n volveria a descontarlas y el
+    saldo quedaria en negativo. Tampoco sirve un movimiento de cero, que el
+    CHECK `cantidad_no_nula` rechaza.
+
+    **La convencion que queda fijada para CU-24 es escribir DOS movimientos:**
+    una LIBERACION de +n --- que devuelve las unidades a disponible y vacia la
+    reservada --- y acto seguido una VENTA de -n. El neto sobre el disponible es
+    cero, los dos movimientos son no nulos, el invariante se sostiene, y el
+    historial se lee como lo que de verdad paso: «volvieron del apartado y se
+    vendieron».
+
+    De ahi sale el segundo invariante, el de la otra cantidad:
+
+        cantidad_reservada == -suma(RESERVA) - suma(LIBERACION)
+
+    y por eso `reservada_delta` solo lo usan esos dos tipos.
     """
     if existencia.cantidad_disponible + cantidad < 0:
         raise StockInsuficiente(existencia.cantidad_disponible, abs(cantidad))
+    if existencia.cantidad_reservada + reservada_delta < 0:
+        # No deberia pasar nunca desde P6, que libera lo que aparto. Si pasa,
+        # es un error de programa y no del usuario: se frena antes de escribir.
+        raise ReservadaNegativa(existencia.cantidad_reservada, reservada_delta)
 
     existencia.cantidad_disponible += cantidad
+    existencia.cantidad_reservada += reservada_delta
     db.flush()
 
     return repository.agregar_movimiento(
@@ -617,6 +678,101 @@ def alertas_de_stock(
         _fila_a_existencia(fila)
         for fila in repository.listar_alertas(db, sucursal_id=sucursal_id)
     ]
+
+
+# =====================================================================
+# Lo que P6 le consume a P4  -  apartar y liberar stock
+# =====================================================================
+#
+# CU-22 aparta, y CU-23, CU-24 y CU-25 liberan. Las cuatro operaciones viven
+# ACA y no en P6 a proposito: la regla «ninguna cantidad se modifica sin generar
+# un movimiento» es de este paquete, y si P6 tocara `existencia` por su cuenta
+# habria dos lugares que la conocen y uno de los dos se olvidaria.
+#
+# Ninguna de las dos hace commit: la transaccion la controla quien las llama,
+# porque apartar tres prendas de una reserva tiene que ser todo o nada y eso
+# solo lo sabe P6.
+
+def apartar_para_reserva(
+    db: Session,
+    *,
+    variante_id: int,
+    sucursal_id: int,
+    cantidad: int,
+    usuario_id: int | None,
+    motivo: str | None = None,
+) -> Existencia:
+    """Mueve unidades de disponible a reservada. **Sin commit.**
+
+    AQUI VIVE LA MITIGACION DEL RIESGO R5
+    -------------------------------------
+    La existencia se toma con `SELECT ... FOR UPDATE`, asi que mientras esta
+    transaccion la tiene tomada, cualquier otra que quiera la misma fila
+    **espera** en vez de leer un saldo que esta por cambiar. Sin ese bloqueo,
+    dos clientes que reservan la ultima unidad al mismo tiempo leen los dos
+    «queda 1», los dos pasan la comprobacion, y los dos reservan: eso es la
+    sobreventa que el plan clasifica como R5 y exige probar con una prueba de
+    concurrencia explicita.
+
+    El bloqueo se libera solo al terminar la transaccion, de modo que la segunda
+    peticion se despierta cuando la primera ya escribio, vuelve a leer --- ahora
+    «quedan 0» --- y falla con un mensaje que se entiende.
+
+    Una existencia inexistente NO se crea: si esa prenda nunca estuvo en esa
+    sucursal, no hay nada que apartar y el cliente tiene que saberlo.
+    """
+    existencia = repository.obtener_existencia(
+        db, variante_id=variante_id, sucursal_id=sucursal_id, bloquear=True
+    )
+    if existencia is None:
+        raise ExistenciaInexistente()
+
+    if existencia.cantidad_disponible < cantidad:
+        raise StockInsuficiente(existencia.cantidad_disponible, cantidad)
+
+    _aplicar_movimiento(
+        db,
+        existencia,
+        tipo="RESERVA",
+        cantidad=-cantidad,
+        reservada_delta=cantidad,
+        motivo=motivo,
+        usuario_id=usuario_id,
+    )
+    return existencia
+
+
+def liberar_de_reserva(
+    db: Session,
+    *,
+    variante_id: int,
+    sucursal_id: int,
+    cantidad: int,
+    usuario_id: int | None,
+    motivo: str | None = None,
+) -> Existencia:
+    """Devuelve unidades de reservada a disponible. **Sin commit.**
+
+    La usan CU-23 (el cliente cancela), CU-25 (la franja vencio) y CU-24 cuando
+    el resultado de la prueba es NO_LLEVA. `usuario_id` queda nulo en CU-25,
+    que es una tarea programada y no tiene persona detras.
+    """
+    existencia = repository.obtener_existencia(
+        db, variante_id=variante_id, sucursal_id=sucursal_id, bloquear=True
+    )
+    if existencia is None:
+        raise ExistenciaInexistente()
+
+    _aplicar_movimiento(
+        db,
+        existencia,
+        tipo="LIBERACION",
+        cantidad=cantidad,
+        reservada_delta=-cantidad,
+        motivo=motivo,
+        usuario_id=usuario_id,
+    )
+    return existencia
 
 
 # =====================================================================
