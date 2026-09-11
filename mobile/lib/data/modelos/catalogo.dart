@@ -355,6 +355,75 @@ class FichaPrenda {
   }
 }
 
+/// CU-19 · cuanto hay de una variante en una sucursal.
+///
+/// La forma la fija el contrato de la costura **C1**. `cantidad_reservada` no
+/// viaja a proposito: al cliente le sirve saber cuanto puede llevarse, y
+/// publicar lo apartado dejaria deducir el movimiento comercial de cada tienda.
+class DisponibilidadSucursal {
+  const DisponibilidadSucursal({
+    required this.sucursalId,
+    required this.sucursalNombre,
+    required this.ciudadNombre,
+    required this.cantidadDisponible,
+  });
+
+  final int sucursalId;
+  final String sucursalNombre;
+  final String ciudadNombre;
+  final int cantidadDisponible;
+
+  String get unidades =>
+      cantidadDisponible == 1 ? '1 unidad' : '$cantidadDisponible unidades';
+
+  factory DisponibilidadSucursal.desdeJson(Map<String, dynamic> json) {
+    return DisponibilidadSucursal(
+      sucursalId: json['sucursal_id'] as int,
+      sucursalNombre: json['sucursal_nombre'] as String,
+      ciudadNombre: json['ciudad_nombre'] as String,
+      cantidadDisponible: json['cantidad_disponible'] as int,
+    );
+  }
+}
+
+/// La respuesta de CU-19 para una variante.
+class Disponibilidad {
+  const Disponibilidad({
+    required this.varianteId,
+    required this.sku,
+    required this.totalDisponible,
+    required this.sucursales,
+    this.tallaCodigo,
+    this.colorNombre,
+  });
+
+  final int varianteId;
+  final String sku;
+  final String? tallaCodigo;
+  final String? colorNombre;
+  final int totalDisponible;
+
+  /// Solo las sucursales donde hay algo.
+  final List<DisponibilidadSucursal> sucursales;
+
+  bool get hayStock => sucursales.isNotEmpty;
+
+  factory Disponibilidad.desdeJson(Map<String, dynamic> json) {
+    return Disponibilidad(
+      varianteId: json['variante_id'] as int,
+      sku: json['sku'] as String,
+      tallaCodigo: json['talla_codigo'] as String?,
+      colorNombre: json['color_nombre'] as String?,
+      totalDisponible: json['total_disponible'] as int? ?? 0,
+      sucursales: (json['sucursales'] as List<dynamic>? ?? [])
+          .map(
+            (s) => DisponibilidadSucursal.desdeJson(s as Map<String, dynamic>),
+          )
+          .toList(),
+    );
+  }
+}
+
 /// Las opciones del panel de filtros, con lo que el catalogo realmente ofrece.
 class FiltrosDisponibles {
   const FiltrosDisponibles({

@@ -108,14 +108,43 @@
 
         <mat-divider />
 
-        <!-- CU-19 llega con la costura C1: hasta que el servicio de inventario
-             exponga `disponibilidad_por_sucursal`, la ficha no puede decir en
-             qué tienda hay stock. Se anuncia en vez de mostrar un bloque vacío. -->
-        <p class="proximamente">
-          <mat-icon>store</mat-icon>
-          La disponibilidad por sucursal se muestra acá en cuanto esté el
-          inventario (CU-19).
-        </p>
+        <!-- CU-19 · disponibilidad por sucursal. Se consulta al completar la
+             selección, porque la existencia es por variante. -->
+        <section class="stock">
+          <h2 class="rotulo">Dónde encontrarla</h2>
+
+          @if (!variante()) {
+            <p class="pendiente">Elija talla y color para ver en qué sucursales hay.</p>
+          } @else if (consultandoStock()) {
+            <p class="pendiente">Consultando disponibilidad…</p>
+          } @else if (disponibilidad(); as stock) {
+            @if (stock.sucursales.length === 0) {
+              <!-- No es un error: la prenda existe y se ofrece, lo que no hay es
+                   stock. Decirlo así evita que parezca que desapareció. -->
+              <p class="sin-stock">
+                <mat-icon>info_outline</mat-icon>
+                Sin unidades disponibles por ahora en ninguna sucursal.
+              </p>
+            } @else {
+              <ul class="sucursales">
+                @for (sucursal of stock.sucursales; track sucursal.sucursal_id) {
+                  <li>
+                    <mat-icon>store</mat-icon>
+                    <span class="nombre">{{ sucursal.sucursal_nombre }}</span>
+                    <span class="ciudad">{{ sucursal.ciudad_nombre }}</span>
+                    <span class="cantidad">
+                      {{ sucursal.cantidad_disponible }}
+                      {{ sucursal.cantidad_disponible === 1 ? 'unidad' : 'unidades' }}
+                    </span>
+                  </li>
+                }
+              </ul>
+              <p class="total">{{ stock.total_disponible }} en total en la red</p>
+            }
+          } @else {
+            <p class="pendiente">No se pudo consultar la disponibilidad.</p>
+          }
+        </section>
 
         <!-- El vestidor virtual es de la app móvil (RF13): la cámara y la
              detección de pose corren en el teléfono. -->

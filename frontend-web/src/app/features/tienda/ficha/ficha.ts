@@ -11,6 +11,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TiendaService, type ErrorTienda } from '../../../core/services/tienda.service';
 import type {
   ColorTienda,
+  Disponibilidad,
   FichaProducto,
   TallaTienda,
   VarianteVitrina,
@@ -59,6 +60,11 @@ export class Ficha implements OnInit {
   protected readonly cargando = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly ficha = signal<FichaProducto | null>(null);
+
+  /** La disponibilidad de la variante elegida (CU-19), o null si todavía no
+   *  hay variante o la consulta está en curso. */
+  protected readonly disponibilidad = signal<Disponibilidad | null>(null);
+  protected readonly consultandoStock = signal(false);
 
   protected readonly tallaElegida = signal<number | null>(null);
   protected readonly colorElegido = signal<number | null>(null);
@@ -138,6 +144,7 @@ export class Ficha implements OnInit {
       this.colorElegido.set(null);
     }
     this.mostrarFotoDeLaVariante();
+    this.consultarDisponibilidad();
   }
 
   protected elegirColor(colorId: number): void {
@@ -147,6 +154,7 @@ export class Ficha implements OnInit {
       this.tallaElegida.set(null);
     }
     this.mostrarFotoDeLaVariante();
+    this.consultarDisponibilidad();
   }
 
   protected verFoto(indice: number): void {
@@ -166,12 +174,49 @@ export class Ficha implements OnInit {
         this.tallaElegida.set(null);
         this.colorElegido.set(null);
         this.fotoActiva.set(0);
+        this.disponibilidad.set(null);
         this.cargando.set(false);
       },
       error: (fallo: ErrorTienda) => {
         this.error.set(fallo.mensaje);
         this.ficha.set(null);
         this.cargando.set(false);
+      },
+    });
+  }
+
+  /**
+   * CU-19: en qué sucursales hay stock de la variante elegida.
+   *
+   * Se consulta al completar la selección y no al abrir la ficha, porque la
+   * existencia es **por variante**: con veinte variantes, pedirlas todas al
+   * entrar serían veinte consultas de las que el cliente mira una.
+   *
+   * Un fallo acá deja el bloque en blanco y no rompe la ficha: la
+   * disponibilidad es un dato de apoyo, y quedarse sin ella no impide ver la
+   * prenda ni su precio.
+   */
+  private consultarDisponibilidad(): void {
+    const variante = this.variante();
+    if (!variante) {
+      this.disponibilidad.set(null);
+      return;
+    }
+
+    this.consultandoStock.set(true);
+    this.api.obtenerDisponibilidad(variante.id).subscribe({
+      next: (stock) => {
+        // La respuesta puede llegar después de que el cliente cambió de
+        // variante. Sin esta comprobación, la pantalla mostraría el stock de la
+        // talla anterior junto al SKU de la nueva.
+        if (this.variante()?.id === stock.variante_id) {
+          this.disponibilidad.set(stock);
+        }
+        this.consultandoStock.set(false);
+      },
+      error: () => {
+        this.disponibilidad.set(null);
+        this.consultandoStock.set(false);
       },
     });
   }

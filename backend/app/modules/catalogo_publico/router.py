@@ -5,7 +5,7 @@ Ciclo de desarrollo: 2
 Casos de uso:
   CU-17 Consultar catalogo
   CU-18 Consultar ficha de producto
-  CU-19 Consultar disponibilidad por sucursal       [pendiente de la costura C1]
+  CU-19 Consultar disponibilidad por sucursal
 
 Regla: el router valida la entrada, resuelve la autorizacion y delega en el
 servicio. Ninguna regla de negocio vive aqui.
@@ -18,6 +18,7 @@ from fastapi import APIRouter, HTTPException, Path, Query
 from app.core.dependencies import DbSession
 from app.modules.catalogo_publico import service
 from app.modules.catalogo_publico.schemas import (
+    DisponibilidadOut,
     FichaProductoOut,
     FiltrosOut,
     PaginaVitrina,
@@ -44,6 +45,11 @@ def _traducir(error: service.ErrorDeVitrina) -> HTTPException:
         # Excepcion E1 de CU-18. Deliberadamente 404 y no 403: ver la docstring
         # de ProductoNoDisponible.
         return HTTPException(404, "La prenda que busca ya no está disponible.")
+    if isinstance(error, service.VarianteNoDisponible):
+        # Excepcion E1 de CU-19, con el mismo criterio.
+        return HTTPException(
+            404, "Esa combinación de talla y color ya no está disponible."
+        )
     return HTTPException(400, "No se pudo completar la consulta.")
 
 
@@ -137,5 +143,31 @@ def obtener_ficha(
     """
     try:
         return service.obtener_ficha(db, producto_id)
+    except service.ErrorDeVitrina as error:
+        raise _traducir(error) from error
+
+
+@router.get(
+    "/variantes/{variante_id}/disponibilidad",
+    response_model=DisponibilidadOut,
+    summary="CU-19 Consultar disponibilidad por sucursal",
+    responses={404: {"description": "La variante no existe o ya no se ofrece."}},
+)
+def disponibilidad_de_variante(
+    db: DbSession,
+    variante_id: Annotated[int, Path(ge=1)],
+) -> DisponibilidadOut:
+    """Paso 2: en qué sucursales hay stock de la talla y el color elegidos (RF08).
+
+    Cuelga de la **variante** y no del producto porque la existencia es por
+    variante: preguntar «dónde hay esta blusa» no tiene respuesta útil si no se
+    dice en qué talla y en qué color.
+
+    Es público, como el resto de P5. Lo que se informa es lo **disponible**, no
+    lo reservado: al cliente le sirve saber cuánto puede llevarse, y publicar lo
+    apartado dejaría deducir el movimiento comercial de cada tienda.
+    """
+    try:
+        return service.disponibilidad_de_variante(db, variante_id)
     except service.ErrorDeVitrina as error:
         raise _traducir(error) from error

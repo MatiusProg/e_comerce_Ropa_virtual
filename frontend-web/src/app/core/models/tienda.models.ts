@@ -117,6 +117,32 @@ export interface FichaProducto {
   tiene_vestidor: boolean;
 }
 
+/**
+ * CU-19 · cuánto hay de una variante en una sucursal.
+ *
+ * La forma la fija el contrato de la costura **C1**. `cantidad_reservada` no
+ * viaja a propósito: al cliente le sirve saber cuánto puede llevarse, y
+ * publicar lo apartado dejaría deducir el movimiento comercial de cada tienda.
+ */
+export interface DisponibilidadSucursal {
+  sucursal_id: number;
+  sucursal_nombre: string;
+  ciudad_nombre: string;
+  cantidad_disponible: number;
+}
+
+export interface Disponibilidad {
+  variante_id: number;
+  sku: string;
+  talla_codigo: string | null;
+  color_nombre: string | null;
+  /** Suma de toda la red. Viene calculado para poder decir «sin stock» de una
+   *  sola lectura. */
+  total_disponible: number;
+  /** Solo las sucursales donde hay algo. */
+  sucursales: DisponibilidadSucursal[];
+}
+
 /** Las opciones del panel de filtros, con lo que el catálogo realmente ofrece. */
 export interface FiltrosDisponibles {
   categorias: CategoriaTienda[];

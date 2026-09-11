@@ -179,7 +179,7 @@
 
 .sku,
 .pendiente,
-.proximamente {
+.sin-stock {
   display: flex;
   align-items: center;
   gap: 0.45rem;
@@ -201,4 +201,62 @@
 
 .vestidor {
   align-self: flex-start;
+}
+
+/* --- CU-19 · disponibilidad por sucursal -------------------------------- */
+
+.stock .rotulo {
+  margin-top: 0;
+}
+
+.sucursales {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--mat-sys-outline-variant);
+    border-radius: var(--vb-radio-chico);
+    background: var(--vb-marfil);
+
+    mat-icon {
+      font-size: 1.15rem;
+      width: 1.15rem;
+      height: 1.15rem;
+      color: var(--vb-malva);
+    }
+
+    .nombre {
+      font-weight: 600;
+      color: var(--vb-tinta);
+    }
+
+    /* La ciudad va después del nombre y más apagada: el cliente busca primero
+       su ciudad, pero lo que identifica la tienda es el nombre. */
+    .ciudad {
+      font-size: 0.8rem;
+      color: var(--mat-sys-on-surface-variant);
+    }
+
+    .cantidad {
+      margin-left: auto;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--vb-malva-oscuro);
+      white-space: nowrap;
+    }
+  }
+}
+
+.total {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant);
 }

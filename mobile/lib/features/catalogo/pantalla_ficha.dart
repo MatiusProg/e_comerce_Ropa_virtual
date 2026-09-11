@@ -175,28 +175,11 @@ class _EstadoPantallaFicha extends ConsumerState<PantallaFicha> {
               const SizedBox(height: 20),
               _BotonVestidor(prenda: prenda, variante: variante),
 
-              const SizedBox(height: 12),
-              // CU-19 llega con la costura C1: hasta que el servicio de
-              // inventario exponga `disponibilidad_por_sucursal`, la ficha no
-              // puede decir en que tienda hay stock. Se anuncia en vez de
-              // dibujar un bloque vacio.
-              const Row(
-                children: [
-                  Icon(
-                    Icons.store_outlined,
-                    size: 18,
-                    color: Color(0xFF9A8A92),
-                  ),
-                  SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      'La disponibilidad por sucursal se muestra acá en cuanto '
-                      'esté el inventario (CU-19).',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF9A8A92)),
-                    ),
-                  ),
-                ],
-              ),
+              const SizedBox(height: 8),
+              const _Rotulo('Dónde encontrarla'),
+              // CU-19. Se consulta al completar la seleccion, porque la
+              // existencia es por variante.
+              _Disponibilidad(variante: variante),
             ],
           ),
         ),
@@ -451,6 +434,133 @@ class _BotonVestidor extends StatelessWidget {
             style: const TextStyle(fontSize: 12, color: Color(0xFF9A8A92)),
           ),
         ],
+      ],
+    );
+  }
+}
+
+/// CU-19 · en que sucursales hay stock de la variante elegida.
+///
+/// Se apoya en `disponibilidadProvider`, que es `family` por variante: pedir la
+/// de todas las variantes al abrir la ficha serian tantas consultas como
+/// combinaciones tenga la prenda, de las que el cliente mira una.
+///
+/// Un fallo deja el bloque con un aviso y no rompe la ficha: la disponibilidad
+/// es un dato de apoyo, y quedarse sin ella no impide ver la prenda ni su
+/// precio.
+class _Disponibilidad extends ConsumerWidget {
+  const _Disponibilidad({required this.variante});
+
+  final VariantePrenda? variante;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final elegida = variante;
+    if (elegida == null) {
+      return const _Nota('Elija talla y color para ver en qué sucursales hay.');
+    }
+
+    return ref
+        .watch(disponibilidadProvider(elegida.id))
+        .when(
+          loading: () => const _Nota('Consultando disponibilidad…'),
+          error: (fallo, rastro) =>
+              const _Nota('No se pudo consultar la disponibilidad.'),
+          data: (stock) {
+            if (!stock.hayStock) {
+              // No es un error: la prenda existe y se ofrece, lo que no hay es
+              // stock. Decirlo asi evita que parezca que desaparecio.
+              return const _Nota(
+                'Sin unidades disponibles por ahora en ninguna sucursal.',
+                icono: Icons.info_outline,
+              );
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final sucursal in stock.sucursales)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: ColoresVB.marfil,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0x1A2E1F28)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.store,
+                          size: 18,
+                          color: ColoresVB.malva,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                sucursal.sucursalNombre,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                sucursal.ciudadNombre,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF9A8A92),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          sucursal.unidades,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: ColoresVB.malvaOscuro,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                Text(
+                  '${stock.totalDisponible} en total en la red',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF9A8A92),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+  }
+}
+
+class _Nota extends StatelessWidget {
+  const _Nota(this.texto, {this.icono});
+
+  final String texto;
+  final IconData? icono;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icono ?? Icons.store_outlined, size: 18, color: const Color(0xFF9A8A92)),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            texto,
+            style: const TextStyle(fontSize: 12, color: Color(0xFF9A8A92)),
+          ),
+        ),
       ],
     );
   }

@@ -5,15 +5,20 @@ Ciclo de desarrollo: 2
 Casos de uso:
   CU-17 Consultar catalogo
   CU-18 Consultar ficha de producto
+  CU-19 Consultar disponibilidad por sucursal
 
 Regla: aqui solo van consultas. Ninguna regla de negocio, ninguna validacion de
 permisos, ningun commit.
 
 P5 no tiene tablas propias en este ciclo --- `models.py` queda vacio a proposito,
 segun la seccion 3.1 del documento de organizacion --- asi que todo lo de aqui
-LEE las tablas de P3, que son de la misma duena. La unica lectura cruzada de
-verdad es la de `existencia`, que es de Mateo, y por eso no esta aqui: entra por
-la costura C1 cuando su servicio exponga la funcion acordada.
+LEE las tablas de P3, que son de la misma duena.
+
+`existencia` es de Mateo y **no se consulta desde aqui**, ni siquiera ahora que
+CU-19 la necesita: entra por la costura C1, importando la funcion que expone
+`inventario/service.py`. Es el contrato de la seccion 6 del documento de
+organizacion, y lo unico que hay en este archivo sobre CU-19 es la comprobacion
+de que la variante sea ofrecible, que se hace sobre tablas de P3.
 """
 from decimal import Decimal
 
@@ -346,6 +351,31 @@ def rutas_de_vestidor(db: Session, producto_id: int) -> dict[int, str]:
         )
     ).all()
     return {fila[0]: fila[1] for fila in filas}
+
+
+def variante_ofrecible(db: Session, variante_id: int) -> VarianteProducto | None:
+    """La variante, si existe y se puede ofrecer (CU-19).
+
+    «Ofrecible» es lo mismo que en el resto del paquete: variante activa de un
+    producto activo. Se comprueba antes de consultar el inventario para que la
+    disponibilidad no se convierta en una puerta trasera --- sin esto, una
+    variante retirada del catalogo seguiria diciendo en que sucursales hay
+    stock de ella.
+    """
+    return db.scalar(
+        select(VarianteProducto)
+        .join(Producto, Producto.id == VarianteProducto.producto_id)
+        .where(
+            VarianteProducto.id == variante_id,
+            VarianteProducto.activa.is_(True),
+            Producto.activo.is_(True),
+        )
+        .options(
+            selectinload(VarianteProducto.talla),
+            selectinload(VarianteProducto.color),
+            selectinload(VarianteProducto.producto),
+        )
+    )
 
 
 def nombre_de_categoria(db: Session, categoria_id: int) -> str | None:

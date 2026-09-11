@@ -6,6 +6,7 @@ import { catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import {
   ConsultaVitrina,
+  Disponibilidad,
   FichaProducto,
   FiltrosDisponibles,
   PaginaVitrina,
@@ -72,6 +73,19 @@ export class TiendaService {
   obtenerFicha(productoId: number): Observable<FichaProducto> {
     return this.http
       .get<FichaProducto>(`${this.base}/productos/${productoId}`)
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
+
+  /**
+   * CU-19 · en qué sucursales hay stock de la variante elegida.
+   *
+   * Cuelga de la **variante** y no del producto porque la existencia es por
+   * variante: «dónde hay esta blusa» no tiene respuesta útil sin decir en qué
+   * talla y en qué color.
+   */
+  obtenerDisponibilidad(varianteId: number): Observable<Disponibilidad> {
+    return this.http
+      .get<Disponibilidad>(`${this.base}/variantes/${varianteId}/disponibilidad`)
       .pipe(catchError((e) => throwError(() => this.traducir(e))));
   }
 

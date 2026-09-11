@@ -19,6 +19,11 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from app.modules.catalogo import imagenes_almacen as almacen
+# Costura C1: la unica lectura de `existencia` que hace P5 pasa por aqui.
+# Es una importacion de funcion, no un SELECT sobre una tabla ajena ni una
+# llamada HTTP interna --- el contrato esta en la seccion 6 del documento de
+# organizacion del ciclo.
+from app.modules.inventario import service as inventario
 from app.modules.catalogo_publico import repository
 from app.modules.catalogo_publico.schemas import (
     CategoriaOut,
@@ -26,6 +31,8 @@ from app.modules.catalogo_publico.schemas import (
     ColorOut,
     FichaProductoOut,
     FiltrosOut,
+    DisponibilidadOut,
+    DisponibilidadSucursalOut,
     ImagenVitrinaOut,
     PaginaVitrina,
     ProductoVitrinaOut,
@@ -39,6 +46,15 @@ from app.modules.catalogo_publico.schemas import (
 
 class ErrorDeVitrina(Exception):
     """Base de los errores previstos de CU-17 y CU-18."""
+
+
+class VarianteNoDisponible(ErrorDeVitrina):
+    """Excepcion E1 de CU-19.
+
+    Igual que en CU-18: la variante no existe, esta desactivada, o su producto
+    lo esta. Las tres se responden igual para que recorrer identificadores no
+    delate lo que esta retirado del catalogo.
+    """
 
 
 class ProductoNoDisponible(ErrorDeVitrina):
@@ -247,6 +263,45 @@ def _opciones(variantes: list) -> tuple[list[TallaOut], list[ColorOut]]:
     )
 
 
+# --- CU-19 · Consultar disponibilidad por sucursal ------------------------
+
+def disponibilidad_de_variante(db: Session, variante_id: int) -> DisponibilidadOut:
+    """Paso 2: en que sucursales hay stock de la variante elegida.
+
+    Dos pasos, y el orden importa:
+
+    1. **Se comprueba que la variante sea ofrecible**, con tablas de P3. Sin
+       esto, una variante retirada del catalogo seguiria informando donde hay
+       stock de ella --- la disponibilidad seria una puerta trasera a lo que el
+       resto del paquete oculta.
+    2. **Se pide el stock por la costura C1.** `existencia` es de Mateo; P5 no
+       la consulta, importa la funcion que su servicio expone.
+
+    Las sucursales sin stock se descartan aca y no en el inventario: para
+    Mateo, un saldo en cero es un dato legitimo --- es lo que hace falta para
+    reponer ---; para la vitrina es ruido.
+    """
+    variante = repository.variante_ofrecible(db, variante_id)
+    if variante is None:
+        raise VarianteNoDisponible(str(variante_id))
+
+    filas = inventario.disponibilidad_por_sucursal(db, variante_id)
+    sucursales = [
+        DisponibilidadSucursalOut(**fila)
+        for fila in filas
+        if fila["cantidad_disponible"] > 0
+    ]
+
+    return DisponibilidadOut(
+        variante_id=variante.id,
+        sku=variante.sku,
+        talla_codigo=variante.talla.codigo if variante.talla else None,
+        color_nombre=variante.color.nombre if variante.color else None,
+        total_disponible=sum(s.cantidad_disponible for s in sucursales),
+        sucursales=sucursales,
+    )
+
+
 # --- Opciones de filtrado ------------------------------------------------
 
 def obtener_filtros(db: Session) -> FiltrosOut:
@@ -281,6 +336,8 @@ def obtener_filtros(db: Session) -> FiltrosOut:
 __all__ = [
     "ErrorDeVitrina",
     "ProductoNoDisponible",
+    "VarianteNoDisponible",
+    "disponibilidad_de_variante",
     "listar_productos",
     "obtener_ficha",
     "obtener_filtros",

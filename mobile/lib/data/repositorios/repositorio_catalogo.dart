@@ -58,6 +58,22 @@ class RepositorioCatalogo {
     }
   }
 
+  /// CU-19 · en que sucursales hay stock de la variante elegida.
+  ///
+  /// Cuelga de la **variante** y no del producto porque la existencia es por
+  /// variante: «donde hay esta blusa» no tiene respuesta util sin decir en que
+  /// talla y en que color.
+  Future<Disponibilidad> obtenerDisponibilidad(int varianteId) async {
+    try {
+      final respuesta = await _dio.get<Map<String, dynamic>>(
+        '/tienda/variantes/$varianteId/disponibilidad',
+      );
+      return Disponibilidad.desdeJson(respuesta.data!);
+    } on DioException catch (fallo) {
+      throw traducirError(fallo);
+    }
+  }
+
   /// Las opciones del panel de filtros. Se piden una vez al abrir la vitrina.
   Future<FiltrosDisponibles> obtenerFiltros() async {
     try {

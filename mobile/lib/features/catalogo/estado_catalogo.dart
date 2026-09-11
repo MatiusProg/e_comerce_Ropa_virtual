@@ -49,6 +49,18 @@ final fichaProvider = FutureProvider.family<FichaPrenda, int>((
   return ref.watch(repositorioCatalogoProvider).obtenerFicha(productoId);
 });
 
+/// CU-19 · la disponibilidad de una variante.
+///
+/// Por variante y no por producto: se pide cuando el cliente termina de elegir
+/// talla y color. Pedirla al abrir la ficha serian tantas consultas como
+/// variantes tenga la prenda, de las que mira una.
+final disponibilidadProvider = FutureProvider.family<Disponibilidad, int>((
+  ref,
+  varianteId,
+) async {
+  return ref.watch(repositorioCatalogoProvider).obtenerDisponibilidad(varianteId);
+});
+
 // --- Control --------------------------------------------------------------
 
 class ControlConsulta extends Notifier<ConsultaVitrina> {

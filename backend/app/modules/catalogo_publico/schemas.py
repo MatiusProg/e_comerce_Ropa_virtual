@@ -181,6 +181,52 @@ class FichaProductoOut(BaseModel):
     tiene_vestidor: bool = False
 
 
+# --- CU-19 · Disponibilidad por sucursal ----------------------------------
+
+class DisponibilidadSucursalOut(BaseModel):
+    """Cuanto hay de una variante en una sucursal concreta.
+
+    La forma la fija el contrato de la costura **C1**, en la seccion 6 del
+    documento de organizacion: `{sucursal_id, sucursal_nombre, ciudad_nombre,
+    cantidad_disponible}`. Se transcribe tal cual y no se le agregan campos:
+    el dia que Mateo cambie la funcion, este esquema es el unico lugar donde
+    eso se nota.
+
+    **`cantidad_reservada` no viaja**, aunque `existencia` la tenga. Al cliente
+    le sirve saber cuanto puede llevarse, no cuanto tienen apartado otros; y
+    publicarlo dejaria deducir el movimiento comercial de cada tienda.
+    """
+
+    sucursal_id: int
+    sucursal_nombre: str
+    ciudad_nombre: str
+    cantidad_disponible: int
+
+
+class DisponibilidadOut(BaseModel):
+    """La respuesta del paso 2 de CU-19.
+
+    Lleva la variante identificada ademas de las sucursales porque la pantalla
+    la muestra junto al selector de talla y color, y sin el SKU no habria como
+    verificar que lo que se ve corresponde a lo que se eligio.
+    """
+
+    variante_id: int
+    sku: str
+    talla_codigo: str | None = None
+    color_nombre: str | None = None
+
+    #: Suma de lo disponible en toda la red. Viaja calculado para que la
+    #: interfaz no tenga que sumar --- y para poder decir «sin stock» de una sola
+    #: lectura, que es el flujo alternativo 2a.
+    total_disponible: int = 0
+
+    #: Solo las sucursales donde hay algo. Una lista con cinco ceros no le
+    #: sirve a nadie y hace mas larga la pantalla justo cuando la respuesta es
+    #: «no hay».
+    sucursales: list[DisponibilidadSucursalOut] = []
+
+
 # --- Opciones de filtrado ------------------------------------------------
 
 class FiltrosOut(BaseModel):
