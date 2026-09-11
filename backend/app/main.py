@@ -29,7 +29,10 @@ from app.modules.catalogo.maestros.router import router as catalogo_maestros_rou
 from app.modules.catalogo.temporadas_router import router as catalogo_temporadas_router
 
 # --- Ciclo 2 -------------------------------------------------------------
-# from app.modules.inventario.router import router as inventario_router
+from app.modules.inventario.router import router as inventario_router
+from app.modules.inventario.router import (
+    operacion_router as inventario_operacion_router,
+)
 # from app.modules.catalogo_publico.router import router as catalogo_publico_router
 # from app.modules.reservas.router import router as reservas_router
 
@@ -119,7 +122,8 @@ app.include_router(catalogo_maestros_router, prefix=API)
 app.include_router(catalogo_temporadas_router, prefix=API)
 
 # --- Ciclo 2 -------------------------------------------------------------
-# app.include_router(inventario_router, prefix=API)
+app.include_router(inventario_router, prefix=API)
+app.include_router(inventario_operacion_router, prefix=API)
 # app.include_router(catalogo_publico_router, prefix=API)
 # app.include_router(reservas_router, prefix=API)
 

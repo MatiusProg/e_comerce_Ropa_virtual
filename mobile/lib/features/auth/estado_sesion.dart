@@ -143,6 +143,21 @@ class ControlSesion extends Notifier<EstadoSesion> {
     }
   }
 
+  /// La invoca el perfil despues de cambiar la contrasena (CU-04, flujo
+  /// alternativo 3c). El backend revoca todas las sesiones abiertas al
+  /// cambiarla, **incluida la que hizo la peticion**, asi que el token que hay
+  /// guardado ya no vale.
+  ///
+  /// Se cierra localmente y no se llama a `/auth/logout`: esa llamada iria con
+  /// el token muerto, respondaria 401 y el interceptor mostraria "su sesion
+  /// expiro", que no es lo que paso.
+  Future<void> cerrarPorCambioDeContrasena() async {
+    await _almacen.borrar();
+    state = const SesionCerrada(
+      aviso: 'Su contraseña quedó cambiada. Vuelva a iniciar sesión.',
+    );
+  }
+
   /// La invoca el interceptor cuando el servidor responde 401 a una ruta
   /// privada: el token dejo de valer mientras la app estaba en uso.
   Future<void> cerrarPorTokenInvalido() async {

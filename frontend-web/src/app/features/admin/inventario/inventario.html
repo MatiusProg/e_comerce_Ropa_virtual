@@ -1,0 +1,352 @@
+<!-- CU-13 y CU-15 · Inventario — «boundary» PantallaInventario. -->
+<header class="encabezado">
+  <div>
+    <h1 class="vb-titulo">Inventario</h1>
+    <p class="bajada">
+      Cuánto hay y dónde. Toda cantidad que cambia deja un movimiento que la
+      explica: es la regla que sostiene la trazabilidad del stock.
+    </p>
+  </div>
+  <div class="acciones-cabecera">
+    <button matButton="filled" type="button" class="vb-boton-marca" (click)="registrarIngreso()">
+      <mat-icon>local_shipping</mat-icon>
+      Registrar ingreso
+    </button>
+    @if (esAdministrador()) {
+      <button matButton="outlined" type="button" (click)="transferir(null)">
+        <mat-icon>swap_horiz</mat-icon>
+        Transferir
+      </button>
+    }
+  </div>
+</header>
+
+<mat-card class="tarjeta vb-filete-superior" appearance="outlined">
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <div class="filtros">
+    @if (esAdministrador()) {
+      <mat-form-field appearance="outline">
+        <mat-label>Sucursal</mat-label>
+        <mat-select [formControl]="filtroSucursal">
+          <mat-option [value]="''">Todas</mat-option>
+          @for (s of sucursales(); track s.id) {
+            <mat-option [value]="s.id">{{ s.nombre }} · {{ s.ciudad }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
+    <button matButton type="button" (click)="refrescarTodo()">
+      <mat-icon>refresh</mat-icon>
+      Actualizar
+    </button>
+  </div>
+
+  @if (error(); as e) {
+    <div class="aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ e }}</span>
+    </div>
+  }
+
+  <mat-tab-group animationDuration="0ms">
+    <!-- ============ Existencias ============ -->
+    <mat-tab label="Existencias">
+      <div class="panel">
+        <div class="filtros">
+          <mat-form-field appearance="outline">
+            <mat-label>Mostrar</mat-label>
+            <mat-select [formControl]="soloConSaldo">
+              <mat-option [value]="true">Solo con saldo</mat-option>
+              <mat-option [value]="false">Todas, incluidas las agotadas</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        @if (existencias().length) {
+          <div class="envoltorio-tabla">
+            <table mat-table [dataSource]="existencias()">
+              <ng-container matColumnDef="sku">
+                <th mat-header-cell *matHeaderCellDef>SKU</th>
+                <td mat-cell *matCellDef="let e"><code>{{ e.sku }}</code></td>
+              </ng-container>
+
+              <ng-container matColumnDef="producto">
+                <th mat-header-cell *matHeaderCellDef>Prenda</th>
+                <td mat-cell *matCellDef="let e">
+                  {{ e.producto }}
+                  <span class="detalle">{{ e.talla }} · {{ e.color }}</span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="sucursal">
+                <th mat-header-cell *matHeaderCellDef>Sucursal</th>
+                <td mat-cell *matCellDef="let e">{{ e.sucursal }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="disponible">
+                <th mat-header-cell *matHeaderCellDef class="numerica">Disponible</th>
+                <td mat-cell *matCellDef="let e" class="numerica destacado">
+                  {{ e.cantidad_disponible }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="reservada">
+                <th mat-header-cell *matHeaderCellDef class="numerica">Reservada</th>
+                <td
+                  mat-cell
+                  *matCellDef="let e"
+                  class="numerica"
+                  matTooltip="Apartada para reservas. Sigue en la percha, pero no se puede vender a otro."
+                >
+                  {{ e.cantidad_reservada }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="fisica">
+                <th mat-header-cell *matHeaderCellDef class="numerica">En el local</th>
+                <td
+                  mat-cell
+                  *matCellDef="let e"
+                  class="numerica"
+                  matTooltip="Disponible + reservada. Es contra este número que se compara un conteo físico."
+                >
+                  {{ e.cantidad_fisica }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="acciones">
+                <th mat-header-cell *matHeaderCellDef></th>
+                <td mat-cell *matCellDef="let e" class="acciones">
+                  @if (esAdministrador()) {
+                    <button
+                      matIconButton
+                      type="button"
+                      matTooltip="Ajustar por conteo físico"
+                      (click)="ajustar(e)"
+                    >
+                      <mat-icon>fact_check</mat-icon>
+                    </button>
+                    <button
+                      matIconButton
+                      type="button"
+                      matTooltip="Transferir a otra sucursal"
+                      [disabled]="!e.cantidad_disponible"
+                      (click)="transferir(e)"
+                    >
+                      <mat-icon>swap_horiz</mat-icon>
+                    </button>
+                  }
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="columnasExistencias"></tr>
+              <tr mat-row *matRowDef="let fila; columns: columnasExistencias"></tr>
+            </table>
+          </div>
+        } @else {
+          <p class="vacio">
+            No hay existencias registradas todavía. Empiece por registrar un
+            ingreso de mercadería.
+          </p>
+        }
+      </div>
+    </mat-tab>
+
+    <!-- ============ Ingresos (CU-13, paso 2) ============ -->
+    <mat-tab label="Ingresos">
+      <div class="panel">
+        @if (ingresos(); as p) {
+          @if (p.items.length) {
+            <div class="envoltorio-tabla">
+              <table mat-table [dataSource]="p.items">
+                <ng-container matColumnDef="fecha">
+                  <th mat-header-cell *matHeaderCellDef>Fecha</th>
+                  <td mat-cell *matCellDef="let i">
+                    {{ i.registrado_en | date: 'dd/MM/yyyy HH:mm' }}
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="proveedor">
+                  <th mat-header-cell *matHeaderCellDef>Proveedor</th>
+                  <td mat-cell *matCellDef="let i">{{ i.proveedor ?? '—' }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="sucursal">
+                  <th mat-header-cell *matHeaderCellDef>Sucursal</th>
+                  <td mat-cell *matCellDef="let i">{{ i.sucursal }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="referencia">
+                  <th mat-header-cell *matHeaderCellDef>Remito</th>
+                  <td mat-cell *matCellDef="let i">{{ i.referencia ?? '—' }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="lineas">
+                  <th mat-header-cell *matHeaderCellDef class="numerica">Prendas</th>
+                  <td mat-cell *matCellDef="let i" class="numerica">{{ i.lineas }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="unidades">
+                  <th mat-header-cell *matHeaderCellDef class="numerica">Unidades</th>
+                  <td mat-cell *matCellDef="let i" class="numerica destacado">
+                    {{ i.unidades }}
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="usuario">
+                  <th mat-header-cell *matHeaderCellDef>Registró</th>
+                  <td mat-cell *matCellDef="let i">{{ i.usuario ?? 'Sistema' }}</td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="columnasIngresos"></tr>
+                <tr
+                  mat-row
+                  *matRowDef="let fila; columns: columnasIngresos"
+                  class="fila-pulsable"
+                  [class.abierta]="estaAbierto(fila)"
+                  (click)="alternarDetalle(fila)"
+                ></tr>
+              </table>
+            </div>
+
+            <!-- Las líneas se piden al desplegar, no junto con el listado. -->
+            @if (ingresoAbierto(); as abierto) {
+              <div class="detalle-ingreso">
+                <h3>
+                  Prendas del ingreso
+                  @if (abierto.referencia) {
+                    <span class="remito">remito {{ abierto.referencia }}</span>
+                  }
+                </h3>
+                @if (lineasDelIngreso().length) {
+                  <ul>
+                    @for (linea of lineasDelIngreso(); track linea.id) {
+                      <li>
+                        <code>{{ linea.sku }}</code>
+                        {{ linea.producto }} · {{ linea.talla }} · {{ linea.color }}
+                        <strong>{{ conSigno(linea.cantidad) }}</strong>
+                      </li>
+                    }
+                  </ul>
+                } @else {
+                  <p class="vacio">Cargando las líneas…</p>
+                }
+              </div>
+            }
+
+            <mat-paginator
+              [length]="p.total"
+              [pageSize]="p.tamano"
+              [pageIndex]="p.pagina - 1"
+              [hidePageSize]="true"
+              (page)="paginarIngresos($event)"
+            />
+          } @else {
+            <p class="vacio">Todavía no se registró ningún ingreso.</p>
+          }
+        }
+      </div>
+    </mat-tab>
+
+    <!-- ============ Movimientos (CU-15) ============ -->
+    <mat-tab label="Movimientos">
+      <div class="panel">
+        <div class="filtros">
+          <mat-form-field appearance="outline">
+            <mat-label>Tipo</mat-label>
+            <mat-select [formControl]="filtroTipo">
+              <mat-option [value]="''">Todos</mat-option>
+              @for (t of tipos(); track t) {
+                <mat-option [value]="t">{{ t }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        @if (movimientos(); as p) {
+          @if (p.items.length) {
+            <div class="envoltorio-tabla">
+              <table mat-table [dataSource]="p.items">
+                <ng-container matColumnDef="fecha">
+                  <th mat-header-cell *matHeaderCellDef>Fecha</th>
+                  <td mat-cell *matCellDef="let m">
+                    {{ m.creado_en | date: 'dd/MM/yyyy HH:mm' }}
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="tipo">
+                  <th mat-header-cell *matHeaderCellDef>Tipo</th>
+                  <td mat-cell *matCellDef="let m">
+                    <span class="etiqueta-tipo" [class]="claseDeTipo(m.tipo)">
+                      {{ m.tipo }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="sku">
+                  <th mat-header-cell *matHeaderCellDef>SKU</th>
+                  <td mat-cell *matCellDef="let m"><code>{{ m.sku }}</code></td>
+                </ng-container>
+
+                <ng-container matColumnDef="producto">
+                  <th mat-header-cell *matHeaderCellDef>Prenda</th>
+                  <td mat-cell *matCellDef="let m">
+                    {{ m.producto }}
+                    <span class="detalle">{{ m.talla }} · {{ m.color }}</span>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="sucursal">
+                  <th mat-header-cell *matHeaderCellDef>Sucursal</th>
+                  <td mat-cell *matCellDef="let m">{{ m.sucursal }}</td>
+                </ng-container>
+
+                <!-- El signo se muestra siempre: es lo que distingue la salida
+                     de una transferencia de su entrada, y las dos filas dicen
+                     TRANSFERENCIA. -->
+                <ng-container matColumnDef="cantidad">
+                  <th mat-header-cell *matHeaderCellDef class="numerica">Cantidad</th>
+                  <td
+                    mat-cell
+                    *matCellDef="let m"
+                    class="numerica destacado"
+                    [class.entra]="m.cantidad > 0"
+                    [class.sale]="m.cantidad < 0"
+                  >
+                    {{ conSigno(m.cantidad) }}
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="motivo">
+                  <th mat-header-cell *matHeaderCellDef>Motivo</th>
+                  <td mat-cell *matCellDef="let m" class="motivo">{{ m.motivo ?? '—' }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="usuario">
+                  <th mat-header-cell *matHeaderCellDef>Quién</th>
+                  <td mat-cell *matCellDef="let m">{{ m.usuario ?? 'Sistema' }}</td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="columnasMovimientos"></tr>
+                <tr mat-row *matRowDef="let fila; columns: columnasMovimientos"></tr>
+              </table>
+            </div>
+
+            <mat-paginator
+              [length]="p.total"
+              [pageSize]="p.tamano"
+              [pageIndex]="p.pagina - 1"
+              [hidePageSize]="true"
+              (page)="paginarMovimientos($event)"
+            />
+          } @else {
+            <p class="vacio">No hay movimientos con esos filtros.</p>
+          }
+        }
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</mat-card>

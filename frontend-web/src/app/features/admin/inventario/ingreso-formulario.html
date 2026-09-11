@@ -1,0 +1,194 @@
+<!-- CU-13 · Registrar ingreso de mercadería — pasos 4 a 7. -->
+<h2 mat-dialog-title>Registrar ingreso de mercadería</h2>
+
+@if (guardando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<mat-dialog-content>
+  <!-- Cabecera: de quién viene y a dónde llega. -->
+  <form [formGroup]="cabecera" class="cabecera">
+    <div class="fila">
+      <mat-form-field appearance="outline">
+        <mat-label>Proveedor</mat-label>
+        <mat-select formControlName="proveedor_id">
+          @for (p of datos.proveedores; track p.id) {
+            <mat-option [value]="p.id">{{ p.razon_social }}</mat-option>
+          }
+        </mat-select>
+        <mat-hint>Quién envió este lote.</mat-hint>
+      </mat-form-field>
+
+      @if (sucursalFija) {
+        <!-- El Encargado no elige: su ámbito viaja en el token y el servidor
+             rechaza cualquier otra sucursal. -->
+        <mat-form-field appearance="outline">
+          <mat-label>Sucursal</mat-label>
+          <input matInput value="Su sucursal" disabled />
+          <mat-icon matSuffix>lock</mat-icon>
+        </mat-form-field>
+      } @else {
+        <mat-form-field appearance="outline">
+          <mat-label>Sucursal que recibe</mat-label>
+          <mat-select formControlName="sucursal_id">
+            @for (s of datos.sucursales; track s.id) {
+              <mat-option [value]="s.id">{{ s.nombre }} · {{ s.ciudad }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
+    </div>
+
+    <div class="fila">
+      <mat-form-field appearance="outline" class="remito">
+        <mat-label>Remito o factura</mat-label>
+        <input matInput formControlName="referencia" maxlength="40" />
+        <mat-hint>Opcional. Es el número del papel que llegó con la mercadería.</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="observacion">
+        <mat-label>Observación</mat-label>
+        <input matInput formControlName="observacion" maxlength="120" />
+        <mat-hint>Queda en el motivo de cada movimiento.</mat-hint>
+      </mat-form-field>
+    </div>
+  </form>
+
+  <!-- Elección de la prenda: producto primero, después la combinación. -->
+  <section class="selector">
+    <h3>Agregar prendas</h3>
+
+    <div class="fila">
+      <mat-form-field appearance="outline" class="buscar">
+        <mat-label>Buscar producto por código o nombre</mat-label>
+        <input
+          matInput
+          [formControl]="busqueda"
+          [matAutocomplete]="lista"
+          placeholder="Escriba al menos dos letras"
+        />
+        <mat-icon matSuffix>search</mat-icon>
+        <mat-autocomplete
+          #lista="matAutocomplete"
+          [displayWith]="nombreDeProducto"
+          (optionSelected)="elegirProducto($event.option.value)"
+        >
+          @for (p of productos(); track p.id) {
+            <mat-option [value]="p">{{ p.codigo }} · {{ p.nombre }}</mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+    </div>
+
+    @if (productoElegido(); as producto) {
+      <div class="fila">
+        <mat-form-field appearance="outline" class="variante">
+          <mat-label>Talla y color</mat-label>
+          <mat-select [formControl]="varianteElegida">
+            @for (v of variantes(); track v.id) {
+              <mat-option [value]="v.id">
+                {{ v.talla_codigo }} · {{ v.color_nombre }} — {{ v.sku }}
+              </mat-option>
+            }
+          </mat-select>
+          @if (!variantes().length) {
+            <mat-hint>Ese producto no tiene variantes activas.</mat-hint>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="cantidad">
+          <mat-label>Cantidad</mat-label>
+          <input matInput type="number" min="1" [formControl]="cantidad" />
+        </mat-form-field>
+
+        <button matButton="outlined" type="button" (click)="agregarLinea()">
+          <mat-icon>add</mat-icon>
+          Agregar
+        </button>
+      </div>
+    }
+  </section>
+
+  <!-- El remito armado. Nada viaja hasta que se confirma: el ingreso es una
+       transacción y las líneas van todas juntas o ninguna. -->
+  @if (lineas().length) {
+    <section class="remito-armado">
+      <div class="envoltorio-tabla">
+        <table mat-table [dataSource]="lineas()">
+          <ng-container matColumnDef="sku">
+            <th mat-header-cell *matHeaderCellDef>SKU</th>
+            <td mat-cell *matCellDef="let l"><code>{{ l.sku }}</code></td>
+          </ng-container>
+
+          <ng-container matColumnDef="prenda">
+            <th mat-header-cell *matHeaderCellDef>Prenda</th>
+            <td mat-cell *matCellDef="let l">
+              {{ l.producto }}
+              <span class="detalle">{{ l.talla }} · {{ l.color }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="cantidad">
+            <th mat-header-cell *matHeaderCellDef class="numerica">Cantidad</th>
+            <td mat-cell *matCellDef="let l" class="numerica destacado">{{ l.cantidad }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="quitar">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let l" class="numerica">
+              <button
+                matIconButton
+                type="button"
+                matTooltip="Quitar del remito"
+                (click)="quitarLinea(l.variante_id)"
+              >
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+          <!-- Excepción E1: el servidor dice cuáles líneas rechazó, y se
+               marcan esas en vez de invalidar el remito entero. -->
+          <tr
+            mat-row
+            *matRowDef="let fila; columns: columnas"
+            [class.rechazada]="fila.rechazada"
+          ></tr>
+        </table>
+      </div>
+
+      <p class="total">
+        <strong>{{ lineas().length }}</strong> prenda(s) ·
+        <strong>{{ unidades() }}</strong> unidades en total
+      </p>
+    </section>
+  } @else {
+    <p class="vacio">
+      El remito está vacío. Busque un producto, elija la talla y el color, e
+      indique cuántas unidades llegaron.
+    </p>
+  }
+
+  @if (error(); as e) {
+    <div class="aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ e }}</span>
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" [disabled]="guardando()" (click)="cancelar()">
+    Cancelar
+  </button>
+  <button
+    matButton="filled"
+    type="button"
+    class="vb-boton-marca"
+    [disabled]="guardando() || !lineas().length"
+    (click)="confirmar()"
+  >
+    Registrar ingreso
+  </button>
+</mat-dialog-actions>

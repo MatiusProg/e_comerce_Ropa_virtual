@@ -38,6 +38,7 @@ from app.main import app  # noqa: E402
 # Importar los modelos puebla Base.metadata. Sin esto, create_all no crearia
 # ninguna tabla: el metadata solo conoce las clases que fueron importadas.
 from app.modules.catalogo import models as modelos_catalogo  # noqa: E402,F401
+from app.modules.inventario import models as modelos_inventario  # noqa: E402,F401
 from app.modules.organizacion import models as modelos_organizacion  # noqa: E402,F401
 from app.modules.seguridad import models as modelos_seguridad  # noqa: E402,F401
 
@@ -54,6 +55,11 @@ from app.modules.seguridad import models as modelos_seguridad  # noqa: E402,F401
 #: al final --- producto referencia a proveedor, categoria, temporada y
 #: coleccion, y variante_producto a talla y color.
 TABLAS_VOLATILES = (
+    # P4 va primero: el movimiento apunta a la existencia, al usuario y al
+    # proveedor, y la existencia a la variante y a la sucursal. Todas ellas
+    # estan mas abajo en esta misma tupla.
+    "movimiento_inventario",
+    "existencia",
     "cliente_categoria",
     "direccion_cliente",
     "sesion_token",

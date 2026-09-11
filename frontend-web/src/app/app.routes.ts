@@ -93,6 +93,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/admin/productos/productos').then((m) => m.Productos),
       },
+      // --- Ciclo 2 · P4 Inventario (CU-13, CU-15) ---
+      {
+        path: 'inventario',
+        title: 'Inventario · Violet Boutique',
+        loadComponent: () =>
+          import('./features/admin/inventario/inventario').then((m) => m.Inventario),
+      },
     ],
   },
   {
@@ -101,6 +108,21 @@ export const routes: Routes = [
     canActivate: [sesionGuard, rolGuard('CLIENTE')],
     loadComponent: () =>
       import('./features/cliente/perfil/perfil').then((m) => m.Perfil),
+  },
+  // --- Ciclo 2 · P4 Inventario para el Encargado (CU-13) ---
+  //
+  // Va ANTES de 'sucursal' a propósito: esa ruta no declara hijos, así que si
+  // quedara primero consumiría el prefijo y esta no se resolvería nunca.
+  //
+  // Es la MISMA pantalla que la del Administrador. El alcance no lo decide la
+  // ruta sino el servidor: el ámbito de sucursal viaja en el token, y la
+  // pantalla oculta las acciones de CU-15, que son solo del Administrador.
+  {
+    path: 'sucursal/inventario',
+    title: 'Inventario de la sucursal · Violet Boutique',
+    canActivate: [sesionGuard, rolGuard('ENCARGADO')],
+    loadComponent: () =>
+      import('./features/admin/inventario/inventario').then((m) => m.Inventario),
   },
   {
     path: 'sucursal',
