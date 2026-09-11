@@ -15,8 +15,8 @@ por sí sola:
   cada sucursal mirando solo sus propios movimientos (D4).
 - **Ningún saldo se toca sin dejar movimiento.** Es la regla que concentra P4, y
   acá se verifica sobre las dos operaciones.
-- **CU-15 es solo del Administrador.** Un Encargado no ajusta ni transfiere: son
-  saldos de los que no responde.
+- **La transferencia es solo del Administrador.** El ajuste NO: esa mitad es
+  CU-16 y la hace el Encargado sobre su propia sucursal.
 """
 
 from datetime import date, timedelta
@@ -196,30 +196,42 @@ def test_sin_token_no_se_ajusta_el_inventario(api: TestClient) -> None:
     assert api.post(AJUSTE, json={}).status_code == 401
 
 
-def test_el_encargado_no_ajusta_ni_transfiere(
+def test_el_encargado_no_transfiere_entre_sucursales(
     api: TestClient,
+    cabeceras_admin: dict[str, str],
     cabeceras_encargado: dict[str, str],
     sucursal: int,
     variante: int,
 ) -> None:
-    """CU-15 es solo del Administrador.
+    """La transferencia es solo del Administrador, y el ajuste no.
 
-    El Encargado sí registra ingresos (CU-13) y sí lee el historial: lo que no
-    puede es corregir un saldo por su cuenta ni mover mercadería a otro local.
+    El 10/09 esta prueba decía que el Encargado tampoco ajustaba, leyendo solo
+    la fila de CU-15 del documento de organización. Estaba incompleta: **CU-16
+    es ese mismo ajuste visto desde el Encargado**, acotado a su sucursal — y
+    es justamente por eso que CU-15 figura como de Administrador.
+
+    Lo que sigue siendo solo del Administrador es la transferencia, porque cruza
+    dos sucursales y el Encargado responde por una sola.
     """
-    ajuste = api.post(
-        AJUSTE,
+    destino = _crear_sucursal(api, cabeceras_admin, nombre="Norte")
+    _sembrar_stock(
+        api, cabeceras_admin, sucursal_id=sucursal, variante_id=variante, cantidad=10
+    )
+
+    transferencia = api.post(
+        TRANSFERENCIA,
         headers=cabeceras_encargado,
         json={
             "variante_id": variante,
-            "sucursal_id": sucursal,
-            "cantidad_contada": 3,
-            "motivo": MOTIVO,
+            "sucursal_origen_id": sucursal,
+            "sucursal_destino_id": destino,
+            "cantidad": 2,
+            "motivo": "Reposición para la vitrina del norte",
         },
     )
-    assert ajuste.status_code == 403
+    assert transferencia.status_code == 403
 
-    # Pero el historial sí lo ve: es la trazabilidad de su propia sucursal.
+    # El historial sí lo ve: es la trazabilidad de su propia sucursal.
     assert api.get(MOVIMIENTOS, headers=cabeceras_encargado).status_code == 200
 
 

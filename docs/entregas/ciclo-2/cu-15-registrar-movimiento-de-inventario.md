@@ -11,7 +11,7 @@
 | **Nombre** | Registrar movimiento de inventario |
 | **Descripción** | Permite registrar ajustes por conteo físico y transferencias de mercadería entre sucursales, dejando trazabilidad del motivo, el usuario y la fecha. |
 | **Propósito** | Cerrar la brecha entre lo que el sistema dice que hay y lo que hay de verdad, y repartir el stock entre locales, **sin** que ninguna cantidad cambie sin dejar el movimiento que la explica. |
-| **Actores** | Administrador (iniciador) |
+| **Actores** | Administrador (iniciador). El ajuste lo comparte con el Encargado por **CU-16**, acotado a su sucursal |
 | **Paquete** | P4 · Inventario |
 | **Prioridad** | Media |
 | **Requisitos que realiza** | RF22, RF28 |
@@ -82,10 +82,20 @@ las genera el sistema desde CU-22, CU-23, CU-25 y las ventas del Ciclo 3. Ofrece
 dejaría descuadrar un saldo contra la reserva o la venta que lo justifica. El selector se pide al
 servidor en vez de escribirlo en la interfaz, por el mismo motivo que los cargos de CU-06.
 
-**CU-15 es solo del Administrador y CU-13 no.** El Encargado recibe las cajas, así que registra
-ingresos; lo que no hace es corregir un saldo por su cuenta ni mandar mercadería a otro local, que
-son saldos de los que no responde. Como son dos ámbitos de rol distintos sobre el mismo paquete, hay
-**dos routers** y la exigencia se declara una vez en cada uno — la regla de la §6.11.4 de
+**La transferencia es solo del Administrador; el ajuste, no.** *(Corregido el 11/09 al implementar
+CU-16.)* Esta ficha decía que el Encargado no ajustaba, leyendo solo la fila de CU-15 de la §2.2 del
+acuerdo. Estaba incompleto: **CU-16 es ese mismo ajuste visto desde el Encargado** —«consultar y
+**ajustar** la disponibilidad de las prendas de su propia sucursal»—, y es justamente por eso que
+CU-15 figura como de Administrador: la mitad del Encargado tiene caso de uso propio.
+
+Así que `POST /inventario/movimientos/ajuste` vive en el *router* de operación, que admite los dos
+roles, con `verificar_ambito_sucursal` adentro. **Un endpoint con dos alcances, no dos endpoints**:
+duplicarlo expondría el mismo recurso en dos rutas —lo que la §6.11.2 decidió no hacer— y dejaría
+dos copias de la regla del conteo físico esperando a divergir.
+
+La **transferencia** sí se queda solo con el Administrador: cruza dos sucursales y el Encargado
+responde por una sola. Como son dos ámbitos de rol distintos sobre el mismo paquete, hay **dos
+routers** y la exigencia se declara una vez en cada uno — la regla de la §6.11.4 de
 `docs/06-decisiones-tecnicas.md`: bajarla al nivel de cada endpoint reintroduce el agujero de
 olvidarla en uno solo.
 
@@ -93,7 +103,7 @@ olvidarla en uno solo.
 
 | Método | Ruta | Paso | Rol |
 |---|---|---|---|
-| `POST` | `/inventario/movimientos/ajuste` | 3-6 · conteo físico | Administrador |
+| `POST` | `/inventario/movimientos/ajuste` | 3-6 · conteo físico | Administrador y Encargado (CU-16) |
 | `POST` | `/inventario/movimientos/transferencia` | 3a · traslado | Administrador |
 | `GET` | `/inventario/movimientos` | 1a · historial con filtros, paginado | Administrador y Encargado |
 | `GET` | `/inventario/tipos-movimiento` | selector del formulario | Administrador y Encargado |
@@ -103,7 +113,8 @@ olvidarla en uno solo.
 | Plataforma | Ruta | Rol |
 |---|---|---|
 | Web | `/admin/inventario` | Administrador |
-| Web | `/sucursal/inventario` | Encargado — **solo el historial**, sin ajuste ni transferencia |
+| Web | `/sucursal/inventario` | Encargado — historial e ingresos, sin transferencia |
+| Web | `/sucursal/disponibilidad` | Encargado — el ajuste de su sucursal, que es **CU-16** |
 | Móvil | — | El actor no es Cliente: es solo web (§2.2 del acuerdo) |
 
 ## Pruebas
@@ -118,7 +129,8 @@ por sí sola:
   nada.
 - `test_la_transferencia_deja_dos_movimientos_y_mueve_los_dos_saldos` — incluida la comprobación de
   que cada sucursal reconstruye su saldo con sus propias filas.
-- `test_el_encargado_no_ajusta_ni_transfiere` — pero sí lee el historial.
+- `test_el_encargado_no_transfiere_entre_sucursales` — pero sí ajusta lo suyo (CU-16) y sí lee el
+  historial.
 
 ## Costura C1 — lo que este paquete le debe a Karen
 

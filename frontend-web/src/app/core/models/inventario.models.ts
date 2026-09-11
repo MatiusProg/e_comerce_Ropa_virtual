@@ -1,5 +1,5 @@
 /**
- * CU-13 y CU-15 · Inventario — modelos del contrato.
+ * CU-13, CU-15 y CU-16 · Inventario — modelos del contrato.
  *
  * Espejo de `backend/app/modules/inventario/schemas.py`.
  *
@@ -34,6 +34,30 @@ export interface Existencia extends VarianteResumen {
    * pantalla no tenga que deducir esa regla por su cuenta.
    */
   cantidad_fisica: number;
+
+  /** Umbral de reposición que fijó el Encargado (CU-16). Cero = sin alerta. */
+  stock_minimo: number;
+  /**
+   * Si esta prenda está en alerta. Viaja calculado por el mismo motivo que
+   * `cantidad_fisica`: la regla —hay alerta cuando el umbral es mayor que cero
+   * y el disponible no lo supera— es del negocio, no de la pantalla. Si cada
+   * cliente la dedujera por su cuenta, la web y el móvil terminarían avisando
+   * cosas distintas.
+   */
+  bajo_minimo: boolean;
+}
+
+// --- CU-16 · Disponibilidad de la sucursal -------------------------------
+
+/**
+ * El Encargado fija el punto de reposición de una prenda.
+ *
+ * Viaja solo el umbral: es el único campo de una existencia que una persona
+ * edita a mano. Las dos cantidades no se tocan por esta puerta ni por ninguna
+ * otra que no genere un movimiento.
+ */
+export interface StockMinimoCrear {
+  stock_minimo: number;
 }
 
 // --- CU-13 · Ingreso de mercadería ---------------------------------------

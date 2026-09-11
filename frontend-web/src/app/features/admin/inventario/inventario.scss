@@ -118,6 +118,23 @@ code {
   white-space: nowrap;
 }
 
+// Una prenda sin minimo no esta «bien», esta SIN VIGILAR, y son dos cosas
+// distintas.
+.sin-vigilar {
+  color: var(--mat-sys-outline);
+}
+
+.en-alerta {
+  font-weight: 600;
+  color: var(--mat-sys-error);
+}
+
+// La fila entera se tine ademas de la celda: en una tabla ancha, un numero rojo
+// al medio se pierde al recorrerla de arriba abajo.
+.fila-alerta {
+  background: #fdf0d5;
+}
+
 .etiqueta-tipo {
   display: inline-block;
   padding: 0.15rem 0.6rem;

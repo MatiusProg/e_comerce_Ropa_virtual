@@ -9,23 +9,42 @@ Casos de uso que realiza este paquete:
   CU-15 Registrar movimiento de inventario
   CU-16 Gestionar disponibilidad de la sucursal
 
-Implementados en este archivo: CU-13 y CU-15.
+Implementados en este archivo: CU-13, CU-15 y CU-16.
 
 Regla: el router valida la entrada, resuelve la autorizacion y delega en el
 servicio. Ninguna regla de negocio vive aqui.
 
 DOS ROUTERS, PORQUE SON DOS AMBITOS DE ROL
 ------------------------------------------
-CU-13 lo ejecutan el Administrador Y el Encargado -es quien recibe las cajas-;
-CU-15 es solo del Administrador, porque un ajuste por conteo y una
-transferencia entre sucursales cambian saldos de los que el Encargado no
-responde. La exigencia se declara UNA vez por router y no endpoint por
-endpoint: es la regla de la seccion 6.11.4 de docs/06-decisiones-tecnicas.md, y
-el motivo es que olvidarla en un solo endpoint abre un agujero que nada avisa.
+`operacion_router` es de Administrador Y Encargado: el ingreso de mercaderia
+(CU-13, que el Encargado hace porque es quien recibe las cajas), el ajuste por
+conteo, el umbral de reposicion y las lecturas del deposito. `router` es solo
+del Administrador, y ahi vive lo unico que cruza sucursales: la transferencia.
+
+La exigencia se declara UNA vez por router y no endpoint por endpoint: es la
+regla de la seccion 6.11.4 de docs/06-decisiones-tecnicas.md, y el motivo es que
+olvidarla en un solo endpoint abre un agujero que nada avisa.
 
 El ambito de datos del Encargado -su sucursal y ninguna otra- no lo resuelve el
 rol sino `verificar_ambito_sucursal`, porque la sucursal viaja en el token y no
 en el cuerpo de la peticion.
+
+POR QUE EL AJUSTE CAMBIO DE ROUTER
+----------------------------------
+El 10/09 el ajuste se declaro solo para el Administrador, leyendo la fila de
+CU-15 de la seccion 2.2 del documento de organizacion, que dice «web: Admin».
+Estaba incompleto: **CU-16 es el mismo ajuste visto desde el Encargado** -«le
+permite consultar y AJUSTAR la disponibilidad de las prendas de su propia
+sucursal»-, y es justamente el motivo por el que CU-15 figura como de
+Administrador: la mitad del Encargado tiene caso de uso propio.
+
+Asi que es un endpoint con dos ambitos y no dos endpoints. Duplicarlo
+-`/movimientos/ajuste` y `/disponibilidad/ajuste`- expondria el mismo recurso en
+dos rutas, que es lo que la seccion 6.11.2 decidio no hacer, y dejaria dos
+copias de la regla del conteo fisico esperando a divergir.
+
+La transferencia NO se mueve: cruza dos sucursales y el Encargado responde por
+una sola.
 """
 from datetime import datetime
 from typing import Annotated
@@ -49,6 +68,7 @@ from app.modules.inventario.schemas import (
     MovimientoOut,
     PaginaIngresos,
     PaginaMovimientos,
+    StockMinimoIn,
     TransferenciaIn,
     TransferenciaOut,
 )
@@ -280,6 +300,68 @@ def listar_existencias(
     )
 
 
+# =====================================================================
+# CU-16 - Gestionar disponibilidad de la sucursal
+# =====================================================================
+
+@operacion_router.get(
+    "/alertas",
+    response_model=list[ExistenciaOut],
+    summary="CU-16 Prendas en punto de reposición",
+)
+def listar_alertas(
+    db: DbSession,
+    usuario: Usuario,
+    sucursal_id: Annotated[int | None, Query()] = None,
+) -> list[ExistenciaOut]:
+    """Las prendas que llegaron a su punto de reposición, de peor a mejor.
+
+    Solo aparecen las que tienen umbral: cero significa «sin alerta», y una
+    existencia recién creada por un ingreso no debería empezar a avisar sola con
+    un número que nadie eligió.
+
+    El Encargado ve las de su sucursal aunque no la indique.
+    """
+    return service.alertas_de_stock(
+        db, sucursal_id=_sucursal_del_usuario(usuario, sucursal_id)
+    )
+
+
+@operacion_router.patch(
+    "/existencias/{existencia_id}/stock-minimo",
+    response_model=ExistenciaOut,
+    summary="CU-16 Fijar el punto de reposición de una prenda",
+    responses={
+        403: {"description": "Un Encargado intentó tocar otra sucursal."},
+        404: {"description": "Esa existencia no existe."},
+    },
+)
+def fijar_stock_minimo(
+    existencia_id: int, datos: StockMinimoIn, db: DbSession, usuario: Usuario
+) -> ExistenciaOut:
+    """Fija cuándo esta prenda tiene que avisar que hay que reponerla.
+
+    Es la única escritura del paquete que **no** genera movimiento, y no es una
+    excepción a la regla: lo que no se toca sin movimiento es una *cantidad de
+    mercadería*, y el umbral no lo es — es una preferencia de quien administra
+    el local.
+
+    Se comprueba el ámbito **antes** de escribir, y para eso hace falta saber de
+    qué sucursal es la existencia: por eso se la busca primero. Confiar en el
+    identificador de la URL sin resolverlo dejaría a un Encargado cambiándole el
+    umbral a cualquier prenda de la red con solo probar números.
+    """
+    actual = service.existencia_por_id(db, existencia_id)
+    if actual is None:
+        raise HTTPException(404, "Esa existencia no existe.")
+    verificar_ambito_sucursal(usuario, actual.sucursal_id)
+
+    try:
+        return service.fijar_stock_minimo(db, existencia_id, datos.stock_minimo)
+    except service.ErrorDeInventario as error:
+        raise _traducir(error)
+
+
 @operacion_router.get(
     "/movimientos",
     response_model=PaginaMovimientos,
@@ -331,12 +413,13 @@ def listar_tipos_manuales() -> list[str]:
 # CU-15 - Registrar movimiento de inventario  (solo Administrador)
 # =====================================================================
 
-@router.post(
+@operacion_router.post(
     "/movimientos/ajuste",
     response_model=AjusteOut,
     status_code=status.HTTP_201_CREATED,
-    summary="CU-15 Ajuste por conteo físico",
+    summary="CU-15/CU-16 Ajuste por conteo físico",
     responses={
+        403: {"description": "Un Encargado intentó ajustar otra sucursal."},
         409: {
             "description": (
                 "El conteo coincide con el saldo (E7) o no cubre lo reservado (E8)."
@@ -345,11 +428,16 @@ def listar_tipos_manuales() -> list[str]:
     },
 )
 def registrar_ajuste(datos: AjusteIn, db: DbSession, usuario: Usuario) -> AjusteOut:
-    """Flujo principal: se envía lo contado y el sistema calcula la diferencia.
+    """Se envía lo contado y el sistema calcula la diferencia.
 
     Lo contado es el total físico —lo reservado sigue estando en la percha—, no
     lo disponible.
+
+    Es **CU-15** cuando lo hace el Administrador, que puede ajustar cualquier
+    sucursal, y **CU-16** cuando lo hace el Encargado sobre la suya. La misma
+    operación, dos alcances; quien los separa es el token.
     """
+    verificar_ambito_sucursal(usuario, datos.sucursal_id)
     try:
         return service.registrar_ajuste(db, datos, usuario_id=usuario.id)
     except service.ErrorDeInventario as error:

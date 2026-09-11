@@ -1,0 +1,215 @@
+<!-- CU-16 · Gestionar disponibilidad de la sucursal — «boundary». -->
+<header class="encabezado">
+  <div>
+    <h1 class="vb-titulo">Disponibilidad</h1>
+    <p class="bajada">
+      El stock de
+      @if (nombreDeSucursal()) {
+        <strong>{{ nombreDeSucursal() }}</strong>
+      } @else {
+        su sucursal
+      }
+      : qué hay, qué está comprometido y qué hay que reponer.
+    </p>
+  </div>
+  <button matButton type="button" (click)="refrescar()">
+    <mat-icon>refresh</mat-icon>
+    Actualizar
+  </button>
+</header>
+
+@if (error(); as e) {
+  <div class="aviso" role="alert">
+    <mat-icon>error_outline</mat-icon>
+    <span>{{ e }}</span>
+  </div>
+}
+
+<!-- Las alertas van arriba y aparte: quien abre esto a primera hora viene a
+     hacer una sola pregunta, y la respuesta no puede estar repartida entre
+     cuarenta filas ordenadas por SKU. -->
+<mat-card class="tarjeta alertas vb-filete-superior" appearance="outlined">
+  <div class="titulo-panel">
+    <mat-icon [class.hay]="alertas().length">
+      {{ alertas().length ? 'notification_important' : 'task_alt' }}
+    </mat-icon>
+    <h2>
+      @if (alertas().length) {
+        Hay {{ alertas().length }} prenda(s) para reponer
+      } @else {
+        Nada que reponer
+      }
+    </h2>
+  </div>
+
+  @if (alertas().length) {
+    <div class="envoltorio-tabla">
+      <table mat-table [dataSource]="alertas()">
+        <ng-container matColumnDef="sku">
+          <th mat-header-cell *matHeaderCellDef>SKU</th>
+          <td mat-cell *matCellDef="let a"><code>{{ a.sku }}</code></td>
+        </ng-container>
+
+        <ng-container matColumnDef="producto">
+          <th mat-header-cell *matHeaderCellDef>Prenda</th>
+          <td mat-cell *matCellDef="let a">
+            {{ a.producto }}
+            <span class="detalle">{{ a.talla }} · {{ a.color }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="disponible">
+          <th mat-header-cell *matHeaderCellDef class="numerica">Quedan</th>
+          <td mat-cell *matCellDef="let a" class="numerica destacado sale">
+            {{ a.cantidad_disponible }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="minimo">
+          <th mat-header-cell *matHeaderCellDef class="numerica">Mínimo</th>
+          <td mat-cell *matCellDef="let a" class="numerica">{{ a.stock_minimo }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="faltan">
+          <th mat-header-cell *matHeaderCellDef class="numerica">Faltan</th>
+          <td mat-cell *matCellDef="let a" class="numerica destacado">
+            {{ faltan(a) }}
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnasAlerta"></tr>
+        <tr mat-row *matRowDef="let fila; columns: columnasAlerta"></tr>
+      </table>
+    </div>
+    <p class="pie">
+      Ordenadas de la más urgente a la menos. Se apagan solas cuando entra un
+      ingreso que las repone.
+    </p>
+  } @else {
+    <p class="vacio">
+      Ninguna prenda llegó a su punto de reposición. Una prenda sin mínimo
+      fijado no se vigila: use <em>Fijar mínimo</em> en la tabla de abajo.
+    </p>
+  }
+</mat-card>
+
+<!-- El listado completo, para cuando la pregunta es otra. -->
+<mat-card class="tarjeta" appearance="outlined">
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <div class="filtros">
+    <mat-form-field appearance="outline" class="campo-busqueda">
+      <mat-label>Buscar por SKU, prenda, talla o color</mat-label>
+      <input matInput [formControl]="busqueda" />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Mostrar</mat-label>
+      <mat-select [formControl]="soloConSaldo">
+        <mat-option [value]="false">Todas, incluidas las agotadas</mat-option>
+        <mat-option [value]="true">Solo con saldo</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  @if (visibles().length) {
+    <div class="envoltorio-tabla">
+      <table mat-table [dataSource]="visibles()">
+        <ng-container matColumnDef="sku">
+          <th mat-header-cell *matHeaderCellDef>SKU</th>
+          <td mat-cell *matCellDef="let e"><code>{{ e.sku }}</code></td>
+        </ng-container>
+
+        <ng-container matColumnDef="producto">
+          <th mat-header-cell *matHeaderCellDef>Prenda</th>
+          <td mat-cell *matCellDef="let e">
+            {{ e.producto }}
+            <span class="detalle">{{ e.talla }} · {{ e.color }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="disponible">
+          <th mat-header-cell *matHeaderCellDef class="numerica">Disponible</th>
+          <td mat-cell *matCellDef="let e" class="numerica destacado">
+            {{ e.cantidad_disponible }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="reservada">
+          <th mat-header-cell *matHeaderCellDef class="numerica">Reservada</th>
+          <td
+            mat-cell
+            *matCellDef="let e"
+            class="numerica"
+            matTooltip="Apartada para reservas. Sigue en la percha, pero ya tiene dueño."
+          >
+            {{ e.cantidad_reservada }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="fisica">
+          <th mat-header-cell *matHeaderCellDef class="numerica">En el local</th>
+          <td
+            mat-cell
+            *matCellDef="let e"
+            class="numerica"
+            matTooltip="Disponible + reservada. Es contra este número que se compara un conteo físico."
+          >
+            {{ e.cantidad_fisica }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="minimo">
+          <th mat-header-cell *matHeaderCellDef class="numerica">Mínimo</th>
+          <td mat-cell *matCellDef="let e" class="numerica">
+            @if (e.stock_minimo) {
+              <span [class.en-alerta]="e.bajo_minimo">{{ e.stock_minimo }}</span>
+            } @else {
+              <span class="sin-vigilar" matTooltip="Sin mínimo: esta prenda no avisa">—</span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let e" class="acciones">
+            <button
+              matIconButton
+              type="button"
+              matTooltip="Ajustar por conteo físico"
+              (click)="ajustar(e)"
+            >
+              <mat-icon>fact_check</mat-icon>
+            </button>
+            <button
+              matIconButton
+              type="button"
+              matTooltip="Fijar el punto de reposición"
+              (click)="fijarMinimo(e)"
+            >
+              <mat-icon>notifications_active</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr
+          mat-row
+          *matRowDef="let fila; columns: columnas"
+          [class.fila-alerta]="fila.bajo_minimo"
+        ></tr>
+      </table>
+    </div>
+  } @else {
+    <p class="vacio">
+      @if (existencias().length) {
+        Ninguna prenda coincide con la búsqueda.
+      } @else {
+        No hay existencias registradas en su sucursal todavía.
+      }
+    </p>
+  }
+</mat-card>
