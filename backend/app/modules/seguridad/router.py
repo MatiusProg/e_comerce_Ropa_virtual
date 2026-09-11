@@ -26,6 +26,7 @@ from app.modules.seguridad.schemas import (
     PaginaUsuarios,
     PerfilEditarIn,
     PerfilOut,
+    PreferenciasIn,
     RolOut,
     TokenOut,
     UsuarioAutenticadoOut,
@@ -315,6 +316,14 @@ def _traducir_perfil(error: service.ErrorDePerfil) -> HTTPException:
         return HTTPException(404, "Su cuenta no tiene una ficha de cliente asociada.")
     if isinstance(error, service.CiudadInexistente):
         return HTTPException(422, "La ciudad indicada no existe.")
+    if isinstance(error, service.CategoriaPreferidaInexistente):
+        # Excepcion E3: se nombran las que sobran para que la pantalla sepa
+        # cuales desmarcar.
+        return HTTPException(
+            422,
+            "Alguna de las categorías elegidas ya no está disponible: "
+            f"{', '.join(str(i) for i in error.ids)}. Actualice la lista y vuelva a guardar.",
+        )
     if isinstance(error, service.DireccionInexistente):
         return HTTPException(404, "La dirección indicada no existe.")
     if isinstance(error, service.ContrasenaActualIncorrecta):
@@ -347,6 +356,33 @@ def editar_perfil(datos: PerfilEditarIn, db: DbSession, usuario: Usuario) -> Per
         raise HTTPException(409, "Ya existe una cuenta con ese correo electrónico.")
     except service.DocumentoYaRegistrado:
         raise HTTPException(409, "Ya existe un cliente con ese documento.")
+    except service.ErrorDePerfil as error:
+        raise _traducir_perfil(error)
+
+
+@perfil_router.put(
+    "/categorias",
+    response_model=PerfilOut,
+    summary="CU-04 Guardar mis categorías preferidas",
+    responses={
+        422: {"description": "Alguna categoría no existe o está desactivada (excepción E3)."}
+    },
+)
+def guardar_preferencias(
+    datos: PreferenciasIn, db: DbSession, usuario: Usuario
+) -> PerfilOut:
+    """Paso 3d: las categorías que le interesan al Cliente.
+
+    Es `PUT` y no `PATCH` ni `POST`: se manda la **selección completa**, así que
+    la operación reemplaza el recurso entero y repetirla no cambia nada. Marcar
+    y desmarcar de a una dejaría estados intermedios, que es el mismo problema
+    que el reordenamiento de imágenes de CU-11.
+
+    Devuelve el perfil completo y no solo las preferencias, para que la pantalla
+    se refresque con una sola respuesta.
+    """
+    try:
+        return service.guardar_preferencias(db, usuario.id, datos)
     except service.ErrorDePerfil as error:
         raise _traducir_perfil(error)
 

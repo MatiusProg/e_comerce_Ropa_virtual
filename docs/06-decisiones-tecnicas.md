@@ -410,6 +410,25 @@ flujo se cumple.
 de [`docs/entregas/ciclo-2/00-organizacion-por-caso-de-uso.md`](entregas/ciclo-2/00-organizacion-por-caso-de-uso.md).
 Se cumplió lo previsto: el cambio fue aditivo y no hubo que rehacer nada del CU-04 del Ciclo 1.
 
+**Implementado el 11/09/2026.** Cuatro decisiones que se tomaron al construirlo y que no se deducen
+de la tabla:
+
+1. **Se guardan con `PUT` y la selección completa, no con altas y bajas sueltas.** Es el mismo
+   razonamiento que el reordenamiento de imágenes de CU-11: marcar y desmarcar de a una deja
+   estados intermedios, y una conexión que se corta a la mitad guarda medias preferencias. Mandar
+   la lista entera vuelve la operación idempotente y elimina el estado «a medio aplicar». La lista
+   vacía es válida y significa «ninguna».
+2. **Las opciones salen de `/tienda/filtros`, no del maestro de CU-08.** El maestro exige rol
+   Administrador —un Cliente recibiría 403— y además devolvería categorías sin una sola prenda:
+   una preferencia que no puede recomendar nada. El endpoint público de la vitrina ya devuelve
+   solo las categorías que el catálogo ofrece, que es exactamente el conjunto elegible.
+3. **Hay un tope de doce.** No es una restricción de la base —la tabla puente admite las que sean—
+   sino del caso de uso: el recomendador del CU-33 usa las preferencias para *acotar* candidatas, y
+   un cliente que marca las treinta categorías no acota nada. De paso ataja una petición con diez
+   mil identificadores.
+4. **Solo en web durante este ciclo.** Lo fijó la §2.1 de la contrapropuesta: la pantalla móvil del
+   CU-04 se construyó sin este bloque y lo suma después, si hay tiempo.
+
 ### 6.11.4 Quién puede listar las ciudades
 
 Al integrar el CU-04 con el CU-05 apareció un choque que ninguno de los dos podía ver por separado.

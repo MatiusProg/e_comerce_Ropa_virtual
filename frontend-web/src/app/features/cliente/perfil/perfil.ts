@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatChipsModule } from '@angular/material/chips';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -14,7 +15,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { AuthService } from '../../../core/services/auth.service';
 import { PerfilService, type ErrorPerfil } from '../../../core/services/perfil.service';
+import { TiendaService } from '../../../core/services/tienda.service';
 import {
+  PREFERENCIAS_MAXIMAS,
   TALLAS_CALZADO,
   TALLAS_INFERIOR,
   TALLAS_SUPERIOR,
@@ -22,6 +25,7 @@ import {
   type Perfil as PerfilModelo,
   type PerfilEditar,
 } from '../../../core/models/perfil.models';
+import type { CategoriaTienda } from '../../../core/models/tienda.models';
 import { Confirmacion, type DatosConfirmacion } from '../../../shared/confirmacion/confirmacion';
 import { CambioContrasenaDialogo } from './cambio-contrasena';
 import { DireccionFormulario, type DatosDireccion } from './direccion-formulario';
@@ -33,8 +37,15 @@ import { DireccionFormulario, type DatosDireccion } from './direccion-formulario
  * cliente nunca envía su identificador: el servidor lo resuelve desde el token,
  * de modo que la pantalla no tiene forma de pedir el perfil de otro.
  *
- * Las categorías preferidas del paso 2 quedan fuera del Ciclo 1: dependen de
- * CU-08. Ver §6.11.3 de `docs/06-decisiones-tecnicas.md`.
+ * **Las categorías preferidas se incorporan en el Ciclo 2.** Quedaron diferidas
+ * del Ciclo 1 porque dependían de CU-08, que entonces no creaba ninguna
+ * categoría que elegir; cierra la §6.11.3 de `docs/06-decisiones-tecnicas.md`.
+ *
+ * Las opciones salen de `/tienda/filtros`, que es público y devuelve **solo las
+ * categorías que el catálogo realmente ofrece**. No del maestro de CU-08, que
+ * exige rol Administrador —un Cliente recibiría 403— y que además dejaría
+ * elegir categorías sin una sola prenda: una preferencia que no puede
+ * recomendar nada.
  */
 @Component({
   selector: 'app-perfil',
@@ -42,6 +53,7 @@ import { DireccionFormulario, type DatosDireccion } from './direccion-formulario
     ReactiveFormsModule,
     MatButtonModule,
     MatCardModule,
+    MatChipsModule,
     MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
@@ -72,6 +84,25 @@ export class Perfil {
   protected readonly perfil = signal<PerfilModelo | null>(null);
   protected readonly direcciones = signal<Direccion[]>([]);
 
+  // --- Categorías preferidas (Ciclo 2) ---------------------------------
+  private readonly tienda = inject(TiendaService);
+  protected readonly maximoPreferencias = PREFERENCIAS_MAXIMAS;
+  protected readonly categorias = signal<CategoriaTienda[]>([]);
+  /** Los identificadores elegidos, en edición. Se confirman con «Guardar». */
+  protected readonly preferidas = signal<number[]>([]);
+  protected readonly guardandoPreferencias = signal(false);
+
+  /** Si la selección difiere de lo guardado. Sin esto, el botón invitaría a
+   *  guardar lo mismo que ya está. */
+  protected readonly preferenciasCambiadas = computed(() => {
+    const guardadas = new Set(
+      (this.perfil()?.categorias_preferidas ?? []).map((c) => c.id),
+    );
+    const elegidas = this.preferidas();
+    if (guardadas.size !== elegidas.length) return true;
+    return elegidas.some((id) => !guardadas.has(id));
+  });
+
   protected readonly iniciales = computed(() => {
     const u = this.usuario();
     if (!u) return '';
@@ -91,6 +122,64 @@ export class Perfil {
 
   constructor() {
     this.cargar();
+
+    this.tienda.obtenerFiltros().subscribe({
+      next: (filtros) => this.categorias.set(filtros.categorias),
+      // Perder las categorías cuesta el bloque de preferencias, no la pantalla.
+      error: () => this.categorias.set([]),
+    });
+  }
+
+  protected estaPreferida(id: number): boolean {
+    return this.preferidas().includes(id);
+  }
+
+  /** El tope está lleno y esta categoría no es una de las elegidas. */
+  protected topeAlcanzado(id: number): boolean {
+    return (
+      !this.estaPreferida(id) && this.preferidas().length >= this.maximoPreferencias
+    );
+  }
+
+  protected alternarPreferida(id: number): void {
+    const actuales = this.preferidas();
+    if (actuales.includes(id)) {
+      this.preferidas.set(actuales.filter((otro) => otro !== id));
+      return;
+    }
+    if (actuales.length >= this.maximoPreferencias) return;
+    this.preferidas.set([...actuales, id]);
+  }
+
+  /**
+   * Paso 3d: guarda la selección completa.
+   *
+   * Se manda la lista entera y no altas y bajas sueltas: la operación reemplaza
+   * el recurso, así que repetirla no cambia nada y no queda un estado a medio
+   * aplicar si la conexión se corta.
+   */
+  protected guardarPreferencias(): void {
+    this.guardandoPreferencias.set(true);
+    this.error.set(null);
+    this.api.guardarPreferencias(this.preferidas()).subscribe({
+      next: (p) => {
+        this.guardandoPreferencias.set(false);
+        this.perfil.set(p);
+        this.preferidas.set(p.categorias_preferidas.map((c) => c.id));
+        this.aviso.open('Preferencias guardadas.', 'Cerrar', { duration: 3500 });
+      },
+      error: (e: ErrorPerfil) => {
+        this.guardandoPreferencias.set(false);
+        this.error.set(e.mensaje);
+      },
+    });
+  }
+
+  /** Vuelve la selección a lo último guardado. */
+  protected descartarPreferencias(): void {
+    this.preferidas.set(
+      (this.perfil()?.categorias_preferidas ?? []).map((c) => c.id),
+    );
   }
 
   /** Pasos 1 y 2 del flujo principal. */
@@ -100,6 +189,7 @@ export class Perfil {
       next: (p) => {
         this.perfil.set(p);
         this.direcciones.set(p.direcciones);
+        this.preferidas.set(p.categorias_preferidas.map((c) => c.id));
         this.formulario.reset({
           nombres: p.nombres,
           apellidos: p.apellidos,

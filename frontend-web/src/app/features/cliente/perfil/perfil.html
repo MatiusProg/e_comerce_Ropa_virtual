@@ -168,6 +168,69 @@
       </div>
     </form>
 
+    <!-- Flujo alternativo 3d · categorías preferidas (Ciclo 2).
+         Fuera del formulario de datos personales: se guardan por separado
+         porque son un recurso propio y se reemplazan enteras. -->
+    <mat-card class="tarjeta vb-filete-superior" appearance="outlined">
+      <mat-card-header class="encabezado-tarjeta">
+        <mat-card-title class="titulo-seccion">
+          <mat-icon>favorite_border</mat-icon>
+          Lo que te interesa
+        </mat-card-title>
+        <mat-card-subtitle>
+          Elegí hasta {{ maximoPreferencias }} categorías y te vamos a
+          recomendar prendas de ésas.
+        </mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        @if (categorias().length === 0) {
+          <p class="vacio">
+            Todavía no hay categorías con prendas publicadas para elegir.
+          </p>
+        } @else {
+          <mat-chip-listbox class="preferencias" [multiple]="true">
+            @for (categoria of categorias(); track categoria.id) {
+              <mat-chip-option
+                [selected]="estaPreferida(categoria.id)"
+                [disabled]="topeAlcanzado(categoria.id)"
+                (click)="alternarPreferida(categoria.id)"
+                [matTooltip]="
+                  topeAlcanzado(categoria.id)
+                    ? 'Ya elegiste el máximo. Sacá una para agregar otra.'
+                    : ''
+                "
+              >
+                {{ categoria.nombre }}
+              </mat-chip-option>
+            }
+          </mat-chip-listbox>
+
+          <p class="conteo">
+            {{ preferidas().length }} de {{ maximoPreferencias }} elegidas
+          </p>
+
+          @if (preferenciasCambiadas()) {
+            <div class="acciones-formulario">
+              <button matButton type="button" (click)="descartarPreferencias()">
+                Descartar
+              </button>
+              <button
+                matButton="filled"
+                type="button"
+                class="vb-boton-marca"
+                [disabled]="guardandoPreferencias()"
+                (click)="guardarPreferencias()"
+              >
+                <mat-icon>save</mat-icon>
+                Guardar preferencias
+              </button>
+            </div>
+          }
+        }
+      </mat-card-content>
+    </mat-card>
+
     <!-- Flujos alternativos 3a y 3b. -->
     <mat-card class="tarjeta vb-filete-superior" appearance="outlined">
       <mat-card-header class="encabezado-tarjeta">

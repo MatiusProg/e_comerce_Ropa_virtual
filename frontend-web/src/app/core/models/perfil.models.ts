@@ -22,6 +22,17 @@ export interface Direccion {
  * Las categorías preferidas que menciona ese paso quedan fuera del Ciclo 1:
  * dependen de CU-08. Ver §6.11.3 de `docs/06-decisiones-tecnicas.md`.
  */
+/**
+ * Una categoría marcada como preferida (Ciclo 2).
+ *
+ * Viaja con el nombre resuelto para poder dibujar las elegidas sin volver a
+ * pedir el maestro.
+ */
+export interface CategoriaPreferida {
+  id: number;
+  nombre: string;
+}
+
 export interface Perfil {
   nombres: string;
   apellidos: string;
@@ -32,7 +43,13 @@ export interface Perfil {
   talla_inferior: string | null;
   talla_calzado: string | null;
   direcciones: Direccion[];
+  /** Diferidas del Ciclo 1: dependían de que CU-08 creara categorías. */
+  categorias_preferidas: CategoriaPreferida[];
 }
+
+/** Tope de categorías preferidas. Lo impone el backend; se repite acá para
+ *  poder avisar antes de gastar una llamada. */
+export const PREFERENCIAS_MAXIMAS = 12;
 
 /**
  * Cuerpo de PATCH /perfil — pasos 3 a 5.

@@ -15,6 +15,10 @@ from datetime import date, datetime, timezone
 from sqlalchemy import Row, func, or_, select, update
 from sqlalchemy.orm import Session, joinedload
 
+# `Categoria` es de P3. La dependencia P1 -> P3 para el catalogo de
+# preferencias del cliente ya esta declarada en la seccion 2 de
+# docs/04-analisis-arquitectura.md.
+from app.modules.catalogo.models import Categoria
 from app.modules.organizacion.models import Ciudad, Empleado, Proveedor, Sucursal
 from app.modules.seguridad.models import (
     Cliente,
@@ -438,3 +442,40 @@ def eliminar_direccion(db: Session, direccion: DireccionCliente) -> None:
     """
     db.delete(direccion)
     db.flush()
+
+
+# --- CU-04 · categorias preferidas ---------------------------------------
+# Lee `categoria`, que es tabla de P3. Es una dependencia permitida: la seccion
+# 2 de docs/04-analisis-arquitectura.md ya declara que P1 depende de P3 para el
+# catalogo de preferencias del cliente.
+
+def categorias_activas(db: Session, ids: list[int]) -> list[Categoria]:
+    """Las categorias activas de entre las pedidas, en el orden del maestro.
+
+    Devuelve solo las que existen y estan activas; comparar la cantidad con la
+    pedida es lo que le permite al servicio detectar cual sobra sin hacer una
+    consulta por identificador.
+    """
+    if not ids:
+        return []
+    return list(
+        db.scalars(
+            select(Categoria)
+            .where(Categoria.id.in_(ids), Categoria.activa.is_(True))
+            .order_by(Categoria.orden, Categoria.nombre)
+        )
+    )
+
+
+def reemplazar_categorias_preferidas(
+    db: Session, cliente: Cliente, categorias: list[Categoria]
+) -> None:
+    """Deja las preferidas del cliente exactamente en `categorias`.
+
+    Se asigna la coleccion entera en vez de calcular altas y bajas: SQLAlchemy
+    resuelve el diff sobre la tabla puente, y hacerlo a mano seria reescribir esa
+    logica con mas lugares donde equivocarse.
+    """
+    cliente.categorias_preferidas = categorias
+    db.flush()
+

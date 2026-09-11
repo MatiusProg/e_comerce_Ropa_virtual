@@ -29,8 +29,10 @@ from app.modules.seguridad.schemas import (
     DireccionOut,
     LoginIn,
     PaginaUsuarios,
+    CategoriaPreferidaOut,
     PerfilEditarIn,
     PerfilOut,
+    PreferenciasIn,
     RolOut,
     TokenOut,
     UsuarioAutenticadoOut,
@@ -549,6 +551,20 @@ class PerfilInexistente(ErrorDePerfil):
     """
 
 
+class CategoriaPreferidaInexistente(ErrorDePerfil):
+    """Excepcion E3 de CU-04: una categoria elegida no existe o esta desactivada.
+
+    Lleva los identificadores que sobran para que el mensaje pueda nombrarlos:
+    la pantalla del cliente puede tener el arbol cargado desde antes de que el
+    Administrador desactivara una rama, y decirle solo «hay un error» lo deja
+    sin saber cual desmarcar.
+    """
+
+    def __init__(self, ids: list[int]) -> None:
+        self.ids = ids
+        super().__init__(", ".join(str(i) for i in ids))
+
+
 class CiudadInexistente(ErrorDePerfil):
     """La ciudad indicada para la direccion no existe."""
 
@@ -595,7 +611,39 @@ def obtener_perfil(db: Session, usuario_id: int) -> PerfilOut:
         talla_inferior=cliente.talla_inferior,
         talla_calzado=cliente.talla_calzado,
         direcciones=_direcciones(db, cliente.id),
+        categorias_preferidas=[
+            CategoriaPreferidaOut.model_validate(c, from_attributes=True)
+            for c in cliente.categorias_preferidas
+        ],
     )
+
+
+def guardar_preferencias(
+    db: Session, usuario_id: int, datos: PreferenciasIn
+) -> PerfilOut:
+    """Paso 3d: reemplaza las categorias preferidas del Cliente.
+
+    Recibe la seleccion completa, no altas y bajas: la operacion es idempotente
+    y no existe el estado «a medio aplicar». Ver la docstring de PreferenciasIn.
+
+    La lista vacia es valida y significa «ninguna»: es como el cliente deja de
+    recibir recomendaciones sesgadas por una preferencia que ya no tiene.
+    """
+    cliente = _cliente_del_usuario(db, usuario_id)
+
+    categorias = repository.categorias_activas(db, datos.categorias)
+
+    # Excepcion E3. Se compara por conjunto y no por cantidad: pedir dos veces
+    # la misma categoria ya lo resolvio el esquema, pero pedir una que existe y
+    # otra que no daria la misma cantidad si ademas se repitiera alguna.
+    encontradas = {c.id for c in categorias}
+    faltantes = [i for i in datos.categorias if i not in encontradas]
+    if faltantes:
+        raise CategoriaPreferidaInexistente(faltantes)
+
+    repository.reemplazar_categorias_preferidas(db, cliente, categorias)
+    db.commit()
+    return obtener_perfil(db, usuario_id)
 
 
 def editar_perfil(db: Session, usuario_id: int, datos: PerfilEditarIn) -> PerfilOut:

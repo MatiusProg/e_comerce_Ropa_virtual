@@ -305,12 +305,27 @@ class DireccionOut(BaseModel):
     predeterminada: bool
 
 
+class CategoriaPreferidaOut(BaseModel):
+    """Una categoria marcada como preferida por el Cliente.
+
+    Viaja con su nombre resuelto y no solo con el identificador: la pantalla
+    tiene que poder dibujar las elegidas sin volver a pedir el maestro, y la app
+    movil las muestra en una lista donde «categoria 7» no dice nada.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nombre: str
+
+
 class PerfilOut(BaseModel):
     """El perfil completo que muestra el paso 2 del flujo principal.
 
-    Las categorias preferidas que menciona ese paso quedan fuera del Ciclo 1:
-    dependen de CU-08, que todavia no crea ninguna categoria. Ver la seccion
-    6.11.3 de docs/06-decisiones-tecnicas.md.
+    Las **categorias preferidas** se incorporan en el Ciclo 2: quedaron
+    diferidas del Ciclo 1 porque dependen de CU-08, que entonces no creaba
+    ninguna categoria que elegir. Cierra la seccion 6.11.3 de
+    docs/06-decisiones-tecnicas.md.
     """
 
     nombres: str
@@ -322,6 +337,48 @@ class PerfilOut(BaseModel):
     talla_inferior: str | None
     talla_calzado: str | None
     direcciones: list[DireccionOut]
+    categorias_preferidas: list[CategoriaPreferidaOut] = []
+
+
+#: Tope de categorias preferidas por cliente.
+#:
+#: No es una restriccion de la base --- la tabla puente admite las que sean ---
+#: sino del caso de uso. Una preferencia que abarca todo el catalogo no es una
+#: preferencia: el recomendador del CU-33 la usa para acotar candidatas, y si el
+#: cliente marca las treinta categorias no acota nada. Doce es holgado para
+#: elegir de verdad y ataja de paso una peticion con diez mil identificadores.
+PREFERENCIAS_MAXIMAS = 12
+
+
+class PreferenciasIn(BaseModel):
+    """Las categorias preferidas, completas (paso 3d).
+
+    Se envia **la lista entera y no altas y bajas sueltas**, por el mismo motivo
+    que el reordenamiento de imagenes de CU-11: marcar y desmarcar de a una deja
+    estados intermedios, y una conexion que se corta a la mitad guarda medias
+    preferencias. Mandar la seleccion completa hace que la operacion sea
+    idempotente --- repetirla no cambia nada --- y que no exista un «a medio
+    aplicar».
+
+    La lista vacia es valida y significa «no quiero ninguna».
+    """
+
+    categorias: list[int] = Field(default_factory=list, max_length=PREFERENCIAS_MAXIMAS)
+
+    @field_validator("categorias")
+    @classmethod
+    def _sin_repetidas(cls, valores: list[int]) -> list[int]:
+        """Duplicados fuera, en silencio.
+
+        Es un conjunto, no una lista: la clave primaria compuesta de
+        `cliente_categoria` ya lo impone, y fallar por algo que la interfaz
+        puede mandar dos veces sin querer seria ruido, no una validacion.
+        """
+        vistas: list[int] = []
+        for valor in valores:
+            if valor not in vistas:
+                vistas.append(valor)
+        return vistas
 
 
 class PerfilEditarIn(BaseModel):
