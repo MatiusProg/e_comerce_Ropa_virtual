@@ -112,9 +112,35 @@ prepararse durante el Ciclo 2, junto con la carga del catálogo, antes de que em
 
 ## 6.6 Inteligencia artificial
 
-**Servicio elegido:** API de Claude (Anthropic), consumida desde el backend con el SDK oficial de
-Python (`anthropic`). Modelo por defecto: **`claude-opus-5`**; `claude-sonnet-5` como alternativa
-de menor costo para el recomendador si el consumo lo exige.
+**Servicio elegido:** **API de Gemini (Google AI Studio), en su plan gratuito**, consumida desde el
+backend con el SDK oficial de Python de Google. *(Decidido el 11/09/2026. Sustituye a la elección
+original de la API de Claude.)*
+
+**Por qué se cambió.** El 04/09 se decidió que el modelo tiene que ser **gratuito, sin costo por
+uso**: el riesgo **R9** es quedarse sin crédito antes de la defensa del 22/09, y una demostración en
+vivo que se corta por cuota agotada cuesta más que cualquier diferencia de calidad entre modelos.
+Esta sección siguió diciendo «Claude Opus» durante una semana, que es de pago por *token*, y la
+contradicción quedó señalada en la §2.5 de la contrapropuesta del Ciclo 2 y en la §6 del análisis de
+alcance. Se cierra acá.
+
+**Por qué Gemini y no DeepSeek, que era el otro candidato.** El criterio eliminatorio estaba escrito
+de antemano y es uno solo: **uso de herramientas fiable**. El CU-34 y el CU-35 están diseñados sobre
+funciones declaradas —`buscar_productos`, `consultar_disponibilidad`, `generar_reporte`…— y no sobre
+generación de SQL; un proveedor que no las soporte bien obliga a rediseñar dos casos de uso. Gemini
+declara *function calling* como parte de su API, tiene plan gratuito en AI Studio y SDK de Python
+mantenido por Google.
+
+**Lo que hay que verificar al construir P10, no ahora:** los planes gratuitos cambian de condiciones
+y no se dan por sabidos. Antes de escribir el primer caso de uso de IA se comprueban, en ese momento,
+el límite de peticiones del plan gratuito y que el *function calling* responda de forma estable con
+las herramientas reales del sistema. Si alguno de los dos falla, la degradación del punto 3 del CU-33
+—recomendador determinista por SQL, sin modelo— sigue siendo la red de seguridad y el proyecto no se
+cae.
+
+**Una interfaz entre el sistema y el proveedor.** P10 declara una sola función
+—`completar(mensajes, herramientas)`— y todo el resto del sistema habla con ella. Cambiar de modelo
+tiene que ser cambiar una clase, no reescribir tres casos de uso; esta sección ya se reescribió una
+vez y conviene no depender de que no vuelva a pasar.
 
 **Principio de diseño (ver D6 en §4.2.1):** la IA nunca es fuente de verdad. Toda respuesta que
 involucre precios, existencias o estados se construye a partir de datos consultados en la base de
@@ -170,6 +196,9 @@ lectura, no calcula los valores.
   completo.
 - Las claves de la API residen en variables de entorno del servidor; **el cliente web y la app
   móvil nunca llaman al servicio de IA directamente**.
+- Las variables son **`IA_PROVEEDOR`, `IA_API_KEY` e `IA_MODELO`**, sin el nombre del proveedor
+  adentro: con `ANTHROPIC_API_KEY` en el `.env`, cambiar de modelo obligaba a tocar el despliegue
+  además del código.
 
 ## 6.7 Pasarela de pago
 
