@@ -28,6 +28,25 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/registro/registro').then((m) => m.Registro),
   },
 
+  // --- Ciclo 2 · Karen · La vitrina, también sin sesión ------------------
+  // CU-17 y CU-18 son públicos a propósito: el flujo principal no tiene
+  // precondición de sesión y el RF07 pide que el cliente consulte el catálogo
+  // desde la web y el móvil. Exigir token obligaría a registrarse para mirar
+  // una prenda. Lo que se ofrece ya está acotado en el servidor —solo producto
+  // activo con variantes activas— y los esquemas públicos no exponen proveedor
+  // ni precio base.
+  {
+    path: 'tienda',
+    title: 'Catálogo · Violet Boutique',
+    loadComponent: () =>
+      import('./features/tienda/catalogo/catalogo').then((m) => m.Catalogo),
+  },
+  {
+    path: 'tienda/producto/:id',
+    title: 'Prenda · Violet Boutique',
+    loadComponent: () => import('./features/tienda/ficha/ficha').then((m) => m.Ficha),
+  },
+
   // --- Con sesión, una por rol ------------------------------------------
   {
     path: 'admin',
@@ -92,6 +111,14 @@ export const routes: Routes = [
         title: 'Productos · Violet Boutique',
         loadComponent: () =>
           import('./features/admin/productos/productos').then((m) => m.Productos),
+      },
+      {
+        // CU-14. Ruta aparte de `inventario`, que es de CU-13 y CU-15: aquélla
+        // sirve para operar sobre una tienda y ésta para mirar la red entera.
+        path: 'consolidado',
+        title: 'Inventario consolidado · Violet Boutique',
+        loadComponent: () =>
+          import('./features/admin/consolidado/consolidado').then((m) => m.Consolidado),
       },
       // --- Ciclo 2 · P4 Inventario (CU-13, CU-15) ---
       {
