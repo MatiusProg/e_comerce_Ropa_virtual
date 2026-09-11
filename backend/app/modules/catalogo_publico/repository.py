@@ -22,9 +22,10 @@ de que la variante sea ofrecible, que se hace sobre tablas de P3.
 """
 from decimal import Decimal
 
-from sqlalchemy import Select, and_, exists, func, or_, select
+from sqlalchemy import Select, and_, delete, exists, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
+from app.modules.catalogo_publico.models import Favorito
 from app.modules.catalogo.models import (
     Categoria,
     Coleccion,
@@ -508,3 +509,107 @@ def extremos_de_precio(db: Session) -> tuple[Decimal | None, Decimal | None]:
         .where(VarianteProducto.activa.is_(True), Producto.activo.is_(True))
     ).one()
     return fila[0], fila[1]
+
+
+# --- CU-20 · Favoritos ----------------------------------------------------
+
+def ids_de_favoritos(db: Session, cliente_id: int) -> list[int]:
+    """Los identificadores de producto que el cliente marco.
+
+    Se devuelve la lista pelada y no las tarjetas: es lo que la vitrina necesita
+    para pintar los corazones, y traer el producto entero de cada uno solo para
+    saber cuales estan marcados seria pedir de mas.
+    """
+    return list(
+        db.scalars(
+            select(Favorito.producto_id).where(Favorito.cliente_id == cliente_id)
+        )
+    )
+
+
+def es_favorito(db: Session, cliente_id: int, producto_id: int) -> bool:
+    return (
+        db.scalar(
+            select(Favorito.producto_id).where(
+                Favorito.cliente_id == cliente_id,
+                Favorito.producto_id == producto_id,
+            )
+        )
+        is not None
+    )
+
+
+def agregar_favorito(db: Session, cliente_id: int, producto_id: int) -> None:
+    """Marca la prenda. Si ya estaba, no hace nada.
+
+    La comprobacion previa evita chocar contra la clave primaria compuesta; la
+    clave sigue siendo la garantia de que no se duplique, pero preguntar antes
+    convierte un error de base en una operacion idempotente, que es lo que el
+    endpoint promete.
+    """
+    if es_favorito(db, cliente_id, producto_id):
+        return
+    db.add(Favorito(cliente_id=cliente_id, producto_id=producto_id))
+    db.flush()
+
+
+def quitar_favorito(db: Session, cliente_id: int, producto_id: int) -> None:
+    """Desmarca la prenda. Si no estaba, no hace nada: tambien es idempotente."""
+    db.execute(
+        delete(Favorito).where(
+            Favorito.cliente_id == cliente_id, Favorito.producto_id == producto_id
+        )
+    )
+    db.flush()
+
+
+def _favoritos_ofrecibles(cliente_id: int):
+    """La condicion del listado de favoritos.
+
+    Solo se listan los que **siguen siendo ofrecibles**: producto activo y con
+    al menos una variante activa, igual que en la vitrina. La fila del favorito
+    NO se borra cuando el producto se desactiva --- es historial de preferencia
+    y el recomendador del CU-33 lo usa (RF31) --- pero mostrarlo seria ofrecer
+    algo que no se puede comprar.
+    """
+    return (
+        select(Producto)
+        .join(Favorito, Favorito.producto_id == Producto.id)
+        .where(
+            Favorito.cliente_id == cliente_id,
+            Producto.activo.is_(True),
+            exists(select(VarianteProducto.id).where(_variante_ofrecible())),
+        )
+    )
+
+
+def contar_favoritos(db: Session, cliente_id: int) -> int:
+    return (
+        db.scalar(
+            select(func.count()).select_from(
+                _favoritos_ofrecibles(cliente_id).subquery()
+            )
+        )
+        or 0
+    )
+
+
+def listar_favoritos(
+    db: Session, cliente_id: int, *, limite: int, desplazamiento: int
+) -> list[Producto]:
+    """Una pagina de favoritos, lo ultimo marcado primero.
+
+    El orden es por `creado_en` descendente y desempata por `id`: sin desempate,
+    dos prendas marcadas en el mismo instante --- que es posible, porque el
+    `server_default` es `now()` y dos altas en la misma transaccion comparten
+    marca --- podrian salir en distinto orden entre dos paginas.
+    """
+    return list(
+        db.scalars(
+            _favoritos_ofrecibles(cliente_id)
+            .order_by(Favorito.creado_en.desc(), Producto.id.desc())
+            .limit(limite)
+            .offset(desplazamiento)
+        )
+    )
+

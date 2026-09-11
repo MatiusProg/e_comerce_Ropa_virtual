@@ -1,0 +1,97 @@
+<!-- CU-20 · Gestionar favoritos — «boundary» PantallaFavoritos. -->
+<header class="encabezado">
+  <div>
+    <h1 class="vb-titulo">Mis favoritos</h1>
+    <p class="bajada">
+      Las prendas que guardaste, lo último primero. Si una deja de ofrecerse,
+      sale de la lista.
+    </p>
+  </div>
+  <a matButton routerLink="/tienda" class="acceso">
+    <mat-icon>storefront</mat-icon>
+    Ir al catálogo
+  </a>
+</header>
+
+<mat-card class="panel vb-filete-superior" appearance="outlined">
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  @if (error(); as mensaje) {
+    <p class="aviso error">
+      <mat-icon>error_outline</mat-icon>
+      {{ mensaje }}
+    </p>
+  } @else if (pagina(); as resultado) {
+    @if (resultado.items.length === 0) {
+      <div class="aviso vacio">
+        <mat-icon>favorite_border</mat-icon>
+        <p>Todavía no guardaste ninguna prenda.</p>
+        <a matButton="filled" routerLink="/tienda" class="vb-boton-marca">
+          Buscar prendas
+        </a>
+      </div>
+    } @else {
+      <div class="vitrina">
+        @for (producto of resultado.items; track producto.id) {
+          <article class="tarjeta" (click)="abrir(producto)">
+            <div class="foto">
+              @if (foto(producto); as url) {
+                <img [src]="url" [alt]="producto.nombre" loading="lazy" />
+              } @else {
+                <div class="sin-foto">
+                  <mat-icon>checkroom</mat-icon>
+                </div>
+              }
+              @if (producto.tiene_vestidor) {
+                <span
+                  class="insignia"
+                  matTooltip="Puede probarse en el vestidor virtual desde la app móvil"
+                >
+                  <mat-icon>view_in_ar</mat-icon>
+                  Vestidor virtual
+                </span>
+              }
+              <button
+                type="button"
+                class="corazon marcado"
+                (click)="quitar(producto, $event)"
+                matTooltip="Quitar de favoritos"
+                aria-label="Quitar de favoritos"
+              >
+                <mat-icon>favorite</mat-icon>
+              </button>
+            </div>
+
+            <div class="cuerpo">
+              <p class="categoria">{{ producto.categoria_nombre }}</p>
+              <h2 class="nombre">{{ producto.nombre }}</h2>
+              <p class="precio">{{ precio(producto) }}</p>
+
+              @if (producto.colores.length) {
+                <div class="colores">
+                  @for (color of producto.colores; track color.id) {
+                    <span
+                      class="muestra"
+                      [style.background]="color.hexadecimal"
+                      [matTooltip]="color.nombre"
+                    ></span>
+                  }
+                </div>
+              }
+            </div>
+          </article>
+        }
+      </div>
+
+      <mat-paginator
+        [length]="resultado.total"
+        [pageIndex]="resultado.pagina - 1"
+        [pageSize]="resultado.tamano"
+        [pageSizeOptions]="[12, 24, 48]"
+        (page)="paginar($event)"
+      />
+    }
+  }
+</mat-card>

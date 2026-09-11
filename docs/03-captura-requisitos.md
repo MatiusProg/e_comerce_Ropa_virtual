@@ -81,6 +81,29 @@ disponibilidad); el ciclo de órdenes de compra queda fuera del alcance —ver �
 | CU-35 | Generar reporte por comando de voz | Permite al Administrador solicitar un reporte en lenguaje natural mediante comando de voz; el sistema interpreta la solicitud, consulta los datos y devuelve el reporte generado, con opción de descarga. |
 | CU-36 | Consultar tablero de indicadores | Permite al Administrador visualizar los KPIs del negocio en tiempo real: ventas del día y del mes, ticket promedio, reservas pendientes y atendidas, conversión de reserva a venta, productos más vendidos y stock crítico. |
 | CU-37 | Generar reportes de gestión | Permite al Administrador y al Encargado generar y descargar en PDF y Excel los reportes de ventas, inventario, movimientos, reservas, rendimiento por temporada/colección y compras por proveedor. |
+| CU-38 | Registrar productos del proveedor | Permite al Proveedor registrar o enviar la información de los productos que abastece y asociarlos a una temporada y una colección, con alcance limitado a los suyos. |
+| CU-39 | Informar disponibilidad y plazo de abastecimiento | Permite al Proveedor informar qué productos puede abastecer y en qué plazo, alimentando el estado *próximo a ingresar* del inventario consolidado. |
+| CU-40 | Notificar eventos a los usuarios | El Sistema avisa a quien corresponda cuando ocurre un hecho que requiere su atención: una reserva dirigida a su sucursal, una reserva preparada para el cliente, un pedido pagado y una alerta de stock bajo. |
+| CU-41 | Recuperar contraseña | Permite a cualquier usuario recuperar el acceso a su cuenta mediante un enlace de un solo uso enviado a su correo, sin intervención del Administrador. |
+
+> **Los casos de uso CU-38 a CU-41 son un refinamiento del Ciclo 2.** La lista original de treinta y
+> siete se entregó en la Presentación #1. Al construir el Ciclo 2 aparecieron tres carencias de
+> cobertura que no eran de granularidad sino de funcionalidad ausente, y se incorporaron como
+> refinamiento —que es lo que el PUDS predice: los requisitos se precisan ciclo a ciclo a medida que
+> el sistema se construye—. El análisis que los justifica, con la evidencia de cada uno, está en
+> [`entregas/ciclo-2/02-analisis-de-alcance-y-vestidor-virtual.md`](entregas/ciclo-2/02-analisis-de-alcance-y-vestidor-virtual.md)
+> y la respuesta que los acepta, en
+> [`entregas/ciclo-2/03-respuesta-de-mateo-al-analisis.md`](entregas/ciclo-2/03-respuesta-de-mateo-al-analisis.md).
+>
+> En síntesis: el actor **Proveedor** figuraba entre los actores principales del enunciado con tres
+> responsabilidades y **no iniciaba ningún caso de uso** (CU-38 y CU-39); el **RF11** exigía
+> notificar las reservas a la sucursal y ningún caso de uso notificaba —lo que había era consulta—
+> (CU-40); y una plataforma con clientes autorregistrados **no tenía recuperación de contraseña**
+> (CU-41).
+>
+> **Los numeran a continuación y no se renumera nada.** CU-01 a CU-37 conservan su código: están
+> citados en la priorización, en la trazabilidad, en la matriz paquete–caso de uso, en los diagramas
+> y en el historial del repositorio.
 
 ## 3.2 Priorizar los casos de uso
 
@@ -127,6 +150,10 @@ casos de uso; **Media** = necesaria para completar la funcionalidad exigida pero
 | CU-35 | Generar reporte por comando de voz | Media | 3 | Inteligencia Artificial |
 | CU-36 | Consultar tablero de indicadores | Alta | 3 | Reportes |
 | CU-37 | Generar reportes de gestión | Alta | 3 | Reportes |
+| CU-38 | Registrar productos del proveedor | Media | 3 | Organización |
+| CU-39 | Informar disponibilidad y plazo de abastecimiento | Media | 3 | Inventario |
+| CU-40 | Notificar eventos a los usuarios | Media | 3 | Reservas / Ventas |
+| CU-41 | Recuperar contraseña | Media | 3 | Seguridad |
 
 ### Distribución por ciclos
 
@@ -152,8 +179,8 @@ sucursales, la imposibilidad del cliente de conocer la disponibilidad por talla,
 antes de acudir a la tienda, la falta de trazabilidad de los movimientos de mercadería, el
 desbalance de stock entre sucursales y la ausencia de un mecanismo de reserva anticipada.
 
-**CICLO 3 — Comercio, experiencia e inteligencia (15 casos de uso: CU-12, CU-20, CU-21, CU-26 a
-CU-37).** Presentación final, 20/09.
+**CICLO 3 — Comercio, experiencia e inteligencia (19 casos de uso: CU-12, CU-20, CU-21, CU-26 a
+CU-37 y CU-38 a CU-41).** Presentación final, 20/09.
 Promociones, favoritos, **vestidor virtual con realidad aumentada**, carrito y **venta digital con
 pasarela de pago**, **punto de venta presencial**, **inteligencia artificial** (recomendador,
 asistente conversacional y reportes por comando de voz) y el **tablero de indicadores** con los
@@ -166,7 +193,7 @@ manualmente y con días de retraso, y la nula personalización de la oferta.
 |---|---|:---:|:---:|---|
 | 1 | 05/09 | 4 | 9 | Fundamentos — CRUD y autenticación |
 | 2 | 13/09 | 8 | 13 | Núcleo — reglas de negocio del inventario y las reservas |
-| 3 | 20/09 | 7 | 15 | Diferenciadores — RA, IA, pagos, POS y reportes |
+| 3 | 20/09 | 7 | 19 | Diferenciadores — RA, IA, pagos, POS y reportes, más los cuatro del refinamiento |
 
 > **Advertencia sobre el Ciclo 3.** Es el más cargado y contiene lo técnicamente más incierto
 > (realidad aumentada, integración de pagos, IA). Dos mitigaciones están previstas en el plan: los
@@ -193,7 +220,7 @@ original. La última columna traza cada requisito con los casos de uso que lo re
 | **RF08** | El cliente deberá poder consultar disponibilidad por sucursal. | CU-19 |
 | **RF09** | El cliente deberá poder seleccionar múltiples prendas para una reserva. | CU-22 |
 | **RF10** | El sistema deberá registrar y gestionar reservas. | CU-22, CU-23, CU-24, CU-25 |
-| **RF11** | El sistema deberá notificar las reservas a la sucursal correspondiente. | CU-22, CU-24 |
+| **RF11** | El sistema deberá notificar las reservas a la sucursal correspondiente. | CU-22, CU-24, **CU-40** |
 | **RF12** | El sistema deberá permitir consultar el estado de una reserva. | CU-23, CU-24 |
 | **RF13** | La aplicación móvil deberá permitir utilizar el vestidor virtual. | CU-21 |
 | **RF14** | El cliente deberá poder agregar productos al carrito. | CU-26 |
@@ -211,6 +238,11 @@ original. La última columna traza cada requisito con los casos de uso que lo re
 
 **Cobertura:** los veinticinco requisitos funcionales del enunciado quedan cubiertos por al menos
 un caso de uso.
+
+> **Corrección del Ciclo 2 sobre el RF11.** Hasta el refinamiento, este requisito estaba trazado a
+> CU-22 y CU-24, que es donde la reserva **aparece en la lista** del Encargado cuando entra a
+> mirarla. Eso es consulta, no notificación: nada salía a buscar al destinatario. **CU-40** es el
+> que lo realiza de verdad, y por eso se agrega a la traza.
 
 ### 3.3.2 Requisitos funcionales adicionales del equipo
 
@@ -231,6 +263,9 @@ adicionales numerados a continuación de los originales.
 | **RF34** | El cajero deberá poder registrar devoluciones de prendas vendidas, reingresándolas al inventario. | CU-32 | El OE-11 exige actualizar el inventario tras *devoluciones*, operación que ningún RF define. |
 | **RF35** | El sistema deberá permitir gestionar promociones y descuentos con vigencia, aplicables a un producto, una categoría o una temporada. | CU-12 | El enunciado incluye "gestionar promociones" entre las funciones del Administrador (§4), pero no lo formula como RF. |
 | **RF36** | El sistema deberá permitir exportar los reportes en formato PDF y Excel. | CU-37 | El RF24 exige consultar reportes; la exportación es lo que los vuelve utilizables fuera del sistema. |
+| **RF37** | El proveedor deberá poder registrar la información de los productos que abastece y asociarlos a una temporada y una colección. | CU-38 | El enunciado (§4) le da al Proveedor tres responsabilidades y ningún RF las recoge. Sin esto, A5 es un actor principal que no inicia nada. |
+| **RF38** | El proveedor deberá poder informar la disponibilidad y el plazo de abastecimiento de sus productos, alimentando el estado *próximo a ingresar* del inventario consolidado. | CU-39 | El enunciado exige distinguir la mercadería «próxima a ingresar» y ningún caso de uso la produce: el CU-13 registra lo que **ya llegó**. Sin esto, ese estado es inalcanzable. |
+| **RF39** | El sistema deberá permitir a un usuario recuperar el acceso a su cuenta mediante un enlace de un solo uso enviado a su correo. | CU-41 | El RF01 permite autorregistrarse; nada permite volver a entrar tras olvidar la contraseña, salvo pedírselo al Administrador. |
 
 ## 3.4 Requisitos no funcionales
 

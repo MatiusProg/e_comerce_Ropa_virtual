@@ -45,6 +45,7 @@ MODULOS_CON_ROUTER = (
     "app.modules.inventario.router",
     "app.modules.inventario.consolidado_router",
     "app.modules.catalogo_publico.router",
+    "app.modules.catalogo_publico.favoritos_router",
 )
 
 

@@ -25,7 +25,7 @@ from app.modules.catalogo import models as _catalogo_models  # noqa: F401
 
 # Ciclo 2 - descomentar al implementarlos
 from app.modules.inventario import models as _inventario_models  # noqa: F401
-# from app.modules.catalogo_publico import models as _cat_pub_models  # noqa: F401
+from app.modules.catalogo_publico import models as _cat_pub_models  # noqa: F401
 from app.modules.reservas import models as _reservas_models  # noqa: F401
 
 # Ciclo 3 - descomentar al implementarlos
