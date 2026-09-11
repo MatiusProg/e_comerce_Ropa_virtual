@@ -119,8 +119,13 @@ Rol **Administrador**, declarado una sola vez en `mantenimiento_router`.
 
 ## Pantallas
 
-Ninguna. El actor es el Sistema. La tabla de la §2.2 del acuerdo ya lo anota así: «— (tarea
-programada)».
+Ninguna propia: el actor es el Sistema, y la tabla de la §2.2 del acuerdo ya lo anota así
+—«— (tarea programada)»—.
+
+Sí hay un **disparador manual** en `/admin/reservas`, visible solo para el Administrador. No es una
+pantalla del caso de uso: es la forma de mostrar el efecto en vivo en la defensa, y de correrlo si
+el planificador falla. El resultado se informa con lo que hizo —cuántas expiró y cuántas unidades
+devolvió— y no con un «listo».
 
 ## Pruebas
 

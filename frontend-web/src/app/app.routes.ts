@@ -127,7 +127,31 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/admin/inventario/inventario').then((m) => m.Inventario),
       },
+      // --- Ciclo 2 · P6 Reservas (CU-24, CU-25) ---
+      // Misma pantalla que la del Encargado: el alcance lo decide el servidor
+      // con el ambito del token, y el disparador de la expiracion (CU-25) solo
+      // aparece para el Administrador.
+      {
+        path: 'reservas',
+        title: 'Reservas · Violet Boutique',
+        loadComponent: () =>
+          import('./features/sucursal/reservas/reservas-sucursal').then(
+            (m) => m.ReservasSucursal,
+          ),
+      },
     ],
+  },
+  // --- Ciclo 2 · P6 Reservas del Cliente (CU-22, CU-23) ---
+  //
+  // ANTES de 'mi-cuenta' a proposito: esa ruta no declara hijos, asi que si
+  // quedara primero consumiria el prefijo y esta no se resolveria nunca. Mismo
+  // caso que 'sucursal/...' mas abajo.
+  {
+    path: 'mi-cuenta/reservas',
+    title: 'Mis reservas · Violet Boutique',
+    canActivate: [sesionGuard, rolGuard('CLIENTE')],
+    loadComponent: () =>
+      import('./features/cliente/reservas/reservas').then((m) => m.Reservas),
   },
   {
     path: 'mi-cuenta',
@@ -149,6 +173,17 @@ export const routes: Routes = [
   // `inventario` reusa la pantalla del Administrador para que el Encargado
   // registre sus ingresos (CU-13) y lea su historial. El alcance no lo decide
   // la ruta sino el servidor: el ámbito viaja en el token.
+  // CU-24: el panel de reservas del local. El Administrador entra por
+  // /admin/reservas con alcance a toda la red.
+  {
+    path: 'sucursal/reservas',
+    title: 'Reservas de la sucursal · Violet Boutique',
+    canActivate: [sesionGuard, rolGuard('ENCARGADO')],
+    loadComponent: () =>
+      import('./features/sucursal/reservas/reservas-sucursal').then(
+        (m) => m.ReservasSucursal,
+      ),
+  },
   {
     path: 'sucursal/disponibilidad',
     title: 'Disponibilidad · Violet Boutique',

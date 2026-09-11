@@ -3,7 +3,7 @@
 > Ficha del caso de uso, en el mismo formato que las del Ciclo 1
 > ([`ciclo-1/cap-1-captura-requisitos.md`](../ciclo-1/cap-1-captura-requisitos.md)).
 >
-> **Entregado el backend.** No tiene pantalla móvil: el actor es el Encargado.
+> **Entregados el backend y la pantalla web.** No tiene pantalla móvil: el actor es el Encargado.
 
 | Campo | Contenido |
 |---|---|
@@ -133,10 +133,27 @@ Rol **Encargado o Administrador**, declarado una sola vez en `sucursal_router`.
 
 ## Pantallas
 
-| Plataforma | Ruta | Estado |
+| Plataforma | Ruta | Rol |
 |---|---|---|
-| Web | `/sucursal/reservas` | **Pendiente** |
+| Web | `/sucursal/reservas` | Encargado — las de su local |
+| Web | `/admin/reservas` | Administrador — toda la red, más el disparador de CU-25 |
 | Móvil | — | El actor no es Cliente: es solo web (§2.2 del acuerdo) |
+
+Es la **misma** pantalla para los dos roles, como en CU-13: el alcance lo decide
+el servidor con el ámbito del token. Lo único que cambia es que el botón de
+*Expirar vencidas* (CU-25) solo aparece para el Administrador, porque es
+mantenimiento del sistema y no una tarea de sucursal.
+
+**Las de hoy se destacan**, con la palabra «HOY» además del color: en un listado
+plano, una reserva de dentro de tres días y una de dentro de veinte minutos se
+leen igual, y solo una de las dos es urgente.
+
+**En el diálogo de cierre, ninguna prenda viene marcada por defecto.** Poner
+«NO_LLEVA» de entrada haría que cerrar sin mirar fuera un clic, y el resultado de
+la prueba es justamente lo que este caso de uso existe para registrar: cada marca
+mueve stock. El botón de confirmar queda deshabilitado hasta que estén todas
+respondidas —que es la excepción **E11** evitada antes de enviarla—, y hay dos
+atajos para el caso común: «no se llevó nada» y «se llevó todo».
 
 ## Pruebas
 

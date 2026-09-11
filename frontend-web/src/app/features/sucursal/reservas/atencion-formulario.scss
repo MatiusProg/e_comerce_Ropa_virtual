@@ -1,0 +1,116 @@
+:host {
+  display: block;
+}
+
+h2 {
+  color: var(--vb-malva-oscuro);
+  margin-bottom: 0.5rem;
+}
+
+mat-dialog-content {
+  padding-top: 1rem;
+}
+
+.explicacion {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.atajos {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.prendas {
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+
+  li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 0.75rem 0.9rem;
+    border-radius: var(--vb-radio-chico);
+    border: 1px solid var(--mat-sys-outline-variant);
+    background: var(--mat-sys-surface);
+  }
+
+  // Sin marcar se destaca con un borde punteado, no solo con color: es el
+  // estado que impide cerrar, y tiene que verse cual falta de un vistazo.
+  .sin-marcar {
+    border-style: dashed;
+    border-color: var(--vb-malva-claro);
+    background: var(--vb-marfil);
+  }
+}
+
+.prenda {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+
+  code {
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
+  }
+
+  strong {
+    display: block;
+    line-height: 1.3;
+  }
+}
+
+.detalle {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.resumen {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin-bottom: 1rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--vb-radio-chico);
+  background: var(--vb-rosa-palido);
+  color: var(--vb-malva-oscuro);
+  font-size: 0.92rem;
+  line-height: 1.45;
+
+  mat-icon {
+    flex: none;
+  }
+}
+
+.ancho {
+  width: 100%;
+}
+
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin-bottom: 1rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--vb-radio-chico);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+
+  mat-icon {
+    flex: none;
+  }
+}

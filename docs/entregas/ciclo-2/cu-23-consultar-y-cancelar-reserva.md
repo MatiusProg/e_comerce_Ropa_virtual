@@ -5,7 +5,7 @@
 > caso de uso, por el mismo motivo que explica
 > [`cu-10-gestionar-productos-y-variantes.md`](cu-10-gestionar-productos-y-variantes.md).
 >
-> **Entregado el backend.** La pantalla web y la móvil son del día 4, junto con las de CU-22.
+> **Entregados el backend y la pantalla web.** La móvil queda pendiente.
 
 | Campo | Contenido |
 |---|---|
@@ -121,8 +121,23 @@ reserva se **atiende**, no se cancela.
 
 | Plataforma | Ruta | Estado |
 |---|---|---|
-| Web | `/mi-cuenta/reservas` | **Pendiente** — día 4 |
-| Móvil | `reservas` | **Pendiente** — día 4 |
+| Web | `/mi-cuenta/reservas` | ✔ Entregada |
+| Móvil | `reservas` | **Pendiente** |
+
+**Las vivas arriba y en tarjetas; las cerradas abajo y en tabla.** No es
+decoración: son dos preguntas distintas. «¿Cuándo tengo que ir y qué reservé?»
+necesita ver la franja, la sucursal y las prendas de un vistazo, y es lo único
+sobre lo que el cliente puede actuar. «¿Qué reservé el mes pasado?» es historial
+y se lee en lista.
+
+La cancelación pasa por el diálogo de confirmación compartido —el mismo del
+Ciclo 1— y dice explícitamente qué implica: que las prendas vuelven a estar
+disponibles para otros clientes.
+
+Y cuando el servidor responde que la reserva ya no admite la operación
+—`estado-final`—, la pantalla **se refresca además de avisar**: ese error casi
+siempre significa que la vista está vieja (la atendieron o expiró mientras el
+cliente miraba), y reintentar no va a servir.
 
 ## Pruebas
 

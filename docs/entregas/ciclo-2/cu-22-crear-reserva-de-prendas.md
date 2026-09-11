@@ -5,7 +5,7 @@
 > caso de uso, por el mismo motivo que explica
 > [`cu-10-gestionar-productos-y-variantes.md`](cu-10-gestionar-productos-y-variantes.md).
 >
-> **Entregado el backend.** La pantalla web y la móvil son del día 4.
+> **Entregados el backend y la pantalla web.** La móvil queda pendiente.
 
 | Campo | Contenido |
 |---|---|
@@ -161,8 +161,35 @@ aparte, por la regla de la §6.11.4.
 
 | Plataforma | Ruta | Estado |
 |---|---|---|
-| Web | `/mi-cuenta/reservas` | **Pendiente** — día 4 |
-| Móvil | `reservas` | **Pendiente** — día 4 |
+| Web | `/mi-cuenta/reservas` | ✔ Entregada |
+| Móvil | `reservas` | **Pendiente** |
+
+### La pantalla invierte el orden del formulario, a propósito
+
+El servidor recibe sucursal, franja y prendas; la pantalla pide **primero las
+prendas**. La pregunta del cliente es «¿dónde puedo probarme esto?», no «¿qué hay
+en la sucursal Centro?».
+
+Eligiendo primero las prendas, el selector de sucursal puede ofrecer **solo las
+que tienen stock de todas ellas** —cruzando la disponibilidad de cada variante
+con CU-19, que se apoya en la costura C1— en vez de dejar armar una combinación
+que el servidor va a rechazar con un 409 después de que el cliente ya eligió día
+y hora.
+
+Y si se agrega una prenda que la sucursal elegida no tiene, la selección se
+limpia sola en vez de quedar mostrando algo inválido.
+
+### El detalle de la hora que no se ve
+
+`toISOString()` **no sirve** para mandar la franja: convierte a UTC, de modo que
+las 15:00 de Bolivia salen como `19:00Z`. El servidor compara esa hora contra
+`sucursal.horario_apertura`, que es un `TIME` sin zona y significa «abre a las
+nueve» *en esa tienda*; con la hora convertida, un local que cierra a las 18:00
+rechazaría una reserva perfectamente válida.
+
+La pantalla manda la hora de pared **más el desfase** —`2026-09-12T15:00:00-04:00`—,
+que es lo que el *backend* exige y lo que `timestamptz` guarda sin ambigüedad.
+Está en `conDesfase()`, con el porqué escrito al lado.
 
 ## Pruebas
 
