@@ -1,0 +1,217 @@
+<!-- CU-22 y CU-23 · Mis reservas — «boundary» PantallaReservas. -->
+<mat-toolbar class="barra">
+  <span class="logotipo vb-titulo">Violet Boutique</span>
+  <span class="etiqueta-area">Mi cuenta</span>
+
+  <span class="separador"></span>
+
+  @if (usuario(); as u) {
+    <span class="identidad">
+      <span class="avatar">{{ iniciales() }}</span>
+      <span class="datos">
+        <span class="nombre">{{ u.nombres }} {{ u.apellidos }}</span>
+        <span class="rol">Cliente</span>
+      </span>
+    </span>
+    <button matIconButton type="button" (click)="salir()" aria-label="Cerrar sesión">
+      <mat-icon>logout</mat-icon>
+    </button>
+  }
+</mat-toolbar>
+
+<main class="contenido">
+  <header class="encabezado">
+    <div>
+      <h1 class="vb-titulo">Mis reservas</h1>
+      <p class="bajada">
+        Las prendas que apartamos para que te pruebes en la tienda. Te las
+        guardamos hasta el final de tu franja.
+      </p>
+      <a routerLink="/mi-cuenta" class="volver">
+        <mat-icon>arrow_back</mat-icon>
+        Volver a mi perfil
+      </a>
+    </div>
+    <button matButton="filled" type="button" class="vb-boton-marca" (click)="nueva()">
+      <mat-icon>add_shopping_cart</mat-icon>
+      Reservar prendas
+    </button>
+  </header>
+
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  @if (error(); as e) {
+    <div class="aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ e }}</span>
+    </div>
+  }
+
+  <!-- Las vivas, en tarjetas: es lo único sobre lo que se puede actuar. -->
+  <section class="vivas">
+    <h2>Próximas</h2>
+
+    @if (vivas().length) {
+      <div class="tarjetas">
+        @for (r of vivas(); track r.id) {
+          <mat-card class="tarjeta vb-filete-superior" appearance="outlined">
+            <div class="cabecera-tarjeta">
+              <span class="etiqueta-estado" [class]="claseDeEstado(r.estado)">
+                {{ r.estado }}
+              </span>
+              <span class="leyenda">{{ leyenda(r.estado) }}</span>
+            </div>
+
+            <div class="cuando">
+              <mat-icon>event</mat-icon>
+              <div>
+                <strong>{{ r.franja_inicio | date: 'EEEE d \'de\' MMMM' }}</strong>
+                <span class="detalle">
+                  {{ r.franja_inicio | date: 'HH:mm' }} a
+                  {{ r.franja_fin | date: 'HH:mm' }}
+                </span>
+              </div>
+            </div>
+
+            <div class="donde">
+              <mat-icon>storefront</mat-icon>
+              <div>
+                <strong>{{ r.sucursal }}</strong>
+                <span class="detalle">{{ r.ciudad }}</span>
+              </div>
+            </div>
+
+            <div class="que">
+              <mat-icon>checkroom</mat-icon>
+              <div>
+                <strong>{{ r.prendas }} prenda(s)</strong>
+                <span class="detalle">{{ r.unidades }} unidades en total</span>
+              </div>
+            </div>
+
+            <!-- El detalle se pide al desplegar, no con el listado. -->
+            @if (estaAbierta(r)) {
+              @if (abierta(); as detalle) {
+                <ul class="prendas">
+                  @for (linea of detalle.lineas; track linea.id) {
+                    <li>
+                      <code>{{ linea.sku }}</code>
+                      {{ linea.producto }}
+                      <span class="detalle">
+                        {{ linea.talla }} · {{ linea.color }} ×{{ linea.cantidad }}
+                      </span>
+                    </li>
+                  }
+                </ul>
+              }
+            } @else if (cargandoDetalle()) {
+              <p class="detalle">Cargando las prendas…</p>
+            }
+
+            <div class="acciones-tarjeta">
+              <button matButton type="button" (click)="alternarDetalle(r)">
+                <mat-icon>{{ estaAbierta(r) ? 'expand_less' : 'expand_more' }}</mat-icon>
+                {{ estaAbierta(r) ? 'Ocultar' : 'Ver prendas' }}
+              </button>
+              <button
+                matButton
+                type="button"
+                class="boton-cancelar"
+                matTooltip="Las prendas vuelven a estar disponibles para otros clientes"
+                (click)="cancelar(r)"
+              >
+                <mat-icon>event_busy</mat-icon>
+                Cancelar
+              </button>
+            </div>
+          </mat-card>
+        }
+      </div>
+    } @else {
+      <p class="vacio">
+        No tenés reservas activas. Elegí las prendas que querés probarte y te las
+        apartamos en la sucursal que prefieras.
+      </p>
+    }
+  </section>
+
+  <!-- Las cerradas, en lista: es historial y se lee de un vistazo. -->
+  <section class="cerradas">
+    <div class="titulo-seccion">
+      <h2>Anteriores</h2>
+      <mat-form-field appearance="outline">
+        <mat-label>Filtrar</mat-label>
+        <mat-select [formControl]="filtroCerradas">
+          <mat-option [value]="''">Todas las cerradas</mat-option>
+          <mat-option value="ATENDIDA">Atendidas</mat-option>
+          <mat-option value="CANCELADA">Canceladas</mat-option>
+          <mat-option value="EXPIRADA">Vencidas</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    @if (cerradas(); as p) {
+      @if (p.items.length) {
+        <mat-card class="tarjeta lista" appearance="outlined">
+          @for (r of p.items; track r.id) {
+            <div class="fila-historial">
+              <span class="etiqueta-estado" [class]="claseDeEstado(r.estado)">
+                {{ r.estado }}
+              </span>
+              <div class="resumen">
+                <strong>{{ r.franja_inicio | date: 'dd/MM/yyyy HH:mm' }}</strong>
+                <span class="detalle">
+                  {{ r.sucursal }} · {{ r.prendas }} prenda(s) · {{ r.unidades }} unidades
+                </span>
+              </div>
+              <button
+                matIconButton
+                type="button"
+                matTooltip="Ver prendas"
+                (click)="alternarDetalle(r)"
+              >
+                <mat-icon>{{ estaAbierta(r) ? 'expand_less' : 'expand_more' }}</mat-icon>
+              </button>
+            </div>
+
+            @if (estaAbierta(r)) {
+              @if (abierta(); as detalle) {
+                <ul class="prendas en-historial">
+                  @for (linea of detalle.lineas; track linea.id) {
+                    <li>
+                      <code>{{ linea.sku }}</code>
+                      {{ linea.producto }}
+                      <span class="detalle">
+                        {{ linea.talla }} · {{ linea.color }} ×{{ linea.cantidad }}
+                      </span>
+                      @if (linea.resultado_prueba === 'LLEVA') {
+                        <span class="resultado lleva">Te la llevaste</span>
+                      } @else if (linea.resultado_prueba === 'NO_LLEVA') {
+                        <span class="resultado no-lleva">No te la llevaste</span>
+                      }
+                    </li>
+                  }
+                </ul>
+                @if (detalle.observacion) {
+                  <p class="observacion">{{ detalle.observacion }}</p>
+                }
+              }
+            }
+          }
+
+          <mat-paginator
+            [length]="p.total"
+            [pageSize]="p.tamano"
+            [pageIndex]="p.pagina - 1"
+            [hidePageSize]="true"
+            (page)="paginar($event)"
+          />
+        </mat-card>
+      } @else {
+        <p class="vacio">Todavía no tenés reservas cerradas.</p>
+      }
+    }
+  </section>
+</main>

@@ -39,7 +39,13 @@ from app.modules.inventario.consolidado_router import (
     router as inventario_consolidado_router,
 )
 from app.modules.catalogo_publico.router import router as catalogo_publico_router
-# from app.modules.reservas.router import router as reservas_router
+from app.modules.reservas.router import router as reservas_router
+from app.modules.reservas.router import (
+    mantenimiento_router as reservas_mantenimiento_router,
+)
+from app.modules.reservas.router import (
+    sucursal_router as reservas_sucursal_router,
+)
 
 # --- Ciclo 3 -------------------------------------------------------------
 # from app.modules.ventas.router import router as ventas_router
@@ -131,7 +137,9 @@ app.include_router(inventario_router, prefix=API)
 app.include_router(inventario_operacion_router, prefix=API)
 app.include_router(inventario_consolidado_router, prefix=API)
 app.include_router(catalogo_publico_router, prefix=API)
-# app.include_router(reservas_router, prefix=API)
+app.include_router(reservas_router, prefix=API)
+app.include_router(reservas_sucursal_router, prefix=API)
+app.include_router(reservas_mantenimiento_router, prefix=API)
 
 # --- Ciclo 3 -------------------------------------------------------------
 # app.include_router(ventas_router, prefix=API)

@@ -37,7 +37,18 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost:4200,http://localhost:8100"
 
     # --- Reservas (regla de negocio del paquete P6) ----------------------
-    RESERVA_VIGENCIA_HORAS: int = 24      # tras la franja horaria, expira
+    #
+    # Cuanto aguanta una reserva DESPUES de que su franja termino, antes de que
+    # CU-25 la expire y devuelva el stock. Es la tolerancia para el cliente que
+    # llega tarde.
+    RESERVA_VIGENCIA_HORAS: int = 24
+
+    # Con cuanta anticipacion se puede reservar. Existe para proteger el
+    # inventario, no para incomodar al cliente: la reserva inmoviliza unidades
+    # desde que se crea hasta que su franja vence, asi que reservar para dentro
+    # de un mes dejaria stock apartado un mes. Tres dias es el equilibrio entre
+    # planificar una visita y no congelar la vitrina (CU-22, excepcion E5).
+    RESERVA_ANTICIPACION_MAXIMA_HORAS: int = 72
 
     # --- Pasarela de pago (P8, ciclo 3) ----------------------------------
     STRIPE_SECRET_KEY: str = ""

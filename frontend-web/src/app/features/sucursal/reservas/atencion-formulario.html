@@ -1,0 +1,95 @@
+<!-- CU-24 · Cerrar la reserva con el resultado de la prueba. -->
+<h2 mat-dialog-title>Cerrar la reserva #{{ datos.reserva.id }}</h2>
+
+@if (guardando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<mat-dialog-content>
+  <p class="explicacion">
+    Marcá qué pasó con cada prenda. Las que el cliente <strong>no</strong> se
+    lleva vuelven al stock disponible; las que sí, salen del inventario.
+  </p>
+
+  <div class="atajos">
+    <button matButton type="button" (click)="marcarTodas('NO_LLEVA')">
+      <mat-icon>undo</mat-icon>
+      No se llevó nada
+    </button>
+    <button matButton type="button" (click)="marcarTodas('LLEVA')">
+      <mat-icon>shopping_bag</mat-icon>
+      Se llevó todo
+    </button>
+  </div>
+
+  <!-- Ninguna viene marcada por defecto: cerrar sin mirar no puede ser un
+       clic, porque cada marca mueve stock. -->
+  <ul class="prendas">
+    @for (linea of datos.reserva.lineas; track linea.id) {
+      <li [class.sin-marcar]="!marcaDe(linea.id)">
+        <div class="prenda">
+          <code>{{ linea.sku }}</code>
+          <div>
+            <strong>{{ linea.producto }}</strong>
+            <span class="detalle">
+              {{ linea.talla }} · {{ linea.color }} · {{ linea.cantidad }} unidad(es)
+            </span>
+          </div>
+        </div>
+
+        <mat-button-toggle-group
+          [value]="marcaDe(linea.id)"
+          (change)="marcar(linea.id, $event.value)"
+          aria-label="Resultado de la prueba"
+        >
+          <mat-button-toggle value="LLEVA">
+            <mat-icon>shopping_bag</mat-icon>
+            Se la lleva
+          </mat-button-toggle>
+          <mat-button-toggle value="NO_LLEVA">
+            <mat-icon>undo</mat-icon>
+            No
+          </mat-button-toggle>
+        </mat-button-toggle-group>
+      </li>
+    }
+  </ul>
+
+  @if (completo()) {
+    <div class="resumen">
+      <mat-icon>fact_check</mat-icon>
+      <span>
+        Salen del inventario <strong>{{ seLleva() }}</strong> unidad(es) y vuelven
+        a la percha <strong>{{ devuelve() }}</strong>.
+      </span>
+    </div>
+  }
+
+  <mat-form-field appearance="outline" class="ancho">
+    <mat-label>Observación (opcional)</mat-label>
+    <textarea matInput rows="2" maxlength="200" [formControl]="observacion"></textarea>
+    <mat-hint>Queda en la reserva. Ej.: «pidió otra talla, se la encargamos».</mat-hint>
+  </mat-form-field>
+
+  @if (error(); as e) {
+    <div class="aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ e }}</span>
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" [disabled]="guardando()" (click)="cancelar()">
+    Cancelar
+  </button>
+  <button
+    matButton="filled"
+    type="button"
+    class="vb-boton-marca"
+    [disabled]="guardando() || !completo()"
+    (click)="confirmar()"
+  >
+    Cerrar reserva
+  </button>
+</mat-dialog-actions>
