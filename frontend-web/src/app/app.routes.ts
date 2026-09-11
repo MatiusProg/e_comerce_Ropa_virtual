@@ -112,6 +112,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/admin/productos/productos').then((m) => m.Productos),
       },
+      {
+        // CU-14. Ruta aparte de `inventario`, que es de CU-13 y CU-15: aquélla
+        // sirve para operar sobre una tienda y ésta para mirar la red entera.
+        path: 'consolidado',
+        title: 'Inventario consolidado · Violet Boutique',
+        loadComponent: () =>
+          import('./features/admin/consolidado/consolidado').then((m) => m.Consolidado),
+      },
       // --- Ciclo 2 · P4 Inventario (CU-13, CU-15) ---
       {
         path: 'inventario',
