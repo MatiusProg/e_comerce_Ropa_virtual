@@ -34,7 +34,7 @@ from sqlalchemy.orm import Session
 from app.modules.catalogo.models import Color, Producto, Talla, VarianteProducto
 from app.modules.organizacion.models import Ciudad, Sucursal
 from app.modules.reservas.models import DetalleReserva, Reserva
-from app.modules.seguridad.models import Cliente
+from app.modules.seguridad.models import Cliente, Usuario
 
 #: Estados en los que una reserva sigue viva: ocupa vestidor y retiene stock.
 #: Se declara una vez porque lo usan el control de capacidad de CU-22, la
@@ -119,6 +119,39 @@ def detalles_de(db: Session, reserva_id: int) -> list[DetalleReserva]:
             select(DetalleReserva)
             .where(DetalleReserva.reserva_id == reserva_id)
             .order_by(DetalleReserva.id)
+        ).all()
+    )
+
+
+def listar_vencidas(
+    db: Session, *, corte: datetime, tope: int
+) -> list[Reserva]:
+    """Reservas vivas cuya franja vencio antes del corte (CU-25).
+
+    Tres detalles que no son adorno:
+
+    **`with_for_update(skip_locked=True)`.** Bloquea las filas que va a
+    modificar --- para que no se crucen con una cancelacion o una atencion en
+    curso --- pero **saltea** las que otra transaccion ya tiene tomadas en vez
+    de esperarlas. Es lo correcto para una tarea programada: si dos corridas se
+    pisan, la segunda se lleva las que quedaron libres y no se queda colgada; y
+    si un cliente esta cancelando la suya justo en ese momento, la tarea la deja
+    pasar y la agarra en la proxima vuelta.
+
+    **El tope.** La tarea procesa como mucho `tope` reservas por corrida. Sin
+    el, la primera ejecucion sobre una base con meses de historial abriria una
+    transaccion enorme y mantendria bloqueadas miles de filas.
+
+    **El orden por `franja_fin`.** Las mas viejas primero, que son las que mas
+    tiempo llevan reteniendo stock.
+    """
+    return list(
+        db.scalars(
+            select(Reserva)
+            .where(Reserva.estado.in_(ESTADOS_VIVOS), Reserva.franja_fin < corte)
+            .order_by(Reserva.franja_fin)
+            .limit(tope)
+            .with_for_update(skip_locked=True)
         ).all()
     )
 
@@ -265,6 +298,7 @@ def listar_reservas(
     sucursal_id: int | None = None,
     estado: str | None = None,
     vivas: bool | None = None,
+    proximas_primero: bool = False,
 ) -> list[Row]:
     """Listado con el recuento de prendas y unidades de cada reserva.
 
@@ -299,24 +333,38 @@ def listar_reservas(
             Reserva.estado,
             prendas.label("prendas"),
             unidades.label("unidades"),
+            # Para el panel del Encargado (CU-24), que necesita saber a quien
+            # esta atendiendo. La pantalla del Cliente lo ignora.
+            (Usuario.nombres + " " + Usuario.apellidos).label("cliente"),
         )
         .join(Sucursal, Sucursal.id == Reserva.sucursal_id)
-        .join(Ciudad, Ciudad.id == Sucursal.ciudad_id),
+        .join(Ciudad, Ciudad.id == Sucursal.ciudad_id)
+        .join(Cliente, Cliente.id == Reserva.cliente_id)
+        .join(Usuario, Usuario.id == Cliente.usuario_id),
         cliente_id=cliente_id,
         sucursal_id=sucursal_id,
         estado=estado,
         vivas=vivas,
     )
 
+    # LAS DOS PANTALLAS ORDENAN AL REVES, Y ES CORRECTO
+    # -------------------------------------------------
+    # El Cliente mira su historial: lo ultimo que hizo va arriba, como en
+    # cualquier listado de «mis cosas». El Encargado mira una agenda: lo que
+    # tiene que atender primero es lo que empieza ANTES, y una reserva de las
+    # 15:00 arriba de una de las 10:00 le haria trabajar en orden inverso.
+    #
+    # El desempate por id evita que dos reservas de la misma franja salgan en
+    # orden distinto en cada consulta, que haria que una se repitiera en dos
+    # paginas y otra no apareciera en ninguna.
+    orden = (
+        (Reserva.franja_inicio.asc(), Reserva.id.asc())
+        if proximas_primero
+        else (Reserva.franja_inicio.desc(), Reserva.id.desc())
+    )
     return list(
         db.execute(
-            # La franja mas proxima primero: es la que el cliente necesita ver.
-            # El desempate por id descendente evita que dos reservas de la misma
-            # franja salgan en orden distinto en cada consulta, que haria que
-            # una se repitiera en dos paginas y otra no apareciera en ninguna.
-            consulta.order_by(Reserva.franja_inicio.desc(), Reserva.id.desc())
-            .offset((pagina - 1) * tamano)
-            .limit(tamano)
+            consulta.order_by(*orden).offset((pagina - 1) * tamano).limit(tamano)
         ).all()
     )
 

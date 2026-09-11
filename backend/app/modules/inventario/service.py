@@ -775,6 +775,52 @@ def liberar_de_reserva(
     return existencia
 
 
+def descontar_por_venta(
+    db: Session,
+    *,
+    variante_id: int,
+    sucursal_id: int,
+    cantidad: int,
+    usuario_id: int | None,
+    motivo: str | None = None,
+) -> Existencia:
+    """Saca unidades del disponible por una venta. **Sin commit.**
+
+    En el Ciclo 2 la usa CU-24 cuando el cliente se lleva la prenda que vino a
+    probarse. En el Ciclo 3 la va a usar tambien el punto de venta (P7) para la
+    venta directa, que es el mismo movimiento sin reserva delante.
+
+    SOBRE LA SECUENCIA LIBERACION + VENTA
+    -------------------------------------
+    CU-24 llama primero a `liberar_de_reserva` y despues a esta. Parece un
+    rodeo --- las unidades vuelven al disponible para salir acto seguido --- y
+    es a proposito: el invariante del paquete es
+    `cantidad_disponible == suma(movimientos)`, y esas unidades ya habian salido
+    del disponible al crearse la reserva. Una VENTA de -n a secas las
+    descontaria por segunda vez y dejaria el saldo en negativo; un movimiento de
+    cero lo rechaza el CHECK `cantidad_no_nula`.
+
+    Con los dos movimientos el neto sobre el disponible es cero, los dos son no
+    nulos, el invariante se sostiene, y el historial se lee como lo que de
+    verdad paso: «volvieron del apartado y se vendieron».
+    """
+    existencia = repository.obtener_existencia(
+        db, variante_id=variante_id, sucursal_id=sucursal_id, bloquear=True
+    )
+    if existencia is None:
+        raise ExistenciaInexistente()
+
+    _aplicar_movimiento(
+        db,
+        existencia,
+        tipo="VENTA",
+        cantidad=-cantidad,
+        motivo=motivo,
+        usuario_id=usuario_id,
+    )
+    return existencia
+
+
 # =====================================================================
 # Costura C1 - lo que P5 le consume a P4
 # =====================================================================

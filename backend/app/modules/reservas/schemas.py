@@ -9,7 +9,7 @@ Casos de uso que realiza este paquete:
   CU-24 Atender reserva en sucursal
   CU-25 Expirar reservas vencidas (proceso automatico)
 
-Implementados en este archivo: CU-22 y CU-23.
+Implementados en este archivo: CU-22, CU-23, CU-24 y CU-25.
 
 Los nombres y tipos replican el esquema fisico de la seccion 6.4 de
 docs/entregas/ciclo-2/00-organizacion-por-caso-de-uso.md y las columnas de
@@ -18,6 +18,8 @@ docs/entregas/ciclo-2/00-organizacion-por-caso-de-uso.md y las columnas de
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from app.modules.reservas.models import RESULTADOS_PRUEBA
 
 # Regla: NUNCA se expone un modelo SQLAlchemy directamente.
 
@@ -132,6 +134,89 @@ class CancelarReservaIn(BaseModel):
         return valor.strip() or None
 
 
+# =====================================================================
+# CU-24 - Atender reserva en sucursal
+# =====================================================================
+
+class ResultadoLineaIn(BaseModel):
+    """Que paso con una prenda cuando el cliente se la probo."""
+
+    detalle_id: int
+    #: LLEVA o NO_LLEVA. Los valores los fija RESULTADOS_PRUEBA en models.py y
+    #: el CHECK `ck_reserva_detalle_resultado` los aplica en la base; aqui se
+    #: rechazan antes, para devolver un 422 que nombre el campo en vez de un
+    #: error de PostgreSQL.
+    resultado: str
+
+    @field_validator("resultado")
+    @classmethod
+    def _valido(cls, valor: str) -> str:
+        valor = valor.strip().upper()
+        if valor not in RESULTADOS_PRUEBA:
+            raise ValueError("El resultado debe ser LLEVA o NO_LLEVA.")
+        return valor
+
+
+class AtenderReservaIn(BaseModel):
+    """Cierre de la reserva con el resultado de la prueba (CU-24).
+
+    Los resultados de TODAS las lineas viajan juntos porque el cierre es una
+    sola transaccion: cada prenda mueve stock --- las que no se lleva vuelven al
+    disponible, las que se lleva salen --- y cerrar a medias dejaria una reserva
+    ATENDIDA con parte de su mercaderia todavia apartada, que es un estado que
+    nadie limpia despues.
+    """
+
+    resultados: list[ResultadoLineaIn] = Field(min_length=1)
+    observacion: str | None = Field(default=None, max_length=200)
+
+    @field_validator("observacion")
+    @classmethod
+    def _recortar_observacion(cls, valor: str | None) -> str | None:
+        if valor is None:
+            return None
+        return valor.strip() or None
+
+    @model_validator(mode="after")
+    def _sin_lineas_repetidas(self) -> "AtenderReservaIn":
+        vistas = set()
+        for resultado in self.resultados:
+            if resultado.detalle_id in vistas:
+                raise ValueError(
+                    "Hay una prenda con dos resultados distintos en el mismo "
+                    "cierre."
+                )
+            vistas.add(resultado.detalle_id)
+        return self
+
+
+# =====================================================================
+# CU-25 - Expirar reservas vencidas
+# =====================================================================
+
+class ExpiracionOut(BaseModel):
+    """Lo que hizo una corrida de la tarea de expiracion.
+
+    Devuelve **cuantas** y **cuales**, no solo un «listo». Una tarea programada
+    que no dice lo que hizo es imposible de verificar: si un dia deja de
+    funcionar, el sintoma seria stock retenido sin que nada lo denuncie, y eso
+    se descubre semanas despues contando prendas a mano.
+    """
+
+    #: Cuantas reservas vencidas encontro esta corrida.
+    encontradas: int
+    #: Cuantas expiro de verdad. Puede ser menor que `encontradas` si otra
+    #: transaccion las estaba tocando; esas quedan para la proxima vuelta.
+    expiradas: int
+    #: Unidades devueltas a `cantidad_disponible` en total.
+    unidades_liberadas: int
+    #: Los identificadores, para poder rastrear una en el historial.
+    reservas: list[int]
+    #: Hasta que instante se considero vencida una reserva. Viaja para que la
+    #: pantalla pueda explicar por que una reserva de ayer todavia no expiro.
+    corte: datetime
+
+
 # --- Salida --------------------------------------------------------------
 
 class LineaReservaOut(BaseModel):
@@ -177,7 +262,14 @@ class ReservaOut(BaseModel):
 
 
 class ReservaResumenOut(BaseModel):
-    """Fila del listado «mis reservas», sin el detalle."""
+    """Fila del listado, tanto de «mis reservas» como del panel de la sucursal.
+
+    `cliente` viaja para la pantalla del Encargado de CU-24 --- que necesita
+    saber a quien esta atendiendo --- y se ignora en la del Cliente, que ya sabe
+    que las reservas son suyas. Un esquema y no dos: son la misma fila mirada
+    desde dos lados, y duplicarla garantizaria que algun dia digan cosas
+    distintas.
+    """
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -190,6 +282,7 @@ class ReservaResumenOut(BaseModel):
     estado: str
     prendas: int
     unidades: int
+    cliente: str | None = None
 
 
 class PaginaReservas(BaseModel):

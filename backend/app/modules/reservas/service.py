@@ -9,7 +9,7 @@ Casos de uso que realiza este paquete:
   CU-24 Atender reserva en sucursal
   CU-25 Expirar reservas vencidas (proceso automatico)
 
-Implementados en este archivo: CU-22 y CU-23.
+Implementados en este archivo: CU-22, CU-23, CU-24 y CU-25.
 
 Regla: aqui viven las reglas de negocio y el control de la transaccion. El
 servicio orquesta repositorios; nunca conoce el objeto Request de HTTP.
@@ -39,7 +39,9 @@ from app.modules.reservas.repository import ESTADOS_VIVOS
 from app.modules.reservas.schemas import (
     DURACION_MAXIMA_MINUTOS,
     DURACION_MINIMA_MINUTOS,
+    AtenderReservaIn,
     CancelarReservaIn,
+    ExpiracionOut,
     LineaReservaOut,
     PaginaReservas,
     ReservaCrearIn,
@@ -139,6 +141,32 @@ class ReservaInexistente(ErrorDeReservas):
 
 class ReservaAjena(ErrorDeReservas):
     """La reserva existe pero es de otro cliente."""
+
+
+class ReservaDeOtraSucursal(ErrorDeReservas):
+    """El Encargado quiso tocar una reserva que no es de su local."""
+
+
+class ReservaNoAtendible(ErrorDeReservas):
+    """La reserva ya no esta viva y no se puede preparar ni atender."""
+
+    def __init__(self, estado: str):
+        self.estado = estado
+        super().__init__(f"Estado {estado}")
+
+
+class ResultadosIncompletos(ErrorDeReservas):
+    """Excepcion E11: faltan o sobran resultados respecto de las lineas.
+
+    Lleva las dos diferencias para que el mensaje pueda decir cual de las dos
+    cosas pasa: olvidarse de una prenda y mandar una que no es de esa reserva
+    son errores distintos.
+    """
+
+    def __init__(self, faltantes: list[int], ajenos: list[int]):
+        self.faltantes = faltantes
+        self.ajenos = ajenos
+        super().__init__(f"Faltan {faltantes}, sobran {ajenos}")
 
 
 class ReservaNoCancelable(ErrorDeReservas):
@@ -411,6 +439,275 @@ def cancelar_reserva(
     db.commit()
 
     return _armar_reserva(db, reserva.id)
+
+
+# =====================================================================
+# CU-24 - Atender reserva en sucursal
+# =====================================================================
+
+def _reserva_de_la_sucursal(
+    db: Session, reserva_id: int, *, sucursal_id: int | None, bloquear: bool = True
+):
+    """La reserva, comprobando que sea del local de quien pregunta.
+
+    `sucursal_id` en None significa Administrador: su ambito es toda la red.
+
+    Se resuelve **leyendo la fila**, igual que en CU-16: el identificador de la
+    URL no dice a que sucursal pertenece, y sin este paso a un Encargado le
+    bastaria probar numeros para cerrar reservas de otro local.
+    """
+    reserva = repository.obtener_reserva_entidad(db, reserva_id, bloquear=bloquear)
+    if reserva is None:
+        raise ReservaInexistente()
+    if sucursal_id is not None and reserva.sucursal_id != sucursal_id:
+        raise ReservaDeOtraSucursal()
+    return reserva
+
+
+def preparar_reserva(
+    db: Session, reserva_id: int, *, sucursal_id: int | None
+) -> ReservaOut:
+    """PENDIENTE -> PREPARADA. El Encargado ya junto las prendas.
+
+    **No mueve stock**, y es la unica transicion de la reserva que no lo hace:
+    las unidades ya estaban apartadas desde CU-22 y siguen estandolo. Lo unico
+    que cambia es que alguien las fue a buscar a la percha.
+
+    Tampoco impide que el cliente cancele: PREPARADA sigue siendo un estado vivo
+    y el RF29 le deja cancelar hasta que se atienda (CU-23).
+    """
+    reserva = _reserva_de_la_sucursal(db, reserva_id, sucursal_id=sucursal_id)
+
+    if reserva.estado != "PENDIENTE":
+        raise ReservaNoAtendible(reserva.estado)
+
+    reserva.estado = "PREPARADA"
+    db.commit()
+    return _armar_reserva(db, reserva.id)
+
+
+def atender_reserva(
+    db: Session,
+    reserva_id: int,
+    datos: AtenderReservaIn,
+    *,
+    sucursal_id: int | None,
+    usuario_id: int,
+) -> ReservaOut:
+    """Cierra la reserva con el resultado de la prueba. -> ATENDIDA.
+
+    QUE PASA CON EL STOCK, PRENDA POR PRENDA
+    ----------------------------------------
+    **NO_LLEVA**: una `LIBERACION` de +n. Las unidades vuelven al disponible y
+    la reserva las suelta. Es el mismo movimiento que una cancelacion.
+
+    **LLEVA**: una `LIBERACION` de +n **y** una `VENTA` de -n. Parece un rodeo
+    y es a proposito: esas unidades ya habian salido del disponible al crearse
+    la reserva, asi que una VENTA de -n a secas las descontaria dos veces y
+    dejaria el saldo en negativo; y un movimiento de cero lo rechaza el CHECK
+    `cantidad_no_nula`. Con los dos, el neto sobre el disponible es cero, el
+    invariante `disponible == suma(movimientos)` se sostiene, y el historial se
+    lee como lo que paso: «volvieron del apartado y se vendieron».
+
+    SOBRE LA DECISION D3 Y EL CICLO 3
+    ---------------------------------
+    D3 dice que «la venta descuenta de reservado si vino de una reserva». Eso
+    describe el mundo del Ciclo 3, donde el punto de venta existe y el cobro
+    ocurre en el mismo acto. En el Ciclo 2 no hay entidad `Venta` todavia, y
+    habia que elegir entre dos males:
+
+      a) dejar las unidades de LLEVA en `cantidad_reservada` esperando una venta
+         que en este ciclo no puede ocurrir --- y que nadie liberaria despues,
+         porque la reserva ya estaria ATENDIDA y CU-25 solo expira las vivas ---;
+      b) descontarlas ahora, que es lo que de verdad paso: la prenda salio de la
+         tienda con el cliente.
+
+    Se eligio (b). El inventario queda diciendo la verdad y no hay stock
+    atrapado. **Cuando P7 exista, CU-24 y el cobro pasan a ser una sola
+    transaccion** y el movimiento de VENTA lo va a escribir la venta, no este
+    caso de uso; hasta entonces lo escribe aca, con el motivo que lo explica.
+    """
+    reserva = _reserva_de_la_sucursal(db, reserva_id, sucursal_id=sucursal_id)
+
+    if reserva.estado not in ESTADOS_VIVOS:
+        raise ReservaNoAtendible(reserva.estado)
+
+    detalles = repository.detalles_de(db, reserva.id)
+    por_id = {detalle.id: detalle for detalle in detalles}
+    enviados = {r.detalle_id: r.resultado for r in datos.resultados}
+
+    # E11. Tienen que venir TODAS las lineas y ninguna ajena: si faltara una,
+    # sus unidades quedarian apartadas en una reserva ya cerrada y no las
+    # liberaria nadie.
+    faltantes = sorted(set(por_id) - set(enviados))
+    ajenos = sorted(set(enviados) - set(por_id))
+    if faltantes or ajenos:
+        raise ResultadosIncompletos(faltantes, ajenos)
+
+    for detalle in detalles:
+        resultado = enviados[detalle.id]
+        if resultado == "LLEVA":
+            motivo = f"Reserva #{reserva.id} atendida, el cliente se la lleva"
+        else:
+            motivo = f"Reserva #{reserva.id} atendida, prenda devuelta a la percha"
+        motivo = motivo[:200]
+
+        # Siempre se libera: la reserva suelta lo que tenia apartado.
+        inventario.liberar_de_reserva(
+            db,
+            variante_id=detalle.variante_id,
+            sucursal_id=reserva.sucursal_id,
+            cantidad=detalle.cantidad,
+            usuario_id=usuario_id,
+            motivo=motivo,
+        )
+
+        if resultado == "LLEVA":
+            inventario.descontar_por_venta(
+                db,
+                variante_id=detalle.variante_id,
+                sucursal_id=reserva.sucursal_id,
+                cantidad=detalle.cantidad,
+                usuario_id=usuario_id,
+                motivo=motivo,
+            )
+
+        detalle.resultado_prueba = resultado
+
+    reserva.estado = "ATENDIDA"
+    if datos.observacion:
+        reserva.observacion = datos.observacion
+    db.commit()
+
+    return _armar_reserva(db, reserva.id)
+
+
+def listar_reservas_de_sucursal(
+    db: Session,
+    *,
+    sucursal_id: int | None,
+    pagina: int,
+    tamano: int,
+    estado: str | None = None,
+    vivas: bool | None = None,
+) -> PaginaReservas:
+    """El panel del Encargado: las reservas de su local, la mas proxima arriba.
+
+    Ordena al reves que «mis reservas» del Cliente, y es correcto: el Cliente
+    mira un historial y el Encargado mira una agenda.
+    """
+    total = repository.contar_reservas(
+        db, sucursal_id=sucursal_id, estado=estado, vivas=vivas
+    )
+    filas = repository.listar_reservas(
+        db,
+        pagina=pagina,
+        tamano=tamano,
+        sucursal_id=sucursal_id,
+        estado=estado,
+        vivas=vivas,
+        proximas_primero=True,
+    )
+    return PaginaReservas(
+        total=total,
+        pagina=pagina,
+        tamano=tamano,
+        items=[
+            ReservaResumenOut.model_validate(fila, from_attributes=True)
+            for fila in filas
+        ],
+    )
+
+
+def obtener_reserva_de_sucursal(
+    db: Session, reserva_id: int, *, sucursal_id: int | None
+) -> ReservaOut:
+    """El detalle de una reserva del local, para prepararla o atenderla."""
+    _reserva_de_la_sucursal(db, reserva_id, sucursal_id=sucursal_id, bloquear=False)
+    return _armar_reserva(db, reserva_id)
+
+
+# =====================================================================
+# CU-25 - Expirar reservas vencidas  (proceso automatico, actor A6)
+# =====================================================================
+
+#: Cuantas reservas procesa una corrida como maximo.
+#:
+#: Sin tope, la primera ejecucion sobre una base con meses de historial abriria
+#: una transaccion enorme y mantendria bloqueadas miles de filas. Doscientas
+#: alcanzan de sobra para el ritmo real de una tienda, y si quedaran mas, la
+#: siguiente corrida las toma.
+TOPE_POR_CORRIDA = 200
+
+
+def expirar_reservas_vencidas(
+    db: Session, *, tope: int = TOPE_POR_CORRIDA
+) -> ExpiracionOut:
+    """Devuelve al inventario el stock de las reservas que nadie fue a buscar.
+
+    Realiza el **RF30**. Es el unico caso de uso del sistema cuyo actor es
+    **A6, el Sistema**: no lo inicia una persona, y por eso los movimientos que
+    deja llevan `usuario_id` nulo --- que es exactamente para lo que esa columna
+    admite nulo, segun la nota de `inventario/models.py`.
+
+    CUANDO SE CONSIDERA VENCIDA
+    ---------------------------
+    No basta con que la franja haya terminado: se espera ademas
+    `RESERVA_VIGENCIA_HORAS` mas. Esa tolerancia existe para el cliente que
+    llega tarde --- o al dia siguiente --- y encuentra su reserva todavia en
+    pie. El precio es tener stock retenido ese rato, y por eso es una variable
+    de entorno y no una constante: una tienda con poco inventario va a querer
+    bajarla.
+
+    POR QUE SE VUELVE A COMPROBAR EL ESTADO
+    ---------------------------------------
+    La consulta ya filtra por estados vivos, pero entre que devuelve las filas y
+    que se procesan pudo cancelarse alguna. El bloqueo de la consulta lo impide
+    para las filas que tomo, asi que la comprobacion es cinturon y tirantes; se
+    deja igual porque el costo de equivocarse aca es liberar stock dos veces, y
+    eso inventa mercaderia.
+
+    **Es idempotente**: correrla dos veces seguidas no libera nada la segunda
+    vez, porque las reservas ya quedaron EXPIRADA.
+    """
+    corte = _ahora() - timedelta(hours=settings.RESERVA_VIGENCIA_HORAS)
+    vencidas = repository.listar_vencidas(db, corte=corte, tope=tope)
+
+    expiradas: list[int] = []
+    unidades = 0
+
+    for reserva in vencidas:
+        if reserva.estado not in ESTADOS_VIVOS:
+            continue
+
+        for detalle in repository.detalles_de(db, reserva.id):
+            inventario.liberar_de_reserva(
+                db,
+                variante_id=detalle.variante_id,
+                sucursal_id=reserva.sucursal_id,
+                cantidad=detalle.cantidad,
+                # Nulo a proposito: no hay persona detras de esta operacion.
+                usuario_id=None,
+                motivo=f"Reserva #{reserva.id} expirada sin atencion"[:200],
+            )
+            unidades += detalle.cantidad
+
+        reserva.estado = "EXPIRADA"
+        reserva.observacion = "Expirada: la franja venció sin que el cliente asistiera."
+        expiradas.append(reserva.id)
+
+    # Un solo commit al final: o la corrida entera cuadra o no se escribe nada.
+    # Con un commit por reserva, un fallo a mitad dejaria media tanda expirada y
+    # la otra media con los bloqueos sueltos y el stock sin devolver.
+    db.commit()
+
+    return ExpiracionOut(
+        encontradas=len(vencidas),
+        expiradas=len(expiradas),
+        unidades_liberadas=unidades,
+        reservas=expiradas,
+        corte=corte,
+    )
 
 
 # --- Consultas -----------------------------------------------------------
