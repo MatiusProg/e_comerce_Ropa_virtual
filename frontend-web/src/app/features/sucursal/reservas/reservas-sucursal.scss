@@ -1,0 +1,211 @@
+:host {
+  display: block;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.encabezado {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.85rem;
+    font-weight: 600;
+    color: var(--vb-malva-oscuro);
+  }
+
+  .bajada {
+    margin: 0.25rem 0 0;
+    max-width: 46rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.acciones-cabecera {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.tarjeta {
+  border-radius: var(--vb-radio);
+  border: 1px solid var(--mat-sys-outline-variant);
+  box-shadow: var(--vb-sombra-suave);
+  overflow: hidden;
+  background: var(--mat-sys-surface);
+}
+
+.filtros {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  padding: 1.25rem 1.25rem 0;
+
+  mat-form-field {
+    min-width: 15rem;
+  }
+}
+
+.envoltorio-tabla {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  background: transparent;
+}
+
+code {
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
+.numerica {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.detalle {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.acciones {
+  text-align: right;
+  white-space: nowrap;
+}
+
+// Lo de hoy se destaca: en un listado plano, una reserva de dentro de tres dias
+// y una de dentro de veinte minutos se leen igual, y solo una es urgente. La
+// palabra HOY va escrita ademas del color, porque el color solo no alcanza.
+.hoy {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--vb-oro);
+  color: var(--vb-tinta);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.fila-hoy {
+  background: #fdf8e8;
+}
+
+.abierta {
+  background: var(--vb-rosa-palido);
+}
+
+.etiqueta-estado {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  background: var(--mat-sys-surface-variant);
+  color: var(--mat-sys-on-surface-variant);
+  white-space: nowrap;
+}
+
+.estado-pendiente {
+  background: var(--vb-rosa-palido);
+  color: var(--vb-malva-oscuro);
+}
+
+.estado-preparada {
+  background: #e6eef7;
+  color: #2c4f76;
+}
+
+.estado-atendida {
+  background: #e6f2e8;
+  color: #2e7d32;
+}
+
+.estado-cancelada,
+.estado-expirada {
+  background: var(--mat-sys-surface-variant);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.detalle-reserva {
+  margin: 0 1.25rem 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--vb-radio-chico);
+  background: var(--vb-marfil);
+  border: 1px solid var(--mat-sys-outline-variant);
+
+  h3 {
+    margin: 0 0 0.75rem;
+    font-size: 0.95rem;
+    color: var(--vb-malva-oscuro);
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+}
+
+.resultado {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+
+  &.lleva {
+    background: #e6f2e8;
+    color: #2e7d32;
+  }
+
+  &.no-lleva {
+    background: var(--mat-sys-surface-variant);
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.observacion {
+  margin: 0.85rem 0 0;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin: 1rem 1.25rem 0;
+  padding: 0.8rem 1rem;
+  border-radius: var(--vb-radio-chico);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+
+  mat-icon {
+    flex: none;
+  }
+}
+
+.vacio {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+}

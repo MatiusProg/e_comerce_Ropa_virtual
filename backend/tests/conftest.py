@@ -40,6 +40,7 @@ from app.main import app  # noqa: E402
 from app.modules.catalogo import models as modelos_catalogo  # noqa: E402,F401
 from app.modules.catalogo_publico import models as modelos_cat_pub  # noqa: E402,F401
 from app.modules.inventario import models as modelos_inventario  # noqa: E402,F401
+from app.modules.reservas import models as modelos_reservas  # noqa: E402,F401
 from app.modules.organizacion import models as modelos_organizacion  # noqa: E402,F401
 from app.modules.seguridad import models as modelos_seguridad  # noqa: E402,F401
 
@@ -59,6 +60,10 @@ TABLAS_VOLATILES = (
     # P4 va primero: el movimiento apunta a la existencia, al usuario y al
     # proveedor, y la existencia a la variante y a la sucursal. Todas ellas
     # estan mas abajo en esta misma tupla.
+    # P6 antes que P4: el detalle apunta a la reserva y a la variante, y la
+    # reserva al cliente y a la sucursal.
+    "reserva_detalle",
+    "reserva",
     "movimiento_inventario",
     "existencia",
     # `favorito` apunta a `cliente` y a `producto`, las dos mas abajo.

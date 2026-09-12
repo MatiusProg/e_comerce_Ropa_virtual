@@ -1,0 +1,141 @@
+:host {
+  display: block;
+}
+
+h2 {
+  color: var(--vb-malva-oscuro);
+  // Las etiquetas flotantes de Material suben por encima del borde del campo;
+  // sin este margen el primer campo se monta sobre el titulo.
+  margin-bottom: 0.5rem;
+}
+
+h3 {
+  margin: 0.25rem 0 0.75rem;
+  font-size: 0.95rem;
+  color: var(--vb-malva-oscuro);
+}
+
+mat-dialog-content {
+  padding-top: 1rem;
+}
+
+.fila {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  mat-form-field {
+    flex: 1 1 0;
+    min-width: 9rem;
+  }
+
+  // El boton se alinea con la caja del campo, no con su base: los campos de
+  // Material reservan espacio para el `mat-hint` debajo.
+  > button {
+    margin-top: 0.5rem;
+  }
+}
+
+.ancho {
+  width: 100%;
+}
+
+.buscar {
+  flex: 1 1 100%;
+}
+
+.variante {
+  flex: 3 1 0;
+}
+
+.cantidad {
+  flex: 1 1 0;
+  min-width: 7rem;
+}
+
+.armada,
+.cuando {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+.envoltorio-tabla {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  background: transparent;
+}
+
+code {
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
+.numerica {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.destacado {
+  font-weight: 600;
+}
+
+.detalle {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// Excepcion E1: la prenda que el servidor rechazo. Se marca con fondo Y con
+// borde, no solo con color: el rojo suave sobre blanco no lo ve todo el mundo.
+.rechazada {
+  background: var(--mat-sys-error-container);
+  outline: 2px solid var(--mat-sys-error);
+  outline-offset: -2px;
+}
+
+.total {
+  margin: 0.75rem 0 0;
+  text-align: right;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.nota {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 1rem;
+  font-size: 0.92rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.vacio {
+  margin: 1rem 0 0;
+  padding: 1.5rem;
+  text-align: center;
+  border-radius: var(--vb-radio-chico);
+  background: var(--vb-marfil);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin-top: 1rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--vb-radio-chico);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+
+  mat-icon {
+    flex: none;
+  }
+}

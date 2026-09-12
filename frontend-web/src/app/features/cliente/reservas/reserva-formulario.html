@@ -1,0 +1,209 @@
+<!-- CU-22 · Crear reserva de prendas — pasos 2 a 7. -->
+<h2 mat-dialog-title>Reservar prendas para probarme</h2>
+
+@if (guardando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<mat-dialog-content>
+  <!-- Paso 1: las prendas. Van ANTES de la sucursal a propósito: sabiendo qué
+       querés probarte, el selector de abajo solo ofrece los locales que las
+       tienen todas. -->
+  <section class="selector">
+    <h3>¿Qué querés probarte?</h3>
+
+    <div class="fila">
+      <mat-form-field appearance="outline" class="buscar">
+        <mat-label>Buscá una prenda</mat-label>
+        <input
+          matInput
+          [formControl]="busqueda"
+          [matAutocomplete]="lista"
+          placeholder="Escribí al menos dos letras"
+        />
+        <mat-icon matSuffix>search</mat-icon>
+        <mat-autocomplete
+          #lista="matAutocomplete"
+          [displayWith]="nombreDeProducto"
+          (optionSelected)="elegirProducto($event.option.value)"
+        >
+          @for (p of productos(); track p.id) {
+            <mat-option [value]="p">
+              {{ p.nombre }}
+              @if (p.categoria_nombre) {
+                <span class="detalle">· {{ p.categoria_nombre }}</span>
+              }
+            </mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+    </div>
+
+    @if (ficha(); as f) {
+      <div class="fila">
+        <mat-form-field appearance="outline" class="variante">
+          <mat-label>Talla y color</mat-label>
+          <mat-select [formControl]="varianteElegida">
+            @for (v of f.variantes; track v.id) {
+              <mat-option [value]="v.id">{{ etiquetaDeVariante(v) }}</mat-option>
+            }
+          </mat-select>
+          @if (!f.variantes.length) {
+            <mat-hint>Esta prenda no tiene combinaciones disponibles.</mat-hint>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="cantidad">
+          <mat-label>Cantidad</mat-label>
+          <input matInput type="number" min="1" max="10" [formControl]="cantidad" />
+        </mat-form-field>
+
+        <button matButton="outlined" type="button" (click)="agregarLinea()">
+          <mat-icon>add</mat-icon>
+          Agregar
+        </button>
+      </div>
+    }
+  </section>
+
+  @if (lineas().length) {
+    <section class="armada">
+      <div class="envoltorio-tabla">
+        <table mat-table [dataSource]="lineas()">
+          <ng-container matColumnDef="sku">
+            <th mat-header-cell *matHeaderCellDef>SKU</th>
+            <td mat-cell *matCellDef="let l"><code>{{ l.sku }}</code></td>
+          </ng-container>
+
+          <ng-container matColumnDef="prenda">
+            <th mat-header-cell *matHeaderCellDef>Prenda</th>
+            <td mat-cell *matCellDef="let l">
+              {{ l.producto }}
+              <span class="detalle">{{ l.talla }} · {{ l.color }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="cantidad">
+            <th mat-header-cell *matHeaderCellDef class="numerica">Cantidad</th>
+            <td mat-cell *matCellDef="let l" class="numerica destacado">{{ l.cantidad }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="quitar">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let l" class="numerica">
+              <button
+                matIconButton
+                type="button"
+                matTooltip="Quitar de la reserva"
+                (click)="quitarLinea(l.variante_id)"
+              >
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+          <tr
+            mat-row
+            *matRowDef="let fila; columns: columnas"
+            [class.rechazada]="fila.rechazada"
+          ></tr>
+        </table>
+      </div>
+      <p class="total">
+        <strong>{{ lineas().length }}</strong> prenda(s) ·
+        <strong>{{ unidades() }}</strong> unidades
+      </p>
+    </section>
+
+    <!-- Paso 2: dónde y cuándo. Solo aparecen las sucursales que tienen TODAS
+         las prendas elegidas. -->
+    <section class="cuando" [formGroup]="franja">
+      <h3>¿Dónde y cuándo?</h3>
+
+      @if (buscandoSucursales()) {
+        <p class="nota">
+          <mat-icon>hourglass_empty</mat-icon>
+          <span>Buscando en qué sucursales están todas…</span>
+        </p>
+      } @else if (!sucursalesPosibles().length) {
+        <div class="aviso" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          <span>
+            Ninguna sucursal tiene todas esas prendas juntas en la cantidad que
+            pediste. Probá quitando alguna o bajando la cantidad.
+          </span>
+        </div>
+      } @else {
+        <mat-form-field appearance="outline" class="ancho">
+          <mat-label>Sucursal</mat-label>
+          <mat-select formControlName="sucursal_id">
+            @for (s of sucursalesPosibles(); track s.sucursal_id) {
+              <mat-option [value]="s.sucursal_id">
+                {{ s.sucursal_nombre }} · {{ s.ciudad_nombre }}
+              </mat-option>
+            }
+          </mat-select>
+          <mat-hint>Solo las que tienen todas las prendas de tu reserva.</mat-hint>
+        </mat-form-field>
+
+        <div class="fila">
+          <mat-form-field appearance="outline">
+            <mat-label>Día</mat-label>
+            <input
+              matInput
+              [matDatepicker]="calendario"
+              [min]="minimo"
+              [max]="maximo"
+              formControlName="dia"
+            />
+            <mat-datepicker-toggle matIconSuffix [for]="calendario" />
+            <mat-datepicker #calendario />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Hora</mat-label>
+            <input matInput type="time" formControlName="hora" />
+            <mat-hint>Dentro del horario de la tienda.</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Cuánto vas a estar</mat-label>
+            <mat-select formControlName="duracion">
+              @for (d of duraciones; track d) {
+                <mat-option [value]="d">{{ d }} minutos</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+      }
+    </section>
+  } @else {
+    <p class="vacio">
+      Todavía no elegiste nada. Buscá una prenda, elegí la talla y el color, y
+      agregala a la reserva.
+    </p>
+  }
+
+  @if (error(); as e) {
+    <div class="aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ e }}</span>
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" [disabled]="guardando()" (click)="cancelar()">
+    Cancelar
+  </button>
+  <button
+    matButton="filled"
+    type="button"
+    class="vb-boton-marca"
+    [disabled]="guardando() || !lineas().length || !sucursalesPosibles().length"
+    (click)="confirmar()"
+  >
+    Confirmar reserva
+  </button>
+</mat-dialog-actions>

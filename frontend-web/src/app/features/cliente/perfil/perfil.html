@@ -27,6 +27,17 @@
         Tus datos, tus tallas habituales y las direcciones a las que te entregamos.
       </p>
     </div>
+    <!-- CU-22/CU-23. Es la única puerta de entrada a las reservas que tiene hoy
+         el cliente: el área de cliente no tiene menú propio, y agregarle uno
+         para dos pantallas sería más de lo que hace falta. -->
+    <a
+      matButton="filled"
+      class="vb-boton-marca"
+      routerLink="/mi-cuenta/reservas"
+    >
+      <mat-icon>event_available</mat-icon>
+      Mis reservas
+    </a>
   </header>
 
   @if (cargando()) {
