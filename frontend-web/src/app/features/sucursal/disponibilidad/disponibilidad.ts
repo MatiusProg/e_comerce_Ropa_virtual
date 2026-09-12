@@ -156,7 +156,7 @@ export class Disponibilidad implements OnInit {
   protected ajustar(existencia: Existencia): void {
     const datos: DatosAjusteFormulario = { existencia };
     this.dialogo
-      .open(AjusteFormulario, { data: datos, width: '560px', disableClose: true })
+      .open(AjusteFormulario, { data: datos, width: '560px', maxWidth: '95vw', disableClose: true })
       .afterClosed()
       .subscribe((ajuste) => {
         if (!ajuste) return;
@@ -173,7 +173,7 @@ export class Disponibilidad implements OnInit {
   protected fijarMinimo(existencia: Existencia): void {
     const datos: DatosMinimoFormulario = { existencia };
     this.dialogo
-      .open(MinimoFormulario, { data: datos, width: '520px', disableClose: true })
+      .open(MinimoFormulario, { data: datos, width: '520px', maxWidth: '95vw', disableClose: true })
       .afterClosed()
       .subscribe((actualizada) => {
         if (!actualizada) return;

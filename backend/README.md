@@ -32,6 +32,25 @@ python -m app.db.seed
 uvicorn app.main:app --reload
 ```
 
+### El dataset de demostración
+
+`seed.py` deja el sistema **vacío**: los roles para entrar y el catálogo para
+mirar. Para verlo **en uso** —con existencias, movimientos, clientes, favoritos
+y reservas— hay un segundo seed:
+
+```bash
+python -m app.db.seed_operacion
+```
+
+Necesita `DEMO_PASSWORD` en el `.env` y tarda unos minutos. **Corre contra una
+base local**: escribe miles de filas y se niega a arrancar si `DATABASE_URL`
+apunta a Supabase o a Railway, que es la base desplegada. Los volúmenes se
+ajustan en el diccionario `VOLUMEN`, al principio del archivo.
+
+Con los valores de fábrica deja ~515 personas, ~2.400 existencias, ~5.600
+movimientos repartidos en seis meses, ~2.100 favoritos y 300 reservas en los
+cinco estados.
+
 Verificación:
 
 ```bash
@@ -58,7 +77,9 @@ app/
 ├── db/
 │   ├── base.py           Base declarativa + convención de nombres
 │   ├── session.py        Motor y sesión (una por petición)
-│   └── seed.py           Datos de prueba
+│   ├── seed.py           Roles, ciudades y administrador (ciclo 1)
+│   ├── seed_catalogo.py  Sucursales, maestros y ~60 productos (ciclo 2)
+│   └── seed_operacion.py Personas, inventario, favoritos y reservas
 ├── modules/
 │   ├── seguridad/          P1  · CU-01 a CU-04            · ciclo 1
 │   ├── organizacion/       P2  · CU-05 a CU-07            · ciclo 1

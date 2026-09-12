@@ -50,6 +50,9 @@ pgdata/
 # ---------- Archivos subidos en desarrollo ----------
 backend/uploads/
 backend/media/
+# Cualquier MEDIA_ROOT local: el seed genera las imagenes con Pillow y no se
+# versionan, asi que la carpeta depende de como se llame en cada maquina.
+backend/media_*/
 
 # ---------- Editores e IDE ----------
 .vscode/

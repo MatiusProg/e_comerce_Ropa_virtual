@@ -23,8 +23,11 @@ transparentes tienen que tener transparencia DE VERDAD --- es de lo que depende
 el prototipo de realidad aumentada (seccion 6.5, supuesto S5) --- y generarlas
 es la forma de garantizarlo en vez de confiar en que el archivo subido este bien.
 
-El inventario NO se siembra aqui: `existencia` y `movimiento_inventario` son
-tablas de Mateo y su migracion 0003 todavia no esta en main. Ver `main()`.
+El inventario NO se siembra aqui, y ya no por falta de tablas: la 0003 de Mateo
+esta en main desde el cierre del Ciclo 2. Es que `existencia` y
+`movimiento_inventario` no son datos de catalogo sino de operacion, y sembrarlos
+exige las personas que los mueven. Todo eso vive en `app/db/seed_operacion.py`,
+que se corre aparte y contra una base local.
 """
 
 import random
@@ -475,7 +478,6 @@ def sembrar(db: Session) -> None:
     if total_productos is None:
         print("  ! no se sembro ningun producto")
     print(
-        "  ! el inventario NO se siembra aqui: `existencia` y "
-        "`movimiento_inventario` son de Mateo (migracion 0003) y todavia no "
-        "estan en main. Cuando lo esten, se agrega su bloque."
+        "  = el inventario, las personas, los favoritos y las reservas van "
+        "aparte:  python -m app.db.seed_operacion"
     )

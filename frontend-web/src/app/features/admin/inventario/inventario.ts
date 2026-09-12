@@ -297,7 +297,7 @@ export class Inventario implements OnInit {
       sucursalFijada: this.esAdministrador() ? null : this.auth.usuario()?.sucursal_id ?? null,
     };
     this.dialogo
-      .open(IngresoFormulario, { data: datos, width: '860px', disableClose: true })
+      .open(IngresoFormulario, { data: datos, width: '860px', maxWidth: '95vw', disableClose: true })
       .afterClosed()
       .subscribe((registrado) => {
         if (!registrado) return;
@@ -312,7 +312,7 @@ export class Inventario implements OnInit {
 
   protected ajustar(existencia: Existencia): void {
     this.dialogo
-      .open(AjusteFormulario, { data: { existencia }, width: '560px', disableClose: true })
+      .open(AjusteFormulario, { data: { existencia }, width: '560px', maxWidth: '95vw', disableClose: true })
       .afterClosed()
       .subscribe((ajuste) => {
         if (!ajuste) return;
@@ -335,7 +335,7 @@ export class Inventario implements OnInit {
   protected fijarMinimo(existencia: Existencia): void {
     const datos: DatosMinimoFormulario = { existencia };
     this.dialogo
-      .open(MinimoFormulario, { data: datos, width: '520px', disableClose: true })
+      .open(MinimoFormulario, { data: datos, width: '520px', maxWidth: '95vw', disableClose: true })
       .afterClosed()
       .subscribe((actualizada) => {
         if (!actualizada) return;
@@ -357,7 +357,7 @@ export class Inventario implements OnInit {
       sucursales: this.sucursales(),
     };
     this.dialogo
-      .open(TransferenciaFormulario, { data: datos, width: '600px', disableClose: true })
+      .open(TransferenciaFormulario, { data: datos, width: '600px', maxWidth: '95vw', disableClose: true })
       .afterClosed()
       .subscribe((hecha) => {
         if (!hecha) return;
