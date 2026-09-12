@@ -9,6 +9,7 @@ import {
   Disponibilidad,
   FichaProducto,
   FiltrosDisponibles,
+  PaginaFavoritos,
   PaginaVitrina,
 } from '../models/tienda.models';
 
@@ -93,6 +94,45 @@ export class TiendaService {
   obtenerFiltros(): Observable<FiltrosDisponibles> {
     return this.http
       .get<FiltrosDisponibles>(`${this.base}/filtros`)
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
+
+  // --- CU-20 · Favoritos -------------------------------------------------
+  //
+  // Es la única parte de este servicio que exige sesión de Cliente: el resto de
+  // P5 es público. El interceptor ya adjunta el token, así que acá no hay nada
+  // especial que hacer más que no llamarlos sin sesión.
+
+  listarFavoritos(pagina = 1, tamano = 12): Observable<PaginaFavoritos> {
+    const params = new HttpParams().set('pagina', pagina).set('tamano', tamano);
+    return this.http
+      .get<PaginaFavoritos>(`${this.base}/favoritos`, { params })
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
+
+  /**
+   * Los identificadores marcados, para pintar los corazones de la vitrina.
+   *
+   * Existe aparte del listado porque **la vitrina es pública**: agregarle un
+   * campo `es_favorito` a la tarjeta obligaría a que el catálogo supiera quién
+   * está mirando, y hoy no lo sabe ni tiene por qué.
+   */
+  idsDeFavoritos(): Observable<number[]> {
+    return this.http
+      .get<number[]>(`${this.base}/favoritos/ids`)
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
+
+  /** Idempotente: marcar dos veces deja lo mismo. */
+  marcarFavorito(productoId: number): Observable<void> {
+    return this.http
+      .put<void>(`${this.base}/favoritos/${productoId}`, {})
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
+
+  desmarcarFavorito(productoId: number): Observable<void> {
+    return this.http
+      .delete<void>(`${this.base}/favoritos/${productoId}`)
       .pipe(catchError((e) => throwError(() => this.traducir(e))));
   }
 

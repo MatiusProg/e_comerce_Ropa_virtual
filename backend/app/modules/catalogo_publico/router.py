@@ -6,6 +6,7 @@ Casos de uso:
   CU-17 Consultar catalogo
   CU-18 Consultar ficha de producto
   CU-19 Consultar disponibilidad por sucursal
+  CU-20 Gestionar favoritos                         [ciclo 3, router aparte]
 
 Regla: el router valida la entrada, resuelve la autorizacion y delega en el
 servicio. Ninguna regla de negocio vive aqui.
@@ -17,6 +18,7 @@ from fastapi import APIRouter, HTTPException, Path, Query
 
 from app.core.dependencies import DbSession
 from app.modules.catalogo_publico import service
+from app.modules.catalogo_publico.favoritos_router import router as favoritos_router
 from app.modules.catalogo_publico.schemas import (
     DisponibilidadOut,
     FichaProductoOut,
@@ -37,6 +39,11 @@ from app.modules.catalogo_publico.schemas import (
 # con variantes activas --- y los esquemas de este paquete no exponen proveedor,
 # precio base ni estado: ver la cabecera de schemas.py.
 router = APIRouter(prefix="/tienda", tags=["Catálogo público"])
+
+# CU-20 cuelga de este router y NO hereda su apertura: trae su propia exigencia
+# de rol Cliente. Se incluye aqui y no en `main.py` para no tocar un archivo
+# compartido --- ver la cabecera de favoritos_router.py.
+router.include_router(favoritos_router)
 
 
 def _traducir(error: service.ErrorDeVitrina) -> HTTPException:

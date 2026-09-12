@@ -46,6 +46,15 @@ export const routes: Routes = [
     title: 'Prenda · Violet Boutique',
     loadComponent: () => import('./features/tienda/ficha/ficha').then((m) => m.Ficha),
   },
+  {
+    // CU-20. A diferencia del resto de la tienda, ésta **sí** exige sesión de
+    // Cliente: un favorito es de alguien, y sin sesión no hay de quién.
+    path: 'tienda/favoritos',
+    title: 'Mis favoritos · Violet Boutique',
+    canActivate: [sesionGuard, rolGuard('CLIENTE')],
+    loadComponent: () =>
+      import('./features/tienda/favoritos/favoritos').then((m) => m.Favoritos),
+  },
 
   // --- Con sesión, una por rol ------------------------------------------
   {

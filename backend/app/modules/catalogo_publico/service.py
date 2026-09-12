@@ -24,6 +24,9 @@ from app.modules.catalogo import imagenes_almacen as almacen
 # llamada HTTP interna --- el contrato esta en la seccion 6 del documento de
 # organizacion del ciclo.
 from app.modules.inventario import service as inventario
+# Costura P5 -> P1: quien es el cliente del token lo resuelve el dueno de
+# `cliente`, que es P1. Mismo criterio que la costura C1.
+from app.modules.seguridad import service as seguridad
 from app.modules.catalogo_publico import repository
 from app.modules.catalogo_publico.schemas import (
     CategoriaOut,
@@ -34,6 +37,7 @@ from app.modules.catalogo_publico.schemas import (
     DisponibilidadOut,
     DisponibilidadSucursalOut,
     ImagenVitrinaOut,
+    PaginaFavoritos,
     PaginaVitrina,
     ProductoVitrinaOut,
     TallaOut,
@@ -123,8 +127,25 @@ def listar_productos(
         **filtros,
     )
 
-    # Todo lo que la tarjeta necesita se resuelve en cuatro consultas agregadas
-    # para la pagina entera, no en cuatro por producto.
+    return PaginaVitrina(
+        total=total, pagina=pagina, tamano=tamano, items=_tarjetas(db, productos)
+    )
+
+
+def _tarjetas(db: Session, productos: list) -> list[ProductoVitrinaOut]:
+    """Arma las tarjetas de una pagina de productos.
+
+    Esta en una funcion porque la usan la vitrina (CU-17) y los favoritos
+    (CU-20), que muestran exactamente la misma tarjeta. Duplicarla obligaria a
+    agregar dos veces cada dato nuevo, y el dia que difieran la pantalla de
+    favoritos mostraria una prenda distinta de como la muestra el catalogo.
+
+    Todo lo que la tarjeta necesita se resuelve en **cinco consultas agregadas
+    para la pagina entera**, no en cinco por producto.
+    """
+    if not productos:
+        return []
+
     ids = [p.id for p in productos]
     precios = repository.rango_de_precios(db, ids)
     imagenes = repository.imagen_principal(db, ids)
@@ -145,8 +166,7 @@ def listar_productos(
         ]
         fila.tiene_vestidor = producto.id in con_vestidor
         items.append(fila)
-
-    return PaginaVitrina(total=total, pagina=pagina, tamano=tamano, items=items)
+    return items
 
 
 # --- CU-18 · Consultar ficha de producto ---------------------------------
@@ -302,6 +322,83 @@ def disponibilidad_de_variante(db: Session, variante_id: int) -> DisponibilidadO
     )
 
 
+# --- CU-20 · Favoritos ----------------------------------------------------
+
+def _cliente(db: Session, usuario_id: int) -> int:
+    """El cliente del token, por la costura con P1.
+
+    Si la cuenta no tiene ficha de cliente --- un Administrador, por ejemplo ---
+    P1 levanta `PerfilInexistente` y el router lo traduce a 403. P5 no necesita
+    saber como se resuelve.
+    """
+    return seguridad.cliente_id_de_usuario(db, usuario_id)
+
+
+def listar_favoritos(
+    db: Session, usuario_id: int, *, pagina: int, tamano: int
+) -> PaginaFavoritos:
+    """Paso 2 de CU-20: la lista del cliente, lo ultimo marcado primero."""
+    cliente_id = _cliente(db, usuario_id)
+    total = repository.contar_favoritos(db, cliente_id)
+    productos = repository.listar_favoritos(
+        db, cliente_id, limite=tamano, desplazamiento=(pagina - 1) * tamano
+    )
+    return PaginaFavoritos(
+        total=total, pagina=pagina, tamano=tamano, items=_tarjetas(db, productos)
+    )
+
+
+def ids_de_favoritos(db: Session, usuario_id: int) -> list[int]:
+    """Los identificadores marcados, para pintar los corazones de la vitrina.
+
+    Va aparte del listado y no como un campo de la tarjeta porque **la vitrina
+    es publica**: agregarle `es_favorito` obligaria a que CU-17 supiera quien
+    esta mirando, y hoy no lo sabe ni tiene por que. La pantalla pide esta lista
+    una vez al entrar, si hay sesion de Cliente, y marca las tarjetas del lado
+    del navegador.
+    """
+    return repository.ids_de_favoritos(db, _cliente(db, usuario_id))
+
+
+def marcar_favorito(db: Session, usuario_id: int, producto_id: int) -> None:
+    """Paso 3: marca la prenda.
+
+    **Es idempotente**: marcar dos veces deja lo mismo y responde igual. El
+    corazon de una interfaz se puede tocar dos veces sin querer, y fallar por
+    eso seria convertir un doble toque en un error.
+
+    Solo se puede marcar lo ofrecible. Sin esta comprobacion, el favorito seria
+    una forma de guardar referencias a productos que el catalogo oculta.
+    """
+    cliente_id = _cliente(db, usuario_id)
+
+    producto = repository.obtener_producto(db, producto_id)
+    if (
+        producto is None
+        or not producto.activo
+        or not any(v.activa for v in producto.variantes)
+    ):
+        # Las tres situaciones se responden igual, por el mismo motivo que en
+        # CU-18: distinguirlas convertiria el favorito en un detector de
+        # productos ocultos.
+        raise ProductoNoDisponible(str(producto_id))
+
+    repository.agregar_favorito(db, cliente_id, producto_id)
+    db.commit()
+
+
+def desmarcar_favorito(db: Session, usuario_id: int, producto_id: int) -> None:
+    """Paso 4: quita la prenda de la lista.
+
+    Tambien es idempotente, y **a proposito no comprueba que el producto siga
+    siendo ofrecible**: si una prenda se desactivo despues de marcarla, el
+    cliente tiene que poder sacarla igual. Exigir que sea ofrecible para
+    desmarcar dejaria favoritos imposibles de borrar.
+    """
+    repository.quitar_favorito(db, _cliente(db, usuario_id), producto_id)
+    db.commit()
+
+
 # --- Opciones de filtrado ------------------------------------------------
 
 def obtener_filtros(db: Session) -> FiltrosOut:
@@ -337,6 +434,10 @@ __all__ = [
     "ErrorDeVitrina",
     "ProductoNoDisponible",
     "VarianteNoDisponible",
+    "desmarcar_favorito",
+    "ids_de_favoritos",
+    "listar_favoritos",
+    "marcar_favorito",
     "disponibilidad_de_variante",
     "listar_productos",
     "obtener_ficha",

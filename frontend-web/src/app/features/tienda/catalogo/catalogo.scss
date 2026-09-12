@@ -192,3 +192,41 @@
     }
   }
 }
+
+/* --- CU-20 · el corazón ------------------------------------------------- */
+
+.corazon {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  /* Fondo propio y semiopaco: sobre una foto clara, un corazón sin fondo
+     desaparece. */
+  background: rgb(255 255 255 / 82%);
+  color: var(--vb-malva);
+  box-shadow: var(--vb-sombra-suave);
+  transition: transform 120ms ease, background 120ms ease;
+
+  mat-icon {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  &:hover {
+    transform: scale(1.08);
+    background: #fff;
+  }
+
+  &.marcado {
+    color: #c2185b;
+  }
+}
+

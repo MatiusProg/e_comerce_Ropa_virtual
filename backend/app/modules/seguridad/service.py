@@ -577,6 +577,20 @@ class ContrasenaActualIncorrecta(ErrorDePerfil):
     """Excepcion E1 del flujo alternativo 3c."""
 
 
+def cliente_id_de_usuario(db: Session, usuario_id: int) -> int:
+    """El identificador de cliente del usuario autenticado (costura P5 -> P1).
+
+    La expone P1 para que P5 no consulte `cliente` por su cuenta al resolver los
+    favoritos del CU-20. Es el mismo criterio que la costura C1 del Ciclo 2:
+    quien es dueno de la tabla publica una funcion, y el otro paquete la importa
+    en vez de escribir un SELECT sobre algo ajeno.
+
+    Levanta `PerfilInexistente` si la cuenta no tiene ficha de cliente --- que es
+    lo que pasa con un Administrador, y el router lo traduce a 403.
+    """
+    return _cliente_del_usuario(db, usuario_id).id
+
+
 def _cliente_del_usuario(db: Session, usuario_id: int) -> Cliente:
     """Ficha de cliente del usuario autenticado, o error.
 
