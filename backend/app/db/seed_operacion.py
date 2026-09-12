@@ -1084,7 +1084,15 @@ def sembrar(db: Session) -> None:
     # Las hojas del arbol de categorias: son las que un cliente elige en su
     # perfil. Preferir «Mujer» y no «Blusas» no dice nada que el sistema pueda
     # usar despues.
-    hojas = [c for c in db.scalars(select(Categoria)) if c.categoria_padre_id is not None]
+    #
+    # Hoja es la que NO TIENE HIJAS, no la que tiene padre. No son lo mismo: en
+    # la taxonomia de la base desplegada, «Ropa Intima» y «Ropa de Descanso» son
+    # raices sin hijas y cuelgan productos directamente. Mirando el padre se
+    # quedaban fuera del selector del perfil justo las cuatro categorias que
+    # mas ropa tienen.
+    todas = list(db.scalars(select(Categoria)))
+    con_hijas = {c.categoria_padre_id for c in todas if c.categoria_padre_id}
+    hojas = [c for c in todas if c.id not in con_hijas]
 
     if not sucursales or "CLIENTE" not in roles:
         print("  ! falta el seed del Ciclo 1 y 2: no hay sucursales o no hay roles")

@@ -9,9 +9,22 @@ Que siembra:
   P2  5 sucursales en las 3 ciudades del Ciclo 1, y 4 proveedores
   P3  categorias jerarquicas, tallas por tipo de prenda, colores,
       2 temporadas con sus colecciones,
-      ~60 productos con sus variantes talla x color,
+      ~55 productos con sus variantes talla x color,
       una imagen principal por producto y el PNG transparente del vestidor
       virtual para las variantes de los productos destacados (supuesto S5)
+
+HAY DOS CATALOGOS, Y LOS ELIGE LA BASE
+--------------------------------------
+El arbol de categorias de este proyecto existe en dos versiones: la propia
+--- Mujer, Hombre, Accesorios --- y la que la base desplegada tiene cargada a
+mano, que ordena por tipo de prenda. El seed reconoce las categorias por nombre,
+asi que sembrar una sobre la otra no reemplaza: agrega, y la vitrina queda con
+dos taxonomias en paralelo.
+
+Por eso `sembrar` empieza preguntandole a la base cual es la suya --- ver
+`_perfil_de` --- y siembra los productos de esa. Con la base vacia usa la
+propia. Todo lo que cambia entre una y otra esta en `Perfil`: el arbol, las
+tallas, los productos y en que categorias tiene sentido el vestidor virtual.
 
 Es idempotente, igual que el resto del seed: se reconoce por el codigo del
 producto y por el nombre de cada maestro, asi que volver a correrlo no duplica
@@ -34,6 +47,7 @@ import random
 from decimal import Decimal
 from io import BytesIO
 from pathlib import Path
+from typing import NamedTuple
 
 from PIL import Image, ImageDraw
 from sqlalchemy import select
@@ -165,6 +179,173 @@ MODELOS: list[tuple[str, str, str, list[str], int, int]] = [
 CATEGORIAS_CON_VESTIDOR = {"Blusas", "Vestidos", "Camisas", "Poleras", "Casacas"}
 
 
+# =====================================================================
+# La segunda taxonomia: la que la base desplegada ya tiene
+# =====================================================================
+#
+# La de arriba ordena el catalogo POR PUBLICO --- Mujer, Hombre, Accesorios ---
+# y nacio con el Ciclo 2. Supabase quedo con otra, cargada a mano durante las
+# demostraciones, que ordena POR TIPO DE PRENDA.
+#
+# Ninguna de las dos esta mal, pero SEMBRAR LA NUESTRA ENCIMA DE LA SUYA NO
+# REEMPLAZA NADA: el seed reconoce las categorias por nombre, asi que crearia
+# las propias al lado y la vitrina terminaria ofreciendo «Mujer > Blusas» y
+# «Prendas Superiores > Blusas y Camisas» como dos ramas del mismo arbol. Un
+# catalogo con dos taxonomias en paralelo no se puede defender.
+#
+# Por eso el seed ya no impone la suya: mira que hay en la base y usa lo que
+# encuentra. Ver `_perfil_de`.
+#
+# Los nombres de aqui abajo estan copiados EXACTOS de la base desplegada: el
+# acento de «Ropa Intima», la minuscula de «jeans», la coma de «Chaquetas,
+# Abrigos y Sudaderas». Si no coinciden letra por letra, el seed no reconoce la
+# categoria y crea una gemela --- que es justo lo que este bloque evita.
+
+CATEGORIAS_PRENDA: list[tuple[str, list[str]]] = [
+    ("Prendas Superiores", [
+        "Blusas y Camisas", "Tops y Camisetas", "Chaquetas, Abrigos y Sudaderas",
+    ]),
+    ("Prendas Inferiores", ["Pantalones y jeans", "Faldas y Shorts", "Leggins"]),
+    # Estas cuatro son raiz y hoja a la vez: no tienen hijas y los productos
+    # cuelgan directamente de ellas. El modelo lo admite --- `categoria_padre_id`
+    # es opcional --- y `_productos` busca la categoria por nombre, sin mirar a
+    # que nivel del arbol esta.
+    ("Piezas Completas y Conjuntos", []),
+    ("Ropa Íntima", []),
+    ("Ropa de Descanso", []),
+    ("Ropa Especial", []),
+]
+
+#: EN MAYUSCULAS, como estan en la base desplegada.
+#:
+#: `uq_talla_tipo_codigo` es sobre (tipo_prenda, codigo) y distingue mayusculas:
+#: sembrar «Superior» donde ya dice «SUPERIOR» NO choca contra la restriccion
+#: --- crea una segunda familia de tallas, y la ficha de producto termina
+#: ofreciendo la M dos veces.
+#:
+#: Las siete SUPERIOR ya existen y no se tocan. Las INFERIOR hay que crearlas:
+#: la base no tiene ninguna y los pantalones, las faldas y los leggins no se
+#: venden en XS.
+TALLAS_PRENDA: list[tuple[str, list[str]]] = [
+    ("SUPERIOR", ["XS", "S", "M", "L", "XL", "XXL", "XXXL"]),
+    ("INFERIOR", ["36", "38", "40", "42", "44"]),
+]
+
+#: Los prefijos no se repiten con los del otro perfil --- BYC y no BLU, PYJ y no
+#: PMU --- para que el codigo de producto siga siendo unico aunque alguna vez se
+#: hayan sembrado los dos en la misma base.
+MODELOS_PRENDA: list[tuple[str, str, str, list[str], int, int]] = [
+    ("Blusas y Camisas", "SUPERIOR", "BYC", [
+        "Blusa de seda manga larga", "Blusa cruzada", "Blusa de gasa",
+        "Camisa Oxford manga larga", "Camisa de lino", "Camisa a cuadros",
+        "Camisa de vestir blanca",
+    ], 180, 420),
+    ("Tops y Camisetas", "SUPERIOR", "TYC", [
+        "Top de tirantes", "Top cropped", "Camiseta básica de algodón",
+        "Camiseta oversize", "Polera manga larga", "Musculosa deportiva",
+    ], 110, 240),
+    ("Chaquetas, Abrigos y Sudaderas", "SUPERIOR", "CHA", [
+        "Blazer entallado", "Abrigo de paño", "Campera de jean",
+        "Sudadera con capucha", "Cárdigan tejido", "Casaca rompeviento",
+    ], 380, 980),
+    ("Pantalones y jeans", "INFERIOR", "PYJ", [
+        "Jean skinny", "Jean mom fit", "Jean wide leg", "Pantalón de vestir",
+        "Pantalón palazzo", "Pantalón cargo",
+    ], 240, 480),
+    ("Faldas y Shorts", "INFERIOR", "FYS", [
+        "Falda midi plisada", "Falda lápiz", "Falda de jean",
+        "Short de lino", "Short deportivo",
+    ], 150, 330),
+    ("Leggins", "INFERIOR", "LEG", [
+        "Legging deportivo", "Legging térmico", "Legging de cuero sintético",
+        "Legging con bolsillos",
+    ], 120, 260),
+    ("Piezas Completas y Conjuntos", "SUPERIOR", "PCC", [
+        "Vestido midi plisado", "Vestido camisero", "Vestido de fiesta",
+        "Enterizo de lino", "Conjunto de dos piezas", "Mono elegante",
+    ], 320, 690),
+    ("Ropa Íntima", "SUPERIOR", "RIN", [
+        "Conjunto de encaje", "Brasier sin costuras", "Body de algodón",
+        "Top deportivo sin aro",
+    ], 90, 260),
+    ("Ropa de Descanso", "SUPERIOR", "RDE", [
+        "Pijama de algodón", "Camisón de satén", "Bata de toalla",
+        "Conjunto de descanso",
+    ], 140, 320),
+    ("Ropa Especial", "SUPERIOR", "RES", [
+        "Vestido de gala", "Traje de baño entero", "Bikini de dos piezas",
+        "Conjunto deportivo de compresión",
+    ], 200, 880),
+]
+
+#: Donde el probador virtual tiene sentido. La ropa intima y la de bano quedan
+#: fuera a proposito: superponer esas prendas sobre la camara de una persona no
+#: es una funcion que este proyecto quiera ofrecer.
+VESTIDOR_PRENDA = {
+    "Blusas y Camisas",
+    "Tops y Camisetas",
+    "Chaquetas, Abrigos y Sudaderas",
+    "Piezas Completas y Conjuntos",
+}
+
+
+class Perfil(NamedTuple):
+    """Un catalogo completo: su arbol, sus tallas y sus productos."""
+
+    nombre: str
+    categorias: list[tuple[str, list[str]]]
+    tallas: list[tuple[str, list[str]]]
+    modelos: list[tuple[str, str, str, list[str], int, int]]
+    con_vestidor: set[str]
+
+
+PERFIL_PUBLICO = Perfil(
+    "por publico (Mujer / Hombre / Accesorios)",
+    CATEGORIAS,
+    TALLAS,
+    MODELOS,
+    CATEGORIAS_CON_VESTIDOR,
+)
+PERFIL_PRENDA = Perfil(
+    "por tipo de prenda (el de la base desplegada)",
+    CATEGORIAS_PRENDA,
+    TALLAS_PRENDA,
+    MODELOS_PRENDA,
+    VESTIDOR_PRENDA,
+)
+
+
+def _perfil_de(db: Session) -> Perfil:
+    """Elige el catalogo segun la taxonomia que la base YA tiene.
+
+    NO SE DECIDE CON UNA VARIABLE DE ENTORNO. Una variable mal puesta en Railway
+    siembra la taxonomia equivocada en la base que comparte todo el equipo, y
+    deshacerlo es borrar productos a mano. La base ya sabe cual es la suya;
+    alcanza con preguntarle.
+
+    Se cuenta cuantas hojas de cada perfil reconoce la base y gana el que mas
+    reconozca. Con la base vacia gana el propio, que es el caso de una maquina
+    recien clonada.
+    """
+    existentes = {c.nombre for c in db.scalars(select(Categoria))}
+    if not existentes:
+        return PERFIL_PUBLICO
+
+    puntajes = [
+        (len({modelo[0] for modelo in perfil.modelos} & existentes), perfil)
+        for perfil in (PERFIL_PRENDA, PERFIL_PUBLICO)
+    ]
+    reconocidas, perfil = max(puntajes, key=lambda par: par[0])
+    if reconocidas == 0:
+        print(
+            "  ! la base tiene categorias que no son de ningun perfil conocido.\n"
+            "    Se usa el propio, que va a AGREGAR su arbol al lado del que hay."
+        )
+        return PERFIL_PUBLICO
+    return perfil
+
+
+
 # --- Generacion de imagenes ---------------------------------------------
 
 def _png_de_producto(color_hex: str, etiqueta: str) -> bytes:
@@ -261,10 +442,12 @@ def _proveedores(db: Session) -> list[int]:
     return [p.id for p in existentes.values()]
 
 
-def _maestros(db: Session) -> tuple[dict[str, int], dict[str, list[Talla]], list[Color]]:
+def _maestros(
+    db: Session, perfil: Perfil
+) -> tuple[dict[str, int], dict[str, list[Talla]], list[Color]]:
     # Categorias, con su jerarquia.
     por_nombre = {c.nombre: c for c in db.scalars(select(Categoria))}
-    for orden, (raiz, hijas) in enumerate(CATEGORIAS):
+    for orden, (raiz, hijas) in enumerate(perfil.categorias):
         if raiz not in por_nombre:
             padre = Categoria(nombre=raiz, orden=orden)
             db.add(padre)
@@ -283,7 +466,7 @@ def _maestros(db: Session) -> tuple[dict[str, int], dict[str, list[Talla]], list
 
     # Tallas, agrupadas por tipo de prenda.
     existentes = {(t.tipo_prenda, t.codigo): t for t in db.scalars(select(Talla))}
-    for tipo, codigos in TALLAS:
+    for tipo, codigos in perfil.tallas:
         for orden, codigo in enumerate(codigos):
             if (tipo, codigo) not in existentes:
                 talla = Talla(tipo_prenda=tipo, codigo=codigo, orden=orden)
@@ -352,12 +535,13 @@ def _productos(
     colores: list[Color],
     proveedores: list[int],
     colecciones: list[int],
+    perfil: Perfil,
 ) -> int:
     """Los ~60 productos con sus variantes. Devuelve cuantos creo."""
     ya_estan = {p.codigo for p in db.scalars(select(Producto))}
     creados = 0
 
-    for subcategoria, tipo_prenda, prefijo, modelos, minimo, maximo in MODELOS:
+    for subcategoria, tipo_prenda, prefijo, modelos, minimo, maximo in perfil.modelos:
         categoria_id = categorias.get(subcategoria)
         if categoria_id is None:
             continue
@@ -401,13 +585,17 @@ def _productos(
                     )
             db.flush()
 
-            _imagenes_de(db, producto, subcategoria, paleta)
+            _imagenes_de(db, producto, subcategoria, paleta, perfil.con_vestidor)
 
     return creados
 
 
 def _imagenes_de(
-    db: Session, producto: Producto, subcategoria: str, paleta: list[Color]
+    db: Session,
+    producto: Producto,
+    subcategoria: str,
+    paleta: list[Color],
+    con_vestidor: set[str],
 ) -> None:
     """Una imagen principal del producto y, si corresponde, los PNG del vestidor.
 
@@ -429,7 +617,7 @@ def _imagenes_de(
         )
     )
 
-    if subcategoria not in CATEGORIAS_CON_VESTIDOR:
+    if subcategoria not in con_vestidor:
         return
 
     # Una variante por color de la paleta, en la talla intermedia: alcanza para
@@ -467,11 +655,16 @@ def _imagenes_de(
 def sembrar(db: Session) -> None:
     """Siembra la organizacion y el catalogo del Ciclo 2."""
     print("Sembrando organizacion y catalogo del Ciclo 2...")
+    perfil = _perfil_de(db)
+    print(f"  taxonomia: {perfil.nombre}")
+
     _sucursales(db)
     proveedores = _proveedores(db)
-    categorias, tallas, colores = _maestros(db)
+    categorias, tallas, colores = _maestros(db, perfil)
     colecciones = _temporadas(db)
-    creados = _productos(db, categorias, tallas, colores, proveedores, colecciones)
+    creados = _productos(
+        db, categorias, tallas, colores, proveedores, colecciones, perfil
+    )
 
     total_productos = db.scalar(select(Producto.id).order_by(Producto.id.desc()))
     print(f"  productos nuevos: {creados}")
