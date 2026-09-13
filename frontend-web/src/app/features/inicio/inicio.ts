@@ -8,10 +8,15 @@ import { AuthService } from '../../core/services/auth.service';
 
 /**
  * Pantalla de inicio de los roles que todavía no tienen área propia:
- * Cliente, Encargado de Sucursal y Cajero.
+ * Cliente, Cajero y Proveedor.
  *
- * El Administrador no pasa por acá: su área tiene su propia cáscara con
- * navegación (`AdminLayout`), y reutiliza la misma tarjeta de bienvenida.
+ * Ni el Administrador ni el Encargado pasan por acá: sus áreas tienen su
+ * propia cáscara con navegación —`AdminLayout` y `SucursalLayout`— y
+ * reutilizan la misma tarjeta de bienvenida.
+ *
+ * El Encargado SÍ pasaba, y ese era el problema: sus tres pantallas estaban
+ * terminadas y montadas, pero esta pantalla no tiene navegación, así que no
+ * había forma de llegar a ellas sin escribir la URL.
  */
 @Component({
   selector: 'app-inicio',

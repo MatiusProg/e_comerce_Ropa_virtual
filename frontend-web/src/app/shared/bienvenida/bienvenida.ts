@@ -22,7 +22,7 @@ const AREA: Record<Rol, { titulo: string; detalle: string; icono: string }> = {
   ENCARGADO: {
     titulo: 'Panel de sucursal',
     detalle:
-      'Acá se atienden las reservas y se controla el inventario de la sucursal. Sus funciones propias llegan con el Ciclo 2.',
+      'Desde la barra de arriba se atienden las reservas del local, se controla la disponibilidad de las prendas y se registran los ingresos e inventario de la sucursal. Todo acotado a tu tienda.',
     icono: 'storefront',
   },
   CAJERO: {
@@ -42,10 +42,10 @@ const AREA: Record<Rol, { titulo: string; detalle: string; icono: string }> = {
 /**
  * Tarjeta de bienvenida por rol, sin barra superior.
  *
- * Se usa suelta dentro del área de administración —que ya trae su propia
- * barra— y envuelta por `Inicio` para los demás roles, que todavía no tienen
- * área propia. Existe separada justamente para no duplicar el texto de cada
- * rol en dos lugares.
+ * Se usa suelta dentro de las áreas que ya traen su propia barra —la de
+ * administración y la de sucursal— y envuelta por `Inicio` para los roles que
+ * todavía no tienen área propia: Cliente, Cajero y Proveedor. Existe separada
+ * justamente para no duplicar el texto de cada rol en dos lugares.
  */
 @Component({
   selector: 'app-bienvenida',
