@@ -79,67 +79,72 @@ la reconoce y crea una gemela.
 imágenes —que se dibujan con Pillow, no están versionadas— van al disco de la
 máquina que lo ejecuta. Correrlo desde una laptop apuntando a Supabase deja las
 filas en Supabase y los archivos en la laptop: la API desplegada sirve `/media`
-desde el volumen de Railway, así que **todas las fotos responden 404**.
+desde el volumen de Railway, así que **todas las fotos responderían 404**.
 
 Y no se arregla repitiéndolo: el seed salta el producto cuyo código ya existe,
 así que la segunda corrida ni siquiera llega a generar las imágenes. Habría que
 borrar los productos primero.
 
-Por eso **el seed tiene que ejecutarse dentro del contenedor de Railway**, donde
+Por eso **el seed se ejecuta dentro del contenedor de Railway**, donde
 `MEDIA_ROOT` es el volumen persistente y `DATABASE_URL` es Supabase. `railway
 run` **no** sirve: ejecuta el comando en tu máquina con las variables del
 servicio inyectadas, que es exactamente el caso roto.
 
-**Antes de empezar**, en el servicio de la API en Railway:
+#### Se corre desde la Console del servicio
 
-1. Confirmar que hay un **volumen montado en `/app/media`**. Sin él las imágenes
-   se pierden en el siguiente despliegue, aunque el seed funcione.
-2. Definir las variables `DEMO_PASSWORD`, `ADMIN_PASSWORD` y
-   `SEMBRAR_EN_DESPLEGADA=1` —esta última desarma a propósito la guarda que
-   impide sembrar contra una base desplegada—.
-
-**La carga**, cambiando temporalmente el comando de arranque del servicio
-(Settings → Deploy → Custom Start Command):
+Railway da una terminal dentro del contenedor en la pestaña **Console** del
+servicio. Es la forma correcta: no hay que tocar el comando de arranque, no hay
+`healthcheck` que pueda fallar y no se puede dejar el servicio caído.
 
 ```sh
-sh -c "alembic upgrade head && (python -m app.db.seed && python -m app.db.seed_operacion) & gunicorn app.main:app -k uvicorn.workers.UvicornWorker -b 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120"
+python -m app.db.seed             # catálogo: productos, variantes e imágenes
+python -m app.db.seed_operacion   # personas, inventario, favoritos y reservas
 ```
 
-El `&` no es decorativo: **el seed va en segundo plano a propósito**. El
-`healthcheckTimeout` del `railway.json` es de 120 segundos y el seed tarda
-varios minutos; si bloqueara el arranque, Railway daría el despliegue por
-fallido, reiniciaría el contenedor y el seed volvería a empezar en un bucle.
-Backgroundeándolo, gunicorn responde `/health` de inmediato y la siembra avanza
-en los logs del servicio.
+> **Antes se documentaba aquí un cambio temporal del comando de arranque**, con
+> el seed en segundo plano para que el `healthcheckTimeout` de 120 s no diera el
+> despliegue por fallido. Funcionaba, pero arriesgaba dejar el servicio abajo si
+> el comando quedaba mal escrito. La Console lo vuelve innecesario.
 
-Cuando los logs digan `Dataset de operacion listo`, **devolver el comando de
-arranque al original** (el del `Dockerfile`). Dejarlo puesto no rompe nada
-—el seed es idempotente— pero agrega segundos a cada despliegue.
+#### Requisitos
 
-**Verificación**, contra el dominio de la API:
+| | |
+|---|---|
+| Volumen montado en `/app/media` | **imprescindible antes de sembrar** |
+| `MEDIA_ROOT=/app/media` y `MEDIA_URL` | para servir las imágenes |
+| `ADMIN_PASSWORD` | lo pide `app.db.seed` |
+| `DEMO_PASSWORD` y `SEMBRAR_EN_DESPLEGADA=1` | **solo** los pide `app.db.seed_operacion` |
+
+`app.db.seed` **no necesita** las dos últimas: se puede sembrar el catálogo sin
+definir ninguna credencial nueva.
+
+`SEMBRAR_EN_DESPLEGADA=1` desarma a propósito la guarda que impide sembrar
+contra una base desplegada. Sin ella, `seed_operacion` se niega a arrancar.
+
+#### Verificación
 
 ```bash
-curl -s "$API/api/v1/tienda/productos?pagina=1&tamano=1"   # total > 0
+API=https://ecomerceropavirtual-production.up.railway.app
+curl -s "$API/api/v1/tienda/productos?pagina=1&tamano=1"                          # total > 0
 curl -s -o /dev/null -w "%{http_code}\n" "$API/media/productos/1/principal.jpg"   # 200
 ```
 
-**Qué agrega a Supabase, además de los productos.** El seed respeta lo que ya
-está pero completa lo que falta, y conviene saberlo de antemano: 5 sucursales
-Violet junto a *Urubo*, 4 proveedores junto a *Shein*, 8 colores junto a
-*Morador De la noche*, las 5 tallas `INFERIOR` que no existían —los pantalones
-no se venden en XS—, 2 temporadas junto a *Primavera*, y ~515 usuarios de
-demostración con el dominio `@demo.violetboutique.bo`, que es lo que permite
-distinguirlos de las cuentas reales del equipo.
+Y en la salida del seed, la línea `taxonomia:` tiene que nombrar el perfil que
+corresponde a esa base. Si dice el equivocado, **parar**: significa que no
+reconoció las categorías y va a crear un árbol gemelo.
 
-Las categorías y las tallas `SUPERIOR` **no se tocan**.
+#### Estado del despliegue al 13/09/2026
 
-Verificación:
+El **catálogo ya está cargado**: 52 productos, 798 variantes y 111 imágenes —59
+de ellas los PNG transparentes del vestidor, verificados con canal alfa real—.
+Se sembró con el perfil *por tipo de prenda* y las 12 categorías que ya existían
+quedaron intactas, sin gemelas.
 
-```bash
-curl http://localhost:8000/health        # debe responder {"status":"ok",...}
-```
+El volumen `backend-volume` está montado en `/app/media` del servicio Backend,
+región `us-east4-eqdc4a`, y las imágenes se sirven desde ahí.
 
-Documentación interactiva de la API: <http://localhost:8000/docs>
+**Falta `app.db.seed_operacion`** —las personas, el inventario, los favoritos y
+las reservas—, que además necesita las dos variables de la tabla de arriba.
 
 ## Organización del código
 
