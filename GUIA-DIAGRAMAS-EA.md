@@ -414,7 +414,7 @@ Tipos por caso:
 | Herencia de actores | `Generalization` | — |
 | `include` / `extend` | `Dependency` | `include` / `extend` |
 | Traza paquete → caso de uso | `Abstraction` | `trace` |
-| Dependencia entre paquetes | `Usage` | («use», lo pone EA) |
+| Dependencia entre paquetes | `Dependency` | sin estereotipo · `Direction = 'Source -> Destination'` · ver §7.5 |
 | Relación entre clases | `Association` (**siempre**) | — |
 | Enlace de comunicación | `Association` | — |
 | Mensaje de comunicación | `Collaboration` | — |
@@ -640,6 +640,33 @@ Para cada uno: **tipo de diagrama en EA**, elementos, conectores, disposición y
 **1.5 (modelo estructurado)** es un solo diagrama con todo: actores en una columna a la izquierda,
 casos de uso en dos columnas a la derecha (los numerados y las extensiones).
 
+> ⚠️ **El 1.5 es ACUMULATIVO. Regla fijada el 13/09/2026.** El de un ciclo muestra los casos de uso
+> y los actores de **ese ciclo y de todos los anteriores**: el del Ciclo 2 lleva los 9 del Ciclo 1
+> más sus 13, y el del Ciclo 3 llevará esos 22 más los suyos. Es lo que la sección pide —
+> «estructurar el modelo de casos de uso» es el modelo **completo tal como quedó al cerrar el
+> ciclo**, no el delta—. El que va por ciclo y por caso de uso es el **1.3.1**; el 1.5 es la foto
+> del sistema entero.
+>
+> **Cuidado al rehacerlo:** los actores del paquete de un ciclo no son solo suyos. En Violet
+> Boutique los trece diagramas de comunicación de **2.2** tienen puestos en el lienzo los actores
+> del paquete `Ciclo 2`, así que un `-Rehacer` que borre ese paquete los deja sin actor y con 48
+> conectores de mensaje colgando. Se comprueba antes, por SQL:
+>
+> ```sql
+> SELECT d.Name, o.Name FROM (t_diagramobjects dobj
+>   INNER JOIN t_object o ON o.Object_ID = dobj.Object_ID)
+>   INNER JOIN t_diagram d ON d.Diagram_ID = dobj.Diagram_ID
+> WHERE o.Package_ID = <el paquete> AND d.Package_ID <> <el paquete>
+> ```
+>
+> Si devuelve filas, hay que **agregar sin borrar** y rehacer solo el diagrama 1.5, que es lo que
+> hace `ea-cu-1-5-acumulado.ps1`.
+>
+> **Y un detalle del conteo:** al crear el diagrama sobre conectores que YA existían, EA no
+> materializa las `DiagramLinks` hasta que alguien lo abre —el script reporta 0 relaciones y el
+> dibujo sale bien igual—. Lo que se verifica entonces es cuántos conectores hay **entre los
+> elementos del paquete**, que es lo que EA va a dibujar (regla 3).
+
 **1.3.2** es **un diagrama por caso de uso**, en el **mismo paquete** que el 1.5 (regla 2). Cada uno
 muestra su CU, los actores que lo inician y los CU relacionados por `include`/`extend`.
 
@@ -693,6 +720,40 @@ $dCu01 = New-DiagramaDeCasoDeUso $pkg 'CU-01 Registrar cliente' @(
 
   Acá es **obligatorio** ordenar el Z (regla 4) o el paquete tapa a sus casos de uso. Y se ocultan
   las trazas: los CU ya están dibujados dentro del paquete, que es la misma información.
+
+#### Agregar un caso de uso al 2.1.2 y al 2.1.3 sin rehacerlos
+
+Pasa en cada ciclo: aparecen casos de uso nuevos y los dos diagramas ya están acomodados a mano.
+**No se regeneran.** Script de referencia: `ea-analisis-2-1-refinamiento.ps1`.
+
+| Diagrama | Qué hacer |
+|---|---|
+| **2.1.2** | Es una columna: paquetes a la izquierda, casos de uso a la derecha, agrupados por paquete. Se inserta el caso de uso en el bloque de **su** paquete y se **empuja hacia abajo** todo lo que queda debajo del umbral. Las inserciones se aplican de **abajo hacia arriba**, o cada desplazamiento mueve el punto de inserción de las que faltan. |
+| **2.1.3** | Ahí el `Package` **sí es un marco contenedor**: los actores y los casos de uso se dibujan dentro de sus límites. Hay que **bajar `Bottom` del marco antes** de meter nada, o el elemento nuevo queda fuera de la caja. Si el actor iniciador no estaba en esa vista, se agrega también. |
+
+**La traza va del PAQUETE al CASO DE USO** —`Abstraction` «trace», `Source` = paquete— y cada caso
+de uso lleva **dos**: una desde la copia del paquete que usa el 2.1.2 y otra desde la que usa el
+2.1.3. Un caso de uso que pertenece a dos paquetes lleva cuatro, y aparece **una sola vez** en el
+2.1.2.
+
+> ⚠️ **Los once paquetes están triplicados en el modelo** (ids 59-69 para 2.1.1, 81-91 para 2.1.2 y
+> 92-102 para 2.1.3). Es el resultado de la regla 6 —`Package.Elements` no devuelve los elementos de
+> tipo `Package`, así que el buscar-o-crear no los encontraba y los recreaba en cada corrida—. **No
+> se arregla**: cada diagrama apunta a su copia y unificarlos ahora significa rehacer los trece
+> dibujos a mano. Lo que sí hay que hacer es **colgar cada traza de la copia correcta**.
+
+**Comprobación obligatoria después de mover cosas.** Un choque de cajas no da error y no se ve hasta
+que alguien abre el diagrama. Se verifica por SQL, sin exportar nada:
+
+```sql
+SELECT d.RectLeft, d.RectRight, d.RectTop, d.RectBottom, o.Name
+FROM t_diagramobjects d INNER JOIN t_object o ON o.Object_ID = d.Object_ID
+WHERE d.Diagram_ID = <id>
+```
+
+y se cruzan todos los pares buscando solapamiento, más que cada elemento caiga dentro del marco.
+La primera corrida de este script dejó al actor `Sistema (procesos automáticos)` encima de
+`CU-30 Abrir y cerrar caja` en la vista de P7; se detectó así y no abriendo EA.
 
 ---
 
@@ -788,34 +849,68 @@ avisar.
 
 ### 7.5 Análisis de paquetes 2.4
 
-**Tipo:** `Package` · **Script:** `ea-paquetes-2-4.ps1`
+**Tipo de diagrama:** `Package` · **Script:** `ea-paquetes-2-4-ciclo2.ps1`
 
-Un diagrama por **ciclo de desarrollo**, que responde a las dos preguntas del capítulo:
+> **Esta receta cambió el 13/09/2026.** La primera versión —la que produjo el diagrama del
+> Ciclo 1— dibujaba las clases **contenidas** dentro de cada paquete y unía los paquetes con
+> `Usage`. Se reemplazó por la forma del diagrama **3.10a** de otro proyecto
+> (`PROYECTO_MEDICOS/docs/diagramas/PlataformaMedica.eapx`), que está mejor resuelto. Abajo va el
+> porqué del cambio y lo que queda de la versión vieja.
 
-- **Cohesión** — qué hay **dentro** de cada paquete. Las clases se dibujan **contenidas** en su
-  paquete.
-- **Acoplamiento** — las líneas **entre** paquetes. Conectores **`Usage`** («use»), en un solo
-  sentido.
+| Qué | Cómo |
+|---|---|
+| Paquetes | elementos de tipo `Package`, **280 × 80** |
+| Dependencias | conector **`Dependency`**, sin estereotipo, `Direction = 'Source -> Destination'` |
+| Disposición | pirámide por capas, **paso de fila 150**, columnas cada 320 (`40 · 360 · 680` y `200 · 520`) |
+| Orden Z | **no hace falta tocarlo**: sin clases adentro, ningún rectángulo tapa a nadie |
 
-> La regla «entre clases siempre `Association`» es para los diagramas **de clases**. Acá no se une
-> clase con clase: las clases solo se muestran dentro de su paquete, y lo único que se conecta son
-> los paquetes, con `Usage`, que es lo que expresa una dependencia de paquete.
+**Lo que cambió, y por qué.**
 
-**Por qué se duplican los elementos.** Los paquetes del 2.1 y las clases del 2.2 ya existen, pero
-acá se crean elementos propios:
+1. **Los paquetes van solos, sin las clases adentro.** Con tres paquetes y catorce clases el
+   dibujo del Ciclo 1 todavía se leía; con los seis paquetes y la veintena de clases del Ciclo 2
+   se vuelve ilegible. El diagrama del capítulo tiene que contestar «quién depende de quién», y
+   eso se ve mejor sin el relleno.
+2. **`Dependency` en vez de `Usage`.** Es lo que usa el 3.10a y es la flecha que UML asocia a la
+   dependencia entre paquetes. `Usage` («use») es un refinamiento de `Dependency` que promete más
+   de lo que el diagrama afirma.
+3. **La disposición es una pirámide, no dos filas.** La base —el paquete del que todos dependen—
+   abajo y centrada; cada capa encima depende hacia abajo. Con la regla de las dos filas, un
+   sistema de seis paquetes deja una fila de cinco y no se entiende qué depende de qué.
 
-1. Las clases del 2.2 llevan encima los `Collaboration` de los nueve diagramas de comunicación;
-   reusarlas **inundaría** este diagrama de mensajes que no vienen al caso (regla 3).
-2. Al revés: colgar las dependencias P2→P1 y P3→P1 de los paquetes del 2.1 las haría aparecer en
-   2.1.1 y 2.1.2, que ya están acomodados a mano.
+**La cohesión no se pierde: se baja a las notas.** El 3.10a no lleva notas, pero la sección 2.4
+del índice pide las dos mitades —cohesión y acoplamiento—, así que van dos `Note` al pie, y la de
+cohesión **nombra las clases de cada paquete**. Es la misma información que antes estaba dibujada,
+en un espacio que no compite con las flechas.
 
-**Disposición:** dos filas. Arriba, los paquetes de los que **no** depende nadie; abajo, los que
-dependen. Así las flechas «use» apuntan siempre hacia arriba. Cada fila se centra contra la más
-ancha.
+**La grilla, para copiarla tal cual:**
 
-Al pie, dos `Note`: una de cohesión y una de acoplamiento, repartiéndose el ancho del dibujo.
+```powershell
+$ANCHO = 280; $ALTO = 80; $PASO_FILA = 150
+$COLUMNAS = @{ 1 = @(360); 2 = @(200, 520); 3 = @(40, 360, 680) }   # por cantidad de la fila
+$t = -60
+foreach ($fila in $capas) {
+    $xs = $COLUMNAS[$fila.Count]
+    for ($i = 0; $i -lt $fila.Count; $i++) { Poner $d $P[$fila[$i]] $xs[$i] $t $ANCHO $ALTO }
+    $t -= $PASO_FILA
+}
+```
 
-Y el orden Z, con el `Refresh()` previo (regla 4) — es exactamente donde falla si se olvida.
+**Lo que sigue valiendo de la versión vieja:**
+
+- Los elementos se **duplican** a propósito: no se reusan los paquetes del 2.1. Colgarles las
+  dependencias los haría aparecer en 2.1.1 y 2.1.2, que ya están acomodados a mano (regla 3).
+- El diagrama y sus elementos viven en el **mismo paquete** (regla 2).
+- `Package.Elements` **no devuelve los elementos de tipo `Package`**: el «buscar-o-crear» tiene
+  que indexar por SQL sobre `t_object`, o cada corrida los duplica (regla 6).
+
+**El diagrama del Ciclo 1 no se rehízo.** Quedó con las clases adentro y con `Usage`; el del
+Ciclo 2 en adelante usa esta receta. Si se quieren uniformes, hay que rehacer el del Ciclo 1 a
+mano o borrarlo y volver a generarlo.
+
+**Sobre el nombre.** En el proyecto médico el diagrama se llama `3.10a Diagrama de Paquetes` y es
+**uno solo** para todo el sistema. Acá la sección es `2.4 Análisis de Paquetes` y va **por ciclo**,
+porque así lo pide el índice de la ingeniera; el nombre del diagrama conserva el sufijo
+`- CICLO #N`.
 
 ---
 
@@ -1073,6 +1168,24 @@ la base real, y se **verifica columna por columna** contra ellos después de gen
 `cliente.usuario_id` es `UNIQUE NOT NULL`, un usuario tiene **0 o 1** ficha de cliente —nunca
 "exactamente 1", porque un administrador no es cliente—.
 
+> ⚠️ **El UNIQUE compuesto no hace único a cada una de sus columnas.** Al derivar las
+> cardinalidades de `information_schema`, un `JOIN` contra `key_column_usage` devuelve **una fila
+> por columna** de la restricción. `variante_producto` tiene `UNIQUE(producto_id, talla_id,
+> color_id)`: leído así, `producto_id` parece único y el modelo termina diciendo que **un producto
+> tiene a lo sumo una variante** —exactamente al revés de lo que afirma la decisión D1—. Hay que
+> agrupar por `constraint_name` y quedarse solo con las restricciones de **una** columna:
+>
+> ```sql
+> SELECT tc.table_name, MIN(kcu.column_name), COUNT(kcu.column_name)
+> FROM information_schema.table_constraints tc
+> JOIN information_schema.key_column_usage kcu ON kcu.constraint_name = tc.constraint_name
+> WHERE tc.constraint_type = 'UNIQUE'
+> GROUP BY tc.table_name, tc.constraint_name
+> -- y descartar las que devuelven COUNT > 1
+> ```
+>
+> No da error y el diagrama se ve bien: se detecta leyendo las cardinalidades una por una.
+
 **Disposición:** columnas agrupadas por paquete de análisis, de izquierda a derecha. Las
 autorreferencias (una categoría que es subcategoría de otra) necesitan **aire a la derecha**.
 Alto de cada caja: `60 + nColumnas * 18`.
@@ -1204,6 +1317,7 @@ $visibles = ($d.DiagramLinks | Where-Object { -not $_.IsHidden }).Count
 | El script falla **mucho después** del error real, sin sentido | una variable de bucle pisó un mapa (`$a` vs `$A`) | nombres de más de una letra para los mapas |
 | `OleDbConnection.Open()` falla justo después de cerrar EA | el proceso todavía tiene el archivo | `ReleaseComObject` + `GC::Collect` + `Start-Sleep 1500` |
 | Un array de un solo par se **aplana** | PowerShell aplana arrays de un elemento | `@( ,@($a, $b) )` con coma delante |
+| Los **acentos de los nombres** salen como `automÃ¡ticos` en el diagrama exportado | el `.ps1` se guardó **sin BOM** y PowerShell 5.1 lo lee como ANSI (Windows-1252), no como UTF-8 | guardar el script en **UTF-8 con BOM** y volver a generar con `-Rehacer`. Es invisible al leer el archivo: se comprueba con `open(p,'rb').read(3) == b'ï»¿'` |
 
 ---
 

@@ -231,6 +231,116 @@ $SUBSISTEMAS = @(
     @{ n = 'coleccion'; propia = $true }
   )
 }
+,
+
+# ------------------------------------------------------------------ P4 --
+@{
+  nombre = '4.3 Subsistema 4 — Inventario'
+  nota   = "SUBSISTEMA 4 = PAQUETE P4 del análisis 2.1`n`nCU-13 Registrar ingreso de mercadería,`nCU-14 Consultar inventario consolidado,`nCU-15 Registrar movimiento de inventario,`nCU-16 Gestionar disponibilidad de la sucursal.`n`nBackend: backend/app/modules/inventario`nFrontend: features/admin/inventario, features/admin/consolidado,`n          features/sucursal/disponibilidad`n`nVerde: implementado. Azul: tabla de otro subsistema.`n`nEs el subsistema que concentra la regla más crítica del`nsistema: ninguna cantidad se modifica sin generar su`nmovimiento. Por eso TODO endpoint que toca existencia`ntoca también movimiento_inventario.`n`nsolo dos de sus siete tablas son propias: P4 dice cuánto`nhay y dónde, pero la prenda y la sucursal son de otros."
+  grupos = @(
+    @{ form = 'Inventario'; nf = 'features/admin/inventario/inventario.ts. Tres pestañas: existencias, ingresos y movimientos.'; clases = @(
+        @{ n = 'listar_existencias';     nc = 'GET /api/v1/inventario/existencias. Paginado desde el 13/09: devolvía la lista entera y con el dataset cargado el navegador no la podía dibujar.'; tablas = @('existencia','variante_producto','sucursal') },
+        @{ n = 'listar_ingresos';        nc = 'GET /api/v1/inventario/ingresos. Agrupa los movimientos de INGRESO por referencia de remito.'; tablas = @('movimiento_inventario') },
+        @{ n = 'detalle_de_ingreso';     nc = 'GET /api/v1/inventario/ingresos/detalle';   tablas = @('movimiento_inventario','existencia') },
+        @{ n = 'listar_movimientos';     nc = 'GET /api/v1/inventario/movimientos. La trazabilidad que pide el RF22.'; tablas = @('movimiento_inventario','existencia') },
+        @{ n = 'listar_tipos_manuales';  nc = 'GET /api/v1/inventario/tipos-movimiento. Devuelve una constante: no consulta ninguna tabla.'; tablas = @() }
+      )},
+    @{ form = 'IngresoFormulario'; nf = 'features/admin/inventario/ingreso-formulario.ts. El remito, con sus líneas.'; clases = @(
+        @{ n = 'registrar_ingreso'; nc = 'POST /api/v1/inventario/ingresos. Todo el remito en una sola transacción: si una línea falla, no entra ninguna.'; tablas = @('existencia','movimiento_inventario','variante_producto','sucursal','proveedor') }
+      )},
+    @{ form = 'AjusteFormulario'; nf = 'features/admin/inventario/ajuste-formulario.ts'; clases = @(
+        @{ n = 'registrar_ajuste'; nc = 'POST /api/v1/inventario/movimientos/ajuste. Se cuenta el total FÍSICO, no el disponible: una prenda apartada sigue en la percha.'; tablas = @('existencia','movimiento_inventario') }
+      )},
+    @{ form = 'TransferenciaFormulario'; nf = 'features/admin/inventario/transferencia-formulario.ts'; clases = @(
+        @{ n = 'registrar_transferencia'; nc = 'POST /api/v1/inventario/movimientos/transferencia. Dos movimientos en una transacción: TRASLADO_SALIDA y TRASLADO_ENTRADA.'; tablas = @('existencia','movimiento_inventario','sucursal') }
+      )},
+    @{ form = 'Consolidado'; nf = 'features/admin/consolidado/consolidado.ts'; clases = @(
+        @{ n = 'consultar_consolidado'; nc = 'GET /api/v1/inventario/consolidado. Agrupa por variante y calcula el resumen sobre TODO lo filtrado antes de paginar.'; tablas = @('existencia','variante_producto','producto','sucursal') }
+      )},
+    @{ form = 'Disponibilidad'; nf = 'features/sucursal/disponibilidad/disponibilidad.ts. El panel del Encargado, acotado a su sucursal.'; clases = @(
+        @{ n = 'listar_alertas'; nc = 'GET /api/v1/inventario/alertas. Solo las que tienen umbral: cero significa «sin alerta».'; tablas = @('existencia','variante_producto') }
+      )},
+    @{ form = 'MinimoFormulario'; nf = 'features/admin/inventario/minimo-formulario.ts'; clases = @(
+        @{ n = 'fijar_stock_minimo'; nc = 'PATCH /api/v1/inventario/existencias/{id}/stock-minimo'; tablas = @('existencia') }
+      )},
+    @{ form = $null; clases = @(
+        @{ n = 'apartar_para_reserva'; nc = 'inventario/service.py. NO es un endpoint: lo llama P6 al crear una reserva. Toma el SELECT ... FOR UPDATE que mitiga el riesgo R5.'; tablas = @('existencia','movimiento_inventario') },
+        @{ n = 'liberar_de_reserva';   nc = 'inventario/service.py. Lo llaman CU-23, CU-24 y CU-25 para devolver el stock apartado.'; tablas = @('existencia','movimiento_inventario') },
+        @{ n = 'descontar_por_venta';  nc = 'inventario/service.py. Lo llama CU-24 cuando el cliente se lleva la prenda.'; tablas = @('existencia','movimiento_inventario') },
+        @{ n = 'disponibilidad_por_sucursal'; nc = 'inventario/service.py. La COSTURA C1: P5 le pide este dato en vez de consultar existencia, que es ajena.'; tablas = @('existencia','sucursal') }
+      )}
+  )
+  tablas = @(
+    @{ n = 'existencia';            propia = $true  },
+    @{ n = 'movimiento_inventario'; propia = $true  },
+    @{ n = 'variante_producto';     propia = $false },
+    @{ n = 'producto';              propia = $false },
+    @{ n = 'sucursal';              propia = $false },
+    @{ n = 'proveedor';             propia = $false }
+  )
+},
+
+# ------------------------------------------------------------------ P5 --
+@{
+  nombre = '4.3 Subsistema 5 — Catálogo Público y Disponibilidad'
+  nota   = "SUBSISTEMA 5 = PAQUETE P5 del análisis 2.1`n`nCU-17 Consultar catálogo, CU-18 Consultar ficha de producto,`nCU-19 Consultar disponibilidad por sucursal.`n`nBackend: backend/app/modules/catalogo_publico`nFrontend: features/tienda/catalogo, features/tienda/ficha`nMóvil: mobile/lib/features/catalogo`n`nAzul: TODAS las tablas son de otro subsistema.`n`nEs el único subsistema SIN TABLAS PROPIAS en este ciclo,`ny no es un descuido: P5 es una fachada de solo lectura`nsobre P3 y P4. Esa es su razón de ser --- separa las`nnecesidades de consulta del cliente de las operaciones`nde mantenimiento del Administrador.`n`nTampoco pasa por autenticación: su router no declara`nrequiere_roles. La vitrina es pública.`n`ndisponibilidad_de_variante no consulta existencia por su`ncuenta: llama a la función de P4 (costura C1)."
+  grupos = @(
+    @{ form = 'Catalogo'; nf = 'features/tienda/catalogo/catalogo.ts. La vitrina, con búsqueda, filtros, orden y paginación.'; clases = @(
+        @{ n = 'listar_productos'; nc = 'GET /api/v1/tienda/productos. Solo lo ofrecible: producto activo con al menos una variante activa.'; tablas = @('producto','variante_producto','imagen_producto','categoria') },
+        @{ n = 'obtener_filtros';  nc = 'GET /api/v1/tienda/filtros. Solo las opciones que el catálogo realmente ofrece.'; tablas = @('categoria','talla','color','temporada') }
+      )},
+    @{ form = 'Ficha'; nf = 'features/tienda/ficha/ficha.ts. El detalle, con la selección de talla y color.'; clases = @(
+        @{ n = 'obtener_ficha';              nc = 'GET /api/v1/tienda/productos/{id}. El 404 es el mismo si no existe o si dejó de ofrecerse: recorrer identificadores no delata los productos ocultos.'; tablas = @('producto','variante_producto','imagen_producto') },
+        @{ n = 'disponibilidad_de_variante'; nc = 'GET /api/v1/tienda/variantes/{id}/disponibilidad. COSTURA C1: le pide el dato a P4.'; tablas = @('variante_producto','existencia') }
+      )}
+  )
+  tablas = @(
+    @{ n = 'producto';          propia = $false },
+    @{ n = 'variante_producto'; propia = $false },
+    @{ n = 'imagen_producto';   propia = $false },
+    @{ n = 'categoria';         propia = $false },
+    @{ n = 'talla';             propia = $false },
+    @{ n = 'color';             propia = $false },
+    @{ n = 'temporada';         propia = $false },
+    @{ n = 'existencia';        propia = $false }
+  )
+},
+
+# ------------------------------------------------------------------ P6 --
+@{
+  nombre = '4.3 Subsistema 6 — Reservas'
+  nota   = "SUBSISTEMA 6 = PAQUETE P6 del análisis 2.1`n`nCU-22 Crear reserva de prendas,`nCU-23 Consultar y cancelar reserva,`nCU-24 Atender reserva en sucursal,`nCU-25 Expirar reservas vencidas.`n`nBackend: backend/app/modules/reservas`nFrontend: features/cliente/reservas, features/sucursal/reservas`nMóvil: mobile/lib/features/reservas`n`nVerde: implementado. Azul: tabla de otro subsistema.`n`nDOS ROUTERS, PORQUE SON DOS ÁMBITOS: /reservas es del`nCliente --- las suyas --- y /sucursal/reservas es del`nEncargado --- las de su local ---. Casi nunca coinciden.`n`nP6 NO ESCRIBE existencia ni movimiento_inventario por su`ncuenta: llama a las funciones de P4. La regla «ninguna`ncantidad cambia sin movimiento» es de P4 y no puede estar`nen dos lugares. Lo que P6 sí controla es la transacción.`n`nexpirar_reservas_vencidas no tiene pantalla: lo dispara`nel planificador. El endpoint de mantenimiento existe para`npoder demostrarlo en la defensa."
+  grupos = @(
+    @{ form = 'Reservas'; nf = 'features/cliente/reservas/reservas.ts. Mis reservas: las vivas en tarjetas y las cerradas en lista.'; clases = @(
+        @{ n = 'listar_mis_reservas'; nc = 'GET /api/v1/reservas. Filtro `vivas` además del de estado: la pregunta de la pantalla es «¿qué tengo pendiente?», y eso son dos estados.'; tablas = @('reserva','reserva_detalle') },
+        @{ n = 'obtener_reserva';     nc = 'GET /api/v1/reservas/{id}. Una reserva ajena devuelve 404 y no 403: un 403 confirmaría que existe.'; tablas = @('reserva','reserva_detalle','variante_producto') },
+        @{ n = 'cancelar_reserva';    nc = 'PATCH /api/v1/reservas/{id}/cancelacion. PATCH sobre un sub-recurso y no DELETE: cancelar no borra la reserva.'; tablas = @('reserva','reserva_detalle','existencia','movimiento_inventario') }
+      )},
+    @{ form = 'ReservaFormulario'; nf = 'features/cliente/reservas/reserva-formulario.ts. Pide primero las prendas y después la sucursal, al revés que el servidor.'; clases = @(
+        @{ n = 'crear_reserva'; nc = 'POST /api/v1/reservas. Primero todo lo que se rechaza sin tocar filas --- sucursal, franja, prendas, capacidad --- y recién al final el apartado, que es lo único que toma bloqueos.'; tablas = @('reserva','reserva_detalle','existencia','movimiento_inventario','sucursal','variante_producto') }
+      )},
+    @{ form = 'ReservasSucursal'; nf = 'features/sucursal/reservas/reservas-sucursal.ts. La agenda del local, la franja más próxima arriba.'; clases = @(
+        @{ n = 'listar_reservas_de_sucursal'; nc = 'GET /api/v1/sucursal/reservas. Ordena al revés que las del Cliente: el Encargado mira una agenda, no un historial.'; tablas = @('reserva','cliente') },
+        @{ n = 'obtener_reserva_de_sucursal'; nc = 'GET /api/v1/sucursal/reservas/{id}. Las prendas que hay que ir a buscar a la percha.'; tablas = @('reserva','reserva_detalle','variante_producto') },
+        @{ n = 'preparar_reserva';            nc = 'PATCH /api/v1/sucursal/reservas/{id}/preparacion. No mueve stock: ya estaba apartado.'; tablas = @('reserva') }
+      )},
+    @{ form = 'AtencionFormulario'; nf = 'features/sucursal/reservas/atencion-formulario.ts. El resultado de cada prenda.'; clases = @(
+        @{ n = 'atender_reserva'; nc = 'PATCH /api/v1/sucursal/reservas/{id}/atencion. Por cada prenda que el cliente se lleva escribe DOS movimientos: una LIBERACION y una VENTA. El neto sobre el disponible es cero y el invariante D4 se sostiene.'; tablas = @('reserva','reserva_detalle','existencia','movimiento_inventario') }
+      )},
+    @{ form = $null; clases = @(
+        @{ n = 'expirar_reservas_vencidas'; nc = 'POST /api/v1/mantenimiento/reservas/expiracion. Lo dispara el planificador; el endpoint existe para demostrarlo. El movimiento de LIBERACION queda SIN usuario, y eso es lo que distingue una expiración de una cancelación en el historial.'; tablas = @('reserva','reserva_detalle','existencia','movimiento_inventario') }
+      )}
+  )
+  tablas = @(
+    @{ n = 'reserva';               propia = $true  },
+    @{ n = 'reserva_detalle';       propia = $true  },
+    @{ n = 'existencia';            propia = $false },
+    @{ n = 'movimiento_inventario'; propia = $false },
+    @{ n = 'variante_producto';     propia = $false },
+    @{ n = 'sucursal';              propia = $false },
+    @{ n = 'cliente';               propia = $false }
+  )
+}
 
 )
 
