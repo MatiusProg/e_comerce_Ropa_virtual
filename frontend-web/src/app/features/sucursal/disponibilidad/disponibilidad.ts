@@ -1,5 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -17,7 +19,10 @@ import {
   InventarioService,
   type ErrorInventario,
 } from '../../../core/services/inventario.service';
-import type { Existencia } from '../../../core/models/inventario.models';
+import type {
+  Existencia,
+  PaginaExistencias,
+} from '../../../core/models/inventario.models';
 // Los dos diálogos viven en `admin/inventario` porque es donde nacieron, con
 // CU-15 y CU-13. No se duplican acá ni se mueven a `shared/`: son la MISMA
 // operación —el mismo endpoint, la misma regla del conteo físico— y tener dos
@@ -51,6 +56,9 @@ import {
  * locales—; esta, alrededor del saldo de un local. Comparten los diálogos y el
  * servicio, que es donde vive lo que de verdad se repite.
  */
+/** Mismo tamaño que las otras tablas paginadas del proyecto. */
+const TAMANO_PAGINA = 20;
+
 @Component({
   selector: 'app-disponibilidad',
   imports: [
@@ -61,6 +69,7 @@ import {
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatPaginatorModule,
     MatProgressBarModule,
     MatSelectModule,
     MatTableModule,
@@ -96,23 +105,28 @@ export class Disponibilidad implements OnInit {
   protected readonly soloConSaldo = new FormControl(false, { nonNullable: true });
 
   /**
-   * El filtro por texto se resuelve acá y no en el servidor a propósito: una
-   * sucursal maneja decenas o pocos cientos de existencias, ya vienen todas, y
-   * un viaje por cada letra tecleada no compra nada.
+   * El filtro por texto pasó AL SERVIDOR el 13/09.
+   *
+   * Antes se resolvía acá, y el razonamiento era que «una sucursal maneja
+   * decenas o pocos cientos de existencias, ya vienen todas». Con el dataset de
+   * operación cargado son ~470 por sucursal y el listado dejó de venir entero:
+   * el endpoint pagina de a veinte. Filtrar en el cliente sobre una página
+   * buscaría en veinte filas y diría que no hay nada, que es peor que el viaje
+   * por cada búsqueda que se quería evitar.
    */
   protected readonly visibles = computed(() => {
-    const texto = this.textoBuscado().trim().toLowerCase();
-    if (!texto) return this.existencias();
-    return this.existencias().filter(
-      (e) =>
-        e.sku.toLowerCase().includes(texto) ||
-        e.producto.toLowerCase().includes(texto) ||
-        e.color.toLowerCase().includes(texto) ||
-        e.talla.toLowerCase().includes(texto),
-    );
+    return this.existencias();
   });
 
   private readonly textoBuscado = signal('');
+
+  protected readonly pagina = signal<PaginaExistencias | null>(null);
+  private indice = 0;
+
+  protected paginar(evento: PageEvent): void {
+    this.indice = evento.pageIndex;
+    this.refrescar();
+  }
 
   protected readonly nombreDeSucursal = computed(
     () => this.existencias()[0]?.sucursal ?? this.alertas()[0]?.sucursal ?? '',
@@ -120,25 +134,40 @@ export class Disponibilidad implements OnInit {
 
   ngOnInit(): void {
     this.refrescar();
-    this.busqueda.valueChanges.subscribe((t) => this.textoBuscado.set(t));
+    this.busqueda.valueChanges
+      .pipe(debounceTime(300), distinctUntilChanged())
+      .subscribe((t) => {
+        this.textoBuscado.set(t);
+        this.indice = 0;
+        this.refrescar();
+      });
     this.soloConSaldo.valueChanges.subscribe(() => this.refrescar());
   }
 
   protected refrescar(): void {
     this.cargando.set(true);
 
-    this.api.listarExistencias({ solo_con_saldo: this.soloConSaldo.value }).subscribe({
-      next: (filas) => {
-        this.existencias.set(filas);
-        this.error.set(null);
-        this.cargando.set(false);
-      },
-      error: (e: ErrorInventario) => {
-        this.existencias.set([]);
-        this.error.set(e.mensaje);
-        this.cargando.set(false);
-      },
-    });
+    this.api
+      .listarExistencias({
+        solo_con_saldo: this.soloConSaldo.value,
+        busqueda: this.textoBuscado().trim() || undefined,
+        pagina: this.indice + 1,
+        tamano: TAMANO_PAGINA,
+      })
+      .subscribe({
+        next: (p) => {
+          this.pagina.set(p);
+          this.existencias.set(p.items);
+          this.error.set(null);
+          this.cargando.set(false);
+        },
+        error: (e: ErrorInventario) => {
+          this.pagina.set(null);
+          this.existencias.set([]);
+          this.error.set(e.mensaje);
+          this.cargando.set(false);
+        },
+      });
 
     this.api.listarAlertas().subscribe({
       next: (filas) => this.alertas.set(filas),
@@ -156,7 +185,7 @@ export class Disponibilidad implements OnInit {
   protected ajustar(existencia: Existencia): void {
     const datos: DatosAjusteFormulario = { existencia };
     this.dialogo
-      .open(AjusteFormulario, { data: datos, width: '560px', disableClose: true })
+      .open(AjusteFormulario, { data: datos, width: '560px', maxWidth: '95vw', disableClose: true })
       .afterClosed()
       .subscribe((ajuste) => {
         if (!ajuste) return;
@@ -173,7 +202,7 @@ export class Disponibilidad implements OnInit {
   protected fijarMinimo(existencia: Existencia): void {
     const datos: DatosMinimoFormulario = { existencia };
     this.dialogo
-      .open(MinimoFormulario, { data: datos, width: '520px', disableClose: true })
+      .open(MinimoFormulario, { data: datos, width: '520px', maxWidth: '95vw', disableClose: true })
       .afterClosed()
       .subscribe((actualizada) => {
         if (!actualizada) return;

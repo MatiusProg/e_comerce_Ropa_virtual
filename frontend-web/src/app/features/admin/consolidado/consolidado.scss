@@ -229,3 +229,19 @@ mat-panel-description {
     }
   }
 }
+
+
+// A 700px los filtros dejan de caber en una fila. Sin esto no se rompe nada,
+// pero cada selector se queda en su ancho minimo y la mitad de la fila queda
+// vacia: es el mismo bloque que usan las demas pantallas con filtros.
+@media (max-width: 700px) {
+  .filtros {
+    padding: 1rem 1rem 0;
+
+    mat-form-field,
+    .campo-busqueda {
+      flex: 1 1 100%;
+      min-width: 0;
+    }
+  }
+}

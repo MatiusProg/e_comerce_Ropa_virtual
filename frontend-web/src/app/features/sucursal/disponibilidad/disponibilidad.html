@@ -203,9 +203,19 @@
         ></tr>
       </table>
     </div>
+
+    @if (pagina(); as p) {
+      <mat-paginator
+        [length]="p.total"
+        [pageSize]="p.tamano"
+        [pageIndex]="p.pagina - 1"
+        [hidePageSize]="true"
+        (page)="paginar($event)"
+      />
+    }
   } @else {
     <p class="vacio">
-      @if (existencias().length) {
+      @if (busqueda.value.trim()) {
         Ninguna prenda coincide con la búsqueda.
       } @else {
         No hay existencias registradas en su sucursal todavía.

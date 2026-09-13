@@ -154,6 +154,20 @@ export interface FiltrosDisponibles {
   precio_max: string | null;
 }
 
+/**
+ * CU-20 · la lista de favoritos.
+ *
+ * Los items son `ProductoVitrina`, **la misma tarjeta que el catálogo**: la
+ * pantalla de favoritos muestra exactamente lo mismo, y duplicar el tipo
+ * obligaría a agregar dos veces cada campo nuevo.
+ */
+export interface PaginaFavoritos {
+  total: number;
+  pagina: number;
+  tamano: number;
+  items: ProductoVitrina[];
+}
+
 export type OrdenVitrina = 'novedades' | 'precio_asc' | 'precio_desc' | 'nombre';
 
 export interface ConsultaVitrina {

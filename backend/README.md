@@ -32,13 +32,119 @@ python -m app.db.seed
 uvicorn app.main:app --reload
 ```
 
-Verificación:
+### El dataset de demostración
+
+`seed.py` deja el sistema **vacío**: los roles para entrar y el catálogo para
+mirar. Para verlo **en uso** —con existencias, movimientos, clientes, favoritos
+y reservas— hay un segundo seed:
 
 ```bash
-curl http://localhost:8000/health        # debe responder {"status":"ok",...}
+python -m app.db.seed_operacion
 ```
 
-Documentación interactiva de la API: <http://localhost:8000/docs>
+Necesita `DEMO_PASSWORD` en el `.env` y tarda unos minutos. **Corre contra una
+base local**: escribe miles de filas y se niega a arrancar si `DATABASE_URL`
+apunta a Supabase o a Railway, que es la base desplegada. Los volúmenes se
+ajustan en el diccionario `VOLUMEN`, al principio del archivo.
+
+Con los valores de fábrica deja ~515 personas, ~2.400 existencias, ~5.600
+movimientos repartidos en seis meses, ~2.100 favoritos y 300 reservas en los
+cinco estados.
+
+### Las dos taxonomías del catálogo
+
+El árbol de categorías existe en dos versiones y **el seed elige la que la base
+ya tiene**, no la que prefiere:
+
+| Perfil | Árbol | Cuándo se usa |
+|---|---|---|
+| `PERFIL_PUBLICO` | Mujer / Hombre / Accesorios | base vacía (máquina recién clonada) |
+| `PERFIL_PRENDA` | Prendas Superiores / Inferiores / Ropa Íntima… | la base ya tiene esas categorías (es el caso de Supabase) |
+
+El motivo es que el seed reconoce las categorías **por nombre**: sembrar un árbol
+sobre el otro no reemplaza nada, lo agrega al lado, y la vitrina termina
+ofreciendo `Mujer > Blusas` y `Prendas Superiores > Blusas y Camisas` como si
+fueran ramas distintas. La elección se hace mirando la base —`_perfil_de()`— y
+no con una variable de entorno: una variable mal puesta en Railway siembra la
+taxonomía equivocada en la base de todo el equipo, y deshacerlo es borrar
+productos a mano.
+
+Al agregar una categoría a Supabase hay que copiarla **letra por letra** al
+perfil correspondiente. Si difiere en un acento o en una mayúscula, el seed no
+la reconoce y crea una gemela.
+
+### Cargar el dataset en Supabase y verlo en el despliegue
+
+**El seed escribe en dos lugares a la vez**: las filas van a la base y las
+imágenes —que se dibujan con Pillow, no están versionadas— van al disco de la
+máquina que lo ejecuta. Correrlo desde una laptop apuntando a Supabase deja las
+filas en Supabase y los archivos en la laptop: la API desplegada sirve `/media`
+desde el volumen de Railway, así que **todas las fotos responderían 404**.
+
+Y no se arregla repitiéndolo: el seed salta el producto cuyo código ya existe,
+así que la segunda corrida ni siquiera llega a generar las imágenes. Habría que
+borrar los productos primero.
+
+Por eso **el seed se ejecuta dentro del contenedor de Railway**, donde
+`MEDIA_ROOT` es el volumen persistente y `DATABASE_URL` es Supabase. `railway
+run` **no** sirve: ejecuta el comando en tu máquina con las variables del
+servicio inyectadas, que es exactamente el caso roto.
+
+#### Se corre desde la Console del servicio
+
+Railway da una terminal dentro del contenedor en la pestaña **Console** del
+servicio. Es la forma correcta: no hay que tocar el comando de arranque, no hay
+`healthcheck` que pueda fallar y no se puede dejar el servicio caído.
+
+```sh
+python -m app.db.seed             # catálogo: productos, variantes e imágenes
+python -m app.db.seed_operacion   # personas, inventario, favoritos y reservas
+```
+
+> **Antes se documentaba aquí un cambio temporal del comando de arranque**, con
+> el seed en segundo plano para que el `healthcheckTimeout` de 120 s no diera el
+> despliegue por fallido. Funcionaba, pero arriesgaba dejar el servicio abajo si
+> el comando quedaba mal escrito. La Console lo vuelve innecesario.
+
+#### Requisitos
+
+| | |
+|---|---|
+| Volumen montado en `/app/media` | **imprescindible antes de sembrar** |
+| `MEDIA_ROOT=/app/media` y `MEDIA_URL` | para servir las imágenes |
+| `ADMIN_PASSWORD` | lo pide `app.db.seed` |
+| `DEMO_PASSWORD` y `SEMBRAR_EN_DESPLEGADA=1` | **solo** los pide `app.db.seed_operacion` |
+
+`app.db.seed` **no necesita** las dos últimas: se puede sembrar el catálogo sin
+definir ninguna credencial nueva.
+
+`SEMBRAR_EN_DESPLEGADA=1` desarma a propósito la guarda que impide sembrar
+contra una base desplegada. Sin ella, `seed_operacion` se niega a arrancar.
+
+#### Verificación
+
+```bash
+API=https://ecomerceropavirtual-production.up.railway.app
+curl -s "$API/api/v1/tienda/productos?pagina=1&tamano=1"                          # total > 0
+curl -s -o /dev/null -w "%{http_code}\n" "$API/media/productos/1/principal.jpg"   # 200
+```
+
+Y en la salida del seed, la línea `taxonomia:` tiene que nombrar el perfil que
+corresponde a esa base. Si dice el equivocado, **parar**: significa que no
+reconoció las categorías y va a crear un árbol gemelo.
+
+#### Estado del despliegue al 13/09/2026
+
+El **catálogo ya está cargado**: 52 productos, 798 variantes y 111 imágenes —59
+de ellas los PNG transparentes del vestidor, verificados con canal alfa real—.
+Se sembró con el perfil *por tipo de prenda* y las 12 categorías que ya existían
+quedaron intactas, sin gemelas.
+
+El volumen `backend-volume` está montado en `/app/media` del servicio Backend,
+región `us-east4-eqdc4a`, y las imágenes se sirven desde ahí.
+
+**Falta `app.db.seed_operacion`** —las personas, el inventario, los favoritos y
+las reservas—, que además necesita las dos variables de la tabla de arriba.
 
 ## Organización del código
 
@@ -58,7 +164,9 @@ app/
 ├── db/
 │   ├── base.py           Base declarativa + convención de nombres
 │   ├── session.py        Motor y sesión (una por petición)
-│   └── seed.py           Datos de prueba
+│   ├── seed.py           Roles, ciudades y administrador (ciclo 1)
+│   ├── seed_catalogo.py  Sucursales, maestros y ~60 productos (ciclo 2)
+│   └── seed_operacion.py Personas, inventario, favoritos y reservas
 ├── modules/
 │   ├── seguridad/          P1  · CU-01 a CU-04            · ciclo 1
 │   ├── organizacion/       P2  · CU-05 a CU-07            · ciclo 1

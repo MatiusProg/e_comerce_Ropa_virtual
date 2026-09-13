@@ -46,6 +46,15 @@ export const routes: Routes = [
     title: 'Prenda · Violet Boutique',
     loadComponent: () => import('./features/tienda/ficha/ficha').then((m) => m.Ficha),
   },
+  {
+    // CU-20. A diferencia del resto de la tienda, ésta **sí** exige sesión de
+    // Cliente: un favorito es de alguien, y sin sesión no hay de quién.
+    path: 'tienda/favoritos',
+    title: 'Mis favoritos · Violet Boutique',
+    canActivate: [sesionGuard, rolGuard('CLIENTE')],
+    loadComponent: () =>
+      import('./features/tienda/favoritos/favoritos').then((m) => m.Favoritos),
+  },
 
   // --- Con sesión, una por rol ------------------------------------------
   {
@@ -175,36 +184,52 @@ export const routes: Routes = [
   // la ruta sino el servidor: el ámbito viaja en el token.
   // CU-24: el panel de reservas del local. El Administrador entra por
   // /admin/reservas con alcance a toda la red.
-  {
-    path: 'sucursal/reservas',
-    title: 'Reservas de la sucursal · Violet Boutique',
-    canActivate: [sesionGuard, rolGuard('ENCARGADO')],
-    loadComponent: () =>
-      import('./features/sucursal/reservas/reservas-sucursal').then(
-        (m) => m.ReservasSucursal,
-      ),
-  },
-  {
-    path: 'sucursal/disponibilidad',
-    title: 'Disponibilidad · Violet Boutique',
-    canActivate: [sesionGuard, rolGuard('ENCARGADO')],
-    loadComponent: () =>
-      import('./features/sucursal/disponibilidad/disponibilidad').then(
-        (m) => m.Disponibilidad,
-      ),
-  },
-  {
-    path: 'sucursal/inventario',
-    title: 'Inventario de la sucursal · Violet Boutique',
-    canActivate: [sesionGuard, rolGuard('ENCARGADO')],
-    loadComponent: () =>
-      import('./features/admin/inventario/inventario').then((m) => m.Inventario),
-  },
+  // El area del Encargado cuelga de su propia cascara, igual que la del
+  // Administrador. ANTES LAS TRES RUTAS ERAN HERMANAS Y `sucursal` caia en la
+  // pantalla generica de bienvenida: las pantallas funcionaban pero no habia
+  // como llegar a ellas salvo escribiendo la URL. Ver `SucursalLayout`.
+  //
+  // El guard va en el padre y lo heredan las hijas; repetirlo en cada una
+  // seria pedirle lo mismo cuatro veces al mismo token.
   {
     path: 'sucursal',
-    title: 'Sucursal · Violet Boutique',
     canActivate: [sesionGuard, rolGuard('ENCARGADO')],
-    loadComponent: inicio,
+    loadComponent: () =>
+      import('./features/sucursal/sucursal-layout/sucursal-layout').then(
+        (m) => m.SucursalLayout,
+      ),
+    children: [
+      {
+        path: '',
+        title: 'Sucursal · Violet Boutique',
+        loadComponent: () =>
+          import('./shared/bienvenida/bienvenida').then((m) => m.Bienvenida),
+      },
+      {
+        path: 'reservas',
+        title: 'Reservas de la sucursal · Violet Boutique',
+        loadComponent: () =>
+          import('./features/sucursal/reservas/reservas-sucursal').then(
+            (m) => m.ReservasSucursal,
+          ),
+      },
+      {
+        path: 'disponibilidad',
+        title: 'Disponibilidad · Violet Boutique',
+        loadComponent: () =>
+          import('./features/sucursal/disponibilidad/disponibilidad').then(
+            (m) => m.Disponibilidad,
+          ),
+      },
+      {
+        // Reusa la pantalla del Administrador: el alcance no lo decide la ruta
+        // sino el ambito que viaja en el token.
+        path: 'inventario',
+        title: 'Inventario de la sucursal · Violet Boutique',
+        loadComponent: () =>
+          import('./features/admin/inventario/inventario').then((m) => m.Inventario),
+      },
+    ],
   },
   {
     path: 'caja',

@@ -150,7 +150,7 @@ def _ingresar(
 
 
 def _saldo(api: TestClient, admin: dict[str, str], *, sucursal_id: int) -> dict[int, dict]:
-    filas = api.get(EXISTENCIAS, headers=admin, params={"sucursal_id": sucursal_id}).json()
+    filas = api.get(EXISTENCIAS, headers=admin, params={"tamano": 100, "sucursal_id": sucursal_id}).json()["items"]
     return {f["variante_id"]: f for f in filas}
 
 

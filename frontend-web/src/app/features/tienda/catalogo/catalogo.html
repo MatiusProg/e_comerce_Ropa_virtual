@@ -7,10 +7,17 @@
       colores y en qué sucursales está disponible.
     </p>
   </div>
-  <a matButton routerLink="/login" class="acceso">
-    <mat-icon>person</mat-icon>
-    Ingresar
-  </a>
+  @if (puedeMarcar()) {
+    <a matButton routerLink="/tienda/favoritos" class="acceso">
+      <mat-icon>favorite</mat-icon>
+      Mis favoritos
+    </a>
+  } @else {
+    <a matButton routerLink="/login" class="acceso">
+      <mat-icon>person</mat-icon>
+      Ingresar
+    </a>
+  }
 </header>
 
 <mat-card class="panel vb-filete-superior" appearance="outlined">
@@ -127,6 +134,25 @@
                   <mat-icon>view_in_ar</mat-icon>
                   Vestidor virtual
                 </span>
+              }
+
+              <!-- CU-20. Solo para el Cliente: un Administrador mirando la
+                   tienda no ve corazones. `stopPropagation` en el componente,
+                   porque la tarjeta entera navega a la ficha. -->
+              @if (puedeMarcar()) {
+                <button
+                  type="button"
+                  class="corazon"
+                  [class.marcado]="esFavorito(producto)"
+                  (click)="alternarFavorito(producto, $event)"
+                  [matTooltip]="esFavorito(producto) ? 'Quitar de favoritos' : 'Guardar en favoritos'"
+                  [attr.aria-label]="
+                    esFavorito(producto) ? 'Quitar de favoritos' : 'Guardar en favoritos'
+                  "
+                  [attr.aria-pressed]="esFavorito(producto)"
+                >
+                  <mat-icon>{{ esFavorito(producto) ? 'favorite' : 'favorite_border' }}</mat-icon>
+                </button>
               }
             </div>
 

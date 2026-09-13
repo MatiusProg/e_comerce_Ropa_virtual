@@ -227,6 +227,23 @@ class DisponibilidadOut(BaseModel):
     sucursales: list[DisponibilidadSucursalOut] = []
 
 
+# --- CU-20 · Favoritos ----------------------------------------------------
+
+class PaginaFavoritos(BaseModel):
+    """La lista de favoritos del Cliente.
+
+    Los items son `ProductoVitrinaOut`, **la misma tarjeta que la vitrina**, y no
+    un esquema propio: la pantalla de favoritos muestra exactamente lo mismo que
+    el catalogo --- foto, rango de precios, colores, marca de vestidor --- y
+    duplicar el esquema obligaria a agregar dos veces cada campo nuevo.
+    """
+
+    total: int
+    pagina: int
+    tamano: int
+    items: list[ProductoVitrinaOut]
+
+
 # --- Opciones de filtrado ------------------------------------------------
 
 class FiltrosOut(BaseModel):

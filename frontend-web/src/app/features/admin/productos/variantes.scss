@@ -71,6 +71,13 @@ mat-dialog-content {
 
 // --- Tabla ----------------------------------------------------------------
 
+// Seis columnas dentro de un dialogo: en un telefono no entran, y la que se
+// desplaza tiene que ser la tabla. Es el mismo envoltorio que usan las once
+// tablas de las pantallas de administracion.
+.envoltorio-tabla {
+  overflow-x: auto;
+}
+
 .tabla {
   width: 100%;
   background: transparent;

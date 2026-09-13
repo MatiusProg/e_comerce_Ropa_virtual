@@ -67,6 +67,7 @@ from app.modules.inventario.schemas import (
     IngresoOut,
     MovimientoOut,
     PaginaIngresos,
+    PaginaExistencias,
     PaginaMovimientos,
     StockMinimoIn,
     TransferenciaIn,
@@ -276,7 +277,7 @@ def detalle_de_ingreso(
 
 @operacion_router.get(
     "/existencias",
-    response_model=list[ExistenciaOut],
+    response_model=PaginaExistencias,
     summary="CU-13/CU-15 Existencias, para elegir sobre cuál operar",
 )
 def listar_existencias(
@@ -285,18 +286,34 @@ def listar_existencias(
     sucursal_id: Annotated[int | None, Query()] = None,
     producto_id: Annotated[int | None, Query()] = None,
     solo_con_saldo: Annotated[bool, Query()] = False,
-) -> list[ExistenciaOut]:
-    """Los saldos con la prenda y la sucursal ya resueltas.
+    busqueda: Annotated[str | None, Query(max_length=80)] = None,
+    pagina: Annotated[int, Query(ge=1)] = 1,
+    tamano: Annotated[int, Query(ge=1, le=100)] = 20,
+) -> PaginaExistencias:
+    """Los saldos con la prenda y la sucursal ya resueltas, **paginados**.
 
-    Es la misma función que consume CU-14 por la costura C1; acá se expone por
-    HTTP para que los formularios de ajuste y transferencia puedan mostrar
-    cuánto hay antes de que la persona escriba un número.
+    Antes devolvía la lista entera. Con el dataset de operación cargado eso son
+    3.424 filas y un megabyte en una sola respuesta: el servidor contesta en
+    menos de un segundo y el navegador se cuelga dibujándolas. Pagina igual que
+    `/ingresos` y `/movimientos`, que es el patrón que ya usaban las otras dos
+    pestañas de la misma pantalla.
+
+    `busqueda` alcanza al SKU y al nombre de la prenda. No es un adorno: con
+    miles de filas, encontrar una existencia concreta paginando de a veinte no
+    es viable, y es lo que necesita el selector de origen de la transferencia.
+
+    **No se toca la costura C1.** CU-14 sigue pidiendo el consolidado entero por
+    `service.inventario_consolidado`, porque calcula su resumen sobre todo lo
+    filtrado antes de paginar. Lo que se pagina es esta pantalla.
     """
-    return service.inventario_consolidado(
+    return service.listar_existencias(
         db,
+        pagina=pagina,
+        tamano=tamano,
         sucursal_id=_sucursal_del_usuario(usuario, sucursal_id),
         producto_id=producto_id,
         solo_con_saldo=solo_con_saldo,
+        busqueda=busqueda,
     )
 
 

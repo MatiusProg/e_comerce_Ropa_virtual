@@ -13,6 +13,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
+import { AuthService } from '../../../core/services/auth.service';
 import { TiendaService, type ErrorTienda } from '../../../core/services/tienda.service';
 import type {
   FiltrosDisponibles,
@@ -62,7 +63,20 @@ import type {
 })
 export class Catalogo implements OnInit {
   private readonly api = inject(TiendaService);
+  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+
+  // --- CU-20 · Favoritos -------------------------------------------------
+  //
+  // Los corazones se pintan del lado del navegador, con la lista de
+  // identificadores que devuelve `/tienda/favoritos/ids`. La vitrina es pública
+  // y no sabe quién la mira: agregarle un campo `es_favorito` a la tarjeta
+  // obligaría a que el catálogo tuviera sesión, y no la tiene.
+
+  /** Solo el Cliente tiene favoritos. Un Administrador mirando la tienda no ve
+   *  corazones, y así el endpoint no se llama para recibir un 403. */
+  protected readonly puedeMarcar = computed(() => this.auth.rol() === 'CLIENTE');
+  protected readonly favoritos = signal<Set<number>>(new Set());
 
   protected readonly cargando = signal(false);
   /** Mensaje del último fallo, o null. Distingue «no se pudo consultar» de
@@ -130,7 +144,57 @@ export class Catalogo implements OnInit {
       control.valueChanges.subscribe(() => this.reiniciar());
     }
 
+    if (this.puedeMarcar()) this.cargarFavoritos();
+
     this.consultar();
+  }
+
+  protected esFavorito(producto: ProductoVitrina): boolean {
+    return this.favoritos().has(producto.id);
+  }
+
+  /**
+   * Marca o desmarca, y actualiza la pantalla antes de que responda el servidor.
+   *
+   * El corazón tiene que contestar en el acto; esperar la respuesta para
+   * pintarlo hace que parezca que no funcionó. Si el servidor falla, se
+   * revierte y se avisa — que es el único caso en que el cliente ve un salto.
+   */
+  protected alternarFavorito(producto: ProductoVitrina, evento: Event): void {
+    // La tarjeta entera navega a la ficha: sin esto, tocar el corazón abre la
+    // prenda además de marcarla.
+    evento.stopPropagation();
+
+    const marcado = this.esFavorito(producto);
+    this.pintarFavorito(producto.id, !marcado);
+
+    const peticion = marcado
+      ? this.api.desmarcarFavorito(producto.id)
+      : this.api.marcarFavorito(producto.id);
+
+    peticion.subscribe({
+      error: () => {
+        this.pintarFavorito(producto.id, marcado);
+        this.error.set('No se pudo actualizar tus favoritos.');
+      },
+    });
+  }
+
+  private pintarFavorito(productoId: number, marcado: boolean): void {
+    // Se reemplaza el `Set` en vez de mutarlo: una señal compara por
+    // referencia, y mutar el conjunto no redibuja nada.
+    const copia = new Set(this.favoritos());
+    if (marcado) copia.add(productoId);
+    else copia.delete(productoId);
+    this.favoritos.set(copia);
+  }
+
+  private cargarFavoritos(): void {
+    this.api.idsDeFavoritos().subscribe({
+      next: (ids) => this.favoritos.set(new Set(ids)),
+      // Quedarse sin los corazones no puede vaciar la vitrina.
+      error: () => this.favoritos.set(new Set()),
+    });
   }
 
   protected paginar(evento: PageEvent): void {

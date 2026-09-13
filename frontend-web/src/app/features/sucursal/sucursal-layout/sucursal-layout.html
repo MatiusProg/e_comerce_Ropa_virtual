@@ -1,0 +1,42 @@
+<mat-toolbar class="barra">
+  <span class="logotipo vb-titulo">Violet Boutique</span>
+  <span class="etiqueta-area">Sucursal</span>
+
+  <span class="separador"></span>
+
+  @if (usuario(); as u) {
+    <span class="identidad">
+      <span class="avatar">{{ iniciales() }}</span>
+      <span class="datos">
+        <span class="nombre">{{ u.nombres }} {{ u.apellidos }}</span>
+        <span class="rol">Encargado</span>
+      </span>
+    </span>
+    <button matIconButton type="button" (click)="salir()" aria-label="Cerrar sesión">
+      <mat-icon>logout</mat-icon>
+    </button>
+  }
+</mat-toolbar>
+
+<nav class="navegacion" aria-label="Secciones de la sucursal">
+  <a routerLink="/sucursal" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }">
+    <mat-icon>storefront</mat-icon>
+    Inicio
+  </a>
+  <a routerLink="/sucursal/reservas" routerLinkActive="activo">
+    <mat-icon>event_available</mat-icon>
+    Reservas
+  </a>
+  <a routerLink="/sucursal/disponibilidad" routerLinkActive="activo">
+    <mat-icon>inventory</mat-icon>
+    Disponibilidad
+  </a>
+  <a routerLink="/sucursal/inventario" routerLinkActive="activo">
+    <mat-icon>warehouse</mat-icon>
+    Inventario
+  </a>
+</nav>
+
+<main class="contenido">
+  <router-outlet />
+</main>

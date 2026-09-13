@@ -90,8 +90,9 @@ ANEXOS                                            (Ciclo 2)
 **Qué va completo desde la primera entrega**, sin subdividir por ciclo:
 
 - 1.1.1 Actores — los nueve (A1 a A9)
-- 1.1.2 Casos de Uso — los treinta y siete (CU-01 a CU-37)
-- 1.1.3 Requisitos Funcionales — RF01 a RF36
+- 1.1.2 Casos de Uso — **CU-01 a CU-41**. Eran treinta y siete en la Presentación #1; el Ciclo 2
+  incorporó cuatro como refinamiento (ver §0.5)
+- 1.1.3 Requisitos Funcionales — **RF01 a RF39**
 - 1.1.4 Requisitos No Funcionales — RNF01 a RNF13
 - 2.1 Análisis de Arquitectura — los once paquetes, la matriz paquete–caso de uso y la vista de
   paquetes
@@ -138,8 +139,8 @@ son **doce diagramas** para el Ciclo 1, contando los nueve de secuencia como uno
 | — (sin sección) | `01-perfil.md` §1.4.3 Supuestos y restricciones | queda fuera del índice; llevar a 1.5 o descartar |
 | Parte I · a) a e) | `marco-teorico/01` a `05` | ✔ (corregir en el `.docx` dos referencias rotas, ver §0.7) |
 | **1.1.1 Actores** | `03-captura-requisitos.md` §3.1.1 | ✔ los 9 |
-| **1.1.2 Casos de Uso** | `03-captura-requisitos.md` §3.1.2 | ✔ los 37 |
-| **1.1.3 Requisitos Funcionales** | `03-captura-requisitos.md` §3.3 | ✔ RF01–RF36 con trazabilidad a CU |
+| **1.1.2 Casos de Uso** | `03-captura-requisitos.md` §3.1.2 | ✔ los 41 · **regenerar el diagrama 1.3.2** |
+| **1.1.3 Requisitos Funcionales** | `03-captura-requisitos.md` §3.3 | ✔ RF01–RF39 con trazabilidad a CU |
 | **1.1.4 Requisitos No Funcionales** | `03-captura-requisitos.md` §3.4 | ✔ RNF01–RNF13 |
 | **1.2 Priorización** (los tres ciclos) | `03-captura-requisitos.md` §3.2 | ✔ redactado · falta volcarlo al `.docx` |
 | **1.3.1 Tabla Detalle** · Ciclo 1 | `entregas/ciclo-1/cap-1-captura-requisitos.md` | ✔ las 9 tablas, listas para volcar |
@@ -226,9 +227,23 @@ Lo que queda en pie de esta sección:
 
 El alcance sí se revisó, pero por cobertura y no por conteo: la revisión del 10/09 encontró tres
 agujeros reales —el actor Proveedor sin ningún caso de uso que lo tenga como iniciador, el RF11 sin
-mecanismo de notificación y la ausencia de recuperación de contraseña— y propone **cuatro casos de
-uso nuevos, CU-38 a CU-41**, numerados a continuación y sin renumerar los 37. Está todo en
-[`entregas/ciclo-2/02-analisis-de-alcance-y-vestidor-virtual.md`](entregas/ciclo-2/02-analisis-de-alcance-y-vestidor-virtual.md).
+mecanismo de notificación y la ausencia de recuperación de contraseña—.
+
+**Resuelto el 11/09/2026: entran los cuatro.** **CU-38 a CU-41** quedan escritos en §1.1.2, §1.1.3 y
+§1.2, numerados a continuación y **sin renumerar los 37**, que conservan su código en la
+priorización, la trazabilidad, la matriz de paquetes, los diagramas y el historial del repositorio.
+Se presentan como **refinamiento del Ciclo 2**, que es lo que el PUDS predice: los requisitos se
+precisan a medida que el sistema se construye.
+
+Los tres documentos que lo sostienen, en orden:
+[el análisis](entregas/ciclo-2/02-analisis-de-alcance-y-vestidor-virtual.md) ·
+[la respuesta de Mateo](entregas/ciclo-2/03-respuesta-de-mateo-al-analisis.md) ·
+[la respuesta de Karen](entregas/ciclo-2/04-respuesta-de-karen.md).
+
+**Queda pendiente un artefacto:** regenerar el **diagrama general de casos de uso (1.3.2)** con los
+cuatro nuevos. Lo hace Mateo, con los *scripts* de Enterprise Architect, y **una sola vez** —por eso
+se escribieron primero las tablas—. Si no llega para el 13/09, el diagrama va con los 37 y los
+cuatro se presentan en el texto como refinamiento.
 
 ## 0.6 Revisión del `.docx` — estado de los encabezados por ciclo
 
