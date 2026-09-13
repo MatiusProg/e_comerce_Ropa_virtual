@@ -43,10 +43,18 @@ otros, y el historial de seis meses que la pantalla promete es en realidad de
 seis minutos.
 
 Asi que despues de cada remito se retrasan sus movimientos a la fecha que les
-toca, con un UPDATE acotado por rango de id. Se hace por id y no por `creado_en`
-porque el id es exacto: el seed corre en un solo hilo, asi que los ids que
-escribio una llamada son un rango contiguo. Cada remito conserva una marca
-distinta de los demas, que es lo que CU-13 necesita para seguir agrupandolo.
+toca, con un UPDATE acotado por rango de id --- POR LOS DOS LADOS: `id > desde`
+y `id <= hasta`, donde `hasta` se lee justo despues de la operacion. Se hace por
+id y no por `creado_en` porque el id es exacto: los ids que escribio una llamada
+son un rango contiguo. Cada remito conserva una marca distinta de los demas, que
+es lo que CU-13 necesita para seguir agrupandolo.
+
+El tope de arriba no es decorativo. Sin el, el UPDATE alcanza a TODO lo que
+tenga id mayor, y eso solo es inofensivo contra una base local donde nadie mas
+escribe. Contra la base desplegada --- que es donde hace falta el dataset para
+la defensa --- la aplicacion esta publicada y CU-25 expira reservas sola: un
+movimiento ajeno escrito mientras el seed corre quedaria retrofechado a hace
+meses, sobre una tabla que es historial inmutable.
 
 VOLUMEN
 -------
@@ -238,18 +246,32 @@ def _fecha_en_la_historia(meses: int) -> datetime:
     ) - timedelta(days=dias)
 
 
-def _retrasar_movimientos(db: Session, desde_id: int, cuando: datetime) -> None:
-    """Fecha hacia atras los movimientos escritos despues de `desde_id`.
+def _retrasar_movimientos(
+    db: Session, desde_id: int, cuando: datetime, hasta_id: int | None = None
+) -> None:
+    """Fecha hacia atras los movimientos que escribio la llamada anterior.
 
-    Ver la nota del encabezado. El rango de id es exacto porque el seed es de un
-    solo hilo: nadie mas esta escribiendo en esta tabla mientras corre.
+    Ver la nota del encabezado. El rango va acotado POR LOS DOS LADOS.
+
+    La version original solo ponia `id > desde`, apoyandose en que el seed es de
+    un solo hilo y nadie mas escribe mientras corre. Eso es cierto contra la base
+    LOCAL y deja de serlo contra la DESPLEGADA: la aplicacion esta publicada y
+    CU-25 expira reservas por su cuenta, asi que un movimiento escrito por
+    alguien de verdad entre `desde_id` y este UPDATE quedaria retrofechado a hace
+    meses --- y `movimiento_inventario` es historial INMUTABLE, que es de lo que
+    depende el invariante D4 y la agrupacion de remitos de CU-13.
+
+    `hasta_id` se lee justo despues de la operacion que se quiere fechar, asi que
+    el rango contiene exactamente sus filas.
     """
+    if hasta_id is None:
+        hasta_id = _ultimo_movimiento(db)
     db.execute(
         text(
             "UPDATE movimiento_inventario SET creado_en = :cuando "
-            "WHERE id > :desde"
+            "WHERE id > :desde AND id <= :hasta"
         ),
-        {"cuando": cuando, "desde": desde_id},
+        {"cuando": cuando, "desde": desde_id, "hasta": hasta_id},
     )
     db.commit()
 
@@ -489,7 +511,8 @@ def _remito(
         ),
         usuario_id=usuario_id,
     )
-    _retrasar_movimientos(db, desde, cuando)
+    hasta = _ultimo_movimiento(db)
+    _retrasar_movimientos(db, desde, cuando, hasta)
     return salida.unidades
 
 
@@ -527,7 +550,8 @@ def _agotar(
     except inventario.ErrorDeInventario:
         db.rollback()
         return False
-    _retrasar_movimientos(db, desde, _fecha_en_la_historia(meses))
+    hasta = _ultimo_movimiento(db)
+    _retrasar_movimientos(db, desde, _fecha_en_la_historia(meses), hasta)
     return True
 
 
@@ -682,7 +706,8 @@ def _inventario(
         except inventario.ErrorDeInventario:
             db.rollback()
             continue
-        _retrasar_movimientos(db, desde, _fecha_en_la_historia(meses))
+        hasta = _ultimo_movimiento(db)
+        _retrasar_movimientos(db, desde, _fecha_en_la_historia(meses), hasta)
         ajustes += 1
 
     # --- Transferencias entre sucursales (flujo 3a de CU-15) --------------
@@ -718,7 +743,8 @@ def _inventario(
         except inventario.ErrorDeInventario:
             db.rollback()
             continue
-        _retrasar_movimientos(db, desde, _fecha_en_la_historia(meses))
+        hasta = _ultimo_movimiento(db)
+        _retrasar_movimientos(db, desde, _fecha_en_la_historia(meses), hasta)
         transferencias += 1
 
     # --- Quiebres de stock: algo tiene que faltar -------------------------
@@ -1019,7 +1045,8 @@ def _reservas(
             db.rollback()
             continue
 
-        _retrasar_movimientos(db, desde, fin)
+        hasta = _ultimo_movimiento(db)
+        _retrasar_movimientos(db, desde, fin, hasta)
         por_estado[estado] = por_estado.get(estado, 0) + 1
 
     # --- Vivas ------------------------------------------------------------
