@@ -21,7 +21,9 @@ library;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../core/enrutado/router.dart';
 import '../../core/red/excepciones.dart';
 import '../../core/tema.dart';
 import '../../data/modelos/catalogo.dart';
@@ -415,14 +417,19 @@ class _BotonVestidor extends StatelessWidget {
           child: FilledButton.icon(
             icon: const Icon(Icons.view_in_ar),
             label: const Text('Probar en el vestidor virtual'),
+            // Conectado al prototipo I3 el 13/09. Le pasa el PNG de ESTA
+            // variante --- la costura C5 --- para que la pantalla de realidad
+            // aumentada no tenga que volver a consultar la API ni conocer la
+            // tabla de imagenes.
             onPressed: sePuede
-                ? () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'El vestidor virtual llega en el Ciclo 3 (CU-21). '
-                        'La prenda ya tiene su imagen lista.',
+                ? () => context.push(
+                    Rutas.vestidor,
+                    extra: <String, String?>{
+                      'url': RepositorioCatalogo.urlDeImagen(
+                        variante!.imagenVestidorUrl,
                       ),
-                    ),
+                      'nombre': prenda.nombre,
+                    },
                   )
                 : null,
           ),

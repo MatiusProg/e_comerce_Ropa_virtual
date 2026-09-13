@@ -482,6 +482,473 @@ $CASOS = @(
   )
 }
 
+,
+
+# =========================================================================
+# CICLO 2 --- los trece casos de uso del nucleo del negocio.
+#
+# Las lineas de vida son las clases de 2.3 del mismo caso de uso, y la
+# numeracion se hereda tal cual del diagrama de comunicacion 2.2, para que el
+# mismo mensaje se siga en los dos capitulos. Los retornos, que el 2.2 no
+# tiene, van como sub-nivel del mensaje que los provoca (1.7 -> 1.7.1) para no
+# desplazar la numeracion original.
+# =========================================================================
+
+# ---------------------------------------------------------------- CU-10 --
+@{
+  nombre = '3.2 CU-10 Gestionar productos y variantes'
+  lineas = @(
+    @{ k = 'act'; actor = 'Administrador';       w = 130 },
+    @{ k = 'pan'; clase = 'PantallaProductos';   w = 190 },
+    @{ k = 'gst'; clase = 'GestorProductos';     w = 190 },
+    @{ k = 'aut'; clase = 'GestorAutenticacion'; w = 190 },
+    @{ k = 'pro'; clase = 'Producto';            w = 150 },
+    @{ k = 'var'; clase = 'VarianteProducto';    w = 180 }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nAlta de producto`ny sus variantes" },
+    @{ t='msg'; o='act'; d='pan'; n='1.1: registrarProducto(datos)' },
+    @{ t='msg'; o='pan'; d='gst'; n='1.2: crear_producto(db, datos)' },
+    @{ t='msg'; o='gst'; d='aut'; n='1.3: autorizar("ADMINISTRADOR")' },
+    @{ t='msg'; o='gst'; d='gst'; n='1.4: _validar_maestros(db, datos)' },
+    @{ t='msg'; o='gst'; d='pro'; n='1.5: SELECT id FROM producto WHERE codigo = :codigo' },
+    @{ t='msg'; o='pro'; d='gst'; n='1.5.1: bool'; ret=$true },
+    @{ t='alt' },
+    @{ t='op'; g='código libre y colección de la temporada' },
+    @{ t='msg'; o='gst'; d='pro'; n='1.6: INSERT INTO producto (codigo, nombre, categoria_id, precio_base)' },
+    @{ t='msg'; o='pro'; d='gst'; n='1.6.1: Producto (id)'; ret=$true },
+    @{ t='msg'; o='act'; d='pan'; n='1.7: generarVariantes(tallas, colores)' },
+    @{ t='msg'; o='pan'; d='gst'; n='1.8: generar_variantes(db, producto_id, tallas, colores)' },
+    @{ t='msg'; o='gst'; d='var'; n='1.9: SELECT talla_id, color_id FROM variante_producto WHERE producto_id = :id' },
+    @{ t='msg'; o='var'; d='gst'; n='1.9.1: list[tuple[int, int]]'; ret=$true },
+    @{ t='msg'; o='gst'; d='gst'; n='1.10: armar_sku(producto, talla, color)' },
+    @{ t='msg'; o='gst'; d='var'; n='1.11: INSERT INTO variante_producto (producto_id, talla_id, color_id, sku, precio)' },
+    @{ t='msg'; o='var'; d='gst'; n='1.11.1: VarianteProducto (id)'; ret=$true },
+    @{ t='msg'; o='gst'; d='pan'; n='1.11.2: ProductoOut'; ret=$true },
+    @{ t='op'; g='código duplicado o colección ajena' },
+    @{ t='msg'; o='gst'; d='pan'; n='4.1: codigoDuplicado() -> 409' },
+    @{ t='fin' }
+  )
+},
+
+# ---------------------------------------------------------------- CU-11 --
+@{
+  nombre = '3.2 CU-11 Gestionar imágenes de producto'
+  lineas = @(
+    @{ k = 'act'; actor = 'Administrador';       w = 130 },
+    @{ k = 'pan'; clase = 'PantallaImagenes';    w = 190 },
+    @{ k = 'gst'; clase = 'GestorImagenes';      w = 190 },
+    @{ k = 'aut'; clase = 'GestorAutenticacion'; w = 190 },
+    @{ k = 'img'; clase = 'ImagenProducto';      w = 170 }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nCarga de una imagen" },
+    @{ t='msg'; o='act'; d='pan'; n='1.1: subirImagen(producto_id, archivo)' },
+    @{ t='msg'; o='pan'; d='gst'; n='1.2: subir(db, producto_id, archivo)' },
+    @{ t='msg'; o='gst'; d='aut'; n='1.3: autorizar("ADMINISTRADOR")' },
+    @{ t='msg'; o='gst'; d='gst'; n='1.4: _asegurar_producto(db, producto_id)' },
+    @{ t='alt' },
+    @{ t='op'; g='formato e imagen válidos' },
+    @{ t='msg'; o='gst'; d='img'; n='1.5: SELECT MAX(orden) FROM imagen_producto WHERE producto_id = :id' },
+    @{ t='msg'; o='img'; d='gst'; n='1.5.1: int'; ret=$true },
+    @{ t='msg'; o='gst'; d='img'; n='1.6: INSERT INTO imagen_producto (producto_id, ruta, es_principal, orden)' },
+    @{ t='msg'; o='img'; d='gst'; n='1.6.1: ImagenProducto (id)'; ret=$true },
+    @{ t='msg'; o='gst'; d='pan'; n='1.6.2: ImagenOut'; ret=$true },
+    @{ t='nota'; txt = "FLUJO 3`nMarcado para`nel vestidor virtual" },
+    @{ t='msg'; o='act'; d='pan'; n='3.1: marcarTransparente(imagen_id)' },
+    @{ t='msg'; o='pan'; d='gst'; n='3.2: marcar_transparente(db, imagen_id)' },
+    @{ t='msg'; o='gst'; d='gst'; n='3.3: _archivo_tiene_transparencia(ruta)' },
+    @{ t='msg'; o='gst'; d='img'; n='3.4: UPDATE imagen_producto SET es_transparente = false WHERE variante_id = :v' },
+    @{ t='msg'; o='gst'; d='img'; n='3.5: UPDATE imagen_producto SET es_transparente = true WHERE id = :id' },
+    @{ t='op'; g='formato no admitido o PNG sin alfa' },
+    @{ t='msg'; o='gst'; d='pan'; n='5.1: formatoNoAdmitido() -> 422' },
+    @{ t='fin' }
+  )
+},
+
+# ---------------------------------------------------------------- CU-13 --
+@{
+  nombre = '3.2 CU-13 Registrar ingreso de mercadería'
+  lineas = @(
+    @{ k = 'act'; actor = 'Encargado de Sucursal'; w = 160 },
+    @{ k = 'pan'; clase = 'PantallaInventario';    w = 190 },
+    @{ k = 'gst'; clase = 'GestorInventario';      w = 190 },
+    @{ k = 'aut'; clase = 'GestorAutenticacion';   w = 190 },
+    @{ k = 'exi'; clase = 'Existencia';            w = 150 },
+    @{ k = 'mov'; clase = 'MovimientoInventario';  w = 200 }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nRemito completo,`nen una transacción" },
+    @{ t='msg'; o='act'; d='pan'; n='1.1: registrarIngreso(remito)' },
+    @{ t='msg'; o='pan'; d='gst'; n='1.2: registrar_ingreso(db, datos, usuario_id)' },
+    @{ t='msg'; o='gst'; d='aut'; n='1.3: autorizar("ADMINISTRADOR", "ENCARGADO")' },
+    @{ t='msg'; o='gst'; d='gst'; n='1.4: _sucursal_activa(db, sucursal_id)' },
+    @{ t='msg'; o='gst'; d='gst'; n='1.5: _variantes_validas(db, lineas)' },
+    @{ t='msg'; o='gst'; d='exi'; n='1.6: SELECT * FROM existencia WHERE variante_id = :v AND sucursal_id = :s' },
+    @{ t='msg'; o='exi'; d='gst'; n='1.6.1: Existencia | None'; ret=$true },
+    @{ t='alt' },
+    @{ t='op'; g='remito válido' },
+    @{ t='msg'; o='gst'; d='exi'; n='1.7: INSERT INTO existencia (variante_id, sucursal_id) -- si no existía' },
+    @{ t='msg'; o='gst'; d='gst'; n='1.8: _aplicar_movimiento(existencia, INGRESO, cantidad)' },
+    @{ t='msg'; o='gst'; d='exi'; n='1.9: UPDATE existencia SET cantidad_disponible = cantidad_disponible + :n' },
+    @{ t='msg'; o='gst'; d='mov'; n='1.10: INSERT INTO movimiento_inventario (existencia_id, tipo, cantidad, referencia)' },
+    @{ t='msg'; o='mov'; d='gst'; n='1.10.1: MovimientoInventario (id)'; ret=$true },
+    @{ t='msg'; o='gst'; d='pan'; n='1.10.2: IngresoOut (saldos resultantes)'; ret=$true },
+    @{ t='op'; g='sucursal inactiva o prenda desactivada' },
+    @{ t='msg'; o='gst'; d='gst'; n='4.1: revertirTransaccion() -- ninguna línea queda escrita' },
+    @{ t='msg'; o='gst'; d='pan'; n='4.2: sucursalInactiva() -> 422' },
+    @{ t='fin' }
+  )
+},
+
+# ---------------------------------------------------------------- CU-14 --
+@{
+  nombre = '3.2 CU-14 Consultar inventario consolidado'
+  lineas = @(
+    @{ k = 'act'; actor = 'Administrador';        w = 130 },
+    @{ k = 'pan'; clase = 'PantallaConsolidado';  w = 200 },
+    @{ k = 'gst'; clase = 'GestorConsolidado';    w = 200 },
+    @{ k = 'aut'; clase = 'GestorAutenticacion';  w = 190 },
+    @{ k = 'exi'; clase = 'Existencia';           w = 150 }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nConsulta consolidada`nde toda la red" },
+    @{ t='msg'; o='act'; d='pan'; n='1.1: consultar(filtros)' },
+    @{ t='msg'; o='pan'; d='gst'; n='1.2: consultar(db, pagina, tamano, filtros)' },
+    @{ t='msg'; o='gst'; d='aut'; n='1.3: autorizar("ADMINISTRADOR")' },
+    @{ t='msg'; o='gst'; d='exi'; n='1.4: SELECT ... FROM existencia JOIN variante_producto JOIN sucursal' },
+    @{ t='msg'; o='exi'; d='gst'; n='1.4.1: list[Row]'; ret=$true },
+    @{ t='msg'; o='gst'; d='gst'; n='1.5: _agrupar(filas) -- por variante, sobre TODO lo filtrado' },
+    @{ t='msg'; o='gst'; d='gst'; n='1.6: _estado(disponible, stock_minimo)' },
+    @{ t='alt' },
+    @{ t='op'; g='hay resultados' },
+    @{ t='msg'; o='gst'; d='gst'; n='1.7: _ordenar(items, orden)' },
+    @{ t='msg'; o='gst'; d='pan'; n='1.7.1: PaginaInventarioConsolidado + ResumenInventarioOut'; ret=$true },
+    @{ t='msg'; o='pan'; d='act'; n='1.8: mostrarConsolidado(resultado)' },
+    @{ t='op'; g='sin resultados con esos filtros' },
+    @{ t='msg'; o='gst'; d='pan'; n='3.1: sinResultados()' },
+    @{ t='fin' }
+  )
+},
+
+# ---------------------------------------------------------------- CU-15 --
+@{
+  nombre = '3.2 CU-15 Registrar movimiento de inventario'
+  lineas = @(
+    @{ k = 'act'; actor = 'Administrador';        w = 130 },
+    @{ k = 'pan'; clase = 'PantallaInventario';   w = 190 },
+    @{ k = 'gst'; clase = 'GestorInventario';     w = 190 },
+    @{ k = 'aut'; clase = 'GestorAutenticacion';  w = 190 },
+    @{ k = 'exi'; clase = 'Existencia';           w = 150 },
+    @{ k = 'mov'; clase = 'MovimientoInventario'; w = 200 }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nAjuste por`nconteo físico" },
+    @{ t='msg'; o='act'; d='pan'; n='1.1: registrarAjuste(datos)' },
+    @{ t='msg'; o='pan'; d='gst'; n='1.2: registrar_ajuste(db, datos, usuario_id)' },
+    @{ t='msg'; o='gst'; d='aut'; n='1.3: autorizar("ADMINISTRADOR", "ENCARGADO")' },
+    @{ t='msg'; o='gst'; d='exi'; n='1.4: SELECT * FROM existencia WHERE id = :id FOR UPDATE' },
+    @{ t='msg'; o='exi'; d='gst'; n='1.4.1: Existencia'; ret=$true },
+    @{ t='alt' },
+    @{ t='op'; g='el saldo contado no deja negativo' },
+    @{ t='msg'; o='gst'; d='gst'; n='1.5: _aplicar_movimiento(existencia, AJUSTE, diferencia)' },
+    @{ t='msg'; o='gst'; d='exi'; n='1.6: UPDATE existencia SET cantidad_disponible = :contada - cantidad_reservada' },
+    @{ t='msg'; o='gst'; d='mov'; n='1.7: INSERT INTO movimiento_inventario (existencia_id, tipo, cantidad, motivo)' },
+    @{ t='msg'; o='mov'; d='gst'; n='1.7.1: MovimientoInventario (id)'; ret=$true },
+    @{ t='msg'; o='gst'; d='pan'; n='1.7.2: MovimientoOut (saldo resultante)'; ret=$true },
+    @{ t='nota'; txt = "FLUJO 2`nTraslado: dos movimientos`nen una transacción" },
+    @{ t='msg'; o='act'; d='pan'; n='2.1: registrarTransferencia(datos)' },
+    @{ t='msg'; o='pan'; d='gst'; n='2.2: registrar_transferencia(db, datos, usuario_id)' },
+    @{ t='msg'; o='gst'; d='mov'; n='2.3: INSERT INTO movimiento_inventario (tipo = TRASLADO_SALIDA, cantidad = -n)' },
+    @{ t='msg'; o='gst'; d='mov'; n='2.4: INSERT INTO movimiento_inventario (tipo = TRASLADO_ENTRADA, cantidad = +n)' },
+    @{ t='op'; g='el ajuste dejaría el saldo negativo' },
+    @{ t='msg'; o='gst'; d='pan'; n='4.1: saldoNegativo() -> 409' },
+    @{ t='fin' }
+  )
+},
+
+# ---------------------------------------------------------------- CU-16 --
+@{
+  nombre = '3.2 CU-16 Gestionar disponibilidad de la sucursal'
+  lineas = @(
+    @{ k = 'act'; actor = 'Encargado de Sucursal';   w = 160 },
+    @{ k = 'pan'; clase = 'PantallaDisponibilidad';  w = 210 },
+    @{ k = 'gst'; clase = 'GestorInventario';        w = 190 },
+    @{ k = 'aut'; clase = 'GestorAutenticacion';     w = 190 },
+    @{ k = 'exi'; clase = 'Existencia';              w = 150 }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nFijar el punto`nde reposición" },
+    @{ t='msg'; o='act'; d='pan'; n='1.1: fijarStockMinimo(existencia_id, umbral)' },
+    @{ t='msg'; o='pan'; d='gst'; n='1.2: fijar_stock_minimo(db, existencia_id, minimo, usuario)' },
+    @{ t='msg'; o='gst'; d='aut'; n='1.3: autorizar("ENCARGADO")' },
+    @{ t='msg'; o='gst'; d='exi'; n='1.4: SELECT * FROM existencia WHERE id = :id' },
+    @{ t='msg'; o='exi'; d='gst'; n='1.4.1: Existencia'; ret=$true },
+    @{ t='alt' },
+    @{ t='op'; g='la existencia es de su sucursal' },
+    @{ t='msg'; o='gst'; d='exi'; n='1.5: UPDATE existencia SET stock_minimo = :minimo WHERE id = :id' },
+    @{ t='msg'; o='exi'; d='gst'; n='1.5.1: Existencia'; ret=$true },
+    @{ t='msg'; o='gst'; d='pan'; n='1.5.2: ExistenciaOut (bajo_minimo)'; ret=$true },
+    @{ t='msg'; o='pan'; d='act'; n='1.6: confirmarConAviso(enAlerta)' },
+    @{ t='nota'; txt = "FLUJO 2`nPanel de alertas`nde stock bajo" },
+    @{ t='msg'; o='act'; d='pan'; n='2.1: listarAlertas()' },
+    @{ t='msg'; o='pan'; d='gst'; n='2.2: alertas_de_stock(db, sucursal_id)' },
+    @{ t='msg'; o='gst'; d='exi'; n='2.3: SELECT ... WHERE stock_minimo > 0 AND cantidad_disponible <= stock_minimo' },
+    @{ t='msg'; o='exi'; d='gst'; n='2.3.1: list[Row]'; ret=$true },
+    @{ t='op'; g='existencia de otra sucursal' },
+    @{ t='msg'; o='gst'; d='pan'; n='4.1: existenciaDeOtraSucursal() -> 403' },
+    @{ t='fin' }
+  )
+},
+
+# ---------------------------------------------------------------- CU-17 --
+@{
+  nombre = '3.2 CU-17 Consultar catálogo'
+  lineas = @(
+    @{ k = 'act'; actor = 'Cliente';            w = 110 },
+    @{ k = 'pan'; clase = 'PantallaCatalogo';   w = 190 },
+    @{ k = 'gst'; clase = 'GestorVitrina';      w = 190 },
+    @{ k = 'pro'; clase = 'Producto';           w = 150 },
+    @{ k = 'var'; clase = 'VarianteProducto';   w = 180 }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nVitrina pública.`nNO pasa por autenticación" },
+    @{ t='msg'; o='act'; d='pan'; n='1.1: abrirCatalogo()' },
+    @{ t='msg'; o='pan'; d='gst'; n='1.2: listar_productos(db, consulta)' },
+    @{ t='msg'; o='gst'; d='pro'; n='1.3: SELECT ... FROM producto WHERE activo = true' },
+    @{ t='msg'; o='pro'; d='gst'; n='1.3.1: list[Row]'; ret=$true },
+    @{ t='msg'; o='gst'; d='var'; n='1.4: SELECT MIN(precio), MAX(precio) FROM variante_producto WHERE producto_id IN (...)' },
+    @{ t='msg'; o='var'; d='gst'; n='1.4.1: dict[int, tuple]'; ret=$true },
+    @{ t='msg'; o='gst'; d='pan'; n='1.4.2: PaginaVitrinaOut'; ret=$true },
+    @{ t='nota'; txt = "FLUJO 2`nBúsqueda, filtros y orden" },
+    @{ t='msg'; o='act'; d='pan'; n='2.1: buscarYFiltrar(criterios)' },
+    @{ t='msg'; o='pan'; d='gst'; n='2.2: listar_productos(db, consulta)' },
+    @{ t='msg'; o='gst'; d='pro'; n='2.3: ids_de_categoria_y_descendientes(db, categoria_id)' },
+    @{ t='msg'; o='pro'; d='gst'; n='2.3.1: list[int]'; ret=$true },
+    @{ t='alt' },
+    @{ t='op'; g='hay resultados' },
+    @{ t='msg'; o='gst'; d='pro'; n='2.4: SELECT COUNT(*) FROM producto WHERE ... -- para el paginador' },
+    @{ t='msg'; o='gst'; d='pan'; n='2.4.1: PaginaVitrinaOut'; ret=$true },
+    @{ t='op'; g='la combinación de filtros no devuelve nada' },
+    @{ t='msg'; o='gst'; d='pan'; n='3.1: sinResultadosConFiltros()' },
+    @{ t='fin' }
+  )
+},
+
+# ---------------------------------------------------------------- CU-18 --
+@{
+  nombre = '3.2 CU-18 Consultar ficha de producto'
+  lineas = @(
+    @{ k = 'act'; actor = 'Cliente';                w = 110 },
+    @{ k = 'pan'; clase = 'PantallaFichaProducto';  w = 210 },
+    @{ k = 'gst'; clase = 'GestorVitrina';          w = 190 },
+    @{ k = 'pro'; clase = 'Producto';               w = 150 },
+    @{ k = 'var'; clase = 'VarianteProducto';       w = 180 },
+    @{ k = 'img'; clase = 'ImagenProducto';         w = 170 }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nApertura de la ficha" },
+    @{ t='msg'; o='act'; d='pan'; n='1.1: abrirFicha(producto_id)' },
+    @{ t='msg'; o='pan'; d='gst'; n='1.2: obtener_ficha(db, producto_id)' },
+    @{ t='msg'; o='gst'; d='pro'; n='1.3: SELECT * FROM producto WHERE id = :id AND activo = true' },
+    @{ t='msg'; o='pro'; d='gst'; n='1.3.1: Row | None'; ret=$true },
+    @{ t='alt' },
+    @{ t='op'; g='la prenda se sigue ofreciendo' },
+    @{ t='msg'; o='gst'; d='img'; n='1.4: SELECT * FROM imagen_producto WHERE producto_id = :id ORDER BY orden' },
+    @{ t='msg'; o='img'; d='gst'; n='1.4.1: list[Row]'; ret=$true },
+    @{ t='msg'; o='gst'; d='var'; n='1.5: SELECT ... FROM variante_producto WHERE producto_id = :id AND activa = true' },
+    @{ t='msg'; o='var'; d='gst'; n='1.5.1: list[Row]'; ret=$true },
+    @{ t='msg'; o='gst'; d='gst'; n='1.6: _opciones(variantes) -- tallas y colores ofrecibles' },
+    @{ t='msg'; o='gst'; d='pan'; n='1.6.1: FichaProductoOut'; ret=$true },
+    @{ t='msg'; o='act'; d='pan'; n='2.1: elegirTalla(talla_id)' },
+    @{ t='msg'; o='pan'; d='pan'; n='2.2: coloresDeTalla(talla_id) -- restringe en el cliente' },
+    @{ t='msg'; o='act'; d='pan'; n='2.3: elegirColor(color_id)' },
+    @{ t='msg'; o='pan'; d='pan'; n='2.4: varianteDe(talla_id, color_id)' },
+    @{ t='op'; g='la prenda dejó de ofrecerse' },
+    @{ t='msg'; o='gst'; d='pan'; n='4.1: prendaYaNoDisponible() -> 404' },
+    @{ t='fin' }
+  )
+},
+
+# ---------------------------------------------------------------- CU-19 --
+@{
+  nombre = '3.2 CU-19 Consultar disponibilidad por sucursal'
+  lineas = @(
+    @{ k = 'act'; actor = 'Cliente';                w = 110 },
+    @{ k = 'pan'; clase = 'PantallaFichaProducto';  w = 210 },
+    @{ k = 'gst'; clase = 'GestorVitrina';          w = 190 },
+    @{ k = 'inv'; clase = 'GestorInventario';       w = 190 },
+    @{ k = 'var'; clase = 'VarianteProducto';       w = 180 },
+    @{ k = 'exi'; clase = 'Existencia';             w = 150 }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nCostura C1: P5 le PIDE`nel dato a P4" },
+    @{ t='msg'; o='act'; d='pan'; n='1.1: verDisponibilidad(variante_id)' },
+    @{ t='msg'; o='pan'; d='gst'; n='1.2: disponibilidad_de_variante(db, variante_id)' },
+    @{ t='msg'; o='gst'; d='var'; n='1.3: SELECT ... FROM variante_producto WHERE id = :id AND activa = true' },
+    @{ t='msg'; o='var'; d='gst'; n='1.3.1: Row | None'; ret=$true },
+    @{ t='alt' },
+    @{ t='op'; g='la variante se sigue ofreciendo' },
+    @{ t='msg'; o='gst'; d='inv'; n='1.4: disponibilidad_por_sucursal(db, variante_id)' },
+    @{ t='msg'; o='inv'; d='exi'; n='1.5: SELECT sucursal_id, cantidad_disponible FROM existencia WHERE variante_id = :v' },
+    @{ t='msg'; o='exi'; d='inv'; n='1.5.1: list[Row]'; ret=$true },
+    @{ t='msg'; o='inv'; d='gst'; n='1.5.2: list[DisponibilidadSucursal]'; ret=$true },
+    @{ t='msg'; o='gst'; d='pan'; n='1.5.3: DisponibilidadOut (total + sucursales con saldo)'; ret=$true },
+    @{ t='msg'; o='pan'; d='act'; n='1.6: mostrarSucursales(disponibilidad)' },
+    @{ t='op'; g='sin unidades en ninguna sucursal' },
+    @{ t='msg'; o='gst'; d='pan'; n='3.1: sinStockPorAhora() -- no es un error' },
+    @{ t='fin' }
+  )
+},
+
+# ---------------------------------------------------------------- CU-22 --
+@{
+  nombre = '3.2 CU-22 Crear reserva de prendas'
+  lineas = @(
+    @{ k = 'act'; actor = 'Cliente';               w = 110 },
+    @{ k = 'pan'; clase = 'PantallaReservas';      w = 190 },
+    @{ k = 'gst'; clase = 'GestorReservas';        w = 190 },
+    @{ k = 'inv'; clase = 'GestorInventario';      w = 190 },
+    @{ k = 'res'; clase = 'Reserva';               w = 150 },
+    @{ k = 'det'; clase = 'ReservaDetalle';        w = 170 },
+    @{ k = 'exi'; clase = 'Existencia';            w = 150 }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nPrimero lo que se rechaza`nSIN tocar filas; el apartado`nal final, que toma bloqueos" },
+    @{ t='msg'; o='act'; d='pan'; n='1.1: confirmarReserva(datos)' },
+    @{ t='msg'; o='pan'; d='gst'; n='1.2: crear_reserva(db, datos, usuario_id)' },
+    @{ t='msg'; o='gst'; d='gst'; n='1.3: _validar_franja(sucursal, inicio, fin)' },
+    @{ t='msg'; o='gst'; d='res'; n='1.4: SELECT COUNT(*) FROM reserva WHERE estado IN (...) AND franja se solapa' },
+    @{ t='msg'; o='res'; d='gst'; n='1.4.1: int'; ret=$true },
+    @{ t='alt' },
+    @{ t='op'; g='franja válida y probador libre' },
+    @{ t='msg'; o='gst'; d='inv'; n='1.5: apartar_para_reserva(db, variante_id, sucursal_id, cantidad)' },
+    @{ t='msg'; o='inv'; d='exi'; n='1.6: SELECT * FROM existencia WHERE variante_id = :v AND sucursal_id = :s FOR UPDATE' },
+    @{ t='msg'; o='exi'; d='inv'; n='1.6.1: Existencia'; ret=$true },
+    @{ t='msg'; o='inv'; d='exi'; n='1.7: UPDATE existencia SET disponible = disponible - :n, reservada = reservada + :n' },
+    @{ t='msg'; o='gst'; d='res'; n='1.8: INSERT INTO reserva (cliente_id, sucursal_id, franja_inicio, franja_fin, estado)' },
+    @{ t='msg'; o='res'; d='gst'; n='1.8.1: Reserva (id)'; ret=$true },
+    @{ t='msg'; o='gst'; d='det'; n='1.9: INSERT INTO reserva_detalle (reserva_id, variante_id, cantidad)' },
+    @{ t='msg'; o='gst'; d='pan'; n='1.9.1: ReservaOut'; ret=$true },
+    @{ t='op'; g='sin probadores libres o sin stock' },
+    @{ t='msg'; o='gst'; d='gst'; n='3.1: revertirTransaccion() -- no queda apartada NINGUNA prenda' },
+    @{ t='msg'; o='gst'; d='pan'; n='3.2: sinProbadoresLibres() -> 409' },
+    @{ t='fin' }
+  )
+},
+
+# ---------------------------------------------------------------- CU-23 --
+@{
+  nombre = '3.2 CU-23 Consultar y cancelar reserva'
+  lineas = @(
+    @{ k = 'act'; actor = 'Cliente';               w = 110 },
+    @{ k = 'pan'; clase = 'PantallaReservas';      w = 190 },
+    @{ k = 'gst'; clase = 'GestorReservas';        w = 190 },
+    @{ k = 'inv'; clase = 'GestorInventario';      w = 190 },
+    @{ k = 'res'; clase = 'Reserva';               w = 150 },
+    @{ k = 'det'; clase = 'ReservaDetalle';        w = 170 },
+    @{ k = 'exi'; clase = 'Existencia';            w = 150 }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nMis reservas" },
+    @{ t='msg'; o='act'; d='pan'; n='1.1: abrirMisReservas()' },
+    @{ t='msg'; o='pan'; d='gst'; n='1.2: listar_mis_reservas(db, usuario_id, filtros)' },
+    @{ t='msg'; o='gst'; d='res'; n='1.3: SELECT ... FROM reserva WHERE cliente_id = :c ORDER BY franja_inicio DESC' },
+    @{ t='msg'; o='res'; d='gst'; n='1.3.1: list[Row]'; ret=$true },
+    @{ t='msg'; o='gst'; d='pan'; n='1.3.2: PaginaReservas'; ret=$true },
+    @{ t='nota'; txt = "FLUJO 2`nCancelación. El estado se`ncomprueba DESPUÉS del bloqueo" },
+    @{ t='msg'; o='act'; d='pan'; n='2.1: cancelarReserva(id, motivo)' },
+    @{ t='msg'; o='pan'; d='gst'; n='2.2: cancelar_reserva(db, reserva_id, datos, usuario_id)' },
+    @{ t='msg'; o='gst'; d='res'; n='2.3: SELECT * FROM reserva WHERE id = :id FOR UPDATE' },
+    @{ t='msg'; o='res'; d='gst'; n='2.3.1: Reserva'; ret=$true },
+    @{ t='alt' },
+    @{ t='op'; g='la reserva sigue viva y es suya' },
+    @{ t='msg'; o='gst'; d='det'; n='2.4: SELECT * FROM reserva_detalle WHERE reserva_id = :id' },
+    @{ t='msg'; o='det'; d='gst'; n='2.4.1: list[ReservaDetalle]'; ret=$true },
+    @{ t='msg'; o='gst'; d='inv'; n='2.5: liberar_de_reserva(db, variante_id, sucursal_id, cantidad)' },
+    @{ t='msg'; o='inv'; d='exi'; n='2.6: UPDATE existencia SET disponible = disponible + :n, reservada = reservada - :n' },
+    @{ t='msg'; o='gst'; d='res'; n="2.7: UPDATE reserva SET estado = 'CANCELADA', observacion = :motivo" },
+    @{ t='msg'; o='gst'; d='pan'; n='2.7.1: ReservaOut'; ret=$true },
+    @{ t='op'; g='ya fue atendida, cancelada o expiró' },
+    @{ t='msg'; o='gst'; d='pan'; n='4.1: laReservaYaNoEstaViva(estado) -> 409' },
+    @{ t='fin' }
+  )
+},
+
+# ---------------------------------------------------------------- CU-24 --
+@{
+  nombre = '3.2 CU-24 Atender reserva en sucursal'
+  lineas = @(
+    @{ k = 'act'; actor = 'Encargado de Sucursal';     w = 160 },
+    @{ k = 'pan'; clase = 'PantallaReservasSucursal';  w = 220 },
+    @{ k = 'gst'; clase = 'GestorReservas';            w = 190 },
+    @{ k = 'inv'; clase = 'GestorInventario';          w = 190 },
+    @{ k = 'res'; clase = 'Reserva';                   w = 150 },
+    @{ k = 'det'; clase = 'ReservaDetalle';            w = 170 },
+    @{ k = 'exi'; clase = 'Existencia';                w = 150 }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nAgenda del local`ny preparación" },
+    @{ t='msg'; o='act'; d='pan'; n='1.1: abrirPanelDeReservas()' },
+    @{ t='msg'; o='pan'; d='gst'; n='1.2: listar_reservas_de_sucursal(db, sucursal_id, filtros)' },
+    @{ t='msg'; o='gst'; d='res'; n='1.3: SELECT ... FROM reserva WHERE sucursal_id = :s ORDER BY franja_inicio' },
+    @{ t='msg'; o='res'; d='gst'; n='1.3.1: list[Row]'; ret=$true },
+    @{ t='msg'; o='act'; d='pan'; n='1.4: prepararReserva(id)' },
+    @{ t='msg'; o='gst'; d='res'; n="1.5: UPDATE reserva SET estado = 'PREPARADA' WHERE id = :id" },
+    @{ t='nota'; txt = "FLUJO 2`nCierre: DOS movimientos`npor cada prenda que se lleva" },
+    @{ t='msg'; o='act'; d='pan'; n='2.1: atenderReserva(id, resultados)' },
+    @{ t='msg'; o='pan'; d='gst'; n='2.2: atender_reserva(db, reserva_id, datos, usuario)' },
+    @{ t='msg'; o='gst'; d='res'; n='2.3: SELECT * FROM reserva WHERE id = :id FOR UPDATE' },
+    @{ t='msg'; o='res'; d='gst'; n='2.3.1: Reserva'; ret=$true },
+    @{ t='msg'; o='gst'; d='det'; n='2.4: SELECT * FROM reserva_detalle WHERE reserva_id = :id' },
+    @{ t='msg'; o='det'; d='gst'; n='2.4.1: list[ReservaDetalle]'; ret=$true },
+    @{ t='alt' },
+    @{ t='op'; g='el cliente se lleva la prenda' },
+    @{ t='msg'; o='gst'; d='inv'; n='2.5a: liberar_de_reserva(...) -- LIBERACION +n, vuelve del apartado' },
+    @{ t='msg'; o='gst'; d='inv'; n='2.6a: descontar_por_venta(...) -- VENTA -n' },
+    @{ t='msg'; o='inv'; d='exi'; n='2.7a: UPDATE existencia SET disponible = disponible - :n, reservada = reservada - :n' },
+    @{ t='op'; g='el cliente no se la lleva' },
+    @{ t='msg'; o='gst'; d='inv'; n='2.5b: liberar_de_reserva(...) -- LIBERACION +n, y ahí termina' },
+    @{ t='msg'; o='inv'; d='exi'; n='2.6b: UPDATE existencia SET disponible = disponible + :n, reservada = reservada - :n' },
+    @{ t='fin' },
+    @{ t='msg'; o='gst'; d='det'; n='2.8: UPDATE reserva_detalle SET resultado_prueba = :resultado' },
+    @{ t='msg'; o='gst'; d='res'; n="2.9: UPDATE reserva SET estado = 'ATENDIDA', observacion = :nota" },
+    @{ t='msg'; o='gst'; d='pan'; n='2.9.1: ReservaOut'; ret=$true }
+  )
+},
+
+# ---------------------------------------------------------------- CU-25 --
+@{
+  nombre = '3.2 CU-25 Expirar reservas vencidas'
+  lineas = @(
+    @{ k = 'act'; actor = 'Sistema (procesos automaticos)'; w = 180 },
+    @{ k = 'pla'; clase = 'PlanificadorTareas';             w = 200 },
+    @{ k = 'gst'; clase = 'GestorReservas';                 w = 190 },
+    @{ k = 'inv'; clase = 'GestorInventario';               w = 190 },
+    @{ k = 'res'; clase = 'Reserva';                        w = 150 },
+    @{ k = 'det'; clase = 'ReservaDetalle';                 w = 170 },
+    @{ k = 'exi'; clase = 'Existencia';                     w = 150 }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nCorrida de la tarea.`nNO hay autorización:`nno hay usuario" },
+    @{ t='msg'; o='act'; d='pla'; n='1.1: dispararTarea()' },
+    @{ t='msg'; o='pla'; d='gst'; n='1.2: expirar_reservas_vencidas(db, tope)' },
+    @{ t='msg'; o='gst'; d='gst'; n='1.3: _ahora() - RESERVA_VIGENCIA_HORAS = corte' },
+    @{ t='msg'; o='gst'; d='res'; n='1.4: SELECT * FROM reserva WHERE estado IN (...) AND franja_fin < :corte' },
+    @{ t='msg'; o='res'; d='gst'; n='1.4.1: list[Reserva]'; ret=$true },
+    @{ t='alt' },
+    @{ t='op'; g='hay reservas vencidas' },
+    @{ t='msg'; o='gst'; d='det'; n='1.5: SELECT * FROM reserva_detalle WHERE reserva_id = :id' },
+    @{ t='msg'; o='det'; d='gst'; n='1.5.1: list[ReservaDetalle]'; ret=$true },
+    @{ t='msg'; o='gst'; d='inv'; n='1.6: liberar_de_reserva(db, variante_id, sucursal_id, cantidad)' },
+    @{ t='msg'; o='inv'; d='exi'; n='1.7: UPDATE existencia SET disponible = disponible + :n, reservada = reservada - :n' },
+    @{ t='msg'; o='gst'; d='res'; n="1.8: UPDATE reserva SET estado = 'EXPIRADA' WHERE id = :id" },
+    @{ t='msg'; o='gst'; d='pla'; n='1.8.1: ExpiracionOut (encontradas, expiradas, unidades)'; ret=$true },
+    @{ t='op'; g='nada que expirar' },
+    @{ t='msg'; o='gst'; d='pla'; n='3.1: informe(encontradas = 0) -- no escribe nada' },
+    @{ t='fin' }
+  )
+}
 )
 
 # =========================================================================
