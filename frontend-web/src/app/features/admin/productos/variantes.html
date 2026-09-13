@@ -87,7 +87,8 @@
       cargar existencia ni reservarlo.
     </p>
   } @else {
-    <table mat-table [dataSource]="variantes()" class="tabla">
+    <div class="envoltorio-tabla">
+      <table mat-table [dataSource]="variantes()" class="tabla">
       <ng-container matColumnDef="sku">
         <th mat-header-cell *matHeaderCellDef>SKU</th>
         <td mat-cell *matCellDef="let v">
@@ -172,9 +173,10 @@
         </td>
       </ng-container>
 
-      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
-      <tr mat-row *matRowDef="let fila; columns: columnas" [class.inactiva]="!fila.activa"></tr>
-    </table>
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr mat-row *matRowDef="let fila; columns: columnas" [class.inactiva]="!fila.activa"></tr>
+      </table>
+    </div>
   }
 </mat-dialog-content>
 

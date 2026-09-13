@@ -230,3 +230,26 @@
   }
 }
 
+
+// A 700px los filtros dejan de caber en una fila, y el margen lateral de la
+// vitrina se come el ancho que necesitan las tarjetas.
+@media (max-width: 700px) {
+  :host {
+    padding: 1.25rem 0.85rem 2rem;
+  }
+
+  .filtros {
+    padding: 1rem 1rem 0;
+
+    mat-form-field,
+    .campo-busqueda {
+      flex: 1 1 100%;
+      min-width: 0;
+    }
+  }
+
+  .vitrina {
+    padding: 1rem;
+    gap: 1rem;
+  }
+}

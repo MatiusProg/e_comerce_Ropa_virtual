@@ -32,6 +32,107 @@ python -m app.db.seed
 uvicorn app.main:app --reload
 ```
 
+### El dataset de demostración
+
+`seed.py` deja el sistema **vacío**: los roles para entrar y el catálogo para
+mirar. Para verlo **en uso** —con existencias, movimientos, clientes, favoritos
+y reservas— hay un segundo seed:
+
+```bash
+python -m app.db.seed_operacion
+```
+
+Necesita `DEMO_PASSWORD` en el `.env` y tarda unos minutos. **Corre contra una
+base local**: escribe miles de filas y se niega a arrancar si `DATABASE_URL`
+apunta a Supabase o a Railway, que es la base desplegada. Los volúmenes se
+ajustan en el diccionario `VOLUMEN`, al principio del archivo.
+
+Con los valores de fábrica deja ~515 personas, ~2.400 existencias, ~5.600
+movimientos repartidos en seis meses, ~2.100 favoritos y 300 reservas en los
+cinco estados.
+
+### Las dos taxonomías del catálogo
+
+El árbol de categorías existe en dos versiones y **el seed elige la que la base
+ya tiene**, no la que prefiere:
+
+| Perfil | Árbol | Cuándo se usa |
+|---|---|---|
+| `PERFIL_PUBLICO` | Mujer / Hombre / Accesorios | base vacía (máquina recién clonada) |
+| `PERFIL_PRENDA` | Prendas Superiores / Inferiores / Ropa Íntima… | la base ya tiene esas categorías (es el caso de Supabase) |
+
+El motivo es que el seed reconoce las categorías **por nombre**: sembrar un árbol
+sobre el otro no reemplaza nada, lo agrega al lado, y la vitrina termina
+ofreciendo `Mujer > Blusas` y `Prendas Superiores > Blusas y Camisas` como si
+fueran ramas distintas. La elección se hace mirando la base —`_perfil_de()`— y
+no con una variable de entorno: una variable mal puesta en Railway siembra la
+taxonomía equivocada en la base de todo el equipo, y deshacerlo es borrar
+productos a mano.
+
+Al agregar una categoría a Supabase hay que copiarla **letra por letra** al
+perfil correspondiente. Si difiere en un acento o en una mayúscula, el seed no
+la reconoce y crea una gemela.
+
+### Cargar el dataset en Supabase y verlo en el despliegue
+
+**El seed escribe en dos lugares a la vez**: las filas van a la base y las
+imágenes —que se dibujan con Pillow, no están versionadas— van al disco de la
+máquina que lo ejecuta. Correrlo desde una laptop apuntando a Supabase deja las
+filas en Supabase y los archivos en la laptop: la API desplegada sirve `/media`
+desde el volumen de Railway, así que **todas las fotos responden 404**.
+
+Y no se arregla repitiéndolo: el seed salta el producto cuyo código ya existe,
+así que la segunda corrida ni siquiera llega a generar las imágenes. Habría que
+borrar los productos primero.
+
+Por eso **el seed tiene que ejecutarse dentro del contenedor de Railway**, donde
+`MEDIA_ROOT` es el volumen persistente y `DATABASE_URL` es Supabase. `railway
+run` **no** sirve: ejecuta el comando en tu máquina con las variables del
+servicio inyectadas, que es exactamente el caso roto.
+
+**Antes de empezar**, en el servicio de la API en Railway:
+
+1. Confirmar que hay un **volumen montado en `/app/media`**. Sin él las imágenes
+   se pierden en el siguiente despliegue, aunque el seed funcione.
+2. Definir las variables `DEMO_PASSWORD`, `ADMIN_PASSWORD` y
+   `SEMBRAR_EN_DESPLEGADA=1` —esta última desarma a propósito la guarda que
+   impide sembrar contra una base desplegada—.
+
+**La carga**, cambiando temporalmente el comando de arranque del servicio
+(Settings → Deploy → Custom Start Command):
+
+```sh
+sh -c "alembic upgrade head && (python -m app.db.seed && python -m app.db.seed_operacion) & gunicorn app.main:app -k uvicorn.workers.UvicornWorker -b 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120"
+```
+
+El `&` no es decorativo: **el seed va en segundo plano a propósito**. El
+`healthcheckTimeout` del `railway.json` es de 120 segundos y el seed tarda
+varios minutos; si bloqueara el arranque, Railway daría el despliegue por
+fallido, reiniciaría el contenedor y el seed volvería a empezar en un bucle.
+Backgroundeándolo, gunicorn responde `/health` de inmediato y la siembra avanza
+en los logs del servicio.
+
+Cuando los logs digan `Dataset de operacion listo`, **devolver el comando de
+arranque al original** (el del `Dockerfile`). Dejarlo puesto no rompe nada
+—el seed es idempotente— pero agrega segundos a cada despliegue.
+
+**Verificación**, contra el dominio de la API:
+
+```bash
+curl -s "$API/api/v1/tienda/productos?pagina=1&tamano=1"   # total > 0
+curl -s -o /dev/null -w "%{http_code}\n" "$API/media/productos/1/principal.jpg"   # 200
+```
+
+**Qué agrega a Supabase, además de los productos.** El seed respeta lo que ya
+está pero completa lo que falta, y conviene saberlo de antemano: 5 sucursales
+Violet junto a *Urubo*, 4 proveedores junto a *Shein*, 8 colores junto a
+*Morador De la noche*, las 5 tallas `INFERIOR` que no existían —los pantalones
+no se venden en XS—, 2 temporadas junto a *Primavera*, y ~515 usuarios de
+demostración con el dominio `@demo.violetboutique.bo`, que es lo que permite
+distinguirlos de las cuentas reales del equipo.
+
+Las categorías y las tallas `SUPERIOR` **no se tocan**.
+
 Verificación:
 
 ```bash
@@ -58,7 +159,9 @@ app/
 ├── db/
 │   ├── base.py           Base declarativa + convención de nombres
 │   ├── session.py        Motor y sesión (una por petición)
-│   └── seed.py           Datos de prueba
+│   ├── seed.py           Roles, ciudades y administrador (ciclo 1)
+│   ├── seed_catalogo.py  Sucursales, maestros y ~60 productos (ciclo 2)
+│   └── seed_operacion.py Personas, inventario, favoritos y reservas
 ├── modules/
 │   ├── seguridad/          P1  · CU-01 a CU-04            · ciclo 1
 │   ├── organizacion/       P2  · CU-05 a CU-07            · ciclo 1

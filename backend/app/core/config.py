@@ -65,6 +65,13 @@ class Settings(BaseSettings):
     ADMIN_EMAIL: str = "admin@violetboutique.bo"
     ADMIN_PASSWORD: str = ""      # sin valor por defecto: ver seed.py
 
+    # Contrasena unica de las personas de demostracion que crea
+    # app/db/seed_operacion.py. Sigue la misma regla que ADMIN_PASSWORD y por
+    # el mismo motivo: sin valor por defecto, porque un valor versionado seria
+    # la credencial de quinientas cuentas en una base desplegada. Si falta, el
+    # seed de operacion no crea ninguna persona y lo dice.
+    DEMO_PASSWORD: str = ""
+
     # --- Almacenamiento de imagenes --------------------------------------
     # Volumen persistente de Railway montado en el contenedor.
     MEDIA_ROOT: str = "/app/media"
