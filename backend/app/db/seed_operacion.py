@@ -906,16 +906,45 @@ def _prendas_con_stock(db: Session, sucursal_id: int, cuantas: int) -> list[tupl
     return [(variante_id, AZAR.choice([1, 1, 1, 2])) for variante_id, _ in filas]
 
 
-def _franja_pasada(sucursal: Sucursal) -> tuple[datetime, datetime]:
+def _ranuras_del_dia(sucursal: Sucursal, duracion: int) -> list[tuple[int, int]]:
+    """Las horas de inicio posibles en esa tienda, en una grilla de 30 minutos.
+
+    SE MIRAN LOS MINUTOS DEL HORARIO, NO SOLO LA HORA.
+
+    La version anterior sorteaba `randrange(apertura.hour, ...)` y le pegaba un
+    minuto al azar, que es correcto solo si la tienda abre y cierra en hora en
+    punto. La sucursal *Urubo* de la base desplegada abre 08:30, asi que
+    `apertura.hour` daba 8 y salian franjas de las 08:00 --- media hora antes de
+    que la tienda abriera---. Se descubrio con los datos reales: la replica local
+    tenia todas las sucursales de 9 a 21 y nunca lo disparo.
+
+    Devuelve los pares (hora, minuto) cuya franja entera cabe entre la apertura
+    y el cierre. Si no cabe ninguna --- una tienda que abre una hora ---, la
+    lista sale vacia y quien llama lo resuelve.
+    """
+    apertura = sucursal.horario_apertura.hour * 60 + sucursal.horario_apertura.minute
+    cierre = sucursal.horario_cierre.hour * 60 + sucursal.horario_cierre.minute
+
+    # La grilla arranca en la primera media hora en punto que no sea anterior a
+    # la apertura: una tienda que abre 08:30 ofrece 08:30, no 08:00.
+    primera = -(-apertura // 30) * 30
+    return [
+        (minuto // 60, minuto % 60)
+        for minuto in range(primera, cierre - duracion + 1, 30)
+    ]
+
+
+def _franja_pasada(sucursal: Sucursal) -> tuple[datetime, datetime] | None:
     """Una franja de las ultimas semanas, dentro del horario de la tienda."""
+    duracion = AZAR.choice([30, 45, 60])
+    ranuras = _ranuras_del_dia(sucursal, duracion)
+    if not ranuras:
+        return None
+
     dia = _ahora() - timedelta(days=AZAR.randrange(2, 120))
-    hora = AZAR.randrange(
-        sucursal.horario_apertura.hour, max(sucursal.horario_cierre.hour - 1, sucursal.horario_apertura.hour + 1)
-    )
-    inicio = dia.replace(
-        hour=hora, minute=AZAR.choice([0, 30]), second=0, microsecond=0
-    )
-    return inicio, inicio + timedelta(minutes=AZAR.choice([30, 45, 60]))
+    hora, minuto = AZAR.choice(ranuras)
+    inicio = dia.replace(hour=hora, minute=minuto, second=0, microsecond=0)
+    return inicio, inicio + timedelta(minutes=duracion)
 
 
 def _franja_futura(sucursal: Sucursal, duracion: int) -> datetime | None:
@@ -927,18 +956,17 @@ def _franja_futura(sucursal: Sucursal, duracion: int) -> datetime | None:
     calcularla porque a ultima hora de un dia el rango valido puede estar vacio,
     y reintentar es mas corto que el caso por caso.
     """
+    ranuras = _ranuras_del_dia(sucursal, duracion)
+    if not ranuras:
+        return None
+
     ahora = _ahora()
     tope = ahora + timedelta(hours=settings.RESERVA_ANTICIPACION_MAXIMA_HORAS - 1)
-    ultima_hora = sucursal.horario_cierre.hour - (duracion // 60) - 1
 
     for _ in range(30):
         dia = ahora + timedelta(days=AZAR.randrange(0, 3))
-        inicio = dia.replace(
-            hour=AZAR.randrange(sucursal.horario_apertura.hour, max(ultima_hora, sucursal.horario_apertura.hour + 1)),
-            minute=AZAR.choice([0, 30]),
-            second=0,
-            microsecond=0,
-        )
+        hora, minuto = AZAR.choice(ranuras)
+        inicio = dia.replace(hour=hora, minute=minuto, second=0, microsecond=0)
         if ahora + timedelta(hours=1) < inicio < tope:
             return inicio
     return None
@@ -983,7 +1011,12 @@ def _reservas(
         if not lineas:
             continue
 
-        inicio, fin = _franja_pasada(sucursal)
+        franja = _franja_pasada(sucursal)
+        if franja is None:
+            # La tienda no tiene ninguna franja que quepa en su horario.
+            continue
+        inicio, fin = franja
+
         estado = AZAR.choices(
             ["ATENDIDA", "CANCELADA", "EXPIRADA"], weights=[55, 25, 20]
         )[0]
