@@ -72,7 +72,13 @@ function Add-AlDiagrama($dia, $el, $l, $t, $ancho, $alto) {
 function New-Conector($src, $dst, $tipo, $estereotipo) {
     $src.Connectors.Refresh()
     foreach ($c in $src.Connectors) {
-        if ($c.SupplierID -eq $dst.ElementID -and $c.Type -eq $tipo -and $c.Stereotype -eq $estereotipo) { return }
+        # `[string]` en los dos lados a proposito: para una Association el
+        # estereotipo del conector es cadena vacia y el parametro llega como
+        # $null, y en PowerShell `'' -eq $null` es FALSO. Sin el casteo, la
+        # deduplicacion no reconoce el conector que ya existe y lo vuelve a
+        # crear en cada corrida: asi aparecieron 30 duplicados el 13/09.
+        if ($c.SupplierID -eq $dst.ElementID -and $c.Type -eq $tipo -and
+            [string]$c.Stereotype -eq [string]$estereotipo) { return }
     }
     $c = $src.Connectors.AddNew('', $tipo)
     $c.SupplierID = $dst.ElementID

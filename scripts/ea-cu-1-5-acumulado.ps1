@@ -37,9 +37,21 @@ function Get-Paquete($padre, $nombre) {
     foreach ($p in $padre.Packages) { if ($p.Name -eq $nombre) { return $p } }
     throw "No se encontro el paquete '$nombre'"
 }
-function Add-AlDiagrama($dia, $el, $l, $t, $ancho, $alto) {
+# OJO: recibe el ID del elemento, no el elemento.
+#
+# Es la correccion del 13/09. Antes recibia la referencia COM y leia
+# `$el.ElementID` en el momento de colocarla. Pero `Get-OCrear` llama a
+# `Elements.Refresh()` cada vez que crea uno, y ESO INVALIDA las referencias
+# que ya estaban guardadas en el mapa: `.ElementID` empieza a devolver 0.
+#
+# El resultado fue un 1.5 con sus 33 cajas puestas y todas apuntando al
+# elemento 0. EA dibujaba los recuadros --- por eso «las piezas se veian» ---
+# pero ninguna relacion, porque no habia elemento del que colgarlas. No da
+# error en ningun lado.
+function Add-AlDiagrama($dia, $idElemento, $l, $t, $ancho, $alto) {
+    if (-not $idElemento) { throw 'Add-AlDiagrama recibio un id vacio' }
     $do = $dia.DiagramObjects.AddNew("l=$l;r=$($l+$ancho);t=$t;b=$($t-$alto);", '')
-    $do.ElementID = $el.ElementID
+    $do.ElementID = $idElemento
     [void]$do.Update()
 }
 
@@ -67,7 +79,13 @@ function Get-OCrear($nombre, $tipo, $notas) {
 function New-Conector($src, $dst, $tipo, $estereotipo) {
     $src.Connectors.Refresh()
     foreach ($c in $src.Connectors) {
-        if ($c.SupplierID -eq $dst.ElementID -and $c.Type -eq $tipo -and $c.Stereotype -eq $estereotipo) { return }
+        # `[string]` en los dos lados a proposito: para una Association el
+        # estereotipo del conector es cadena vacia y el parametro llega como
+        # $null, y en PowerShell `'' -eq $null` es FALSO. Sin el casteo, la
+        # deduplicacion no reconoce el conector que ya existe y lo vuelve a
+        # crear en cada corrida: asi aparecieron 30 duplicados el 13/09.
+        if ($c.SupplierID -eq $dst.ElementID -and $c.Type -eq $tipo -and
+            [string]$c.Stereotype -eq [string]$estereotipo) { return }
     }
     $c = $src.Connectors.AddNew('', $tipo)
     $c.SupplierID = $dst.ElementID
@@ -163,6 +181,32 @@ for ($i = $pCiclo2.Diagrams.Count - 1; $i -ge 0; $i--) {
 }
 $pCiclo2.Diagrams.Refresh()
 
+# Se releen los identificadores del paquete, ya sin referencias viejas dando
+# vueltas: es la unica lectura que no puede estar invalidada.
+$idDe = @{}
+$pCiclo2.Elements.Refresh()
+foreach ($e in $pCiclo2.Elements) { $idDe["$($e.Type)|$($e.Name)"] = $e.ElementID }
+
+# La clave sale de las DEFINICIONES, no de la referencia COM: despues de un
+# `Elements.Refresh()` esas referencias no sirven ni para leerles el nombre.
+$nombreDe = @{
+  'cliente'   = 'Actor|Cliente'
+  'admin'     = 'Actor|Administrador'
+  'encargado' = 'Actor|Encargado de Sucursal'
+  'sistema'   = 'Actor|Sistema (procesos automáticos)'
+  'interno'   = 'Actor|Usuario interno'
+  'cajero'    = 'Actor|Cajero'
+  'proveedor' = 'Actor|Proveedor'
+}
+foreach ($d in $defC1) { $nombreDe[$d.k] = "UseCase|$($d.n)" }
+foreach ($d in $defC2) { $nombreDe[$d.k] = "UseCase|$($d.n)" }
+
+function Id($clave) {
+    $k = $nombreDe[$clave]
+    if (-not $k -or -not $idDe.ContainsKey($k)) { throw "No se encontro el id de '$clave'" }
+    return $idDe[$k]
+}
+
 $dia = $pCiclo2.Diagrams.AddNew($nombre, 'UseCase')
 $dia.Notes = 'Modelo de casos de uso al cerrar el Ciclo 2: los nueve del Ciclo 1 y los trece del Ciclo 2, con todos sus actores.'
 [void]$dia.Update(); $pCiclo2.Diagrams.Refresh()
@@ -178,21 +222,21 @@ $ACTORES = @(
   @{k='proveedor'; t=-1200; w=140},
   @{k='sistema';   t=-1400; w=180}
 )
-foreach ($a in $ACTORES) { Add-AlDiagrama $dia $A[$a.k] 40 $a.t $a.w 80 }
+foreach ($a in $ACTORES) { Add-AlDiagrama $dia (Id $a.k) 40 $a.t $a.w 80 }
 
 $COL_C1 = @('cu01','cu02','cu03','cu04','cu05','cu06','cu07','cu08','cu09')
 $COL_C1_EXT = @('verif','pass','revoc')
 $COL_C2 = @('cu17','cu18','cu19','cu22','cu23','cu10','cu11','cu13','cu14','cu15','cu16','cu24','cu25')
 
 $t = -40
-foreach ($k in $COL_C1) { Add-AlDiagrama $dia $U[$k] 320 $t 250 85; $t -= 110 }
+foreach ($k in $COL_C1) { Add-AlDiagrama $dia (Id $k) 320 $t 250 85; $t -= 110 }
 $t -= 30
-foreach ($k in $COL_C1_EXT) { Add-AlDiagrama $dia $U[$k] 320 $t 250 85; $t -= 110 }
+foreach ($k in $COL_C1_EXT) { Add-AlDiagrama $dia (Id $k) 320 $t 250 85; $t -= 110 }
 
 $t = -40
-foreach ($k in $COL_C2) { Add-AlDiagrama $dia $U[$k] 680 $t 260 85; $t -= 110 }
+foreach ($k in $COL_C2) { Add-AlDiagrama $dia (Id $k) 680 $t 260 85; $t -= 110 }
 
-Add-AlDiagrama $dia $U['auth'] 1060 -700 240 85
+Add-AlDiagrama $dia (Id 'auth') 1060 -700 240 85
 
 $dia.DiagramObjects.Refresh(); $dia.DiagramLinks.Refresh()
 Write-Output "  $nombre : $($dia.DiagramObjects.Count) objetos, $($dia.DiagramLinks.Count) relaciones"
