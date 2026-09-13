@@ -15,6 +15,9 @@ import '../../features/auth/pantalla_registro.dart';
 import '../../features/catalogo/pantalla_catalogo.dart';
 import '../../features/catalogo/pantalla_ficha.dart';
 import '../../features/inicio/pantalla_carga.dart';
+import '../../features/reservas/pantalla_detalle_reserva.dart';
+import '../../features/reservas/pantalla_mis_reservas.dart';
+import '../../features/reservas/pantalla_nueva_reserva.dart';
 import '../../features/inicio/pantalla_inicio.dart';
 import '../../features/perfil/pantalla_perfil.dart';
 
@@ -43,6 +46,25 @@ class Rutas {
   /// la ruta y no como parametro de consulta para que la pantalla sea
   /// enlazable y el boton de volver del telefono la deje bien apilada.
   static const String fichaProducto = '/catalogo/:id';
+
+  // Mateo:
+  /// CU-23 · mis reservas, que es la puerta de entrada del paquete: el cliente
+  /// llega a reservar desde aca, no al reves.
+  static const String reservas = '/reservas';
+
+  /// CU-22 · el formulario. Anidada bajo `/reservas` y declarada ANTES que
+  /// `:id`, porque `go_router` prueba las rutas en orden y `nueva` encajaria
+  /// en el patron del identificador.
+  static const String reservaNueva = '/reservas/nueva';
+
+  /// CU-23 · el detalle. Patron para el enrutador; para navegar se usa
+  /// [reservaDetalle].
+  static const String reservaDetallePatron = '/reservas/:id';
+
+  /// La ruta concreta de una reserva. Es una funcion y no una interpolacion
+  /// suelta en cada pantalla por el mismo motivo que las demas son constantes:
+  /// un `/reserva/7` mal escrito no lo detecta nadie hasta que se ejecuta.
+  static String reservaDetalle(int id) => '/reservas/$id';
 }
 
 /// Rutas accesibles sin sesion: el registro (CU-01) y el login (CU-02).
@@ -122,6 +144,32 @@ final routerProvider = Provider<GoRouter>((ref) {
               final id = int.tryParse(estado.pathParameters['id'] ?? '');
               if (id == null) return const PantallaCatalogo();
               return PantallaFicha(productoId: id);
+            },
+          ),
+        ],
+      ),
+
+      // Mateo: reservas (CU-22, CU-23).
+      GoRoute(
+        path: Rutas.reservas,
+        builder: (context, estado) => const PantallaMisReservas(),
+        routes: [
+          GoRoute(
+            // ANTES que ':id', porque `go_router` prueba en orden y 'nueva'
+            // encajaria en el patron del identificador: sin esto, tocar
+            // «Reservar» abriria el detalle de una reserva inexistente.
+            path: 'nueva',
+            builder: (context, estado) => const PantallaNuevaReserva(),
+          ),
+          GoRoute(
+            // Anidada y no suelta, igual que la ficha: asi el boton de volver
+            // del telefono lleva del detalle a la lista y no a la pantalla de
+            // inicio.
+            path: ':id',
+            builder: (context, estado) {
+              final id = int.tryParse(estado.pathParameters['id'] ?? '');
+              if (id == null) return const PantallaMisReservas();
+              return PantallaDetalleReserva(reservaId: id);
             },
           ),
         ],

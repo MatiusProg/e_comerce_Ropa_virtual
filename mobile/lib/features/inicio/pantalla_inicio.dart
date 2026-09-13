@@ -169,7 +169,12 @@ class _PendientesDelCiclo extends StatelessWidget {
         Icons.storefront_outlined,
         Rutas.catalogo,
       ),
-      ('Reservas', 'CU-22 · CU-23', Icons.event_available_outlined, null),
+      (
+        'Reservas',
+        'CU-22 · CU-23',
+        Icons.event_available_outlined,
+        Rutas.reservas,
+      ),
       (
         'Vestidor virtual',
         'Prototipo · CU-21',
