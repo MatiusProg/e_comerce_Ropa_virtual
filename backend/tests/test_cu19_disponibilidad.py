@@ -215,7 +215,7 @@ def test_la_costura_devuelve_lo_mismo_que_el_inventario(
     del propio paquete de Mateo, que lee la misma tabla por otro camino.
     """
     vitrina = api.get(_disponibilidad(red["s"])).json()
-    inventario = api.get(EXISTENCIAS, headers=red["admin"]).json()
+    inventario = api.get(EXISTENCIAS, headers=red["admin"], params={"tamano": 100}).json()["items"]
 
     esperado = {
         fila["sucursal_id"]: fila["cantidad_disponible"]

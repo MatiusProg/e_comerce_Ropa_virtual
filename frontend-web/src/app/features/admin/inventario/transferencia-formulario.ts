@@ -19,7 +19,8 @@ import type { SucursalBreve } from '../../../core/models/organizacion.models';
 export interface DatosTransferenciaFormulario {
   /** El saldo desde el que se abrió, o null si se abrió desde el botón general. */
   existencia: Existencia | null;
-  /** Saldos disponibles, para elegir origen cuando no vino uno fijado. */
+  /** Saldos de la página que se está mirando, como punto de partida del
+   *  selector de origen. El buscador del diálogo llega al resto. */
   existencias: Existencia[];
   sucursales: SucursalBreve[];
 }
@@ -66,10 +67,38 @@ export class TransferenciaFormulario {
   protected readonly guardando = signal(false);
   protected readonly error = signal<string | null>(null);
 
-  /** Solo se puede transferir lo que tiene saldo disponible. */
-  protected readonly origenes = this.datos.existencias.filter(
-    (e) => e.cantidad_disponible > 0,
+  /**
+   * Solo se puede transferir lo que tiene saldo disponible.
+   *
+   * Es una señal y no una lista fija porque la pantalla ahora pagina: lo que
+   * llega en `datos.existencias` es la página que el usuario está mirando, no
+   * el depósito entero. Cuando la transferencia se abre desde el botón general
+   * —sin una fila de partida— hay que poder llegar a cualquier existencia, y
+   * para eso está el buscador, que pregunta al servidor.
+   */
+  protected readonly origenes = signal<Existencia[]>(
+    this.datos.existencias.filter((e) => e.cantidad_disponible > 0),
   );
+
+  protected readonly buscandoOrigen = signal(false);
+  protected readonly busquedaOrigen = new FormControl('', { nonNullable: true });
+
+  protected buscarOrigen(): void {
+    const texto = this.busquedaOrigen.value.trim();
+    this.buscandoOrigen.set(true);
+    this.api
+      .listarExistencias({ solo_con_saldo: true, busqueda: texto || undefined, tamano: 50 })
+      .subscribe({
+        next: (p) => {
+          this.origenes.set(p.items.filter((e) => e.cantidad_disponible > 0));
+          this.buscandoOrigen.set(false);
+        },
+        error: (e: ErrorInventario) => {
+          this.error.set(e.mensaje);
+          this.buscandoOrigen.set(false);
+        },
+      });
+  }
 
   protected readonly origen = new FormControl<number | null>(
     this.datos.existencia?.existencia_id ?? null,
@@ -93,8 +122,7 @@ export class TransferenciaFormulario {
     const id = this.origenAhora();
     if (id === null || id === undefined) return this.datos.existencia;
     return (
-      this.datos.existencias.find((e) => e.existencia_id === id) ??
-      this.datos.existencia
+      this.origenes().find((e) => e.existencia_id === id) ?? this.datos.existencia
     );
   });
 

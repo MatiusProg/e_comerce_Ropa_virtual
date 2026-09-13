@@ -25,7 +25,7 @@ P5 consulte estas tablas por su cuenta.
 """
 from datetime import datetime
 
-from sqlalchemy import Row, Select, and_, func, select
+from sqlalchemy import Row, Select, and_, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.modules.catalogo.models import Color, Producto, Talla, VarianteProducto
@@ -497,15 +497,20 @@ def disponibilidad_por_sucursal(db: Session, variante_id: int) -> list[Row]:
     )
 
 
-def inventario_consolidado(
-    db: Session,
+def _filtrar_existencias(
+    consulta,
     *,
-    sucursal_id: int | None = None,
-    producto_id: int | None = None,
-    solo_con_saldo: bool = False,
-) -> list[Row]:
-    """Existencias con la prenda y la sucursal resueltas (CU-14 y CU-16)."""
-    consulta = _seleccion_existencia()
+    sucursal_id: int | None,
+    producto_id: int | None,
+    solo_con_saldo: bool,
+    busqueda: str | None,
+):
+    """Los filtros de la consulta de existencias, en un solo lugar.
+
+    Los comparten `inventario_consolidado` y `contar_existencias`: si el conteo
+    filtrara distinto que el listado, el paginador mostraria un total que no se
+    corresponde con lo que se ve.
+    """
     if sucursal_id is not None:
         consulta = consulta.where(Existencia.sucursal_id == sucursal_id)
     if producto_id is not None:
@@ -514,8 +519,62 @@ def inventario_consolidado(
         consulta = consulta.where(
             (Existencia.cantidad_disponible + Existencia.cantidad_reservada) > 0
         )
-    return list(
-        db.execute(
-            consulta.order_by(Sucursal.nombre, Producto.nombre, VarianteProducto.sku)
-        ).all()
+    if busqueda:
+        patron = f"%{busqueda.strip()}%"
+        consulta = consulta.where(
+            or_(VarianteProducto.sku.ilike(patron), Producto.nombre.ilike(patron))
+        )
+    return consulta
+
+
+def inventario_consolidado(
+    db: Session,
+    *,
+    sucursal_id: int | None = None,
+    producto_id: int | None = None,
+    solo_con_saldo: bool = False,
+    busqueda: str | None = None,
+    limite: int | None = None,
+    desplazamiento: int = 0,
+) -> list[Row]:
+    """Existencias con la prenda y la sucursal resueltas (CU-14 y CU-16).
+
+    `limite` y `desplazamiento` son OPCIONALES y por omision no se aplican, asi
+    que la costura C1 --- por donde CU-14 pide el consolidado entero para
+    agrupar y calcular su resumen ANTES de paginar --- sigue devolviendo todo.
+    Los usa solamente el listado paginado de CU-13 y CU-15, que es una pantalla
+    y no un calculo.
+    """
+    consulta = _filtrar_existencias(
+        _seleccion_existencia(),
+        sucursal_id=sucursal_id,
+        producto_id=producto_id,
+        solo_con_saldo=solo_con_saldo,
+        busqueda=busqueda,
     )
+    consulta = consulta.order_by(Sucursal.nombre, Producto.nombre, VarianteProducto.sku)
+    if limite is not None:
+        consulta = consulta.limit(limite).offset(desplazamiento)
+    return list(db.execute(consulta).all())
+
+
+def contar_existencias(
+    db: Session,
+    *,
+    sucursal_id: int | None = None,
+    producto_id: int | None = None,
+    solo_con_saldo: bool = False,
+    busqueda: str | None = None,
+) -> int:
+    """Cuantas existencias hay con esos filtros, para dibujar el paginador."""
+    consulta = _filtrar_existencias(
+        select(func.count())
+        .select_from(Existencia)
+        .join(VarianteProducto, VarianteProducto.id == Existencia.variante_id)
+        .join(Producto, Producto.id == VarianteProducto.producto_id),
+        sucursal_id=sucursal_id,
+        producto_id=producto_id,
+        solo_con_saldo=solo_con_saldo,
+        busqueda=busqueda,
+    )
+    return db.scalar(consulta) or 0

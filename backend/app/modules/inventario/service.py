@@ -40,6 +40,7 @@ from app.modules.inventario.schemas import (
     LineaIngresoOut,
     MovimientoOut,
     PaginaIngresos,
+    PaginaExistencias,
     PaginaMovimientos,
     TransferenciaIn,
     TransferenciaOut,
@@ -850,6 +851,45 @@ def disponibilidad_por_sucursal(db: Session, variante_id: int) -> list[dict]:
     ]
 
 
+def listar_existencias(
+    db: Session,
+    *,
+    pagina: int,
+    tamano: int,
+    sucursal_id: int | None = None,
+    producto_id: int | None = None,
+    solo_con_saldo: bool = False,
+    busqueda: str | None = None,
+) -> PaginaExistencias:
+    """CU-13 y CU-15: los saldos del deposito, paginados.
+
+    FUNCION APARTE, y no un parametro de `inventario_consolidado`. Esa es la
+    costura C1: CU-14 la llama para traerse el consolidado ENTERO, porque agrupa
+    por variante y calcula el resumen sobre todo lo filtrado ANTES de paginar
+    ---esta explicado en consolidado_service.py---. Paginar alli le daria a CU-14
+    un resumen de la pagina en vez del resumen de la consulta.
+
+    Lo que se pagina es la PANTALLA de CU-13 y CU-15, que es otra cosa: una
+    lista para elegir sobre cual existencia operar.
+    """
+    filtros = {
+        "sucursal_id": sucursal_id,
+        "producto_id": producto_id,
+        "solo_con_saldo": solo_con_saldo,
+        "busqueda": busqueda,
+    }
+    total = repository.contar_existencias(db, **filtros)
+    filas = repository.inventario_consolidado(
+        db, limite=tamano, desplazamiento=(pagina - 1) * tamano, **filtros
+    )
+    return PaginaExistencias(
+        total=total,
+        pagina=pagina,
+        tamano=tamano,
+        items=[_fila_a_existencia(f) for f in filas],
+    )
+
+
 def inventario_consolidado(
     db: Session,
     *,
@@ -857,7 +897,12 @@ def inventario_consolidado(
     producto_id: int | None = None,
     solo_con_saldo: bool = False,
 ) -> list[ExistenciaOut]:
-    """CU-14 y CU-16: existencias con la prenda y la sucursal ya resueltas."""
+    """CU-14 y CU-16: existencias con la prenda y la sucursal ya resueltas.
+
+    Devuelve TODO lo que coincide, sin paginar, porque es la costura C1 y CU-14
+    necesita el conjunto completo para agrupar. Para la pantalla de CU-13 y
+    CU-15 esta `listar_existencias`, que si pagina.
+    """
     return [
         _fila_a_existencia(fila)
         for fila in repository.inventario_consolidado(

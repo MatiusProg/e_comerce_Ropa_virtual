@@ -332,6 +332,20 @@ class PaginaMovimientos(BaseModel):
     items: list[MovimientoOut]
 
 
+class PaginaExistencias(BaseModel):
+    """Existencias del deposito, paginadas.
+
+    La lista completa son miles de filas --- con el dataset de operacion, 3.424
+    con saldo --- y el navegador no puede dibujarlas de una. El total viaja
+    aparte para que el paginador sepa cuantas paginas hay.
+    """
+
+    total: int
+    pagina: int
+    tamano: int
+    items: list[ExistenciaOut]
+
+
 class TransferenciaOut(BaseModel):
     """Las dos puntas de una transferencia, tal como quedaron registradas.
 

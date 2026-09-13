@@ -213,8 +213,26 @@ export interface TransferenciaRegistrada {
   destino: Existencia;
 }
 
+/**
+ * Existencias del depósito, paginadas.
+ *
+ * El endpoint devolvía la lista entera. Con el dataset de operación cargado son
+ * 3.424 filas y un megabyte en una sola respuesta: el servidor contesta rápido
+ * y el navegador se cuelga dibujándolas.
+ */
+export interface PaginaExistencias {
+  total: number;
+  pagina: number;
+  tamano: number;
+  items: Existencia[];
+}
+
 export interface FiltrosExistencias {
   sucursal_id?: number;
   producto_id?: number;
   solo_con_saldo?: boolean;
+  /** Alcanza al SKU y al nombre de la prenda. */
+  busqueda?: string;
+  pagina?: number;
+  tamano?: number;
 }

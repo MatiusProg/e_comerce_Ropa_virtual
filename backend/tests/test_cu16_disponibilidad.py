@@ -156,9 +156,13 @@ def _ingresar(
 
 
 def _existencias(api: TestClient, cabeceras: dict[str, str], **params) -> list[dict]:
+    # El endpoint pagina desde el 13/09: devuelve {total, pagina, tamano, items}.
+    # `tamano` va al tope para que ningun escenario se quede corto por el
+    # tamano de fabrica, que es 20.
+    params.setdefault("tamano", 100)
     r = api.get(EXISTENCIAS, headers=cabeceras, params=params)
     assert r.status_code == 200, r.text
-    return r.json()
+    return r.json()["items"]
 
 
 # --- Fixtures ------------------------------------------------------------

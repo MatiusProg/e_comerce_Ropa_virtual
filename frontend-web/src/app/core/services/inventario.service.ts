@@ -15,6 +15,7 @@ import {
   IngresoRegistrado,
   IngresoResumen,
   Movimiento,
+  PaginaExistencias,
   PaginaIngresos,
   PaginaMovimientos,
   StockMinimoCrear,
@@ -90,13 +91,16 @@ export class InventarioService {
 
   // --- Consultas del depósito --------------------------------------------
 
-  listarExistencias(filtros: FiltrosExistencias = {}): Observable<Existencia[]> {
+  listarExistencias(filtros: FiltrosExistencias = {}): Observable<PaginaExistencias> {
     let params = new HttpParams();
     if (filtros.sucursal_id) params = params.set('sucursal_id', filtros.sucursal_id);
     if (filtros.producto_id) params = params.set('producto_id', filtros.producto_id);
     if (filtros.solo_con_saldo) params = params.set('solo_con_saldo', true);
+    if (filtros.busqueda) params = params.set('busqueda', filtros.busqueda);
+    if (filtros.pagina) params = params.set('pagina', filtros.pagina);
+    if (filtros.tamano) params = params.set('tamano', filtros.tamano);
     return this.http
-      .get<Existencia[]>(`${this.base}/existencias`, { params })
+      .get<PaginaExistencias>(`${this.base}/existencias`, { params })
       .pipe(catchError((e) => throwError(() => this.traducir(e))));
   }
 
