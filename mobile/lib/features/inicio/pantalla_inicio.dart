@@ -162,7 +162,11 @@ class _PendientesDelCiclo extends StatelessWidget {
     // El cuarto elemento es la ruta, o `null` si todavia no existe: lo que
     // esta hecho se abre desde aca y lo que no, se lista igual para que se vea
     // que falta sin ir a buscarlo al cronograma.
-    const modulos = [
+    // El tipo va escrito y no inferido: cuando las tres rutas existen, Dart
+    // infiere String en vez de String? y las comprobaciones de abajo quedan
+    // marcadas como siempre falsas. Declararlo nullable mantiene la lista
+    // preparada para el Ciclo 3, donde vuelve a haber modulos sin ruta.
+    const List<(String, String, IconData, String?)> modulos = [
       (
         'Catálogo',
         'CU-17 · CU-18',
@@ -179,7 +183,7 @@ class _PendientesDelCiclo extends StatelessWidget {
         'Vestidor virtual',
         'Prototipo · CU-21',
         Icons.camera_alt_outlined,
-        null,
+        Rutas.vestidor,
       ),
     ];
 

@@ -18,6 +18,7 @@ import '../../features/inicio/pantalla_carga.dart';
 import '../../features/reservas/pantalla_detalle_reserva.dart';
 import '../../features/reservas/pantalla_mis_reservas.dart';
 import '../../features/reservas/pantalla_nueva_reserva.dart';
+import '../../features/vestidor/pantalla_vestidor.dart';
 import '../../features/inicio/pantalla_inicio.dart';
 import '../../features/perfil/pantalla_perfil.dart';
 
@@ -65,6 +66,11 @@ class Rutas {
   /// suelta en cada pantalla por el mismo motivo que las demas son constantes:
   /// un `/reserva/7` mal escrito no lo detecta nadie hasta que se ejecuta.
   static String reservaDetalle(int id) => '/reservas/$id';
+
+  /// I3 · el prototipo del vestidor virtual. No es CU-21: es la prueba de
+  /// riesgo que se construye en el Ciclo 2 para saber, antes del Ciclo 3, si
+  /// la deteccion de pose sobre este telefono da un ritmo usable.
+  static const String vestidor = '/vestidor';
 }
 
 /// Rutas accesibles sin sesion: el registro (CU-01) y el login (CU-02).
@@ -147,6 +153,21 @@ final routerProvider = Provider<GoRouter>((ref) {
             },
           ),
         ],
+      ),
+
+      // Mateo: el prototipo del vestidor (I3).
+      GoRoute(
+        path: Rutas.vestidor,
+        builder: (context, estado) {
+          // `extra` lleva la prenda cuando se entra desde la ficha. Va por ahi
+          // y no por la ruta porque es una URL completa: meterla en el camino
+          // obligaria a escaparla y la pantalla dejaria de ser legible.
+          final datos = estado.extra as Map<String, String?>?;
+          return PantallaVestidor(
+            urlInicial: datos?['url'],
+            nombreInicial: datos?['nombre'],
+          );
+        },
       ),
 
       // Mateo: reservas (CU-22, CU-23).

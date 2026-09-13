@@ -176,9 +176,12 @@ class _Resultados extends ConsumerWidget {
                     crossAxisCount: 2,
                     mainAxisSpacing: 12,
                     crossAxisSpacing: 12,
-                    // La foto es 3:4 y debajo van categoria, nombre y precio.
-                    // Con la proporcion por omision la tarjeta se desborda.
-                    childAspectRatio: 0.56,
+                    // Alto de la celda. Ya no evita el desborde --- de eso se
+                    // encarga el `Expanded` de la tarjeta ---, solo decide
+                    // cuanto le queda a la foto: con 0.52 se acerca al 3:4 que
+                    // tenian las fotos, sin apretarlas cuando el nombre ocupa
+                    // dos lineas.
+                    childAspectRatio: 0.52,
                   ),
               itemCount: pagina.items.length,
               itemBuilder: (context, i) =>
@@ -209,8 +212,16 @@ class _TarjetaPrenda extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AspectRatio(
-              aspectRatio: 3 / 4,
+            // `Expanded` y no `AspectRatio`: la foto se queda con lo que sobre
+            // despues del texto.
+            //
+            // Con la proporcion fija, la altura de la foto no dependia del
+            // texto y el bloque de abajo --- categoria, nombre de una o dos
+            // lineas, precio y muestras de color --- se salia de la celda por
+            // la diferencia. De ahi el «Bottom overflowed by N pixels» con una
+            // N distinta en cada prenda: la N era justamente cuanto media de
+            // mas ESE nombre. Ahora la foto cede y la tarjeta nunca desborda.
+            Expanded(
               child: Stack(
                 fit: StackFit.expand,
                 children: [
