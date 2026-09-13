@@ -63,6 +63,19 @@
               <mat-option [value]="false">Todas, incluidas las agotadas</mat-option>
             </mat-select>
           </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Buscar</mat-label>
+            <input
+              matInput
+              [formControl]="busquedaExistencias"
+              (keyup.enter)="buscarExistencias()"
+              placeholder="SKU o nombre de la prenda"
+            />
+            <button matIconButton matSuffix type="button" (click)="buscarExistencias()">
+              <mat-icon>search</mat-icon>
+            </button>
+          </mat-form-field>
         </div>
 
         @if (existencias().length) {
@@ -173,10 +186,24 @@
               ></tr>
             </table>
           </div>
+
+          @if (paginaExistencias(); as p) {
+            <mat-paginator
+              [length]="p.total"
+              [pageSize]="p.tamano"
+              [pageIndex]="p.pagina - 1"
+              [hidePageSize]="true"
+              (page)="paginarExistencias($event)"
+            />
+          }
         } @else {
           <p class="vacio">
-            No hay existencias registradas todavía. Empiece por registrar un
-            ingreso de mercadería.
+            @if (busquedaExistencias.value.trim()) {
+              Ninguna existencia coincide con esa búsqueda.
+            } @else {
+              No hay existencias registradas todavía. Empiece por registrar un
+              ingreso de mercadería.
+            }
           </p>
         }
       </div>

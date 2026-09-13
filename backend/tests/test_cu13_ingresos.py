@@ -257,10 +257,10 @@ def test_el_ingreso_sube_el_saldo_y_deja_el_movimiento(
     assert cuerpo["lineas"][0]["disponible_resultante"] == 10
 
     saldos = api.get(
-        EXISTENCIAS, headers=cabeceras_admin, params={"sucursal_id": sucursal}
+        EXISTENCIAS, headers=cabeceras_admin, params={"tamano": 100, "sucursal_id": sucursal}
     )
     assert saldos.status_code == 200, saldos.text
-    por_variante = {s["variante_id"]: s for s in saldos.json()}
+    por_variante = {s["variante_id"]: s for s in saldos.json()["items"]}
     assert por_variante[variantes[0]["id"]]["cantidad_disponible"] == 10
     assert por_variante[variantes[1]["id"]]["cantidad_disponible"] == 4
     # Un ingreso no reserva nada.
@@ -302,8 +302,8 @@ def test_un_segundo_ingreso_suma_sobre_el_saldo_anterior(
     saldos = api.get(
         EXISTENCIAS,
         headers=cabeceras_admin,
-        params={"sucursal_id": sucursal, "solo_con_saldo": True},
-    ).json()
+        params={"tamano": 100, "sucursal_id": sucursal, "solo_con_saldo": True},
+    ).json()["items"]
     assert len(saldos) == 1
     assert saldos[0]["cantidad_disponible"] == 18
 
@@ -338,8 +338,8 @@ def test_el_saldo_es_la_suma_de_sus_movimientos(
     suma = sum(m["cantidad"] for m in historial["items"])
 
     saldo = api.get(
-        EXISTENCIAS, headers=cabeceras_admin, params={"sucursal_id": sucursal}
-    ).json()
+        EXISTENCIAS, headers=cabeceras_admin, params={"tamano": 100, "sucursal_id": sucursal}
+    ).json()["items"]
     disponible = next(
         s["cantidad_disponible"]
         for s in saldo
@@ -452,8 +452,8 @@ def test_el_encargado_no_carga_mercaderia_en_otra_sucursal(
 
     # Y no cargó nada: el rechazo es antes de tocar la base.
     saldos = api.get(
-        EXISTENCIAS, headers=cabeceras_admin, params={"sucursal_id": ajena}
-    ).json()
+        EXISTENCIAS, headers=cabeceras_admin, params={"tamano": 100, "sucursal_id": ajena}
+    ).json()["items"]
     assert saldos == []
 
 
@@ -542,8 +542,8 @@ def test_excepcion_e9_si_una_linea_falla_no_queda_cargada_ninguna(
     assert respuesta.status_code == 422
 
     saldos = api.get(
-        EXISTENCIAS, headers=cabeceras_admin, params={"sucursal_id": sucursal}
-    ).json()
+        EXISTENCIAS, headers=cabeceras_admin, params={"tamano": 100, "sucursal_id": sucursal}
+    ).json()["items"]
     assert saldos == [], "quedaron líneas del ingreso que falló"
 
 

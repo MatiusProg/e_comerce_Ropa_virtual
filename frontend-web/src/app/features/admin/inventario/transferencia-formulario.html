@@ -8,14 +8,30 @@
 <mat-dialog-content>
   <!-- El origen es una existencia, no una sucursal: así el máximo se conoce
        sin preguntar nada más. -->
+  @if (!datos.existencia) {
+    <mat-form-field appearance="outline" class="ancho">
+      <mat-label>Buscar la prenda de origen</mat-label>
+      <input
+        matInput
+        [formControl]="busquedaOrigen"
+        (keyup.enter)="buscarOrigen()"
+        placeholder="SKU o nombre de la prenda"
+      />
+      <button matIconButton matSuffix type="button" (click)="buscarOrigen()">
+        <mat-icon>search</mat-icon>
+      </button>
+      <mat-hint>El depósito tiene miles de saldos: buscá antes de elegir.</mat-hint>
+    </mat-form-field>
+  }
+
   <mat-form-field appearance="outline" class="ancho">
     <mat-label>Prenda y sucursal de origen</mat-label>
     <mat-select [formControl]="origen">
-      @for (e of origenes; track e.existencia_id) {
+      @for (e of origenes(); track e.existencia_id) {
         <mat-option [value]="e.existencia_id">{{ etiquetaDeOrigen(e) }}</mat-option>
       }
     </mat-select>
-    @if (!origenes.length) {
+    @if (!origenes().length) {
       <mat-hint>No hay prendas con saldo disponible para transferir.</mat-hint>
     }
   </mat-form-field>
@@ -73,7 +89,7 @@
     matButton="filled"
     type="button"
     class="vb-boton-marca"
-    [disabled]="guardando() || !origenes.length"
+    [disabled]="guardando() || !origenes().length"
     (click)="confirmar()"
   >
     Registrar transferencia

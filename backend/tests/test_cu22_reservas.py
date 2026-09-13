@@ -190,7 +190,7 @@ def _reservar(
 
 
 def _saldo(api: TestClient, admin: dict[str, str], *, sucursal_id: int) -> list[dict]:
-    return api.get(EXISTENCIAS, headers=admin, params={"sucursal_id": sucursal_id}).json()
+    return api.get(EXISTENCIAS, headers=admin, params={"tamano": 100, "sucursal_id": sucursal_id}).json()["items"]
 
 
 # --- Fixtures ------------------------------------------------------------

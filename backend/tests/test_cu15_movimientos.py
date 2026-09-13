@@ -147,8 +147,8 @@ def _sembrar_stock(
 
 def _saldo(api: TestClient, admin: dict[str, str], *, sucursal_id: int) -> dict:
     filas = api.get(
-        EXISTENCIAS, headers=admin, params={"sucursal_id": sucursal_id}
-    ).json()
+        EXISTENCIAS, headers=admin, params={"tamano": 100, "sucursal_id": sucursal_id}
+    ).json()["items"]
     return filas[0] if filas else {}
 
 
@@ -534,8 +534,8 @@ def test_excepcion_e6_no_se_transfiere_mas_de_lo_disponible(
     # No se movió nada, ni siquiera se creó el saldo del destino.
     assert _saldo(api, cabeceras_admin, sucursal_id=sucursal)["cantidad_disponible"] == 3
     assert api.get(
-        EXISTENCIAS, headers=cabeceras_admin, params={"sucursal_id": destino}
-    ).json() == []
+        EXISTENCIAS, headers=cabeceras_admin, params={"tamano": 100, "sucursal_id": destino}
+    ).json()["items"] == []
 
 
 def test_excepcion_e5_no_se_transfiere_una_sucursal_a_si_misma(

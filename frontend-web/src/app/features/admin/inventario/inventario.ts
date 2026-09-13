@@ -27,6 +27,7 @@ import type {
   Existencia,
   IngresoResumen,
   Movimiento,
+  PaginaExistencias,
   PaginaIngresos,
   PaginaMovimientos,
   TipoMovimiento,
@@ -130,7 +131,16 @@ export class Inventario implements OnInit {
   protected readonly cargando = signal(false);
   protected readonly error = signal<string | null>(null);
 
-  protected readonly existencias = signal<Existencia[]>([]);
+  protected readonly paginaExistencias = signal<PaginaExistencias | null>(null);
+
+  /** Las filas de la página que se está mirando. Lo que antes era la lista
+   *  entera: el resto de la pantalla la sigue consumiendo igual. */
+  protected readonly existencias = computed(() => this.paginaExistencias()?.items ?? []);
+
+  /** Busca por SKU o por nombre de prenda. Con miles de existencias, llegar a
+   *  una concreta paginando de a veinte no es viable. */
+  protected readonly busquedaExistencias = new FormControl('', { nonNullable: true });
+  private indiceExistencias = 0;
   protected readonly ingresos = signal<PaginaIngresos | null>(null);
   protected readonly movimientos = signal<PaginaMovimientos | null>(null);
 
@@ -207,19 +217,34 @@ export class Inventario implements OnInit {
       .listarExistencias({
         sucursal_id: this.sucursalElegida,
         solo_con_saldo: this.soloConSaldo.value,
+        busqueda: this.busquedaExistencias.value.trim() || undefined,
+        pagina: this.indiceExistencias + 1,
+        tamano: this.tamano,
       })
       .subscribe({
-        next: (filas) => {
-          this.existencias.set(filas);
+        next: (p) => {
+          this.paginaExistencias.set(p);
           this.error.set(null);
           this.cargando.set(false);
         },
         error: (e: ErrorInventario) => {
-          this.existencias.set([]);
+          this.paginaExistencias.set(null);
           this.error.set(e.mensaje);
           this.cargando.set(false);
         },
       });
+  }
+
+  protected paginarExistencias(evento: PageEvent): void {
+    this.indiceExistencias = evento.pageIndex;
+    this.cargarExistencias();
+  }
+
+  /** Cualquier cambio de criterio vuelve a la primera página: filtrar estando
+   *  en la página 30 deja una tabla vacía que parece un error. */
+  protected buscarExistencias(): void {
+    this.indiceExistencias = 0;
+    this.cargarExistencias();
   }
 
   private cargarIngresos(): void {
