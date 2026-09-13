@@ -1302,6 +1302,8 @@ $visibles = ($d.DiagramLinks | Where-Object { -not $_.IsHidden }).Count
 | Un **rectángulo relleno tapa** lo que tiene dentro; se ven líneas entrando a la nada | orden Z sin definir (999999) | `Sequence` alta al contenedor, baja al contenido |
 | El orden Z **no cambia nada** y no hay error | `$dia.DiagramObjects` tiene la copia vacía de cuando se creó el diagrama | `$dia.DiagramObjects.Refresh()` **antes** del bucle |
 | Aparecen **relaciones que no corresponden** al diagrama | EA dibuja toda relación entre elementos presentes | `DiagramLink.IsHidden = $true` |
+| Quedan **relaciones ajenas visibles** aunque el generador las oculte | `Diagram.DiagramLinks` solo trae los enlaces que EA ya materializó: un conector creado por otro generador **después** del lienzo todavía no tiene fila, y sin fila se dibuja visible | listar por SQL los conectores con ambos extremos en el lienzo y, al que falte, crearle la fila con `DiagramLinks.AddNew('','')` + `ConnectorID` + `IsHidden` |
+| Un diagrama recién generado muestra **0 enlaces visibles** en `t_diagramlinks` | falsa alarma: EA materializa las filas al abrir el diagrama, y **un conector sin fila se dibuja visible**; las filas que sí existen son justo las ocultas | contar `visibles = conectores en el lienzo − filas con `Hidden=True``, no las filas con `Hidden=False` |
 | Elementos **duplicados o triplicados** tras varias corridas | `Package.Elements` no devuelve los `Package` | indexar por `t_object` con `$ea.SQLQuery` |
 | Cientos de **conectores duplicados** | borrar un diagrama no borra sus conectores | deduplicar por par + tipo + nombre antes de crear |
 | Cada elemento con **`(from OtroPaquete)`** debajo | el diagrama y el elemento están en paquetes distintos | mover el diagrama, o apagar la opción en EA |
@@ -1422,4 +1424,4 @@ Exportar             $ea.GetProjectInterface().PutDiagramImageToFile($dia.Diagra
 
 ---
 
-*Última actualización: 05/09/2026. Verificado contra Enterprise Architect 15 Trial en Windows 11.*
+*Última actualización: 13/09/2026. Verificado contra Enterprise Architect 15 Trial en Windows 11.*

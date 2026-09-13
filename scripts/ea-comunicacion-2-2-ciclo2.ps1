@@ -31,6 +31,17 @@ if (-not $ea.OpenFile($modelo)) { throw "No se pudo abrir $modelo" }
 
 # ---------------- utilidades ----------------
 
+function Filas($sql) {
+    $xml = $ea.SQLQuery($sql)
+    $out = @()
+    if ($xml) {
+        $doc = New-Object System.Xml.XmlDocument
+        $doc.LoadXml($xml)
+        foreach ($f in $doc.SelectNodes('//Row')) { $out += $f }
+    }
+    return $out
+}
+
 function Get-OCrearPaqueteModelo($padre, $nombre) {
     foreach ($p in $padre.Packages) { if ($p.Name -eq $nombre) { return $p } }
     $p = $padre.Packages.AddNew($nombre, 'Package'); [void]$p.Update()
@@ -495,18 +506,45 @@ foreach ($caso in $casos) {
 
     # Regla 3: las clases de analisis se comparten entre casos de uso y EA
     # dibuja TODA relacion existente entre los elementos del lienzo.
+    #
+    # No sirve recorrer $d.DiagramLinks a secas: esa coleccion solo trae los
+    # enlaces que EA ya materializo, y un conector creado por OTRO generador
+    # despues de este lienzo todavia no tiene fila. Esos se dibujan con los
+    # valores por defecto --- o sea visibles --- y el bucle nunca los veia. Se
+    # pregunta por SQL cuales tienen los dos extremos en el lienzo, y al que no
+    # sea de este caso de uso se le crea la fila oculta si le falta.
     $d.DiagramLinks.Refresh()
+    $yaTienen = @{}
+    foreach ($lnk in $d.DiagramLinks) { $yaTienen[[int]$lnk.ConnectorID] = $lnk }
+
     $ajenos = 0
-    foreach ($lnk in $d.DiagramLinks) {
-        $con = $ea.GetConnectorByID($lnk.ConnectorID)
+    $enLienzo = Filas @"
+SELECT c.Connector_ID AS id, c.Connector_Type AS t,
+       c.Start_Object_ID AS a, c.End_Object_ID AS b
+FROM t_connector c
+WHERE c.Start_Object_ID IN (SELECT o.Object_ID  FROM t_diagramobjects o  WHERE o.Diagram_ID=$($d.DiagramID))
+  AND c.End_Object_ID   IN (SELECT o2.Object_ID FROM t_diagramobjects o2 WHERE o2.Diagram_ID=$($d.DiagramID))
+"@
+    foreach ($f in $enLienzo) {
+        $id = [int]$f.id
         $propio = $false
-        if ($con.Type -eq 'Collaboration') {
-            $propio = $mios.ContainsKey($con.ConnectorID)
-        } elseif ($con.Type -eq 'Association') {
-            $k1 = "$($con.ClientID)-$($con.SupplierID)"; $k2 = "$($con.SupplierID)-$($con.ClientID)"
+        if ($f.t -eq 'Collaboration') {
+            $propio = $mios.ContainsKey($id)
+        } elseif ($f.t -eq 'Association') {
+            $k1 = "$($f.a)-$($f.b)"; $k2 = "$($f.b)-$($f.a)"
             $propio = ($pares.ContainsKey($k1) -or $pares.ContainsKey($k2))
         }
-        if (-not $propio) { $lnk.IsHidden = $true; [void]$lnk.Update(); $ajenos++ }
+        if ($propio) { continue }
+
+        if ($yaTienen.ContainsKey($id)) {
+            $lnk = $yaTienen[$id]
+        } else {
+            $lnk = $d.DiagramLinks.AddNew('', '')
+            $lnk.ConnectorID = $id
+        }
+        $lnk.IsHidden = $true
+        if (-not $lnk.Update()) { throw "no se pudo ocultar el conector $id en $($caso.n)" }
+        $ajenos++
     }
     $d.DiagramObjects.Refresh(); $d.DiagramLinks.Refresh()
     $ng = ($caso.msj | ForEach-Object { $_.g } | Sort-Object -Unique).Count
