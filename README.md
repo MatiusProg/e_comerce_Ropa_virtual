@@ -30,20 +30,30 @@ migraciones corren solas al arrancar el contenedor, así que un despliegue nunca
 queda sirviendo contra un esquema viejo. Detalle en
 [docs/06-decisiones-tecnicas.md](docs/06-decisiones-tecnicas.md) §6.9.
 
+**La vitrina no exige sesión.** `/tienda` y la ficha de cada prenda son públicas
+a propósito: el RF07 pide que el cliente consulte el catálogo desde la web y el
+móvil, y exigir una cuenta para mirar una prenda lo contradice. Lo que se ofrece
+está acotado en el servidor —solo producto activo con variantes activas— y los
+esquemas públicos no exponen proveedor ni precio base.
+
+**La app móvil todavía no se publica como APK.** Es el anexo *DESCARGAR APP* y
+queda para el Ciclo 3, junto con la firma propia: hoy el *release* se firmaría
+con la clave de depuración, que es el `TODO` que deja la plantilla de Flutter.
+
 ## Tecnologías
 
 | Capa | Herramienta | Versión |
 |---|---|---|
 | Backend | FastAPI + SQLAlchemy + Alembic | FastAPI **0.141** · SQLAlchemy **2.0** |
 | Lenguaje del backend | Python | **3.13** — ver la advertencia de abajo |
-| Base de datos | PostgreSQL | **16** |
+| Base de datos | PostgreSQL | **16** en local · **17** en Supabase |
 | Controlador de base de datos | psycopg | **3.3** (no psycopg2) |
 | Frontend web | Angular + Angular Material | Angular **22** |
-| Móvil | Flutter / Dart | Flutter **3.x** |
+| Móvil | Flutter / Dart | Flutter **3.47** · Dart **3.13** |
 | Realidad aumentada | `camera` + ML Kit Pose Detection | procesamiento en el dispositivo |
-| Inteligencia artificial | API de Claude (`anthropic`) | `claude-opus-5` |
+| Inteligencia artificial | Gemini | **modelo gratuito** · el SDK se fija al construir P10 |
 | Pasarela de pago | Stripe | **modo de pruebas** |
-| Base de datos gestionada | Supabase | PostgreSQL 16, por *session pooler* |
+| Base de datos gestionada | Supabase | PostgreSQL **17**, por *session pooler* |
 | Hospedaje | Railway | API y web, en un solo proyecto |
 | Metodología | PUDS + UML 2.5+ | 3 ciclos |
 
@@ -70,7 +80,7 @@ contra PyPI.
 
 ## Arranque rápido
 
-Requisitos: Docker, **Python 3.13**, Node 20+, Flutter (solo para la app móvil).
+Requisitos: Docker, **Python 3.13**, Node 22+, Flutter 3.47+ (solo para la app móvil).
 
 ```bash
 git clone https://github.com/MatiusProg/e_comerce_Ropa_virtual.git
@@ -87,7 +97,9 @@ source .venv/bin/activate                # macOS / Linux
 
 pip install -r requirements.txt
 alembic upgrade head
-python -m app.db.seed
+python -m app.db.seed                    # roles, ciudades y administrador
+python -m app.db.seed_catalogo           # sucursales, maestros y ~60 productos
+python -m app.db.seed_operacion          # personas, inventario y reservas
 uvicorn app.main:app --reload
 ```
 
@@ -167,7 +179,7 @@ corto: son cuatro días y su contenido es CRUD y autenticación.
 |---|---|:---:|:---:|---|
 | **1 · Fundamentos** | 05/09 | 4 | 9 | Seguridad y roles · Ciudades, sucursales, empleados, proveedores · Maestros del catálogo (categorías, tallas, colores, temporadas, colecciones) |
 | **2 · Núcleo del negocio** | 13/09 | 8 | 13 | Productos y **variantes** · **Inventario multisucursal** con movimientos trazables · Catálogo público y disponibilidad · **Reservas** para prueba en sucursal |
-| **3 · Comercio e inteligencia** | 20/09 | 7 | 15 | **Vestidor virtual (RA)** · Carrito y **pago en línea** · **Punto de venta** · **IA**: recomendador, asistente y reportes por voz · Tablero de KPIs |
+| **3 · Comercio e inteligencia** | 20/09 | 7 | 19 | **Vestidor virtual (RA)** · Carrito y **pago en línea** · **Punto de venta** · **IA**: recomendador, asistente y reportes por voz · Tablero de KPIs · Los cuatro del refinamiento (CU-38 a CU-41) |
 
 Defensa: **martes 22/09**. Cada ciclo cierra con software **desplegado en la
 nube**, no con código sin desplegar.
@@ -194,14 +206,17 @@ frontend-web/
 mobile/
   lib/core/         cliente HTTP (Dio), tema, enrutado
   lib/data/         modelos del contrato y repositorios
-  lib/features/     auth · catalogo · reservas · vestidor_virtual · compra · asistente
+  lib/features/     auth · inicio · catalogo · perfil · reservas · vestidor
+                    (compra, asistente y vestidor_virtual son carpetas
+                     reservadas para el Ciclo 3)
+scripts/            generadores de los diagramas UML sobre el .eapx
 docs/
   00                índice oficial de la ingeniera y mapeo del entregable
   01 a 07           documentación PUDS
   entregas/         el contenido de cada ciclo, listo para volcar al documento
-  diagramas/        fuentes UML y exportados
+  diagramas/        fuentes UML (VioletBoutique.eapx) y exportados
   casos-de-uso/     detalle por ciclo
-  entregas/         el documento de cada presentación
+  marco-teorico/    la Parte I del documento
 ```
 
 **El código replica los paquetes de análisis, con el mismo nombre.** El
@@ -215,6 +230,8 @@ la defensa no hay que traducir entre uno y otro.
 | **incorporarte al desarrollo** | **[docs/07-estructura-repositorio.md](docs/07-estructura-repositorio.md) §7.3** — entorno, rama propia, qué tomar y con qué frecuencia subir |
 | **armar el documento de entrega** | **[docs/00-indice-oficial.md](docs/00-indice-oficial.md)** — el índice que dio la ingeniera, qué sección sale de qué archivo y qué falta |
 | **desarrollar un caso de uso del Ciclo 1** | **[docs/entregas/ciclo-1/](docs/entregas/ciclo-1/)** — las 9 tablas de detalle, el análisis y el diseño de datos |
+| **desarrollar un caso de uso del Ciclo 2** | **[docs/entregas/ciclo-2/](docs/entregas/ciclo-2/)** — una ficha por caso de uso con el «por qué» de cada decisión, y los seis documentos del acuerdo del ciclo |
+| **generar o tocar un diagrama UML** | **[GUIA-DIAGRAMAS-EA.md](GUIA-DIAGRAMAS-EA.md)** — el manual completo: los catorce tipos, las nueve reglas y el catálogo de errores. Leerlo **antes** de correr cualquier `scripts/ea-*.ps1` |
 | **implementar CU-02 (login)** | **[docs/entregas/ciclo-1/guia-cu-02-iniciar-y-cerrar-sesion.md](docs/entregas/ciclo-1/guia-cu-02-iniciar-y-cerrar-sesion.md)** — qué falta en el código y cómo saber que está terminado |
 | **montar tu entorno por primera vez** | **[docs/entorno/versiones.md](docs/entorno/versiones.md)** — qué instalar, en qué orden, con las versiones exactas |
 | **levantar el backend** | **[backend/README.md](backend/README.md)** — de cero a `/health` respondiendo |
@@ -234,9 +251,10 @@ la defensa no hay que traducir entre uno y otro.
 ## Cómo contribuir
 
 Nunca se hace *commit* directo sobre `main`: es la rama que Railway despliega.
-Cada integrante trabaja en **una rama por ciclo** —`MateoCiclo1`, `KarenCiclo1`—
+Cada integrante trabaja en **una rama por ciclo** —`MateoCiclo2`, `KarenCiclo2`—
 creada desde `main`, y todo entra por Pull Request hacia `main` con revisión del
-otro.
+otro. Un arreglo puntual que no es de un caso de uso va en su propia rama corta
+—`fix/…`— y se mergea aparte.
 
 Mensajes de commit en español, en imperativo, con la convención
 `tipo(alcance): descripción`:
@@ -253,12 +271,16 @@ Detalle completo en
 
 | Rol | Integrante | Registro |
 |---|---|---|
-| Backend · Base de datos · IA · Despliegue | Mateo Hurtado Castro | 222008687 |
-| Frontend web · App móvil · Realidad aumentada | Karen Paola Ortega Mancilla | 222056592 |
+| Full stack | Mateo Hurtado Castro | 222008687 |
+| Full stack | Karen Paola Ortega Mancilla | 222056592 |
 
-Ninguno de los dos es el único que entiende un módulo: al cierre de cada ciclo,
-cada integrante le explica al otro lo que implementó. En la defensa cualquiera
-puede ser interrogado sobre cualquier parte del sistema.
+**Los dos somos full stack, y no es una formalidad: es cómo se reparte el
+trabajo.** Desde el Ciclo 2 el reparto es **por caso de uso completo** —quien lo
+toma escribe su migración, su backend, su pantalla web y su pantalla móvil— y no
+por capa. Así nadie espera a que el otro termine para poder seguir, y ninguna
+parte del sistema tiene un solo dueño.
+
+En la defensa cualquiera puede ser interrogado sobre cualquier parte.
 
 ## Licencia
 
