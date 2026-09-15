@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
+from app.core.registro import configurar_logging
 
 # --- Ciclo 1 -------------------------------------------------------------
 from app.modules.seguridad.router import admin_router as seguridad_admin_router
@@ -54,6 +55,12 @@ from app.modules.reservas.router import (
 # from app.modules.ia.router import router as ia_router
 # from app.modules.reportes.router import router as reportes_router
 
+
+# Antes de construir la aplicacion: uvicorn deja el logger raiz sin manejador
+# y todo lo que escriba la aplicacion por debajo de WARNING se pierde. Ver
+# app/core/registro.py --- lo descubrio el proveedor de correo `consola`,
+# que no imprimia nada.
+configurar_logging()
 
 app = FastAPI(
     title="Violet Boutique API",
