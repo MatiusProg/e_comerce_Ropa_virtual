@@ -84,3 +84,28 @@ export const CONTRASENA_LONGITUD_MINIMA = 8;
  * Replica la validación `_contrasena_fuerte` del backend.
  */
 export const CONTRASENA_PATRON = /^(?=.*[A-Za-z])(?=.*\d).+$/;
+
+// --- CU-41 Recuperar contraseña -------------------------------------------
+
+/** Cuerpo de POST /api/v1/auth/recuperacion — CU-41, paso 2. */
+export interface RecuperacionSolicitudIn {
+  correo: string;
+}
+
+/**
+ * Respuesta 202 de POST /api/v1/auth/recuperacion.
+ *
+ * Trae un único campo, y es a propósito: el servidor responde exactamente lo
+ * mismo exista o no la cuenta. Si distinguiera los casos, el endpoint sería
+ * una forma de averiguar qué correos están registrados en la tienda.
+ */
+export interface RecuperacionAceptadaOut {
+  mensaje: string;
+}
+
+/** Cuerpo de POST /api/v1/auth/recuperacion/confirmar — CU-41, paso 6. */
+export interface RecuperacionConfirmarIn {
+  token: string;
+  contrasena_nueva: string;
+  contrasena_repetida: string;
+}

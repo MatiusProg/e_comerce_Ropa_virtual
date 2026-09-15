@@ -8,6 +8,7 @@ Casos de uso que realiza este paquete:
   CU-02 Iniciar y cerrar sesion
   CU-03 Gestionar usuarios y roles
   CU-04 Gestionar perfil del cliente
+  CU-41 Recuperar contrasena  (ciclo 3)
 
 El esquema es el disenado en docs/entregas/ciclo-1/cap-2-3-analisis-y-diseno.md
 seccion 3.3. Si algo cambia aqui, hay que cambiarlo alli: el documento y el
@@ -130,6 +131,9 @@ class Usuario(Auditoria, Base):
     sesiones: Mapped[list["SesionToken"]] = relationship(
         back_populates="usuario", cascade="all, delete-orphan", passive_deletes=True
     )
+    tokens_recuperacion: Mapped[list["TokenRecuperacion"]] = relationship(
+        back_populates="usuario", cascade="all, delete-orphan", passive_deletes=True
+    )
 
 
 class Cliente(Auditoria, Base):
@@ -231,3 +235,61 @@ class SesionToken(Base):
     revocado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     usuario: Mapped[Usuario] = relationship(back_populates="sesiones")
+
+
+class TokenRecuperacion(Base):
+    """Enlace de un solo uso para recuperar el acceso a una cuenta (CU-41).
+
+    Realiza el RF39. Aparece en el Ciclo 3: el Ciclo 1 dejo que cualquiera se
+    autorregistrara (RF01) y no dejo ninguna forma de volver a entrar tras
+    olvidar la contrasena, salvo pedirselo al Administrador.
+
+    NO GUARDA EL TOKEN
+    ------------------
+    Guarda su SHA-256, igual que `usuario` guarda el hash de la contrasena y
+    por el mismo motivo: mientras vive, este token ES la credencial de la
+    cuenta --- quien lo tenga puede cambiar la contrasena sin saber la
+    anterior. Si se guardara en claro, una lectura de esta tabla entregaria el
+    acceso a todas las cuentas con un enlace pendiente.
+
+    SHA-256 y no bcrypt, que es lo que usan las contrasenas: el token son 32
+    bytes aleatorios, no una palabra que alguien pueda adivinar, asi que no
+    hace falta encarecer el calculo para frenar un ataque por diccionario. Y
+    tiene que poder buscarse por igualdad, que es justo lo que bcrypt --- con
+    su sal por fila --- no permite.
+
+    De un solo uso: `usado_en` se escribe al canjearlo y un token usado no
+    vuelve a servir aunque no haya expirado. Sin eso, el enlace serviria tantas
+    veces como alguien lo abriera, y los enlaces quedan en el historial del
+    correo.
+
+    No usa el mixin de Auditoria: como `sesion_token`, sus fechas son las de su
+    propio ciclo de vida y no las de una edicion.
+    """
+
+    __tablename__ = "token_recuperacion"
+    __table_args__ = (
+        CheckConstraint("expira_en > solicitado_en", name="vigencia"),
+        # Solo interesan los tokens sin canjear: al pedir un enlace nuevo hay
+        # que invalidar los anteriores de ese usuario. El indice parcial se
+        # mantiene chico aunque la tabla acumule historia.
+        Index(
+            "idx_recuperacion_usuario_pendiente",
+            "usuario_id",
+            postgresql_where=text("usado_en IS NULL"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    usuario_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("usuario.id", ondelete="CASCADE")
+    )
+    #: SHA-256 del token en hexadecimal: 64 caracteres, siempre.
+    hash_token: Mapped[str] = mapped_column(String(64), unique=True)
+    solicitado_en: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    expira_en: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    usado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    usuario: Mapped[Usuario] = relationship(back_populates="tokens_recuperacion")

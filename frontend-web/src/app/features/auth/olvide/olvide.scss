@@ -1,0 +1,32 @@
+@use '../auth-form' as auth;
+
+:host {
+  @include auth.formulario-auth;
+
+  // El acuse de la solicitud no es un error: va en tono de confirmación y no
+  // en el rojo de `.aviso`, que es el que hereda del mixin.
+  .aviso-ok {
+    background: var(--mat-sys-tertiary-container);
+    color: var(--mat-sys-on-tertiary-container);
+  }
+
+  .intro,
+  .nota {
+    margin: 0 0 1.25rem;
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 0.94rem;
+    line-height: 1.5;
+  }
+
+  .nota {
+    a {
+      color: var(--vb-malva);
+      font-weight: 600;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}

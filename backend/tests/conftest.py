@@ -71,6 +71,9 @@ TABLAS_VOLATILES = (
     "cliente_categoria",
     "direccion_cliente",
     "sesion_token",
+    # `token_recuperacion` apunta a `usuario`, que va mas abajo. Mismo caso que
+    # `sesion_token`, al que acompana.
+    "token_recuperacion",
     "cliente",
     "empleado",
     "imagen_producto",

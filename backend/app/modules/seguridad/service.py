@@ -8,15 +8,20 @@ Casos de uso que realiza este paquete:
   CU-02 Iniciar y cerrar sesion
   CU-03 Gestionar usuarios y roles
   CU-04 Gestionar perfil del cliente
+  CU-41 Recuperar contrasena  (ciclo 3)
 """
+import hashlib
+import secrets
 import uuid
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from math import ceil
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.security import crear_access_token, hash_password, verify_password
+from app.integrations.correo import Mensaje, enviar
 from app.modules.seguridad import repository
 from app.modules.seguridad.models import Cliente
 from app.modules.seguridad.schemas import (
@@ -33,6 +38,8 @@ from app.modules.seguridad.schemas import (
     PerfilEditarIn,
     PerfilOut,
     PreferenciasIn,
+    RecuperacionConfirmarIn,
+    RecuperacionSolicitudIn,
     RolOut,
     TokenOut,
     UsuarioAutenticadoOut,
@@ -822,6 +829,201 @@ def cambiar_contrasena(db: Session, usuario_id: int, datos: CambioContrasenaIn) 
 
     if not verify_password(datos.contrasena_actual, usuario.hash_contrasena):
         raise ContrasenaActualIncorrecta(str(usuario_id))
+
+    try:
+        usuario.hash_contrasena = hash_password(datos.contrasena_nueva)
+        repository.revocar_sesiones_de_usuario(db, usuario_id)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+
+# --- CU-41 Recuperar contrasena ------------------------------------------
+#
+# Realiza el RF39. El Ciclo 1 dejo que cualquiera se autorregistrara (RF01) y
+# no dejo ninguna forma de volver a entrar tras olvidar la contrasena, salvo
+# pedirsela al Administrador --- que ademas tendria que elegirla el, o sea
+# conocerla.
+#
+# TODO EL CASO DE USO GIRA ALREDEDOR DE UNA SOLA IDEA
+# ---------------------------------------------------
+# El enlace que se manda por correo ES la credencial de la cuenta mientras
+# vive. Quien lo tenga puede entrar sin saber la contrasena anterior. De ahi
+# salen las cuatro decisiones de abajo, y ninguna es opcional:
+#
+#   - se guarda el SHA-256 del token, nunca el token  (ver el modelo)
+#   - vale una sola vez, y eso lo decide la base      (ver el repositorio)
+#   - vale poco tiempo                                (RECUPERACION_VIGENCIA_MINUTOS)
+#   - canjearlo revoca todas las sesiones abiertas    (mas abajo)
+
+
+class ErrorDeRecuperacion(Exception):
+    """Base de los errores previstos de CU-41."""
+
+
+class TokenDeRecuperacionInvalido(ErrorDeRecuperacion):
+    """Excepcion E1: el enlace no existe, ya se uso o expiro.
+
+    Los tres casos son UNA sola excepcion a proposito. Distinguirlos le diria a
+    quien prueba un token si alguna vez existio, y los enlaces quedan escritos
+    en el historial del correo y en el del navegador.
+    """
+
+
+class CuentaDesactivadaAlRecuperar(ErrorDeRecuperacion):
+    """La cuenta se desactivo despues de que se pidiera el enlace.
+
+    Es distinto de un token invalido: el enlace estaba bien. Recuperar la
+    contrasena no puede ser la forma de reactivar una cuenta que un
+    Administrador dio de baja por CU-03.
+    """
+
+
+#: Cuantos bytes aleatorios lleva el token. 32 bytes son 256 bits: adivinarlo
+#: por fuerza bruta no es un ataque que exista. `token_urlsafe` los codifica en
+#: 43 caracteres que viajan en una URL sin escaparse.
+_TOKEN_BYTES = 32
+
+
+def _hash_de_token(token: str) -> str:
+    """SHA-256 en hexadecimal del token, que es lo unico que se guarda.
+
+    No lleva sal: la sal existe para que dos contrasenas iguales no produzcan
+    el mismo hash y para encarecer los diccionarios, y aca no hay diccionario
+    posible --- son 32 bytes al azar --- ni dos tokens iguales. Ademas el hash
+    tiene que poder buscarse por igualdad, que es lo que bcrypt no permite.
+    """
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def _armar_correo_de_recuperacion(
+    *, destinatario: str, nombres: str, enlace: str, minutos: int
+) -> Mensaje:
+    """El correo del paso 4, en sus dos versiones."""
+    asunto = "Recupere el acceso a su cuenta de Violet Boutique"
+
+    texto = (
+        f"Hola {nombres}:\n\n"
+        "Alguien pidio recuperar la contrasena de su cuenta de Violet Boutique.\n"
+        "Si fue usted, abra este enlace para elegir una contrasena nueva:\n\n"
+        f"    {enlace}\n\n"
+        f"El enlace vence en {minutos} minutos y sirve una sola vez.\n\n"
+        "Si no lo pidio, no haga nada: su contrasena sigue siendo la misma y\n"
+        "este enlace vence solo.\n\n"
+        "-- Violet Boutique"
+    )
+
+    html = (
+        '<html><body style="font-family:system-ui,sans-serif;color:#2b2b2b">'
+        f"<p>Hola {nombres}:</p>"
+        "<p>Alguien pidió recuperar la contraseña de su cuenta de "
+        "<strong>Violet Boutique</strong>. Si fue usted, elija una contraseña "
+        "nueva:</p>"
+        f'<p><a href="{enlace}" '
+        'style="background:#6d3b8e;color:#fff;padding:12px 20px;'
+        'border-radius:6px;text-decoration:none;display:inline-block">'
+        "Elegir contraseña nueva</a></p>"
+        f'<p style="color:#666;font-size:14px">El enlace vence en {minutos} '
+        "minutos y sirve una sola vez.</p>"
+        '<p style="color:#666;font-size:14px">Si no lo pidió, no haga nada: su '
+        "contraseña sigue siendo la misma y este enlace vence solo.</p>"
+        "</body></html>"
+    )
+
+    return Mensaje(
+        destinatario=destinatario,
+        asunto=asunto,
+        cuerpo_texto=texto,
+        cuerpo_html=html,
+    )
+
+
+def solicitar_recuperacion(db: Session, datos: RecuperacionSolicitudIn) -> None:
+    """Pasos 3 a 5 del flujo principal: emitir el enlace y mandarlo por correo.
+
+    NO LEVANTA NINGUNA EXCEPCION CUANDO EL CORREO NO EXISTE, y esa es la regla
+    principal de esta funcion. El router responde exactamente lo mismo exista o
+    no la cuenta. Si distinguiera los casos, este endpoint --- publico, sin
+    token --- se volveria una forma de averiguar que direcciones estan
+    registradas en la tienda, probandolas de a una. Es la misma decision que ya
+    se tomo en `autenticar`, donde correo inexistente y contrasena incorrecta
+    comparten un unico mensaje.
+
+    Lo mismo vale para la cuenta desactivada: no se le manda enlace --- no
+    tendria a donde entrar --- y tampoco se dice nada.
+    """
+    usuario = repository.obtener_usuario_por_correo(db, datos.correo)
+
+    if usuario is None or not usuario.activo:
+        # Silencio deliberado. Ver el docstring.
+        return
+
+    ahora = datetime.now(timezone.utc)
+    expira_en = ahora + timedelta(minutes=settings.RECUPERACION_VIGENCIA_MINUTOS)
+
+    # `token_urlsafe` usa el generador criptografico del sistema. Con `random`
+    # esto seria predecible a partir de unos pocos tokens observados.
+    token = secrets.token_urlsafe(_TOKEN_BYTES)
+
+    try:
+        # Pedir el enlace de nuevo tiene que dejar uno solo valido: el ultimo.
+        repository.invalidar_tokens_de_recuperacion(db, usuario.id, ahora=ahora)
+        repository.agregar_token_recuperacion(
+            db,
+            usuario_id=usuario.id,
+            hash_token=_hash_de_token(token),
+            expira_en=expira_en,
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    # El correo sale DESPUES del commit. Al reves, una transaccion que fallara
+    # dejaria circulando un enlace que no existe en la base.
+    base = settings.WEB_BASE_URL.rstrip("/")
+    enviar(
+        _armar_correo_de_recuperacion(
+            destinatario=usuario.correo,
+            nombres=usuario.nombres,
+            enlace=f"{base}/recuperar/{token}",
+            minutos=settings.RECUPERACION_VIGENCIA_MINUTOS,
+        )
+    )
+
+
+def confirmar_recuperacion(db: Session, datos: RecuperacionConfirmarIn) -> None:
+    """Pasos 7 a 9: canjear el enlace y reemplazar la contrasena.
+
+      7. canjear el token --- de un solo uso, lo resuelve la base
+      8. reemplazar el hash de la contrasena
+      9. revocar todas las sesiones abiertas
+
+    El paso 9 no es un extra. Si alguien llego a pedir recuperar la contrasena
+    porque le tomaron la cuenta, cambiarla y dejar vivos los tokens ya emitidos
+    no le devolveria el control de nada: el intruso seguiria adentro hasta que
+    su token venciera solo. Es el mismo razonamiento de `cambiar_contrasena` y
+    de la baja de CU-03.
+    """
+    ahora = datetime.now(timezone.utc)
+
+    # Paso 7. La condicion viaja dentro del UPDATE: es lo que impide que dos
+    # peticiones con el mismo token ganen las dos.
+    usuario_id = repository.canjear_token_de_recuperacion(
+        db, _hash_de_token(datos.token), ahora=ahora
+    )
+    if usuario_id is None:
+        db.rollback()
+        raise TokenDeRecuperacionInvalido()
+
+    usuario = repository.obtener_usuario_con_id(db, usuario_id)
+    if usuario is None or not usuario.activo:
+        # La cuenta se dio de baja despues de pedir el enlace. Se deshace
+        # tambien el canje: no tiene sentido quemar un enlace que no sirvio
+        # para nada, y una baja puede revertirse.
+        db.rollback()
+        raise CuentaDesactivadaAlRecuperar(str(usuario_id))
 
     try:
         usuario.hash_contrasena = hash_password(datos.contrasena_nueva)
