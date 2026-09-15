@@ -253,11 +253,39 @@ export const routes: Routes = [
     canActivate: [sesionGuard, rolGuard('CAJERO')],
     loadComponent: inicio,
   },
+  // --- Ciclo 3 · CU-38 · El area del Proveedor --------------------------
+  //
+  // Cuelga de su propia cascara, igual que las del Administrador y el
+  // Encargado. ANTES ERA UNA RUTA SUELTA que caia en la pantalla generica de
+  // bienvenida: el Proveedor entraba y no habia nada, porque era un actor
+  // principal que no iniciaba ningun caso de uso. Es la misma leccion que dejo
+  // CU-16 al cierre del Ciclo 2 --- una pantalla montada no esta entregada si
+  // no hay como llegar a ella ---, aplicada antes de que vuelva a pasar.
+  //
+  // El guard va en el padre y lo heredan las hijas.
   {
     path: 'proveedor',
-    title: 'Proveedor · Violet Boutique',
     canActivate: [sesionGuard, rolGuard('PROVEEDOR')],
-    loadComponent: inicio,
+    loadComponent: () =>
+      import('./features/proveedor/proveedor-layout/proveedor-layout').then(
+        (m) => m.ProveedorLayout,
+      ),
+    children: [
+      {
+        path: '',
+        title: 'Proveedor · Violet Boutique',
+        loadComponent: () =>
+          import('./shared/bienvenida/bienvenida').then((m) => m.Bienvenida),
+      },
+      {
+        path: 'productos',
+        title: 'Mis productos · Violet Boutique',
+        loadComponent: () =>
+          import('./features/proveedor/mis-productos/mis-productos').then(
+            (m) => m.MisProductos,
+          ),
+      },
+    ],
   },
 
   { path: '', pathMatch: 'full', redirectTo: 'login' },

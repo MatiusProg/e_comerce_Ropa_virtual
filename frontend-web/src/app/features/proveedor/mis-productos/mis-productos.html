@@ -1,0 +1,162 @@
+<!-- CU-38 · Registrar productos del proveedor — «boundary» PantallaMisProductos. -->
+<header class="encabezado">
+  <div>
+    <h1 class="vb-titulo">Mis productos</h1>
+    <p class="bajada">
+      Las prendas que usted abastece. Regístrelas acá y la tienda decide cuándo
+      publicarlas en el catálogo.
+    </p>
+  </div>
+
+  <button
+    matButton="filled"
+    type="button"
+    class="vb-boton-marca"
+    (click)="registrar()"
+    [disabled]="listas() === null"
+  >
+    <mat-icon>add</mat-icon>
+    Registrar producto
+  </button>
+</header>
+
+<mat-card class="tarjeta vb-filete-superior" appearance="outlined">
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <mat-card-content>
+    @if (error(); as e) {
+      <div class="aviso" role="alert">
+        <mat-icon>{{ e.tipo === 'sin-ficha' ? 'badge' : 'error_outline' }}</mat-icon>
+        <span>{{ e.mensaje }}</span>
+      </div>
+    }
+
+    <div class="filtros">
+      <mat-form-field appearance="outline" class="buscador">
+        <mat-label>Buscar</mat-label>
+        <input matInput [formControl]="busqueda" placeholder="Código o nombre" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="estado">
+        <mat-label>Estado</mat-label>
+        <mat-select [formControl]="estado">
+          <mat-option value="">Todos</mat-option>
+          <mat-option value="publicados">Publicados</mat-option>
+          <mat-option value="pendientes">Sin publicar</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    @if (pagina(); as p) {
+      @if (p.total === 0) {
+        <div class="vacio">
+          <mat-icon>checkroom</mat-icon>
+          @if (busqueda.value || estado.value) {
+            <p>Ninguna prenda suya coincide con lo buscado.</p>
+          } @else {
+            <p>
+              Todavía no registró ninguna prenda. Use <strong>Registrar producto</strong>
+              para informar lo que abastece.
+            </p>
+          }
+        </div>
+      } @else {
+        <div class="envoltorio-tabla">
+          <table mat-table [dataSource]="p.items">
+            <ng-container matColumnDef="codigo">
+              <th mat-header-cell *matHeaderCellDef>Código</th>
+              <td mat-cell *matCellDef="let fila" class="codigo">{{ fila.codigo }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="nombre">
+              <th mat-header-cell *matHeaderCellDef>Prenda</th>
+              <td mat-cell *matCellDef="let fila">{{ fila.nombre }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="categoria">
+              <th mat-header-cell *matHeaderCellDef>Categoría</th>
+              <td mat-cell *matCellDef="let fila">{{ fila.categoria_nombre || '—' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="variantes">
+              <th mat-header-cell *matHeaderCellDef>Tallas y colores</th>
+              <td mat-cell *matCellDef="let fila">
+                @if (fila.variantes_totales === 0) {
+                  <!--
+                    Sin variantes no hay SKU, y sin SKU la tienda no puede pedir
+                    la prenda. Es media entrega, y tiene que verse.
+                  -->
+                  <span class="pendiente" matTooltip="Sin esto la tienda no puede pedir la prenda">
+                    <mat-icon>priority_high</mat-icon>
+                    Faltan
+                  </span>
+                } @else {
+                  {{ fila.variantes_totales }}
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let fila">
+                @if (fila.activo) {
+                  <span class="etiqueta publicado">Publicado</span>
+                } @else {
+                  <!--
+                    «Sin publicar», no «Inactivo»: para el Proveedor no es un
+                    estado técnico sino una espera.
+                  -->
+                  <span class="etiqueta pendiente-pub">Sin publicar</span>
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef aria-label="Acciones"></th>
+              <td mat-cell *matCellDef="let fila" class="acciones">
+                <button
+                  matIconButton
+                  type="button"
+                  [matMenuTriggerFor]="menu"
+                  aria-label="Acciones de la prenda"
+                >
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #menu="matMenu">
+                  <button mat-menu-item type="button" (click)="corregir(fila)">
+                    <mat-icon>edit</mat-icon>
+                    <span>Corregir datos</span>
+                  </button>
+                  <button mat-menu-item type="button" (click)="abrirVariantes(fila.id)">
+                    <mat-icon>straighten</mat-icon>
+                    <span>Tallas y colores</span>
+                  </button>
+                  @if (fila.activo || fila.variantes_activas > 0) {
+                    <button mat-menu-item type="button" (click)="retirar(fila)">
+                      <mat-icon>block</mat-icon>
+                      <span>Retirar</span>
+                    </button>
+                  }
+                </mat-menu>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+            <tr mat-row *matRowDef="let fila; columns: columnas"></tr>
+          </table>
+        </div>
+
+        <mat-paginator
+          [length]="p.total"
+          [pageSize]="p.tamano"
+          [pageIndex]="p.pagina - 1"
+          [pageSizeOptions]="[10, 20, 50]"
+          (page)="paginar($event)"
+        />
+      }
+    }
+  </mat-card-content>
+</mat-card>
