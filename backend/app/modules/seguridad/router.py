@@ -8,12 +8,15 @@ Casos de uso que realiza este paquete:
   CU-02 Iniciar y cerrar sesion
   CU-03 Gestionar usuarios y roles
   CU-04 Gestionar perfil del cliente
+  CU-41 Recuperar contrasena  (ciclo 3)
 """
+import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.dependencies import DbSession, Usuario, requiere_roles
+from app.integrations.correo import ErrorDeEnvio
 from app.modules.seguridad import service
 from app.modules.seguridad.schemas import (
     CambioContrasenaIn,
@@ -27,6 +30,9 @@ from app.modules.seguridad.schemas import (
     PerfilEditarIn,
     PerfilOut,
     PreferenciasIn,
+    RecuperacionAceptadaOut,
+    RecuperacionConfirmarIn,
+    RecuperacionSolicitudIn,
     RolOut,
     TokenOut,
     UsuarioAutenticadoOut,
@@ -34,6 +40,8 @@ from app.modules.seguridad.schemas import (
     UsuarioEditarIn,
     UsuarioResumenOut,
 )
+
+_log = logging.getLogger("violetboutique.seguridad")
 
 router = APIRouter(prefix="/auth", tags=["Seguridad"])
 
@@ -139,6 +147,101 @@ def usuario_autenticado(usuario: Usuario, db: DbSession) -> UsuarioAutenticadoOu
     """
     return service.obtener_usuario_autenticado(db, usuario.id)
 
+
+# --- CU-41 Recuperar contrasena ------------------------------------------
+#
+# Los dos endpoints son PUBLICOS y van en este router, junto a /registro y
+# /login, por el mismo motivo que ellos: el actor de CU-41 es alguien que
+# justamente no puede iniciar sesion. Exigir token seria pedirle lo unico que
+# no tiene.
+
+#: Lo que responde la solicitud, exista o no la cuenta. Es una constante y no
+#: un texto armado al vuelo para que no pueda volverse distinto por descuido en
+#: alguna de las dos ramas: la respuesta identica ES la medida de seguridad.
+_ACUSE_DE_RECUPERACION = (
+    "Si el correo corresponde a una cuenta, le enviamos un enlace para "
+    "elegir una contraseña nueva. Revise también la carpeta de correo no "
+    "deseado."
+)
+
+
+@router.post(
+    "/recuperacion",
+    response_model=RecuperacionAceptadaOut,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="CU-41 Solicitar recuperacion de contrasena",
+    responses={422: {"description": "El correo no tiene formato valido."}},
+)
+def solicitar_recuperacion(
+    datos: RecuperacionSolicitudIn, db: DbSession
+) -> RecuperacionAceptadaOut:
+    """Envía un enlace de un solo uso al correo de la cuenta (RF39).
+
+    RESPONDE LO MISMO EXISTA O NO LA CUENTA, y por eso no declara ningún 404.
+    Si distinguiera los casos, este endpoint --- público y sin token --- sería
+    una forma de averiguar qué direcciones están registradas en la tienda,
+    probándolas de a una. Es la misma regla por la que `/login` devuelve un
+    único mensaje para correo inexistente y contraseña incorrecta.
+
+    202 y no 200: la solicitud se aceptó. Que el correo llegue depende del
+    proveedor y de la casilla del destinatario, y esta respuesta no lo afirma.
+    """
+    try:
+        service.solicitar_recuperacion(db, datos)
+    except ErrorDeEnvio:
+        # El proveedor no pudo entregar el mensaje. El token YA quedó emitido
+        # —el envío ocurre después del commit— así que no hay nada que
+        # deshacer, y quien reintente recibirá uno nuevo.
+        #
+        # Se responde 202 igual, y no es por optimismo: si un fallo de envío se
+        # reflejara en la respuesta, este endpoint distinguiría una cuenta que
+        # existe —hay a quién escribirle, y el envío falló— de una que no
+        # —nunca se intentó enviar nada—, que es justo lo que el caso de uso
+        # evita. El fallo queda en el log, que es donde se lo busca.
+        _log.exception(
+            "No se pudo enviar el correo de recuperación. El usuario recibió el "
+            "acuse habitual y no sabe que el envío falló."
+        )
+    return RecuperacionAceptadaOut(mensaje=_ACUSE_DE_RECUPERACION)
+
+
+@router.post(
+    "/recuperacion/confirmar",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="CU-41 Confirmar contrasena nueva",
+    responses={
+        400: {"description": "El enlace no es válido, ya se usó o venció (E1)."},
+        403: {"description": "La cuenta fue desactivada (E2)."},
+        422: {"description": "La contraseña no cumple las reglas o no coincide."},
+    },
+)
+def confirmar_recuperacion(datos: RecuperacionConfirmarIn, db: DbSession) -> None:
+    """Canjea el enlace y reemplaza la contraseña.
+
+    Al terminar, TODAS las sesiones abiertas de esa cuenta quedan revocadas:
+    quien recupera el acceso vuelve a entrar con la contraseña nueva, y quien
+    estuviera dentro con un token viejo deja de estarlo.
+    """
+    try:
+        service.confirmar_recuperacion(db, datos)
+    except service.TokenDeRecuperacionInvalido:
+        # 400 y no 404: un 404 confirmaría que ese enlace nunca existió, y
+        # distinguirlo de "ya lo usaste" es justo lo que el caso de uso evita.
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "El enlace no es válido, ya fue utilizado o venció. "
+                "Solicite uno nuevo."
+            ),
+        )
+    except service.CuentaDesactivadaAlRecuperar:
+        # Mismo criterio que el login: no es "no te reconozco", es "te
+        # reconozco y no podés entrar". Recuperar la contraseña no puede ser la
+        # forma de revertir una baja hecha por CU-03.
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Su cuenta está desactivada. Contacte al administrador.",
+        )
 
 # --- CU-03 Gestionar usuarios y roles ------------------------------------
 #

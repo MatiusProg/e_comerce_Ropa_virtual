@@ -10,6 +10,9 @@ import {
   ClienteRegistroIn,
   INICIO_POR_ROL,
   LoginIn,
+  RecuperacionAceptadaOut,
+  RecuperacionConfirmarIn,
+  RecuperacionSolicitudIn,
   TokenOut,
   UsuarioAutenticado,
 } from '../models/auth.models';
@@ -25,6 +28,18 @@ export type ErrorRegistro =
 export type ErrorLogin =
   | { tipo: 'credenciales'; mensaje: string }
   | { tipo: 'desactivada'; mensaje: string }
+  | { tipo: 'sistema'; mensaje: string };
+
+/**
+ * Errores previstos de la confirmación de recuperación (CU-41).
+ *
+ * La SOLICITUD no tiene errores previstos: responde lo mismo exista o no la
+ * cuenta, así que solo puede fallar por red o por un fallo del servidor.
+ */
+export type ErrorRecuperacion =
+  | { tipo: 'enlace-invalido'; mensaje: string }
+  | { tipo: 'desactivada'; mensaje: string }
+  | { tipo: 'datos-invalidos'; mensaje: string }
   | { tipo: 'sistema'; mensaje: string };
 
 const CLAVE_TOKEN = 'fs.token';
@@ -150,6 +165,45 @@ export class AuthService {
     this._usuario.set(null);
   }
 
+  // --- CU-41 Recuperar contraseña ----------------------------------------
+
+  /**
+   * Pide el enlace de recuperación (paso 2).
+   *
+   * No traduce ningún error de negocio porque el servidor no expone ninguno:
+   * responde 202 exista o no la cuenta. Ver `RecuperacionAceptadaOut`.
+   */
+  solicitarRecuperacion(
+    datos: RecuperacionSolicitudIn,
+  ): Observable<RecuperacionAceptadaOut> {
+    return this.http
+      .post<RecuperacionAceptadaOut>(`${this.base}/recuperacion`, datos)
+      .pipe(
+        catchError((e: HttpErrorResponse) =>
+          throwError(() => this.traducirRecuperacion(e)),
+        ),
+      );
+  }
+
+  /**
+   * Canjea el enlace y fija la contraseña nueva (paso 6).
+   *
+   * Al volver, todas las sesiones de esa cuenta quedaron revocadas en el
+   * servidor —incluida la de esta pestaña, si la había—. Por eso se descarta
+   * también la sesión local: dejarla puesta mostraría una sesión que ya no
+   * existe y cada llamada siguiente daría 401.
+   */
+  confirmarRecuperacion(datos: RecuperacionConfirmarIn): Observable<void> {
+    return this.http
+      .post<void>(`${this.base}/recuperacion/confirmar`, datos)
+      .pipe(
+        tap(() => this.descartarSesion()),
+        catchError((e: HttpErrorResponse) =>
+          throwError(() => this.traducirRecuperacion(e)),
+        ),
+      );
+  }
+
   // --- Traducción de errores ---------------------------------------------
 
   private traducirRegistro(error: HttpErrorResponse): ErrorRegistro {
@@ -197,5 +251,39 @@ export class AuthService {
       };
     }
     return { tipo: 'sistema', mensaje: detalle || 'No se pudo iniciar sesión.' };
+  }
+
+  private traducirRecuperacion(error: HttpErrorResponse): ErrorRecuperacion {
+    const detalle: string = error.error?.detail ?? '';
+
+    if (error.status === 400) {
+      // Un solo mensaje para «no existe», «ya se usó» y «venció»: es lo que
+      // responde el servidor, y distinguirlos diría si ese enlace existió.
+      return {
+        tipo: 'enlace-invalido',
+        mensaje:
+          detalle ||
+          'El enlace no es válido, ya fue utilizado o venció. Solicite uno nuevo.',
+      };
+    }
+    if (error.status === 403) {
+      return {
+        tipo: 'desactivada',
+        mensaje: detalle || 'Su cuenta está desactivada. Contacte al administrador.',
+      };
+    }
+    if (error.status === 422) {
+      return { tipo: 'datos-invalidos', mensaje: 'Revise los datos del formulario.' };
+    }
+    if (error.status === 0) {
+      return {
+        tipo: 'sistema',
+        mensaje: 'No se pudo contactar al servidor. Verifique su conexión.',
+      };
+    }
+    return {
+      tipo: 'sistema',
+      mensaje: detalle || 'No se pudo completar la recuperación.',
+    };
   }
 }

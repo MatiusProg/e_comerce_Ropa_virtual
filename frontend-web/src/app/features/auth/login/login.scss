@@ -2,4 +2,11 @@
 
 :host {
   @include auth.formulario-auth;
+
+  // El pie quedó en dos líneas al sumarse CU-41: recuperar contraseña arriba
+  // —es lo que busca quien no pudo entrar— y crear cuenta debajo, más suelta,
+  // para que no se lean como una sola frase.
+  .pie-secundario {
+    margin-top: 0.4rem;
+  }
 }

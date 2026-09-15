@@ -1,0 +1,75 @@
+<!-- CU-41 · Recuperar contraseña — «boundary» FormularioOlvideContrasena. -->
+<app-auth-layout
+  titulo="Recuperar contraseña"
+  subtitulo="Te enviamos un enlace para elegir una nueva."
+>
+  <mat-card class="tarjeta vb-filete-superior" appearance="outlined">
+    @if (enviando()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+
+    <mat-card-content>
+      @if (acuse(); as mensaje) {
+        <!--
+          Paso 5. El formulario desaparece: reenviar desde acá solo invalidaría
+          el enlace que se acaba de mandar, y quien no lo reciba tiene abajo el
+          camino para volver a pedirlo.
+        -->
+        <div class="aviso aviso-ok" role="status">
+          <mat-icon>mark_email_read</mat-icon>
+          <span>{{ mensaje }}</span>
+        </div>
+
+        <p class="nota">
+          El enlace sirve una sola vez y vence en poco tiempo. Si no llega en
+          unos minutos, revisá que el correo esté bien escrito y
+          <a routerLink="/olvide-contrasena" (click)="acuse.set(null)">pedilo de nuevo</a>.
+        </p>
+
+        <p class="pie">
+          <a routerLink="/login">Volver a iniciar sesión</a>
+        </p>
+      } @else {
+        @if (error(); as e) {
+          <div class="aviso" role="alert">
+            <mat-icon>error_outline</mat-icon>
+            <span>{{ e.mensaje }}</span>
+          </div>
+        }
+
+        <p class="intro">
+          Escribí el correo con el que creaste tu cuenta. Si corresponde a una
+          cuenta de Violet Boutique, vas a recibir un enlace para elegir una
+          contraseña nueva.
+        </p>
+
+        <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
+          <mat-form-field appearance="outline" class="ancho-completo">
+            <mat-label>Correo electrónico</mat-label>
+            <input matInput type="email" formControlName="correo" autocomplete="email" />
+            <mat-icon matSuffix>mail_outline</mat-icon>
+            @if (control('correo').hasError('required')) {
+              <mat-error>Ingrese su correo electrónico.</mat-error>
+            } @else if (control('correo').hasError('email')) {
+              <mat-error>El correo no tiene un formato válido.</mat-error>
+            }
+          </mat-form-field>
+
+          <button
+            matButton="filled"
+            type="submit"
+            class="vb-boton-marca boton-principal"
+            [disabled]="enviando()"
+          >
+            Enviarme el enlace
+          </button>
+        </form>
+
+        <p class="pie">
+          ¿Te acordaste?
+          <a routerLink="/login">Iniciá sesión</a>
+        </p>
+      }
+    </mat-card-content>
+  </mat-card>
+</app-auth-layout>

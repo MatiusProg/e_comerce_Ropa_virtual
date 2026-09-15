@@ -8,6 +8,7 @@ Casos de uso que realiza este paquete:
   CU-02 Iniciar y cerrar sesion
   CU-03 Gestionar usuarios y roles
   CU-04 Gestionar perfil del cliente
+  CU-41 Recuperar contrasena  (ciclo 3)
 """
 import re
 from datetime import date, datetime
@@ -479,4 +480,74 @@ class CambioContrasenaIn(BaseModel):
             raise ValueError("Las dos contraseñas nuevas no coinciden.")
         if self.contrasena_nueva == self.contrasena_actual:
             raise ValueError("La contraseña nueva debe ser distinta de la actual.")
+        return self
+
+
+# --- CU-41 Recuperar contrasena ------------------------------------------
+
+class RecuperacionSolicitudIn(BaseModel):
+    """Paso 2 del flujo principal: el correo de la cuenta a recuperar."""
+
+    correo: EmailStr = Field(max_length=120)
+
+    @field_validator("correo")
+    @classmethod
+    def _correo_en_minusculas(cls, valor: str) -> str:
+        """Misma normalizacion que el registro y el login.
+
+        Sin esto, quien se registro como 'ana@x.com' y escribe 'Ana@x.com' no
+        recibiria nada y no sabria por que: la respuesta es la misma exista o
+        no la cuenta, asi que el sistema no se lo diria nunca.
+        """
+        return valor.strip().lower()
+
+
+class RecuperacionAceptadaOut(BaseModel):
+    """Acuse de la solicitud. Dice lo mismo exista o no la cuenta.
+
+    Es deliberado y es la razon de que este esquema no lleve ningun otro campo:
+    si la respuesta distinguiera "te mandamos el enlace" de "ese correo no
+    existe", el endpoint se volveria una forma de averiguar que direcciones
+    estan registradas en la tienda --- sin token y sin limite ---. Es la misma
+    regla por la que el login devuelve un unico mensaje para correo inexistente
+    y contrasena incorrecta.
+    """
+
+    mensaje: str
+
+
+class RecuperacionConfirmarIn(BaseModel):
+    """Paso 6: el token del enlace y la contrasena nueva, dos veces.
+
+    El token viaja en el cuerpo y no en la URL a proposito. Un token en la ruta
+    o en la cadena de consulta queda escrito en el log de accesos del servidor
+    y en el historial del navegador, y mientras vive ES la credencial de la
+    cuenta. La web lo recibe por la URL --- no hay otra forma de llevarlo en un
+    enlace --- pero lo manda por POST.
+    """
+
+    token: str = Field(min_length=16, max_length=128)
+    contrasena_nueva: str = Field(
+        min_length=CONTRASENA_LONGITUD_MINIMA, max_length=128
+    )
+    contrasena_repetida: str = Field(min_length=1, max_length=128)
+
+    @field_validator("contrasena_nueva")
+    @classmethod
+    def _contrasena_fuerte(cls, valor: str) -> str:
+        """Misma regla de fortaleza que el registro y el cambio de contrasena.
+
+        Recuperar el acceso no es una puerta de atras para poner una clave mas
+        debil de la que el registro habria aceptado.
+        """
+        if not _TIENE_LETRA.search(valor) or not _TIENE_DIGITO.search(valor):
+            raise ValueError(
+                "La contraseña debe incluir al menos una letra y un número."
+            )
+        return valor
+
+    @model_validator(mode="after")
+    def _coinciden(self) -> "RecuperacionConfirmarIn":
+        if self.contrasena_nueva != self.contrasena_repetida:
+            raise ValueError("Las dos contraseñas nuevas no coinciden.")
         return self

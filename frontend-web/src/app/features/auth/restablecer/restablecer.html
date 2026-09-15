@@ -1,0 +1,120 @@
+<!-- CU-41 · Recuperar contraseña — «boundary» FormularioContrasenaNueva. -->
+<app-auth-layout
+  titulo="Elegí tu contraseña nueva"
+  subtitulo="Después vas a poder entrar con ella."
+>
+  <mat-card class="tarjeta vb-filete-superior" appearance="outlined">
+    @if (enviando()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+
+    <mat-card-content>
+      @if (listo()) {
+        <!-- Paso 9. -->
+        <div class="aviso aviso-ok" role="status">
+          <mat-icon>check_circle_outline</mat-icon>
+          <span>
+            Tu contraseña quedó cambiada. Cerramos las sesiones que estaban
+            abiertas en otros dispositivos.
+          </span>
+        </div>
+
+        <button
+          matButton="filled"
+          type="button"
+          class="vb-boton-marca boton-principal"
+          (click)="irAlLogin()"
+        >
+          Iniciar sesión
+        </button>
+      } @else if (sinToken) {
+        <!--
+          Alguien entró a /recuperar sin el token del enlace. No es un error del
+          servidor: no hay nada que enviar, así que tampoco hay formulario.
+        -->
+        <div class="aviso" role="alert">
+          <mat-icon>link_off</mat-icon>
+          <span>
+            Este enlace está incompleto. Abrí el que te llegó por correo, o pedí
+            uno nuevo.
+          </span>
+        </div>
+
+        <p class="pie">
+          <a routerLink="/olvide-contrasena">Pedir un enlace nuevo</a>
+        </p>
+      } @else {
+        @if (error(); as e) {
+          <div class="aviso" [class.aviso-atencion]="e.tipo === 'desactivada'" role="alert">
+            <mat-icon>{{ e.tipo === 'desactivada' ? 'block' : 'error_outline' }}</mat-icon>
+            <span>{{ e.mensaje }}</span>
+          </div>
+
+          @if (e.tipo === 'enlace-invalido') {
+            <p class="pie">
+              <a routerLink="/olvide-contrasena">Pedir un enlace nuevo</a>
+            </p>
+          }
+        }
+
+        <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
+          <mat-form-field appearance="outline" class="ancho-completo">
+            <mat-label>Contraseña nueva</mat-label>
+            <input
+              matInput
+              [type]="verContrasena() ? 'text' : 'password'"
+              formControlName="contrasena_nueva"
+              autocomplete="new-password"
+            />
+            <button
+              matIconButton
+              type="button"
+              matSuffix
+              (click)="verContrasena.set(!verContrasena())"
+              [attr.aria-label]="verContrasena() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+            >
+              <mat-icon>{{ verContrasena() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            @if (control('contrasena_nueva').hasError('required')) {
+              <mat-error>Ingrese una contraseña.</mat-error>
+            } @else if (control('contrasena_nueva').hasError('minlength')) {
+              <mat-error>Debe tener al menos {{ longitudMinima }} caracteres.</mat-error>
+            } @else if (control('contrasena_nueva').hasError('pattern')) {
+              <mat-error>Debe incluir al menos una letra y un número.</mat-error>
+            } @else {
+              <mat-hint>
+                Al menos {{ longitudMinima }} caracteres, con una letra y un número.
+              </mat-hint>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="ancho-completo">
+            <mat-label>Repetí la contraseña</mat-label>
+            <input
+              matInput
+              [type]="verContrasena() ? 'text' : 'password'"
+              formControlName="contrasena_repetida"
+              autocomplete="new-password"
+            />
+            @if (control('contrasena_repetida').hasError('required')) {
+              <mat-error>Repita la contraseña.</mat-error>
+            }
+          </mat-form-field>
+
+          @if (formulario.hasError('noCoinciden') && control('contrasena_repetida').touched) {
+            <p class="desajuste" role="alert">Las dos contraseñas no coinciden.</p>
+          }
+
+          <button
+            matButton="filled"
+            type="submit"
+            class="vb-boton-marca boton-principal"
+            [disabled]="enviando()"
+          >
+            Cambiar mi contraseña
+          </button>
+        </form>
+      }
+    </mat-card-content>
+  </mat-card>
+</app-auth-layout>
