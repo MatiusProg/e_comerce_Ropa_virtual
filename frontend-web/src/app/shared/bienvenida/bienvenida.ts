@@ -34,7 +34,7 @@ const AREA: Record<Rol, { titulo: string; detalle: string; icono: string }> = {
   PROVEEDOR: {
     titulo: 'Portal del proveedor',
     detalle:
-      'Acá vas a poder consultar la información de tus productos y su disponibilidad. Es un alcance de consulta: el reabastecimiento no se gestiona por el sistema.',
+      'Desde la barra de arriba se registran las prendas que abastecés y las tallas y colores en que las traés. Lo que registres queda a la espera de que la tienda lo publique en su catálogo.',
     icono: 'local_shipping',
   },
 };
@@ -43,9 +43,10 @@ const AREA: Record<Rol, { titulo: string; detalle: string; icono: string }> = {
  * Tarjeta de bienvenida por rol, sin barra superior.
  *
  * Se usa suelta dentro de las áreas que ya traen su propia barra —la de
- * administración y la de sucursal— y envuelta por `Inicio` para los roles que
- * todavía no tienen área propia: Cliente, Cajero y Proveedor. Existe separada
- * justamente para no duplicar el texto de cada rol en dos lugares.
+ * administración, la de sucursal y, desde CU-38, la del proveedor— y envuelta
+ * por `Inicio` para los roles que todavía no tienen área propia: Cliente y
+ * Cajero. Existe separada justamente para no duplicar el texto de cada rol en
+ * dos lugares.
  */
 @Component({
   selector: 'app-bienvenida',

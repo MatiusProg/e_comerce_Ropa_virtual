@@ -1,0 +1,129 @@
+<!-- CU-38 · «boundary» FormularioMiProducto. -->
+<h2 mat-dialog-title class="vb-titulo">
+  {{ editando ? 'Corregir producto' : 'Registrar un producto que abastezco' }}
+</h2>
+
+@if (enviando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<mat-dialog-content>
+  @if (error(); as e) {
+    @if (e.tipo !== 'codigo-duplicado' && e.tipo !== 'coleccion-ajena') {
+      <div class="aviso" role="alert">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ e.mensaje }}</span>
+      </div>
+    }
+  }
+
+  @if (!editando) {
+    <!--
+      Se avisa ANTES, no después. Un proveedor que registra una prenda y no la
+      encuentra en la tienda tiene que saber por qué mientras la registra.
+    -->
+    <div class="aviso aviso-nota" role="note">
+      <mat-icon>visibility_off</mat-icon>
+      <span>
+        El producto queda registrado <strong>sin publicar</strong>. La tienda lo
+        revisa y decide cuándo mostrarlo en el catálogo.
+      </span>
+    </div>
+  }
+
+  <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+    <div class="fila">
+      <mat-form-field appearance="outline" class="codigo">
+        <mat-label>Código</mat-label>
+        <input matInput formControlName="codigo" maxlength="30" />
+        <mat-hint>El suyo, el que usa en su nomenclatura.</mat-hint>
+        @if (control('codigo').hasError('required')) {
+          <mat-error>Ingrese un código.</mat-error>
+        } @else if (control('codigo').hasError('duplicado')) {
+          <mat-error>Ya existe un producto con ese código. Use otro.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="precio">
+        <mat-label>Precio de referencia</mat-label>
+        <input matInput formControlName="precio_base" inputmode="decimal" />
+        <span matTextPrefix>Bs&nbsp;</span>
+        @if (control('precio_base').hasError('required')) {
+          <mat-error>Ingrese un precio.</mat-error>
+        } @else if (control('precio_base').hasError('pattern')) {
+          <mat-error>Use un número, con hasta dos decimales.</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Nombre de la prenda</mat-label>
+      <input matInput formControlName="nombre" maxlength="120" />
+      @if (control('nombre').hasError('required')) {
+        <mat-error>Ingrese el nombre.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Descripción</mat-label>
+      <textarea matInput formControlName="descripcion" rows="3" maxlength="500"></textarea>
+      <mat-hint>Opcional. Composición, cuidados, lo que distinga la prenda.</mat-hint>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Categoría</mat-label>
+      <mat-select formControlName="categoria_id">
+        @for (fila of categorias; track fila.categoria.id) {
+          <mat-option [value]="fila.categoria.id">
+            <span [style.padding-left.rem]="fila.nivel * 1">{{ fila.categoria.nombre }}</span>
+          </mat-option>
+        }
+      </mat-select>
+      @if (control('categoria_id').hasError('required')) {
+        <mat-error>Elija una categoría.</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="fila">
+      <mat-form-field appearance="outline">
+        <mat-label>Temporada</mat-label>
+        <mat-select formControlName="temporada_id">
+          <mat-option [value]="null">— Sin temporada —</mat-option>
+          @for (t of datos.listas.temporadas; track t.id) {
+            <mat-option [value]="t.id">{{ t.nombre }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Colección</mat-label>
+        <mat-select formControlName="coleccion_id">
+          <mat-option [value]="null">— Sin colección —</mat-option>
+          @for (c of coleccionesElegibles(); track c.id) {
+            <mat-option [value]="c.id">{{ c.nombre }}</mat-option>
+          }
+        </mat-select>
+        @if (control('coleccion_id').hasError('ajena')) {
+          <mat-error>Esa colección no pertenece a la temporada elegida.</mat-error>
+        } @else {
+          <mat-hint>Sólo las de la temporada elegida.</mat-hint>
+        }
+      </mat-form-field>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="ref.close()" [disabled]="enviando()">
+    Cancelar
+  </button>
+  <button
+    matButton="filled"
+    type="button"
+    class="vb-boton-marca"
+    (click)="guardar()"
+    [disabled]="enviando()"
+  >
+    {{ editando ? 'Guardar cambios' : 'Registrar' }}
+  </button>
+</mat-dialog-actions>
