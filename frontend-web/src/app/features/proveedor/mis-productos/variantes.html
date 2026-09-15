@@ -1,0 +1,102 @@
+<!-- CU-38 · «boundary» PanelMisVariantes — paso 7. -->
+<h2 mat-dialog-title class="vb-titulo">
+  Tallas y colores de {{ datos.producto.nombre }}
+</h2>
+
+@if (enviando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<mat-dialog-content>
+  <p class="intro">
+    Declare en qué combinaciones abastece esta prenda. Cada una recibe su propio
+    código (SKU): es lo que la tienda usa para contar existencias y venderla.
+  </p>
+
+  @if (error(); as e) {
+    <div class="aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ e.mensaje }}</span>
+    </div>
+  }
+
+  @if (resultado(); as r) {
+    <div class="aviso aviso-ok" role="status">
+      <mat-icon>check_circle_outline</mat-icon>
+      <span>
+        {{ r.creadas }}
+        {{ r.creadas === 1 ? 'combinación agregada' : 'combinaciones agregadas' }}.
+        @if (r.omitidas > 0) {
+          {{ r.omitidas }} ya estaban y se dejaron como estaban.
+        }
+      </span>
+    </div>
+  }
+
+  <div class="fila">
+    <mat-form-field appearance="outline">
+      <mat-label>Tallas</mat-label>
+      <mat-select multiple [(ngModel)]="tallas">
+        @for (t of datos.listas.tallas; track t.id) {
+          <mat-option [value]="t.id">{{ t.tipo_prenda }} · {{ t.codigo }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Colores</mat-label>
+      <mat-select multiple [(ngModel)]="colores">
+        @for (c of datos.listas.colores; track c.id) {
+          <mat-option [value]="c.id">
+            <span class="muestra" [style.background]="c.hexadecimal"></span>
+            {{ c.nombre }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  @if (combinaciones() > 0) {
+    <p class="cuenta">
+      Se generarán hasta <strong>{{ combinaciones() }}</strong>
+      {{ combinaciones() === 1 ? 'combinación' : 'combinaciones' }}.
+      Las que ya existan se dejan como están.
+    </p>
+  }
+
+  <h3 class="subtitulo">
+    Ya declaradas
+    <span class="cantidad">{{ existentes().length }}</span>
+  </h3>
+
+  @if (existentes().length === 0) {
+    <p class="vacio">
+      Todavía ninguna. Mientras no haya al menos una, la tienda no puede pedir
+      esta prenda.
+    </p>
+  } @else {
+    <mat-chip-set aria-label="Combinaciones ya declaradas">
+      @for (v of existentes(); track v.id) {
+        <mat-chip [class.inactiva]="!v.activa">
+          <span class="muestra" [style.background]="v.color_hexadecimal"></span>
+          {{ v.talla_codigo }} · {{ v.color_nombre }}
+        </mat-chip>
+      }
+    </mat-chip-set>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cerrar()" [disabled]="enviando()">
+    Cerrar
+  </button>
+  <button
+    matButton="filled"
+    type="button"
+    class="vb-boton-marca"
+    (click)="generar()"
+    [disabled]="!puedeGenerar()"
+  >
+    Agregar combinaciones
+  </button>
+</mat-dialog-actions>

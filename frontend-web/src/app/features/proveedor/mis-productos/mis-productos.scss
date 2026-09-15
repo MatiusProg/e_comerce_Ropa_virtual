@@ -1,0 +1,159 @@
+:host {
+  display: block;
+}
+
+.encabezado {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.6rem;
+    color: var(--vb-malva-oscuro);
+  }
+}
+
+.bajada {
+  margin: 0.35rem 0 0;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.94rem;
+  max-width: 46ch;
+}
+
+.tarjeta {
+  border-radius: var(--vb-radio);
+  border: 1px solid var(--mat-sys-outline-variant);
+  box-shadow: var(--vb-sombra-suave);
+  overflow: hidden;
+  background: var(--mat-sys-surface);
+}
+
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--vb-radio-chico);
+  margin-bottom: 1rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+
+  mat-icon {
+    flex: none;
+  }
+}
+
+// --- Filtros ---------------------------------------------------------------
+
+.filtros {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.buscador {
+  flex: 2 1 16rem;
+}
+
+.estado {
+  flex: 1 1 10rem;
+}
+
+// --- Tabla -----------------------------------------------------------------
+
+// La tabla es lo único que puede exceder el ancho: se le da su propio scroll
+// en vez de dejar que empuje la página entera.
+.envoltorio-tabla {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+}
+
+.codigo {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
+
+.acciones {
+  width: 3rem;
+  text-align: right;
+}
+
+.etiqueta {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.publicado {
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+}
+
+// «Sin publicar» no es un error ni una alarma: es una espera. Tono neutro.
+.pendiente-pub {
+  background: var(--mat-sys-surface-variant);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// Faltar las variantes SÍ es media entrega, y se señala.
+.pendiente {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--mat-sys-error);
+  font-size: 0.86rem;
+  font-weight: 600;
+
+  mat-icon {
+    width: 1.05rem;
+    height: 1.05rem;
+    font-size: 1.05rem;
+  }
+}
+
+.vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+
+  mat-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 2.5rem;
+    opacity: 0.45;
+  }
+
+  p {
+    margin: 0;
+    max-width: 40ch;
+    line-height: 1.5;
+  }
+}
+
+@media (max-width: 700px) {
+  .encabezado {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filtros {
+    flex-direction: column;
+    gap: 0;
+  }
+}

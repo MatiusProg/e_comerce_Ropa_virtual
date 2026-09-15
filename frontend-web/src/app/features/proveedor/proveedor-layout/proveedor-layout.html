@@ -1,0 +1,34 @@
+<mat-toolbar class="barra">
+  <span class="logotipo vb-titulo">Violet Boutique</span>
+  <span class="etiqueta-area">Proveedor</span>
+
+  <span class="separador"></span>
+
+  @if (usuario(); as u) {
+    <span class="identidad">
+      <span class="avatar">{{ iniciales() }}</span>
+      <span class="datos">
+        <span class="nombre">{{ u.nombres }} {{ u.apellidos }}</span>
+        <span class="rol">Proveedor</span>
+      </span>
+    </span>
+    <button matIconButton type="button" (click)="salir()" aria-label="Cerrar sesión">
+      <mat-icon>logout</mat-icon>
+    </button>
+  }
+</mat-toolbar>
+
+<nav class="navegacion" aria-label="Secciones del proveedor">
+  <a routerLink="/proveedor" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }">
+    <mat-icon>home</mat-icon>
+    Inicio
+  </a>
+  <a routerLink="/proveedor/productos" routerLinkActive="activo">
+    <mat-icon>checkroom</mat-icon>
+    Mis productos
+  </a>
+</nav>
+
+<main class="contenido">
+  <router-outlet />
+</main>
