@@ -28,6 +28,22 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/registro/registro').then((m) => m.Registro),
   },
 
+  // CU-41 · Recuperar contraseña. Las dos son públicas por definición: el actor
+  // es alguien que justamente no puede iniciar sesión.
+  {
+    path: 'olvide-contrasena',
+    title: 'Recuperar contraseña · Violet Boutique',
+    loadComponent: () => import('./features/auth/olvide/olvide').then((m) => m.Olvide),
+  },
+  {
+    // El camino lo arma el backend al mandar el correo:
+    // `${WEB_BASE_URL}/recuperar/{token}`. Si cambia acá, cambia allá.
+    path: 'recuperar/:token',
+    title: 'Contraseña nueva · Violet Boutique',
+    loadComponent: () =>
+      import('./features/auth/restablecer/restablecer').then((m) => m.Restablecer),
+  },
+
   // --- Ciclo 2 · Karen · La vitrina, también sin sesión ------------------
   // CU-17 y CU-18 son públicos a propósito: el flujo principal no tiene
   // precondición de sesión y el RF07 pide que el cliente consulte el catálogo

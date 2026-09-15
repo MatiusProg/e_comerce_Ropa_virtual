@@ -57,9 +57,49 @@ class Settings(BaseSettings):
     STRIPE_CANCEL_URL: str = "http://localhost:4200/pago/cancelado"
 
     # --- Inteligencia artificial (P10, ciclo 3) --------------------------
-    ANTHROPIC_API_KEY: str = ""
-    IA_MODELO: str = "claude-opus-5"
+    #
+    # Los nombres NO llevan el proveedor adentro a proposito: con
+    # ANTHROPIC_API_KEY, cambiar de proveedor obligaba a tocar el despliegue
+    # ademas del codigo. El acuerdo del 11/09 lo fijo asi y .env.example ya lo
+    # usaba; esto alinea la configuracion con el acuerdo y con el archivo.
+    IA_PROVEEDOR: str = "gemini"
+    IA_API_KEY: str = ""
+    IA_MODELO: str = ""
     IA_MAX_PETICIONES_DIA: int = 50       # tope por usuario, control de costo
+
+    # --- Correo saliente (CU-40 y CU-41, ciclo 3) ------------------------
+    #
+    # Misma leccion que la IA: los nombres no llevan la marca adentro, asi que
+    # elegir proveedor es cambiar UNA variable en Railway y no tocar codigo.
+    #
+    # `consola` no envia nada: escribe el correo entero en el log. Es el valor
+    # por defecto a proposito, porque permite construir y probar CU-41 completo
+    # --- token de un solo uso, dos endpoints y dos pantallas --- sin haber
+    # contratado ningun servicio. Cuando se elija uno, se agrega su modulo en
+    # app/integrations/correo/ y se cambia esta variable.
+    CORREO_PROVEEDOR: str = "consola"
+    CORREO_API_KEY: str = ""
+
+    # La direccion que figura como remitente. Es la trampa de los servicios
+    # transaccionales: casi ninguno deja enviar desde una direccion cualquiera.
+    # O se verifica un dominio propio, o se usa el dominio de prueba del
+    # proveedor --- que en varios SOLO permite enviar a la casilla verificada
+    # de la cuenta. Hay que averiguarlo ANTES de la demostracion.
+    CORREO_REMITENTE: str = "no-responder@violetboutique.bo"
+    CORREO_REMITENTE_NOMBRE: str = "Violet Boutique"
+
+    # --- Recuperacion de contrasena (CU-41, RF39) ------------------------
+    #
+    # Cuanto vale el enlace. Corto a proposito: el enlace ES la credencial
+    # mientras vive, y viaja por un correo que puede quedar abierto en una
+    # maquina compartida. Media hora alcanza para leer el correo y cambiar la
+    # contrasena, y no para mucho mas.
+    RECUPERACION_VIGENCIA_MINUTOS: int = 30
+
+    # A donde apunta el enlace del correo. Es la WEB, no la API: quien recibe
+    # el correo tiene que aterrizar en el formulario de contrasena nueva. En
+    # produccion es la URL publica de la web en Railway.
+    WEB_BASE_URL: str = "http://localhost:4200"
 
     # --- Datos iniciales (app/db/seed.py) --------------------------------
     ADMIN_EMAIL: str = "admin@violetboutique.bo"

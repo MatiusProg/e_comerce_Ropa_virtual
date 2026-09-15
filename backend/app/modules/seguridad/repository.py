@@ -8,6 +8,7 @@ Casos de uso que realiza este paquete:
   CU-02 Iniciar y cerrar sesion
   CU-03 Gestionar usuarios y roles
   CU-04 Gestionar perfil del cliente
+  CU-41 Recuperar contrasena  (ciclo 3)
 """
 import uuid
 from datetime import date, datetime, timezone
@@ -25,6 +26,7 @@ from app.modules.seguridad.models import (
     DireccionCliente,
     Rol,
     SesionToken,
+    TokenRecuperacion,
     Usuario,
 )
 
@@ -479,3 +481,76 @@ def reemplazar_categorias_preferidas(
     cliente.categorias_preferidas = categorias
     db.flush()
 
+
+
+# --- CU-41 Recuperar contrasena ------------------------------------------
+
+def invalidar_tokens_de_recuperacion(
+    db: Session, usuario_id: int, *, ahora: datetime
+) -> int:
+    """Caduca los enlaces pendientes del usuario. Devuelve cuantos eran.
+
+    Se llama al emitir uno nuevo: pedir el enlace dos veces tiene que dejar
+    UNO valido, el ultimo. Si convivieran, el primer correo --- que puede haber
+    llegado a una casilla equivocada, que es justamente por lo que alguien pide
+    el enlace de nuevo --- seguiria sirviendo.
+
+    Marca `usado_en` en vez de borrar la fila: la tabla conserva la historia de
+    quien pidio recuperar y cuando, que es lo unico que queda si despues hay
+    que entender un acceso raro.
+    """
+    resultado = db.execute(
+        update(TokenRecuperacion)
+        .where(
+            TokenRecuperacion.usuario_id == usuario_id,
+            TokenRecuperacion.usado_en.is_(None),
+        )
+        .values(usado_en=ahora)
+    )
+    return resultado.rowcount
+
+
+def agregar_token_recuperacion(
+    db: Session,
+    *,
+    usuario_id: int,
+    hash_token: str,
+    expira_en: datetime,
+) -> TokenRecuperacion:
+    """Registra el enlace emitido. No confirma: la transaccion es del servicio."""
+    token = TokenRecuperacion(
+        usuario_id=usuario_id, hash_token=hash_token, expira_en=expira_en
+    )
+    db.add(token)
+    db.flush()
+    return token
+
+
+def canjear_token_de_recuperacion(
+    db: Session, hash_token: str, *, ahora: datetime
+) -> int | None:
+    """Marca el token como usado si seguia vigente y devuelve a quien pertenece.
+
+    Devuelve None si el token no existe, ya se canjeo o expiro. El servicio NO
+    distingue los tres casos hacia afuera: hacerlo diria si un enlace existio,
+    y los enlaces quedan en el historial del correo.
+
+    Comprobar y marcar en UNA sola sentencia es lo que hace que el enlace sea
+    de un solo uso de verdad. Si se leyera la fila, se decidiera en Python y
+    despues se escribiera, dos peticiones simultaneas con el mismo token
+    pasarian las dos la comprobacion antes de que ninguna escribiera --- y las
+    dos cambiarian la contrasena. Aca la condicion viaja en el WHERE del
+    UPDATE: la segunda no encuentra fila que actualizar y el RETURNING vuelve
+    vacio.
+    """
+    resultado = db.execute(
+        update(TokenRecuperacion)
+        .where(
+            TokenRecuperacion.hash_token == hash_token,
+            TokenRecuperacion.usado_en.is_(None),
+            TokenRecuperacion.expira_en > ahora,
+        )
+        .values(usado_en=ahora)
+        .returning(TokenRecuperacion.usuario_id)
+    )
+    return resultado.scalar_one_or_none()
