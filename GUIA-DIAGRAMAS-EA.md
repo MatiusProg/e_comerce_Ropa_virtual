@@ -17,7 +17,7 @@ Trial en Windows, escribiendo sobre archivos `.eapx` reales.
 
 1. [Qué hace falta antes de empezar](#1-qué-hace-falta-antes-de-empezar)
 2. [La forma de la solución: dos pasadas](#2-la-forma-de-la-solución-dos-pasadas)
-3. [Las nueve reglas de oro](#3-las-nueve-reglas-de-oro)
+3. [Las diez reglas de oro](#3-las-diez-reglas-de-oro)
 4. [Plantilla de un generador](#4-plantilla-de-un-generador)
 5. [Recetario de la API COM](#5-recetario-de-la-api-com)
 6. [Recetario de la segunda pasada (OLEDB)](#6-recetario-de-la-segunda-pasada-oledb)
@@ -33,6 +33,9 @@ Trial en Windows, escribiendo sobre archivos `.eapx` reales.
    - [7.9 Modelo de dominio 3.3.1](#79-modelo-de-dominio-331)
    - [7.10 Componentes del sistema 4.2](#710-componentes-del-sistema-42)
    - [7.11 Componentes por subsistema 4.3](#711-componentes-por-subsistema-43)
+   - [7.12 Estado 3.2](#712-estado-32)
+   - [7.13 Navegación 3.2](#713-navegación-32)
+   - [7.14 Tiempo 3.2](#714-tiempo-32)
 8. [Exportar a PNG](#8-exportar-a-png)
 9. [Catálogo de errores: síntoma → causa → arreglo](#9-catálogo-de-errores-síntoma--causa--arreglo)
 10. [Lo que no se puede automatizar](#10-lo-que-no-se-puede-automatizar)
@@ -94,7 +97,7 @@ EA cachea, la segunda pasada por OLEDB es más segura.
 
 ---
 
-## 3. Las nueve reglas de oro
+## 3. Las diez reglas de oro
 
 ### 1. Los generadores son **aditivos**
 
@@ -204,6 +207,38 @@ llegan rotos.
 $ins.CommandText = "UPDATE t_xref SET Description = ? WHERE Client = '$guid'"
 [void]$ins.Parameters.AddWithValue('d', $textoConAcentos)
 ```
+
+### 10. El nombre de un elemento es el **nombre exacto** de lo que representa en el código
+
+**Regla del 15/09/2026, para todo lo que se genere de acá en adelante.** Un elemento con nombre de
+prosa obliga a traducir mentalmente en la defensa, y esa traducción no está escrita en ningún lado.
+Si el diagrama dice `FormularioRegistro` y el archivo se llama `registro.html`, nadie puede
+comprobar que uno corresponda al otro.
+
+| Estereotipo | Qué nombre lleva | Por qué |
+|---|---|---|
+| **frontera** | el **archivo** de la vista, tal cual: `registro.html`, `usuarios.ts` | hay uno por pantalla, así que el archivo identifica sin ambigüedad |
+| **control** | el **nombre exacto de la función**: `registrar_cliente`, `cambiar_estado` | el archivo **no** sirve: todos los módulos tienen su `service.py` y se llamarían igual |
+| **entidad** | el **nombre exacto de la tabla**: `usuario`, `sesion_token`, `direccion_cliente` | minúsculas y guion bajo, como en la base; sin traducir a PascalCase |
+
+**Cuando el control es una clase con varias operaciones** —el caso del diagrama de navegación 3.2—
+el nombre de la clase es el **archivo del módulo** (`catalogo/maestros/router.py`) y **cada
+operación es el nombre exacto de su función** (`listar_categorias`, `cambiar_estado_talla`). Ahí el
+archivo sí identifica, porque se nombra completo con su ruta.
+
+Consecuencia que hay que aceptar: **si dos áreas comparten un archivo, comparten el elemento.**
+Ciudades y sucursales son las dos `organizacion/router.py`, así que en el diagrama son **una sola
+caja** con las operaciones de las dos. Es incómodo de dibujar y es verdad; la caja separada era la
+mentira.
+
+En Angular la vista son dos archivos (`usuarios.ts` y `usuarios.html`). **Se nombra con el `.ts`**,
+que es el que importa `app.routes.ts` y donde vive la clase, y el `.html` va en la nota.
+
+> **Lo que ya está hecho no se renombra** —decisión de Mateo del 15/09—, así que en el modelo
+> conviven los nombres viejos (`FormularioRegistro`, `GestorRegistro`, `Usuario`) con los nuevos.
+> Si algún día se quisiera unificar, **renombrar en EA es barato**: los diagramas referencian los
+> elementos por `Object_ID`, así que un renombre se propaga solo a todos los diagramas donde
+> aparezca, sin regenerar ninguno.
 
 ---
 
@@ -1269,6 +1304,236 @@ if (-not $elTabla.ContainsKey($t)) {
 }
 ```
 
+### 7.12 Estado 3.2
+
+**Tipo:** `Statechart` · **Script:** `ea-estado-3-2.ps1`
+
+El más fácil de los que faltaban. Tres piezas y nada más:
+
+| Pieza | Cómo se crea |
+|---|---|
+| Estado | `$pkg.Elements.AddNew('PENDIENTE', 'State')` |
+| Pseudoestado inicial | `AddNew('', 'StateNode')` + `$el.Subtype = 100` |
+| Estado final | `AddNew('', 'StateNode')` + `$el.Subtype = 101` |
+| Transición | `$src.Connectors.AddNew($rotulo, 'StateFlow')` |
+
+**Los `Subtype` del `StateNode` están sin documentar y se averiguaron probando.** Los que EA 15
+dibuja son exactamente tres; del 103 en adelante **no dibuja nada** —el elemento queda en el árbol
+y el lienzo sale vacío en ese punto, sin ningún error—:
+
+| `Subtype` | Qué dibuja |
+|---|---|
+| `100` | círculo negro relleno — **inicial** |
+| `101` | círculo negro con anillo — **final** |
+| `102` | círculo con una X — punto de salida |
+| `103`…`108` | **nada** |
+
+El rótulo de la transición es el **nombre del conector**, con la notación de UML
+`evento [guarda] / acción`. Acá la guarda es la **condición literal del `if` que la produce** y
+entre llaves va el ancla al código (`[correo ya registrado]  {409 service.py:374}`), que es lo que
+hace defendible el diagrama.
+
+**QUÉ SE DIBUJA — corrección del 15/09/2026.** Este diagrama **no es el ciclo de vida de un
+objeto**. Es el **flujo de una transacción**, y va **uno por caso de uso transaccional**, como el
+`CU1` del ejemplo de cátedra: `Inicio → Autenticar → Seleccionar operacion → [ramas] →
+Transaccion completada → Fin`. Hubo una primera versión que dibujaba la máquina de estados de
+`Reserva`; estaba bien como statechart y mal como entregable. Se eliminó. El detalle está en
+[`docs/diagramas/estado-navegacion-y-tiempo.md`](docs/diagramas/estado-navegacion-y-tiempo.md).
+
+**La maqueta son cinco columnas**, no un abanico: autenticación · menú · operaciones · validación ·
+cierre. Las operaciones se apilan en la columna del medio con **180 px entre una y otra**, y el
+hueco entre la columna del menú y la de las operaciones tiene que ser **ancho** (600 px): por ahí
+salen las cinco flechas del menú y ahí se dibujan sus rótulos, que son largos.
+
+**NO SE ESCRIBEN COORDENADAS.** Cada estado declara su **columna y su fila**, y el generador calcula
+`l` y `t`. Con dieciocho casos de uso, poner `l` y `t` a mano una por una era garantía de error, y
+además impedía lo que resultó ser la herramienta clave: **las medias filas**.
+
+> **El rótulo cae en el punto medio, y el punto medio choca.** EA dibuja el rótulo de cada
+> transición a media altura entre origen y destino. Con cinco flechas saliendo del mismo menú, dos
+> terminan a la misma altura y en la misma x, y los rótulos salen encimados —se llegó a leer
+> `[a[intenta desactivarse a si mismo] {409 service.py:493}o}`— **sin ningún error**. Un medio punto
+> de fila mueve el rótulo 90 px y alcanza. Tres reglas que salieron de esto:
+>
+> - el sumidero de errores va en la fila **3.5**, no en la 3;
+> - el estado de cierre va en la **2.5**, no en la 2;
+> - y en general, **el punto medio de la flecha de vuelta tiene que caer en el HUECO entre dos
+>   operaciones, nunca sobre una**.
+
+**Dos hallazgos que valen para cualquier statechart:**
+
+- **Nunca dos flechas entre las mismas dos cajas.** EA pone el rótulo en el punto medio del
+  conector; con ida y vuelta los dos puntos medios coinciden y los rótulos salen encimados —se leyó
+  `[a[intenta desactivarse a si mismo] {409 service.py:493}o}`— **sin dar ningún error**. La
+  solución es de modelado: todos los rechazos van a **un sumidero único** (`Informar error`, que es
+  el `_traducir()` del router) y de ahí sale **una sola** flecha de vuelta al menú.
+- **Se pueden poner varios estados finales, y conviene.** El rechazo de autorización muere en un
+  final propio, dibujado al lado de la autenticación. Es UML válido, dice algo verdadero —un 403 no
+  llega a haber transacción— y evita una flecha que cruce el lienzo entero.
+
+El pseudoestado inicial va **lejos** del primer estado: el rótulo de esa transición se dibuja en el
+punto medio, y con la flecha corta queda encima del círculo.
+
+---
+
+### 7.13 Navegación 3.2
+
+**Tipo:** `Logical` (diagrama de clases) · **Script:** `ea-navegacion-3-2.ps1`
+
+**Esto no es UML.** El diagrama de navegación no existe en la especificación 2.5 y **hay que
+decirlo en la defensa**: es la extensión de *UML-based Web Engineering* (UWE), o sea un diagrama de
+clases con un perfil encima. Por eso el tipo de diagrama es `Logical` y los elementos son `Class`:
+no hay tipo nativo al que corresponda.
+
+**VA UNO POR ACTOR — corrección del 15/09/2026.** El ejemplo de cátedra se titula
+`class navegacion cliente`: nombra al actor, lo dibuja adentro, e incluye **los controladores** con
+sus operaciones, no solo las pantallas. La primera versión de este generador hacía **uno solo para
+todo el sistema**, con pantallas y rutas nada más; se rehízo. Ver
+[`docs/diagramas/estado-navegacion-y-tiempo.md`](docs/diagramas/estado-navegacion-y-tiempo.md).
+
+| Pieza | Cómo se crea |
+|---|---|
+| Vista de lista | `Class` con `Stereotype` **y** `StereotypeEx` = `navigationClass` (ver §5.9) |
+| Formulario | lo mismo, con `formClass`. Sus atributos son **los campos reales** |
+| Controlador | lo mismo, con `controller`. Sus operaciones son **los endpoints** |
+| Menú / eje por rol | lo mismo, con `menu` |
+| Actor | **se reutiliza** el del CAP. 1, buscándolo por SQL; no se copia |
+| Salto | `Association` con `Direction = 'Source -> Destination'` |
+
+> **`view` y `form` son estereotipos RESERVADOS de EA.** Si se usan, EA cambia la forma de la caja
+> por la de su perfil de interfaz de usuario, no escribe el `«...»` y —lo grave— **deja de dibujar
+> los atributos**: el formulario sale como una caja vacía, sin sus campos, que es justo lo que había
+> que mostrar. Por eso `navigationClass` y `formClass`. Es el mismo tropiezo del `«FORM»` del 4.3.
+
+> **El rótulo del enlace va en el NOMBRE y sin estereotipo.** Con los dos puestos EA escribe `build`
+> y debajo `«build»`, que es lo mismo dos veces. El estereotipo se reserva para `navigationLink`,
+> el enlace del actor al menú, donde el nombre lo ocupa la guarda.
+
+**Los nombres son los exactos del código** (regla de oro 10): `usuarios.ts`, `usuario-formulario.ts`,
+`seguridad/router.py`, y las operaciones `listar_usuarios`, `crear_usuario`… Por eso el generador
+crea **un controlador por archivo, no por área**, y el `$ids[...|ctrl]` de dos áreas que comparten
+`router.py` apunta al mismo elemento. Un elemento **no puede estar dos veces en el mismo lienzo**,
+así que la caja compartida se dibuja en la primera banda que la usa y las demás le tiran la flecha.
+
+**El alto de cada caja se calcula del contenido**, no es constante: `AltoCaja` suma cabecera + una
+fila por atributo y por operación. El caso peor es `catalogo/maestros/router.py`, con dieciséis
+funciones; con un alto fijo se comía la banda siguiente.
+
+**Un elemento no puede estar dos veces en el mismo lienzo, pero sí en dos diagramas.** Como el
+nombre es el archivo y un archivo atiende a varios actores, `seguridad/router.py` sale en el
+diagrama del Administrador y en el del Cliente: **es el mismo elemento**. El generador lo busca por
+nombre antes de crearlo y, al reutilizarlo, **le agrega las operaciones que falten** —cada diagrama
+declara el subconjunto que le toca y la caja tiene que terminar con la unión—. Ojo con el tipo:
+`Methods.Count` llega como un tipo COM que `Pos` no acepta, y el error («La conversión especificada
+no es válida») no dice de dónde sale; hay que forzar `[int]`.
+
+**Un área puede venir sin vista o sin formulario, y una pantalla puede ser pública.** El perfil del
+Cliente es una sola pantalla con dos formularios encima, sin lista propia; y `/login`, `/registro` y
+`/tienda` no declaran `canActivate`, así que cuelgan **del actor** y no del eje del rol. Dibujarlas
+colgando del menú sería mentir sobre la guarda.
+
+**La ruta va como atributo, no en el nombre.** `$el.Attributes.AddNew('ruta', '/tienda')` con
+`Type` = la ruta: el nodo se lee «Catálogo» y debajo `+ ruta: /tienda`. Si se mete el path en el
+nombre, el diagrama deja de leerse como un mapa de pantallas y pasa a ser una lista de URLs.
+
+**La guarda va en el nombre del enlace**, entre corchetes: `[sesion + ADMINISTRADOR]`. Sale de
+`canActivate` de la ruta de destino, o sea de `sesionGuard` + `rolGuard(...)`.
+
+**La fuente es `frontend-web/src/app/app.routes.ts`, ruta por ruta.** El diagrama es el espejo de
+ese archivo; si se agrega una ruta, se agrega un nodo. Eso es lo que lo hace defendible.
+
+Cuatro cosas de maqueta, cada una encontrada rompiéndose:
+
+- **Una banda por área funcional**: la vista arriba, su formulario debajo y el controlador a la
+  derecha, centrado entre los dos. Así ninguna flecha cruza una caja.
+- **El alto que se pide es un MÍNIMO, no una medida.** Si la clase tiene más atributos u
+  operaciones de los que entran, **EA agranda la caja hacia abajo sin avisar** y se come la banda
+  siguiente. El caso peor del Administrador —seis campos en el formulario de usuario, siete
+  operaciones en el controlador de empleados— necesita 150 px de alto y 380 px de banda. Con 85 y
+  230 se solapaban.
+- **El corredor entre el menú y la columna de vistas tiene que ser ancho** —680 px—. Por ahí se
+  abren en abanico las siete flechas `build` del tablero; si es angosto cruzan por encima de los
+  formularios que quedan en el camino.
+- **Nada de enlaces de vuelta: la navegación se dibuja en CADENA.** `Tablero –build→ Vista –build→
+  Formulario –submit→ Controlador`. Si la vista apunta al controlador y el controlador de vuelta a
+  la vista, EA escribe los dos rótulos en el mismo punto medio y sale `sbuild:` encima de `submit`.
+  Y la vuelta ya está contada: `Tablero –build→ Vista` es el mismo `build` que hace el controlador
+  al devolver la página.
+
+---
+
+### 7.14 Tiempo 3.2
+
+**Tipo:** `Timing` · **Script:** `ea-tiempo-3-2.ps1`
+
+**VA UNO POR CASO DE USO TRANSACCIONAL — corrección del 15/09/2026.** La línea de vida principal es
+**la transacción** (`Inactiva → Autenticando → Validando → Escribiendo → Confirmada`), que es el
+mismo reparto de los diagramas de secuencia y de las capas de 3.1.1. Un diagrama cuenta **un solo
+escenario**: se elige la rama donde el reloj manda, no la más común. Ver
+[`docs/diagramas/estado-navegacion-y-tiempo.md`](docs/diagramas/estado-navegacion-y-tiempo.md).
+
+La línea de vida es un elemento **`TimeLine`**. `AddNew('...', 'StateLifeline')` y
+`AddNew('...', 'ValueLifeline')` **fallan** con *«Referencia a objeto no establecida»*: esos dos
+nombres no existen en la API, hay un solo tipo.
+
+```powershell
+$el = $pkg.Elements.AddNew('', 'TimeLine')
+$el.ClassifierID = $idDeLaClase      # EA la rotula ": Reserva" y el vínculo queda vivo
+$el.Name = ''                        # con clasificador puesto, si no lo escribe DOS veces
+[void]$el.Update()
+```
+
+Las dos colecciones que hacen el dibujo **no aparecen en ninguna receta de Sparx** y se encontraron
+mirando `$el | Get-Member`:
+
+```powershell
+# Las franjas del eje Y, de arriba hacia abajo, en el orden en que se agregan.
+foreach ($nom in @('PENDIENTE','PREPARADA','ATENDIDA','EXPIRADA')) {
+    $part = $el.Partitions.AddNew($nom, '')
+    $part.Name = $nom
+    $part.Size = 34
+}
+[void]$el.Update()
+
+# Los escalones: a qué estado salta y en qué instante.
+$tr = $el.StateTransitions.AddNew('PREPARADA', '')
+$tr.TxState = 'PREPARADA'
+$tr.TxTime  = 30
+$tr.Event   = 'prepararReserva()  {CU-24}'
+$tr.TimeConstraint = '{franja_fin + RESERVA_VIGENCIA_HORAS}'   # opcional
+[void]$el.Update()
+```
+
+`Transition` también tiene `DurationConstraint` y `Note`. `Partition` tiene además `Operator`.
+
+**Tres trampas, las tres silenciosas:**
+
+1. **Ni `Partition` ni `Transition` tienen `Update()` propio.** Llamarlo tira
+   *«no contiene ningún método llamado 'Update'»*. Se asignan las propiedades y se guarda con el
+   `Update()` del **elemento**.
+2. **`AddNew` persiste solo, y la colección vuelve a leerse en `0`.** `$el.Partitions.Count` da `0`
+   aunque las franjas estén escritas y se dibujen. No sirve para verificar, y **correr el generador
+   dos veces sobre el mismo elemento DUPLICA las franjas** —se ven los cuatro estados, y abajo los
+   cuatro otra vez—. Por eso el elemento se crea nuevo en cada corrida y el paquete se rehace
+   entero. Lo que sí se puede mirar es la fila de `t_xref` con `Name='Partitions'`, que guarda
+   `@PAR;Name=...;Size=...;@ENDPAR;` por franja.
+3. **La regla horizontal es fija, de 0 a 100**, estirada al ancho del elemento. `TxTime` va en esa
+   escala, así que los números **son relativos** y no significan horas: hay que decirlo en la nota
+   del diagrama.
+
+**Y tres más, de la vuelta del 15/09:**
+
+4. **La restricción va SIN llaves.** Las pone EA al dibujar; si se escriben en el dato salen
+   dobles: `{{8 h}}`.
+5. **El rótulo se dibuja hacia la derecha y EA no lo corta ni lo envuelve**, y pega la restricción
+   al final del evento sin separación. Con la línea de vida angosta los rótulos consecutivos se
+   pisan y el último se sale del marco. La receta que funciona: **`$ANCHO = 1400`** —unos 14 px por
+   unidad de la regla—, rótulos **cortos**, restricciones de una o dos palabras, y la última marca
+   en 84 como mucho. Lo que significa cada `{...}` va en la **nota del diagrama**, no en el rótulo.
+6. **Las restricciones son lo único medible del diagrama, así que tienen que salir del código.**
+   `{8 h}` es `ACCESS_TOKEN_EXPIRE_MINUTES` de `core/config.py:32`; `{RNF11}` y `{RNF02}` son
+   requisitos no funcionales. Inventar milisegundos es peor que dejar la regla relativa y decirlo.
+
 ---
 
 ## 8. Exportar a PNG
@@ -1322,6 +1587,11 @@ $visibles = ($d.DiagramLinks | Where-Object { -not $_.IsHidden }).Count
 | El diagrama sale con **las cajas sueltas**: los elementos se ven pero **ninguna relación** | los `DiagramObject` quedaron con `Object_ID = 0`. Pasa cuando se guarda la referencia COM de un elemento y después se llama a `Elements.Refresh()`: la referencia se invalida y `.ElementID` devuelve 0 —y `.Name` y `.Type`, cadena vacía— | guardar el **identificador**, no el elemento, y releerlo del paquete justo antes de dibujar. No da error en ningún lado: se detecta con `SELECT COUNT(*) FROM t_diagramobjects WHERE Diagram_ID=<n> AND Object_ID=0` |
 | Cada corrida **duplica** las asociaciones, pero no los `include` ni los `extend` | la deduplicación compara `$c.Stereotype -eq $estereotipo`. Para una `Association` el estereotipo del conector es **cadena vacía** y el parámetro llega como `$null`, y en PowerShell `'' -eq $null` es **falso** | castear los dos lados: `[string]$c.Stereotype -eq [string]$estereotipo` |
 | Los **acentos de los nombres** salen como `automÃ¡ticos` en el diagrama exportado | el `.ps1` se guardó **sin BOM** y PowerShell 5.1 lo lee como ANSI (Windows-1252), no como UTF-8 | guardar el script en **UTF-8 con BOM** y volver a generar con `-Rehacer`. Es invisible al leer el archivo: se comprueba con `open(p,'rb').read(3) == b'ï»¿'` |
+| `AddNew('...', 'StateLifeline')` o `'ValueLifeline'` tira **«Referencia a objeto no establecida»** | esos dos nombres no existen en la API: la línea de vida de un diagrama de tiempo es de tipo **`TimeLine`**, uno solo para las dos | `AddNew('', 'TimeLine')` y el clasificador aparte |
+| Un `StateNode` **no se dibuja** y el lienzo queda con un hueco, sin ningún error | `Subtype` fuera del rango que EA 15 conoce: solo dibuja `100` (inicial), `101` (final) y `102` (punto de salida) | usar uno de esos tres |
+| Las franjas del diagrama de tiempo **salen duplicadas** —los cuatro estados, y abajo los cuatro otra vez— | `Partitions.AddNew` persiste solo y `Partitions.Count` **vuelve a leerse en 0**, así que la deduplicación por conteo no ve nada | crear la línea de vida nueva en cada corrida y rehacer el paquete entero; para mirar lo escrito, `t_xref` con `Name='Partitions'` |
+| `Update()` sobre una `Partition` o una `Transition` tira **«no contiene ningún método llamado 'Update'»** | no lo tienen: se guardan con el `Update()` del elemento que las contiene | asignar las propiedades y llamar a `$el.Update()` |
+| La línea de vida del diagrama de tiempo se rotula **«Reserva: Reserva»** | se le puso `Name` **y** `ClassifierID`, y EA concatena los dos | dejar `Name = ''` cuando hay clasificador |
 
 ---
 
@@ -1336,6 +1606,9 @@ Ninguna de estas se resuelve por script. Hay que hacerlas en EA, a mano:
 - **El rótulo `(from …)`** bajo los elementos, cuando el diagrama y el elemento están en paquetes
   distintos.
 - **Cambiar el operador de un fragmento** de `alt` a `loop`, `opt` o `critical`.
+- **La distribución del diagrama de navegación.** El mapa es un árbol con un nodo que dispara once
+  flechas; el generador lo deja legible y sin cajas pisadas, pero apretarlo para que entre en una
+  página del documento es a mano.
 - **Acomodar y exportar.** Los generadores dejan una distribución razonable, no definitiva.
 
 ---
@@ -1393,7 +1666,7 @@ Después de correr un generador, **antes** de exportar:
    ea-componentes-4-3.ps1  independiente
    ```
 
-6. **Respetar las nueve reglas de oro.** Son las que costaron el tiempo.
+6. **Respetar las diez reglas de oro.** Son las que costaron el tiempo.
 
 ---
 
