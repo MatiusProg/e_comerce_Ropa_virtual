@@ -63,6 +63,16 @@ export const routes: Routes = [
     loadComponent: () => import('./features/tienda/ficha/ficha').then((m) => m.Ficha),
   },
   {
+    // CU-26. Como los favoritos, exige sesión de Cliente: un carrito es de
+    // alguien. El código es de P7 aunque la ruta viva bajo /tienda, que es
+    // donde el cliente la usa.
+    path: 'tienda/carrito',
+    title: 'Mi carrito · Violet Boutique',
+    canActivate: [sesionGuard, rolGuard('CLIENTE')],
+    loadComponent: () =>
+      import('./features/tienda/carrito/carrito').then((m) => m.CarritoPantalla),
+  },
+  {
     // CU-20. A diferencia del resto de la tienda, ésta **sí** exige sesión de
     // Cliente: un favorito es de alguien, y sin sesión no hay de quién.
     path: 'tienda/favoritos',
