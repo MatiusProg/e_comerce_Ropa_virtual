@@ -1,0 +1,183 @@
+<!-- CU-26 · Gestionar carrito de compras — «boundary» PantallaCarrito. -->
+<a matButton routerLink="/tienda" class="volver">
+  <mat-icon>arrow_back</mat-icon>
+  Seguir mirando
+</a>
+
+<header class="encabezado">
+  <h1 class="vb-titulo">Mi carrito</h1>
+  @if (carrito().items > 0) {
+    <button matButton type="button" class="vaciar" (click)="vaciar()">
+      <mat-icon>delete_sweep</mat-icon>
+      Vaciar
+    </button>
+  }
+</header>
+
+<mat-card class="panel vb-filete-superior" appearance="outlined">
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <mat-card-content>
+    @if (error(); as e) {
+      <div class="aviso" role="alert">
+        <mat-icon>{{ e.tipo === 'sin-sesion' ? 'lock' : 'error_outline' }}</mat-icon>
+        <span>{{ e.mensaje }}</span>
+        @if (e.tipo === 'sin-sesion') {
+          <a routerLink="/login">Ingresar</a>
+        }
+      </div>
+    }
+
+    @if (carrito(); as c) {
+      @if (c.no_disponibles > 0) {
+        <!--
+          Se dice arriba y en tono de advertencia: el cliente tiene que
+          enterarse de por qué su total es menor de lo que esperaba.
+        -->
+        <div class="aviso aviso-atencion" role="status">
+          <mat-icon>report_problem</mat-icon>
+          <span>
+            {{ c.no_disponibles === 1 ? 'Una prenda' : c.no_disponibles + ' prendas' }}
+            dejó de ofrecerse mientras estaba en su carrito.
+            {{ c.no_disponibles === 1 ? 'No suma' : 'No suman' }} al total.
+          </span>
+        </div>
+      }
+
+      @if (c.lineas.length === 0) {
+        <div class="vacio">
+          <mat-icon>shopping_bag</mat-icon>
+          <p>Su carrito está vacío.</p>
+          <a matButton="filled" routerLink="/tienda" class="vb-boton-marca">
+            Ver el catálogo
+          </a>
+        </div>
+      } @else {
+        <ul class="lineas">
+          @for (linea of c.lineas; track linea.variante_id) {
+            <li class="linea" [class.caida]="!linea.disponible">
+              @if (linea.imagen_url) {
+                <img [src]="linea.imagen_url" [alt]="linea.producto_nombre" class="foto" />
+              } @else {
+                <span class="foto sin-foto"><mat-icon>checkroom</mat-icon></span>
+              }
+
+              <div class="datos">
+                <a class="nombre" [routerLink]="['/tienda/producto', linea.producto_id]">
+                  {{ linea.producto_nombre }}
+                </a>
+                <p class="variante">
+                  @if (linea.talla_codigo) {
+                    <span class="talla">{{ linea.talla_codigo }}</span>
+                  }
+                  @if (linea.color_nombre) {
+                    <span class="color">
+                      <span class="muestra" [style.background]="linea.color_hexadecimal"></span>
+                      {{ linea.color_nombre }}
+                    </span>
+                  }
+                </p>
+
+                @if (!linea.disponible) {
+                  <p class="nota-caida">
+                    <mat-icon>visibility_off</mat-icon>
+                    Ya no se ofrece. Quítela para continuar.
+                  </p>
+                } @else if (linea.stock_total === 0) {
+                  <!--
+                    Es un aviso, no un impedimento: el carrito no aparta stock
+                    —eso es una reserva, CU-22— y la tienda puede reponer.
+                  -->
+                  <p class="nota-stock">
+                    <mat-icon>info_outline</mat-icon>
+                    Sin unidades por ahora en ninguna sucursal.
+                  </p>
+                } @else if (linea.stock_total < linea.cantidad) {
+                  <p class="nota-stock">
+                    <mat-icon>info_outline</mat-icon>
+                    Hay {{ linea.stock_total }}
+                    {{ linea.stock_total === 1 ? 'unidad' : 'unidades' }} en la red.
+                  </p>
+                }
+              </div>
+
+              <div class="cantidad">
+                <button
+                  matIconButton
+                  type="button"
+                  (click)="restar(linea)"
+                  [disabled]="linea.cantidad <= 1 || ocupada() !== null"
+                  aria-label="Una unidad menos"
+                >
+                  <mat-icon>remove</mat-icon>
+                </button>
+                <span class="numero">{{ linea.cantidad }}</span>
+                <button
+                  matIconButton
+                  type="button"
+                  (click)="sumar(linea)"
+                  [disabled]="linea.cantidad >= maximo || ocupada() !== null"
+                  [matTooltip]="
+                    linea.cantidad >= maximo
+                      ? 'No puede llevar más de ' + maximo + ' unidades de la misma prenda'
+                      : ''
+                  "
+                  aria-label="Una unidad más"
+                >
+                  <mat-icon>add</mat-icon>
+                </button>
+              </div>
+
+              <div class="importe">
+                <span class="subtotal">Bs {{ linea.subtotal }}</span>
+                <span class="unitario">Bs {{ linea.precio_unitario }} c/u</span>
+              </div>
+
+              <button
+                matIconButton
+                type="button"
+                class="quitar"
+                (click)="quitar(linea)"
+                [disabled]="ocupada() !== null"
+                aria-label="Quitar del carrito"
+              >
+                <mat-icon>close</mat-icon>
+              </button>
+            </li>
+          }
+        </ul>
+
+        <footer class="resumen">
+          <div class="cuentas">
+            <p class="fila">
+              <span>{{ c.unidades }} {{ c.unidades === 1 ? 'unidad' : 'unidades' }}</span>
+              <span>{{ c.items }} {{ c.items === 1 ? 'prenda' : 'prendas' }}</span>
+            </p>
+            <p class="fila total">
+              <span>Total</span>
+              <strong>Bs {{ c.total }}</strong>
+            </p>
+            <!--
+              Las promociones son CU-12 y todavía no existen. Se dice acá en vez
+              de mostrar un «descuentos: 0,00» que parecería un total final.
+            -->
+            <p class="nota-promos">Sin promociones aplicadas todavía.</p>
+          </div>
+
+          <button
+            matButton="filled"
+            type="button"
+            class="vb-boton-marca pagar"
+            disabled
+            matTooltip="El pago en línea llega con el siguiente caso de uso"
+          >
+            <mat-icon>lock</mat-icon>
+            Continuar al pago
+          </button>
+        </footer>
+      }
+    }
+  </mat-card-content>
+</mat-card>

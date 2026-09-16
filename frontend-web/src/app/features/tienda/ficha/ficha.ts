@@ -6,9 +6,12 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { TiendaService, type ErrorTienda } from '../../../core/services/tienda.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { CarritoService, type ErrorCarrito } from '../../../core/services/carrito.service';
 import type {
   ColorTienda,
   Disponibilidad,
@@ -56,6 +59,20 @@ import type {
 export class Ficha implements OnInit {
   private readonly api = inject(TiendaService);
   private readonly ruta = inject(ActivatedRoute);
+  private readonly auth = inject(AuthService);
+  private readonly carrito = inject(CarritoService);
+  private readonly aviso = inject(MatSnackBar);
+
+  // --- CU-26 · Agregar al carrito ----------------------------------------
+  //
+  // Sin esto la pantalla del carrito existiría y no habría cómo llegar a ella
+  // con nada adentro: es la lección que ya costó el PR #29 y que CU-38 aplicó
+  // antes de que volviera a pasar.
+
+  /** Sólo el Cliente compra. Un Administrador mirando la tienda no ve el botón,
+   *  y así el endpoint no se llama para recibir un 403. */
+  protected readonly puedeComprar = computed(() => this.auth.rol() === 'CLIENTE');
+  protected readonly agregando = signal(false);
 
   protected readonly cargando = signal(true);
   protected readonly error = signal<string | null>(null);
@@ -228,5 +245,36 @@ export class Ficha implements OnInit {
     if (!variante || !ficha) return;
     const indice = ficha.imagenes.findIndex((i) => i.variante_id === variante.id);
     if (indice >= 0) this.fotoActiva.set(indice);
+  }
+
+  /**
+   * Agrega la variante elegida al carrito.
+   *
+   * Siempre una unidad: la ficha es para decidir *cuál* prenda, no *cuántas*.
+   * La cantidad se ajusta en el carrito, que es donde se ve el total.
+   *
+   * No navega al carrito. Quien está mirando una ficha suele querer seguir
+   * mirando; llevarlo de golpe a otra pantalla le corta el recorrido. El aviso
+   * le ofrece ir, y la burbuja del catálogo ya refleja el cambio.
+   */
+  protected agregarAlCarrito(): void {
+    const elegida = this.variante();
+    if (!elegida || this.agregando()) return;
+
+    this.agregando.set(true);
+    this.carrito.agregar({ variante_id: elegida.id, cantidad: 1 }).subscribe({
+      next: (c) => {
+        this.agregando.set(false);
+        this.aviso.open(
+          `Agregada al carrito. Lleva ${c.unidades} ${c.unidades === 1 ? 'unidad' : 'unidades'}.`,
+          'Ver carrito',
+          { duration: 5000 },
+        );
+      },
+      error: (e: ErrorCarrito) => {
+        this.agregando.set(false);
+        this.aviso.open(e.mensaje, 'Cerrar', { duration: 6000 });
+      },
+    });
   }
 }

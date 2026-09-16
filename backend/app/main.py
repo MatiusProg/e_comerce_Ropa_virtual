@@ -53,6 +53,9 @@ from app.modules.reservas.router import (
 # con el mismo patron que imagenes_* y temporadas_*. Router aparte porque la
 # guarda de rol es PROVEEDOR y no ADMINISTRADOR.
 from app.modules.catalogo.proveedor_router import router as catalogo_proveedor_router
+# CU-26 es de Karen y vive en archivos propios dentro del paquete de Mateo,
+# con el mismo patron que consolidado_* dentro de inventario/.
+from app.modules.ventas.carrito_router import router as carrito_router
 # from app.modules.ventas.router import router as ventas_router
 # from app.modules.pagos.router import router as pagos_router
 # from app.modules.vestidor_virtual.router import router as vestidor_router
@@ -154,6 +157,7 @@ app.include_router(reservas_mantenimiento_router, prefix=API)
 
 # --- Ciclo 3 -------------------------------------------------------------
 app.include_router(catalogo_proveedor_router, prefix=API)
+app.include_router(carrito_router, prefix=API)
 # app.include_router(ventas_router, prefix=API)
 # app.include_router(pagos_router, prefix=API)
 # app.include_router(vestidor_router, prefix=API)

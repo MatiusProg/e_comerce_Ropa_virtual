@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { AbstractControl, FormControl, ReactiveFormsModule } from '@angular/forms';
+import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -14,6 +15,7 @@ import { Router, RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { AuthService } from '../../../core/services/auth.service';
+import { CarritoService } from '../../../core/services/carrito.service';
 import { TiendaService, type ErrorTienda } from '../../../core/services/tienda.service';
 import type {
   FiltrosDisponibles,
@@ -47,6 +49,7 @@ import type {
   imports: [
     ReactiveFormsModule,
     RouterLink,
+    MatBadgeModule,
     MatButtonModule,
     MatCardModule,
     MatChipsModule,
@@ -77,6 +80,15 @@ export class Catalogo implements OnInit {
    *  corazones, y así el endpoint no se llama para recibir un 403. */
   protected readonly puedeMarcar = computed(() => this.auth.rol() === 'CLIENTE');
   protected readonly favoritos = signal<Set<number>>(new Set());
+
+  // --- CU-26 · Carrito ---------------------------------------------------
+  //
+  // Solo la burbuja. El número sale de la señal compartida del servicio, no de
+  // una consulta de esta pantalla: la del carrito y ésta tienen que mostrar
+  // siempre lo mismo, y si cada una lo pidiera por su cuenta se
+  // desincronizarían en cuanto el cliente agregara algo desde una ficha.
+  private readonly carrito = inject(CarritoService);
+  protected readonly itemsEnCarrito = this.carrito.items;
 
   protected readonly cargando = signal(false);
   /** Mensaje del último fallo, o null. Distingue «no se pudo consultar» de
@@ -144,7 +156,13 @@ export class Catalogo implements OnInit {
       control.valueChanges.subscribe(() => this.reiniciar());
     }
 
-    if (this.puedeMarcar()) this.cargarFavoritos();
+    if (this.puedeMarcar()) {
+      this.cargarFavoritos();
+      // Se pide una vez al entrar para que la burbuja diga la verdad al llegar
+      // desde otra pantalla. Un fallo acá no rompe el catálogo: la vitrina se
+      // mira igual sin saber cuántas prendas hay en el carrito.
+      this.carrito.ver().subscribe({ error: () => undefined });
+    }
 
     this.consultar();
   }

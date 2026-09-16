@@ -260,3 +260,13 @@
   font-size: 0.8rem;
   color: var(--mat-sys-on-surface-variant);
 }
+
+// CU-26 · el botón de agregar al carrito va ANTES del vestidor: es la acción
+// principal de la ficha, y el vestidor es un extra que además vive en la app.
+.al-carrito {
+  width: 100%;
+  height: 3rem;
+  margin-top: 1.25rem;
+  border-radius: var(--vb-radio-chico);
+  font-weight: 600;
+}
