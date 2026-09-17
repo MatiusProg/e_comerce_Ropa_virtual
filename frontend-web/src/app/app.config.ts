@@ -26,6 +26,9 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
     { provide: LOCALE_ID, useValue: 'es-BO' },
     { provide: MatPaginatorIntl, useFactory: paginadorEnEspanol },
+    // Chart.js NO se provee acá: ver la nota de la ruta 'admin/tablero' en
+    // app.routes.ts. Ponerlo en esta lista sumaba 211 kB al arranque de TODAS
+    // las pantallas, incluida la vitrina pública en un teléfono.
     // No se registra provideAnimations*: Angular Material 22 resuelve sus
     // animaciones con CSS y el paquete @angular/animations no está instalado.
   ],
