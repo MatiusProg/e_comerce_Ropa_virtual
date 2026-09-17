@@ -1,0 +1,317 @@
+:host {
+  display: block;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.encabezado {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.85rem;
+    font-weight: 600;
+    color: var(--vb-malva-oscuro);
+  }
+
+  .bajada {
+    margin: 0.25rem 0 0;
+    max-width: 46rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .calculado {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.tarjeta {
+  border-radius: var(--vb-radio);
+  border: 1px solid var(--mat-sys-outline-variant);
+  box-shadow: var(--vb-sombra-suave);
+  background: var(--mat-sys-surface);
+  overflow: hidden;
+}
+
+.filtros-tarjeta {
+  margin-bottom: 1.25rem;
+}
+
+.filtros {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  padding: 1.25rem 1.25rem 0;
+
+  .campo-fecha {
+    min-width: 10rem;
+  }
+
+  .campo-sucursal {
+    min-width: 14rem;
+  }
+
+  .atajos {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    // Los atajos se alinean con los campos, que tienen el hueco del mensaje de
+    // error abajo. Sin esto quedan flotando media línea por debajo.
+    margin-bottom: 1.35rem;
+  }
+}
+
+.periodo {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// --- Las tarjetas de cifra ------------------------------------------------
+
+.rejilla-kpi {
+  display: grid;
+  // `auto-fit` y no un número de columnas: a 390 px queda una sola columna sin
+  // que haya que escribir el punto de quiebre.
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.kpi {
+  padding: 1.15rem 1.25rem;
+
+  .rotulo {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin: 0;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .cifra {
+    margin: 0.4rem 0 0;
+    font-size: 2.1rem;
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--vb-malva-oscuro);
+  }
+
+  .pie {
+    margin: 0.25rem 0 0;
+    font-size: 0.82rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+// Solo cuando hay algo que reponer. Una tarjeta siempre en color de alerta
+// deja de significar alerta.
+.kpi-alerta {
+  border-color: var(--vb-oro);
+
+  .cifra {
+    color: #8a6d0b;
+  }
+}
+
+.ayuda {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+  opacity: 0.6;
+  cursor: help;
+}
+
+// Marca los bloques que NO dependen del período de arriba.
+.ahora {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: var(--vb-rosa-palido);
+  color: var(--vb-malva-oscuro);
+}
+
+// --- Paneles y gráficos ---------------------------------------------------
+
+.rejilla-graficos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.panel {
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0 0 1rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--vb-malva-oscuro);
+  }
+}
+
+.rejilla-graficos .panel {
+  margin-bottom: 0;
+}
+
+// Chart.js necesita que el contenedor tenga altura propia: con
+// `maintainAspectRatio: false` el lienzo toma la del padre, y un padre sin
+// altura lo deja en cero píxeles —un gráfico que no se ve y no da error—.
+.lienzo {
+  position: relative;
+}
+
+.lienzo-dona {
+  height: 15rem;
+}
+
+.lienzo-barras {
+  height: 16rem;
+}
+
+.saldos {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+
+  p {
+    margin: 0;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  strong {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--vb-tinta);
+  }
+}
+
+.nota {
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.vacio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.panel-pendiente .vacio {
+  background: var(--vb-marfil);
+  border-radius: var(--vb-radio-chico);
+}
+
+.aviso {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  margin: 0 0 1.25rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.aviso-error {
+  color: var(--mat-sys-error);
+}
+
+// --- La tabla de alertas --------------------------------------------------
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  th {
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .numero {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .destacado {
+    font-weight: 600;
+    color: #8a6d0b;
+  }
+
+  .prenda {
+    display: block;
+  }
+
+  .detalle {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+// El `<caption>` existe para quien navega con lector de pantalla: sin él la
+// tabla se anuncia sin decir de qué es. Se oculta a la vista, no al lector, así
+// que nada de `display: none`.
+.sr-solo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+// A 390 px la tabla no cabe y encogerla la vuelve ilegible: se deja desplazar
+// sola, que es lo único que no rompe la lectura.
+@media (max-width: 40rem) {
+  .panel {
+    overflow-x: auto;
+  }
+
+  .tabla {
+    min-width: 30rem;
+  }
+}

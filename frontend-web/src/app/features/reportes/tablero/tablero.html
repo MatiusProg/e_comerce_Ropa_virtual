@@ -1,0 +1,247 @@
+<header class="encabezado">
+  <div>
+    <h1>Tablero de indicadores</h1>
+    <p class="bajada">
+      Los números del negocio en tiempo real: cómo se mueven las reservas, si el
+      cliente aparece, si la prenda convence y qué hay que reponer.
+    </p>
+  </div>
+
+  @if (datos(); as d) {
+    <p class="calculado">
+      Actualizado {{ d.calculado_en | date: 'dd/MM/yyyy HH:mm' }}
+    </p>
+  }
+</header>
+
+<section class="tarjeta filtros-tarjeta">
+  <div class="filtros">
+    <mat-form-field appearance="outline" class="campo-fecha">
+      <mat-label>Desde</mat-label>
+      <input matInput type="date" [formControl]="desde" (change)="consultar()" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="campo-fecha">
+      <mat-label>Hasta</mat-label>
+      <input matInput type="date" [formControl]="hasta" (change)="consultar()" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="campo-sucursal">
+      <mat-label>Sucursal</mat-label>
+      <mat-select [formControl]="filtroSucursal" (selectionChange)="consultar()">
+        <mat-option value="">Toda la red</mat-option>
+        @for (s of sucursales(); track s.id) {
+          <mat-option [value]="s.id">{{ s.nombre }} · {{ s.ciudad }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <div class="atajos">
+      @for (a of atajos; track a.dias) {
+        <button matButton type="button" (click)="aplicarAtajo(a.dias)">
+          {{ a.etiqueta }}
+        </button>
+      }
+      @if (hayFiltros()) {
+        <button matButton type="button" (click)="limpiar()">
+          <mat-icon>close</mat-icon>
+          Limpiar
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+</section>
+
+@if (error(); as e) {
+  <p class="aviso aviso-error">
+    <mat-icon>error_outline</mat-icon>
+    {{ e }}
+  </p>
+}
+
+@if (datos(); as d) {
+  <p class="periodo">
+    Período del {{ d.periodo.desde | date: 'dd/MM/yyyy' }} al
+    {{ d.periodo.hasta | date: 'dd/MM/yyyy' }}
+    @if (d.periodo.sucursal) {
+      · <strong>{{ d.periodo.sucursal }}</strong>
+    } @else {
+      · toda la red
+    }
+  </p>
+
+  <!-- Reservas: las cuatro cifras que se leen de un vistazo -->
+  <section class="rejilla-kpi">
+    <article class="tarjeta kpi">
+      <p class="rotulo">Reservas del período</p>
+      <p class="cifra">{{ d.reservas.total }}</p>
+      <p class="pie">{{ d.reservas.abiertas }} siguen abiertas</p>
+    </article>
+
+    <article class="tarjeta kpi">
+      <p class="rotulo">
+        Tasa de atención
+        <mat-icon
+          class="ayuda"
+          matTooltip="De las reservas que ya terminaron su ciclo, cuántas terminaron con el cliente en la tienda. Las que siguen abiertas no cuentan: todavía no fracasaron."
+          >help_outline</mat-icon
+        >
+      </p>
+      <p class="cifra">{{ tasa(d.conversion.tasa_atencion) }}</p>
+      <p class="pie">
+        {{ d.conversion.atendidas }} de {{ d.conversion.cerradas }} cerradas
+      </p>
+    </article>
+
+    <article class="tarjeta kpi">
+      <p class="rotulo">
+        Se lo llevó
+        <mat-icon
+          class="ayuda"
+          matTooltip="De las prendas que el cliente efectivamente se probó, cuántas se llevó. Mide si la prenda convence una vez puesta."
+          >help_outline</mat-icon
+        >
+      </p>
+      <p class="cifra">{{ tasa(d.conversion.tasa_prueba) }}</p>
+      <p class="pie">
+        {{ d.conversion.lineas_llevadas }} de
+        {{ d.conversion.lineas_probadas }} prendas probadas
+      </p>
+    </article>
+
+    <article class="tarjeta kpi" [class.kpi-alerta]="d.inventario.en_alerta > 0">
+      <p class="rotulo">Por reponer <span class="ahora">ahora</span></p>
+      <p class="cifra">{{ d.inventario.en_alerta }}</p>
+      <p class="pie">{{ d.inventario.variantes_sin_stock }} sin una sola unidad</p>
+    </article>
+  </section>
+
+  <div class="rejilla-graficos">
+    <section class="tarjeta panel">
+      <h2>Reservas por estado</h2>
+      @if (d.reservas.total === 0) {
+        <p class="vacio">No hubo reservas en este período.</p>
+      } @else {
+        <div class="lienzo lienzo-dona">
+          <canvas
+            baseChart
+            type="doughnut"
+            [data]="datosReservas()"
+            [options]="opcionesReservas"
+          ></canvas>
+        </div>
+      }
+    </section>
+
+    <section class="tarjeta panel">
+      <h2>Prendas más reservadas</h2>
+      @if (d.mas_reservadas.length === 0) {
+        <p class="vacio">Todavía no hay reservas que rankear.</p>
+      } @else {
+        <div class="lienzo lienzo-barras">
+          <canvas
+            baseChart
+            type="bar"
+            [data]="datosRanking()"
+            [options]="opcionesRanking"
+          ></canvas>
+        </div>
+        <p class="nota">
+          Las canceladas y las expiradas no entran: un ranking que las contara
+          sería un ranking de arrepentimientos.
+        </p>
+      }
+    </section>
+  </div>
+
+  <!-- Inventario: una foto del instante, no del período -->
+  <section class="tarjeta panel">
+    <h2>
+      Stock
+      <span class="ahora">ahora</span>
+      <mat-icon
+        class="ayuda"
+        matTooltip="Un saldo es una foto del instante, no un acumulado: este bloque no cambia con las fechas de arriba."
+        >help_outline</mat-icon
+      >
+    </h2>
+
+    <div class="saldos">
+      <p><strong>{{ d.inventario.total_disponible }}</strong> disponibles</p>
+      <p><strong>{{ d.inventario.total_reservado }}</strong> apartadas</p>
+    </div>
+
+    @if (d.alertas.length === 0) {
+      <p class="vacio">Ninguna prenda llegó a su punto de reposición.</p>
+    } @else {
+      <table class="tabla">
+        <caption class="sr-solo">
+          Prendas en punto de reposición
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Prenda</th>
+            <th scope="col">Sucursal</th>
+            <th scope="col" class="numero">Quedan</th>
+            <th scope="col" class="numero">Mínimo</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (a of d.alertas; track a.variante_id + '-' + a.sucursal_id) {
+            <tr>
+              <td>
+                <span class="prenda">{{ a.producto }}</span>
+                <span class="detalle">{{ a.talla }} · {{ a.color }} · {{ a.sku }}</span>
+              </td>
+              <td>{{ a.sucursal }}</td>
+              <td class="numero destacado">{{ a.cantidad_disponible }}</td>
+              <td class="numero">{{ a.stock_minimo }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      @if (d.inventario.en_alerta > d.alertas.length) {
+        <p class="nota">
+          Se muestran las {{ d.alertas.length }} más urgentes de
+          {{ d.inventario.en_alerta }}. El listado completo está en Inventario.
+        </p>
+      }
+    }
+  </section>
+
+  <!-- Ventas: el bloque que espera a la migración 0006 -->
+  <section class="tarjeta panel panel-pendiente">
+    <h2>Ventas</h2>
+    @if (d.ventas.disponible) {
+      <div class="rejilla-kpi">
+        <article class="kpi">
+          <p class="rotulo">Vendido hoy</p>
+          <p class="cifra">{{ d.ventas.monto_hoy | currency: 'BOB' : 'symbol-narrow' }}</p>
+        </article>
+        <article class="kpi">
+          <p class="rotulo">Vendido en el período</p>
+          <p class="cifra">
+            {{ d.ventas.monto_periodo | currency: 'BOB' : 'symbol-narrow' }}
+          </p>
+          <p class="pie">{{ d.ventas.cantidad_periodo }} ventas</p>
+        </article>
+        <article class="kpi">
+          <p class="rotulo">Ticket promedio</p>
+          <p class="cifra">
+            {{ d.ventas.ticket_promedio | currency: 'BOB' : 'symbol-narrow' }}
+          </p>
+        </article>
+      </div>
+    } @else {
+      <p class="vacio">
+        <mat-icon>schedule</mat-icon>
+        {{ d.ventas.motivo }}
+      </p>
+    }
+  </section>
+}

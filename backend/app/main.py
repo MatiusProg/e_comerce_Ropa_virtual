@@ -56,6 +56,10 @@ from app.modules.catalogo.proveedor_router import router as catalogo_proveedor_r
 # CU-26 es de Karen y vive en archivos propios dentro del paquete de Mateo,
 # con el mismo patron que consolidado_* dentro de inventario/.
 from app.modules.ventas.carrito_router import router as carrito_router
+# CU-36 es de Karen y vive en archivos propios dentro de P11, con el mismo
+# patron que consolidado_* y carrito_*. El `router.py` del paquete queda para
+# CU-37 (exportar a PDF y Excel), que es el otro caso de uso de P11.
+from app.modules.reportes.tablero_router import router as tablero_router
 # from app.modules.ventas.router import router as ventas_router
 # from app.modules.pagos.router import router as pagos_router
 # from app.modules.vestidor_virtual.router import router as vestidor_router
@@ -158,6 +162,7 @@ app.include_router(reservas_mantenimiento_router, prefix=API)
 # --- Ciclo 3 -------------------------------------------------------------
 app.include_router(catalogo_proveedor_router, prefix=API)
 app.include_router(carrito_router, prefix=API)
+app.include_router(tablero_router, prefix=API)
 # app.include_router(ventas_router, prefix=API)
 # app.include_router(pagos_router, prefix=API)
 # app.include_router(vestidor_router, prefix=API)

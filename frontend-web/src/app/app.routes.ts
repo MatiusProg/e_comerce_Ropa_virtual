@@ -174,6 +174,21 @@ export const routes: Routes = [
             (m) => m.ReservasSucursal,
           ),
       },
+      // --- Ciclo 3 · P11 Reportes y Tablero (CU-36) ---
+      // Dentro de 'admin' y no en una cáscara propia: el tablero es del
+      // Administrador y la guarda del padre ya resuelve el rol. La exportación
+      // (CU-37) cuelga de acá cuando exista.
+      {
+        path: 'tablero',
+        title: 'Tablero de indicadores · Violet Boutique',
+        // Chart.js se provee dentro del propio componente, no acá: este
+        // archivo viaja en el bundle inicial, así que importar `ng2-charts`
+        // para ponerlo en `providers` metería la librería en el arranque de
+        // todas las pantallas —medido: 678 kB a 890 kB—. Ver la nota de
+        // `tablero.ts`.
+        loadComponent: () =>
+          import('./features/reportes/tablero/tablero').then((m) => m.Tablero),
+      },
     ],
   },
   // --- Ciclo 2 · P6 Reservas del Cliente (CU-22, CU-23) ---
