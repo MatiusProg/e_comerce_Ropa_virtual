@@ -179,7 +179,6 @@ $TABLAS_C2 = @(
        @{n='telefono'; t='VARCHAR(20)'},
        @{n='talla_superior'; t='VARCHAR(10)'},
        @{n='talla_inferior'; t='VARCHAR(10)'},
-       @{n='talla_calzado'; t='VARCHAR(10)'},
        @{n='creado_en'; t='TIMESTAMPTZ'},
        @{n='actualizado_en'; t='TIMESTAMPTZ'}
      ) },

@@ -149,16 +149,6 @@
                 }
               </mat-select>
             </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Calzado</mat-label>
-              <mat-select formControlName="talla_calzado">
-                <mat-option value="">Sin definir</mat-option>
-                @for (t of tallasCalzado; track t) {
-                  <mat-option [value]="t">{{ t }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
           </div>
         </mat-card-content>
       </mat-card>

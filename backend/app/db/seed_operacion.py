@@ -213,7 +213,6 @@ OBSERVACIONES_INGRESO = [
 #: coincida, aunque hoy la base no lo obligue.
 TALLAS_SUPERIOR = ["XS", "S", "M", "L", "XL"]
 TALLAS_INFERIOR = ["36", "38", "40", "42", "44"]
-TALLAS_CALZADO = ["35", "36", "37", "38", "39", "40", "41", "42"]
 
 
 # --- Utilidades ----------------------------------------------------------
@@ -367,7 +366,6 @@ def _clientes(
             telefono=f"7{AZAR.randrange(1_000_000, 9_999_999)}",
             talla_superior=AZAR.choice(TALLAS_SUPERIOR),
             talla_inferior=AZAR.choice(TALLAS_INFERIOR),
-            talla_calzado=AZAR.choice(TALLAS_CALZADO),
             creado_en=alta,
             actualizado_en=alta,
         )

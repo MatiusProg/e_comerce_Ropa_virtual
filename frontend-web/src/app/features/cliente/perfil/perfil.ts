@@ -19,7 +19,6 @@ import { PerfilService, type ErrorPerfil } from '../../../core/services/perfil.s
 import { TiendaService } from '../../../core/services/tienda.service';
 import {
   PREFERENCIAS_MAXIMAS,
-  TALLAS_CALZADO,
   TALLAS_INFERIOR,
   TALLAS_SUPERIOR,
   type Direccion,
@@ -77,7 +76,6 @@ export class Perfil {
 
   protected readonly tallasSuperior = TALLAS_SUPERIOR;
   protected readonly tallasInferior = TALLAS_INFERIOR;
-  protected readonly tallasCalzado = TALLAS_CALZADO;
 
   protected readonly usuario = this.auth.usuario;
   protected readonly cargando = signal(true);
@@ -119,7 +117,6 @@ export class Perfil {
     telefono: ['', [Validators.maxLength(20)]],
     talla_superior: ['', [Validators.maxLength(10)]],
     talla_inferior: ['', [Validators.maxLength(10)]],
-    talla_calzado: ['', [Validators.maxLength(10)]],
   });
 
   constructor() {
@@ -200,7 +197,6 @@ export class Perfil {
           telefono: p.telefono ?? '',
           talla_superior: p.talla_superior ?? '',
           talla_inferior: p.talla_inferior ?? '',
-          talla_calzado: p.talla_calzado ?? '',
         });
         this.cargando.set(false);
       },
@@ -278,7 +274,6 @@ export class Perfil {
       'telefono',
       'talla_superior',
       'talla_inferior',
-      'talla_calzado',
     ] as const;
 
     for (const campo of opcionales) {
@@ -301,7 +296,6 @@ export class Perfil {
       telefono: p.telefono ?? '',
       talla_superior: p.talla_superior ?? '',
       talla_inferior: p.talla_inferior ?? '',
-      talla_calzado: p.talla_calzado ?? '',
     });
   }
 
