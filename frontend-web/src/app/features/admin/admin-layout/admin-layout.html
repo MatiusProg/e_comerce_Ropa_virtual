@@ -19,7 +19,14 @@
 </mat-toolbar>
 
 <nav class="navegacion" aria-label="Secciones de administración">
+  <!-- «Inicio» y no «Tablero»: esta ruta es la bienvenida genérica, y el
+       tablero de verdad es el de CU-36, más abajo. Tener dos entradas
+       llamadas igual hacía que la que no calcula nada pareciera la buena. -->
   <a routerLink="/admin" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }">
+    <mat-icon>home</mat-icon>
+    Inicio
+  </a>
+  <a routerLink="/admin/tablero" routerLinkActive="activo">
     <mat-icon>dashboard</mat-icon>
     Tablero
   </a>

@@ -63,6 +63,16 @@ export const routes: Routes = [
     loadComponent: () => import('./features/tienda/ficha/ficha').then((m) => m.Ficha),
   },
   {
+    // CU-26. Como los favoritos, exige sesión de Cliente: un carrito es de
+    // alguien. El código es de P7 aunque la ruta viva bajo /tienda, que es
+    // donde el cliente la usa.
+    path: 'tienda/carrito',
+    title: 'Mi carrito · Violet Boutique',
+    canActivate: [sesionGuard, rolGuard('CLIENTE')],
+    loadComponent: () =>
+      import('./features/tienda/carrito/carrito').then((m) => m.CarritoPantalla),
+  },
+  {
     // CU-20. A diferencia del resto de la tienda, ésta **sí** exige sesión de
     // Cliente: un favorito es de alguien, y sin sesión no hay de quién.
     path: 'tienda/favoritos',
@@ -163,6 +173,21 @@ export const routes: Routes = [
           import('./features/sucursal/reservas/reservas-sucursal').then(
             (m) => m.ReservasSucursal,
           ),
+      },
+      // --- Ciclo 3 · P11 Reportes y Tablero (CU-36) ---
+      // Dentro de 'admin' y no en una cáscara propia: el tablero es del
+      // Administrador y la guarda del padre ya resuelve el rol. La exportación
+      // (CU-37) cuelga de acá cuando exista.
+      {
+        path: 'tablero',
+        title: 'Tablero de indicadores · Violet Boutique',
+        // Chart.js se provee dentro del propio componente, no acá: este
+        // archivo viaja en el bundle inicial, así que importar `ng2-charts`
+        // para ponerlo en `providers` metería la librería en el arranque de
+        // todas las pantallas —medido: 678 kB a 890 kB—. Ver la nota de
+        // `tablero.ts`.
+        loadComponent: () =>
+          import('./features/reportes/tablero/tablero').then((m) => m.Tablero),
       },
     ],
   },

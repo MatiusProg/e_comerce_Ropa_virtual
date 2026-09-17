@@ -48,6 +48,8 @@ MODULOS_CON_ROUTER = (
     "app.modules.catalogo_publico.router",
     "app.modules.catalogo_publico.favoritos_router",
     "app.modules.reservas.router",
+    "app.modules.ventas.carrito_router",
+    "app.modules.reportes.tablero_router",
 )
 
 

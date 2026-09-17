@@ -43,6 +43,7 @@ from app.modules.inventario import models as modelos_inventario  # noqa: E402,F4
 from app.modules.reservas import models as modelos_reservas  # noqa: E402,F401
 from app.modules.organizacion import models as modelos_organizacion  # noqa: E402,F401
 from app.modules.seguridad import models as modelos_seguridad  # noqa: E402,F401
+from app.modules.ventas import carrito_models as modelos_carrito  # noqa: E402,F401
 
 #: Tablas que se vacian entre una prueba y la siguiente. El resto (roles,
 #: ciudades) son datos de referencia y se siembran una sola vez.
@@ -62,6 +63,9 @@ TABLAS_VOLATILES = (
     # estan mas abajo en esta misma tupla.
     # P6 antes que P4: el detalle apunta a la reserva y a la variante, y la
     # reserva al cliente y a la sucursal.
+    # P7: el detalle apunta al carrito y a la variante; el carrito al cliente.
+    "carrito_detalle",
+    "carrito",
     "reserva_detalle",
     "reserva",
     "movimiento_inventario",

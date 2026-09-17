@@ -146,6 +146,28 @@
           }
         </section>
 
+        <!-- CU-26 · agregar al carrito. Exige variante elegida: el carrito
+             guarda VARIANTES, no productos (decisión D1). Un carrito con «una
+             blusa» sin talla ni color no se puede convertir en pedido. -->
+        @if (puedeComprar()) {
+          <button
+            matButton="filled"
+            type="button"
+            class="vb-boton-marca al-carrito"
+            [disabled]="!variante() || agregando()"
+            [matTooltip]="variante() ? '' : 'Elija talla y color primero'"
+            (click)="agregarAlCarrito()"
+          >
+            <mat-icon>add_shopping_cart</mat-icon>
+            Agregar al carrito
+          </button>
+        } @else {
+          <a matButton routerLink="/login" class="al-carrito">
+            <mat-icon>person</mat-icon>
+            Ingresá para comprar
+          </a>
+        }
+
         <!-- El vestidor virtual es de la app móvil (RF13): la cámara y la
              detección de pose corren en el teléfono. -->
         <button
