@@ -756,3 +756,110 @@ def test_la_barrida_cancela_el_pedido_vencido_y_devuelve_su_stock(
     )
     assert _disponible(api, cabeceras_admin, tienda["v_uno"], tienda["sucursal"]) == antes
     assert _reservada(api, cabeceras_admin, tienda["v_uno"], tienda["sucursal"]) == 0
+
+
+# --- El candado que faltaba (defecto encontrado el 17/09) ------------------
+
+
+def test_confirmar_toma_un_candado_sobre_el_cliente(
+    api: TestClient, cabeceras_cliente: dict[str, str], fabrica_sesiones
+) -> None:
+    """La regla de «un solo pedido pendiente» necesita bloquear al CLIENTE.
+
+    EL DEFECTO QUE ESTA PRUEBA IMPIDE QUE VUELVA
+    ---------------------------------------------
+    `pedido_pendiente_de` toma `SELECT ... FOR UPDATE` sobre la venta
+    pendiente. Protege bien cuando la venta existe, y **no protege nada cuando
+    no existe**: una consulta que no devuelve filas no bloquea nada. Dos POST
+    simultáneos leían los dos «no hay pendiente», pasaban los dos y creaban dos
+    pedidos, cada uno apartando stock.
+
+    Se reprodujo el 17/09 disparando dos peticiones a la vez contra el servidor
+    levantado: los dos devolvieron 201. Con `bloquear_cliente`, uno devuelve
+    409.
+
+    Acá no se simula la carrera —pytest corre en un hilo— sino que se comprueba
+    lo que la hace imposible: que el candado sea **exclusivo** y esté sobre una
+    fila que **existe siempre**. Con `lock_timeout`, la segunda sesión falla en
+    vez de colgar la prueba.
+    """
+    from sqlalchemy import select, text
+
+    from app.modules.seguridad.models import Cliente, Usuario
+    from app.modules.ventas import repository
+
+    from .conftest import CORREO_CLIENTE
+
+    sesion_a = fabrica_sesiones()
+    sesion_b = fabrica_sesiones()
+    try:
+        cliente_id = sesion_a.scalar(
+            select(Cliente.id)
+            .join(Usuario, Usuario.id == Cliente.usuario_id)
+            .where(Usuario.correo == CORREO_CLIENTE)
+        )
+        assert cliente_id is not None, "el cliente de las pruebas tiene que existir"
+
+        # La primera sesión se queda con el candado, sin cerrar la transacción.
+        repository.bloquear_cliente(sesion_a, cliente_id)
+
+        # La segunda no puede tomarlo. Sin `lock_timeout` esperaría para
+        # siempre, que es justamente lo que prueba que el candado sirve.
+        sesion_b.execute(text("SET LOCAL lock_timeout = '400ms'"))
+        with pytest.raises(Exception) as fallo:
+            repository.bloquear_cliente(sesion_b, cliente_id)
+        assert "lock" in str(fallo.value).lower() or "timeout" in str(fallo.value).lower()
+    finally:
+        sesion_a.rollback()
+        sesion_b.rollback()
+        sesion_a.close()
+        sesion_b.close()
+
+
+def test_el_candado_es_por_cliente_y_no_frena_a_los_demas(
+    api: TestClient, cabeceras_cliente: dict[str, str], fabrica_sesiones
+) -> None:
+    """Dos clientes distintos confirman a la vez sin estorbarse.
+
+    Importa tanto como lo anterior: un candado global —sobre una tabla, o uno
+    solo para toda la tienda— serializaría TODAS las compras del negocio detrás
+    de la más lenta, y en la demostración eso se ve como una tienda trabada.
+    """
+    from sqlalchemy import select, text
+
+    from app.modules.seguridad.models import Cliente
+    from app.modules.ventas import repository
+
+    # Un segundo cliente de verdad, por la API de CU-01. No se saltea la prueba
+    # si no existe: una prueba saltada no protege nada, y esta cubre que el
+    # candado no sea global.
+    otra = api.post(
+        "/api/v1/auth/registro",
+        json={
+            "correo": "segunda.cu27@violetboutique.bo",
+            "contrasena": "Segunda12345",
+            "nombres": "Segunda",
+            "apellidos": "Clienta",
+            "telefono": None,
+        },
+    )
+    assert otra.status_code in (200, 201, 409), otra.text
+
+    sesion_a = fabrica_sesiones()
+    sesion_b = fabrica_sesiones()
+    try:
+        ids = list(sesion_a.scalars(select(Cliente.id).order_by(Cliente.id).limit(2)))
+        assert len(ids) == 2, (
+            "hacen falta dos clientes; los crea la fixture de arriba"
+        )
+
+        repository.bloquear_cliente(sesion_a, ids[0])
+
+        # El segundo cliente pasa sin esperar.
+        sesion_b.execute(text("SET LOCAL lock_timeout = '400ms'"))
+        repository.bloquear_cliente(sesion_b, ids[1])
+    finally:
+        sesion_a.rollback()
+        sesion_b.rollback()
+        sesion_a.close()
+        sesion_b.close()

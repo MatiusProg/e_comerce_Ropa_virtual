@@ -389,8 +389,14 @@ def crear_pedido(
     """
     cliente_id = _cliente(db, usuario_id)
 
-    # Un solo pedido pendiente por cliente. El FOR UPDATE de la consulta es lo
-    # que hace que dos peticiones simultaneas no pasen las dos.
+    # Un solo pedido pendiente por cliente, y en ese orden: PRIMERO se bloquea
+    # la fila del cliente y DESPUES se busca su pendiente.
+    #
+    # Al reves no sirve: si el cliente todavia no tiene pedido, la consulta no
+    # devuelve filas y el `FOR UPDATE` no bloquea nada --- dos peticiones
+    # simultaneas pasan las dos. Se reprodujo el 17/09 y esta explicado en
+    # `repository.bloquear_cliente`.
+    repository.bloquear_cliente(db, cliente_id)
     pendiente = repository.pedido_pendiente_de(db, cliente_id)
     if pendiente is not None:
         raise YaTienePedidoPendiente(pendiente.codigo)
