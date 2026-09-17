@@ -1,0 +1,298 @@
+:host {
+  display: block;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+.volver {
+  margin-bottom: 0.75rem;
+}
+
+.tarjeta {
+  border-radius: var(--vb-radio);
+  border: 1px solid var(--mat-sys-outline-variant);
+  box-shadow: var(--vb-sombra-suave);
+  overflow: hidden;
+}
+
+.encabezado mat-card-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--vb-malva-oscuro);
+}
+
+.bloque {
+  padding: 1.25rem 0;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+
+  h2 {
+    margin: 0 0 0.9rem;
+    font-size: 1.02rem;
+    font-weight: 600;
+    color: var(--vb-malva-oscuro);
+  }
+}
+
+// --- Lo que se compra -----------------------------------------------------
+
+.lineas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.linea {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.6rem 0;
+
+  img,
+  .sin-foto {
+    width: 3.25rem;
+    height: 4.25rem;
+    border-radius: var(--vb-radio-chico);
+    object-fit: cover;
+    flex: none;
+  }
+
+  .sin-foto {
+    display: grid;
+    place-items: center;
+    background: var(--vb-marfil);
+    color: var(--vb-malva-claro);
+  }
+
+  .datos {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .nombre {
+    font-weight: 600;
+  }
+
+  .detalle {
+    font-size: 0.85rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .apagada {
+    font-size: 0.8rem;
+    color: var(--mat-sys-error);
+  }
+
+  .importe {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+}
+
+// La línea que ya no se ofrece se atenúa, pero NO se esconde: el cliente tiene
+// que ver qué le está impidiendo confirmar.
+.no-disponible {
+  img,
+  .sin-foto,
+  .nombre,
+  .detalle {
+    opacity: 0.55;
+  }
+
+  .importe {
+    text-decoration: line-through;
+    opacity: 0.55;
+  }
+}
+
+.total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0.9rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  font-size: 1.05rem;
+
+  strong {
+    font-size: 1.4rem;
+    color: var(--vb-malva-oscuro);
+  }
+}
+
+// --- Cómo lo recibe -------------------------------------------------------
+
+.modalidades {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.destinos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.destino {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--vb-radio-chico);
+  background: var(--mat-sys-surface);
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+
+  .datos {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+  }
+
+  .nombre {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 600;
+  }
+
+  .detalle {
+    font-size: 0.85rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &.elegido {
+    border-color: var(--vb-malva);
+    background: var(--vb-rosa-palido);
+  }
+
+  // La sucursal que no abastece no es un botón: es un `div`, así que no puede
+  // enfocarse ni pulsarse. Apagarla sólo con CSS dejaría que el teclado la
+  // seleccionara igual.
+  &.corto {
+    cursor: default;
+    opacity: 0.6;
+  }
+}
+
+.etiqueta {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.08rem 0.4rem;
+  border-radius: 999px;
+  background: var(--vb-rosa-palido);
+  color: var(--vb-malva-oscuro);
+}
+
+.nota {
+  margin: 0.75rem 0 0;
+  font-size: 0.83rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// --- Avisos ---------------------------------------------------------------
+
+.aviso {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 1rem 0;
+  padding: 0.85rem 1rem;
+  border-radius: var(--vb-radio-chico);
+  background: var(--vb-marfil);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.aviso-error {
+  color: var(--mat-sys-error);
+}
+
+.aviso-bloqueo {
+  background: color-mix(in srgb, var(--mat-sys-error) 8%, transparent);
+}
+
+// El aviso de pago simulado NO va en rojo: no es un fallo, es una aclaración
+// honesta. En rojo parecería que algo se rompió.
+.aviso-simulado {
+  background: color-mix(in srgb, var(--vb-oro) 14%, transparent);
+  color: #6b540a;
+}
+
+.conflicto {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  margin: 1rem 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--vb-oro);
+  border-radius: var(--vb-radio-chico);
+  background: color-mix(in srgb, var(--vb-oro) 10%, transparent);
+
+  .titulo {
+    margin: 0 0 0.2rem;
+    font-weight: 600;
+    color: var(--vb-malva-oscuro);
+  }
+
+  .cuerpo {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+
+  button {
+    margin-left: auto;
+    flex: none;
+  }
+}
+
+// --- Pie ------------------------------------------------------------------
+
+.pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+.plazo {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  max-width: 30rem;
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.confirmar {
+  min-width: 13rem;
+}
+
+@media (max-width: 30rem) {
+  .pie {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .confirmar {
+    width: 100%;
+  }
+}
