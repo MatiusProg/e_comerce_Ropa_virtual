@@ -34,8 +34,8 @@ from app.modules.reservas import models as _reservas_models  # noqa: F401
 # linea, `alembic check` ve `carrito` y `carrito_detalle` como tablas
 # sobrantes y un --autogenerate escribiria una migracion que las BORRA.
 from app.modules.ventas import carrito_models as _carrito_models  # noqa: F401
-# from app.modules.ventas import models as _ventas_models  # noqa: F401
-# from app.modules.pagos import models as _pagos_models  # noqa: F401
+from app.modules.ventas import models as _ventas_models  # noqa: F401
+from app.modules.pagos import models as _pagos_models  # noqa: F401
 # from app.modules.vestidor_virtual import models as _vestidor_models  # noqa: F401
 # from app.modules.ia import models as _ia_models  # noqa: F401
 

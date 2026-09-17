@@ -24,6 +24,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     UniqueConstraint,
@@ -75,6 +76,15 @@ class Reserva(Auditoria, Base):
             "estado IN ('" + "', '".join(ESTADOS_RESERVA) + "')", name="estado"
         ),
         CheckConstraint("franja_fin > franja_inicio", name="franja"),
+        # CU-25 barre por franja vencida Y estado vivo, asi que el indice es
+        # COMPUESTO. La 0003 lo creo asi, pero el modelo pedia uno simple sobre
+        # `franja_fin` con `index=True`: los dos no coincidian, y un
+        # --autogenerate habria escrito una migracion que BORRA el compuesto y
+        # deja a CU-25 recorriendo la tabla entera cada vez que corre.
+        # Lo atrapo `alembic check` el 17/09/2026, al escribir la 0006.
+        # No hace falta migracion: la base ya tiene el indice correcto, lo que
+        # estaba mal era la declaracion.
+        Index("ix_reserva_franja_fin_estado", "franja_fin", "estado"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -85,7 +95,8 @@ class Reserva(Auditoria, Base):
         Integer, ForeignKey("sucursal.id"), index=True
     )
     franja_inicio: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    franja_fin: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    #: Sin `index=True`: va en el indice compuesto de `__table_args__`.
+    franja_fin: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     estado: Mapped[str] = mapped_column(String(10), index=True)
 
     #: Lo escribe CU-23 cuando la cancela el cliente y CU-24 cuando el

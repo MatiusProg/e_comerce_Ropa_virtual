@@ -1,8 +1,12 @@
 # Esquema de Ventas y Pagos — la migración `0006_ciclo3_ventas`
 
-Propuesta de las **diez tablas** de los paquetes **P7 · Ventas y Punto de Venta** y **P8 · Pagos**.
-Es el contrato del que cuelgan CU-26 a CU-32, y también CU-29, CU-36 y CU-37, así que conviene
-cerrarlo antes de escribir código encima.
+Las **nueve tablas** que crea la migración, de los paquetes **P7 · Ventas y Punto de Venta** y
+**P8 · Pagos**. Es el contrato del que cuelgan CU-27 a CU-32, y también CU-36 y CU-37.
+
+> **Actualizado el 17/09/2026.** La versión del 15/09 proponía once tablas e incluía `carrito` e
+> `item_carrito`. **Esas dos ya existen**: las creó Karen en la `0009_ciclo3_carrito` al escribir
+> CU-26, con los nombres `carrito` y `carrito_detalle`. Salen de acá, y con ellas cambia la
+> decisión 4 sobre el congelamiento del precio. Lo que sigue es lo que la `0006` crea de verdad.
 
 > **Por qué este documento existe.** Para el Ciclo 2 el acuerdo de columnas estaba en la §6.4 de
 > [`ciclo-2/00-organizacion-por-caso-de-uso.md`](../ciclo-2/00-organizacion-por-caso-de-uso.md), y
@@ -14,23 +18,23 @@ cerrarlo antes de escribir código encima.
 ## 1. Lo que ya está acordado y no se discute
 
 **El identificador y la cadena.** `0006_ciclo3_ventas` es de Mateo, por la §4 de
-[`ciclo-2/04-respuesta-de-karen.md`](../ciclo-2/04-respuesta-de-karen.md). Y por la nota que Karen
-dejó en [`cu-41-recuperar-contrasena.md`](cu-41-recuperar-contrasena.md), **la cabeza ya no es la
-`0005` sino la `0008`**:
+[`ciclo-2/04-respuesta-de-karen.md`](../ciclo-2/04-respuesta-de-karen.md). **La cabeza ya no es la
+`0008` sino la `0009_ciclo3_carrito`**, que entró el 15/09 con CU-26:
 
 ```python
 revision      = "0006_ciclo3_ventas"
-down_revision = "0008_ciclo3_recuperacion"
+down_revision = "0009_ciclo3_carrito"
 ```
 
-La cadena queda `0005 → 0008 → 0006 → 0007`. Se lee raro y es correcta: el número del archivo es
-un nombre, el orden lo da `down_revision`.
+La cadena queda `0005 → 0008 → 0009 → 0006 → 0007`. Se lee raro y es correcta: el número del
+archivo es un nombre, el orden lo da `down_revision`. **Colgarla de la `0008` dejaría el árbol con
+dos cabezas y `alembic upgrade head` fallaría pidiendo cuál.**
 
 **Las decisiones de arquitectura que esto realiza**, de `docs/04-analisis-arquitectura.md`:
 
 | | Qué dice | Cómo se cumple acá |
 |---|---|---|
-| **D1** | todo referencia `variante_producto`, nunca `producto` | `item_carrito`, `detalle_venta` y `detalle_devolucion` apuntan a `variante_id` |
+| **D1** | todo referencia `variante_producto`, nunca `producto` | `detalle_venta` y `detalle_devolucion` apuntan a `variante_id`, igual que el `carrito_detalle` de CU-26 |
 | **D2** | una sola `Venta` con dos canales | `venta.canal` = `DIGITAL` \| `PRESENCIAL`; no hay tabla «pedido» aparte |
 | **D3** | la existencia se descompone en disponible y reservado | la venta descuenta de reservado si vino de una reserva, de disponible si no |
 | **D5** | el estado del pago **solo** lo determina la pasarela | `transaccion_pasarela.evento_id` es **único**: es lo que hace idempotente el webhook |
@@ -42,39 +46,14 @@ no `Enum` de PostgreSQL; y en los CHECK **va solo el sufijo** (`name="estado"`, 
 
 ---
 
-## 2. Las diez tablas
+## 2. Las nueve tablas
 
 ### P7 · Ventas
 
-#### `carrito` — CU-26
-Un carrito **abierto** por cliente. Se cierra al convertirse en venta.
-
-| Columna | Tipo | Notas |
-|---|---|---|
-| `id` | PK | |
-| `cliente_id` | FK → `cliente` | |
-| `estado` | `String(10)` | `ABIERTO` \| `CONVERTIDO` \| `ABANDONADO` |
-| `creado_en` / `actualizado_en` | mixin `Auditoria` | |
-
-**Índice único parcial:** un solo carrito `ABIERTO` por cliente. Es lo que evita que dos pestañas
-del navegador creen dos carritos y el total salga partido.
-
-#### `item_carrito` — CU-26
-| Columna | Tipo | Notas |
-|---|---|---|
-| `id` | PK | |
-| `carrito_id` | FK → `carrito`, `ON DELETE CASCADE` | |
-| `variante_id` | FK → `variante_producto` | **D1** |
-| `cantidad` | `Integer` | CHECK `> 0` |
-| `precio_unitario` | `Numeric(10,2)` | **se copia al agregar**, no se lee en vivo |
-
-**Único** `(carrito_id, variante_id)`: agregar dos veces la misma variante suma cantidad, no crea
-una fila más.
-
-> **Por qué el precio se copia.** Es la misma razón por la que `variante_producto.precio` no
-> repropaga desde `producto.precio_base`: si el precio se leyera en vivo, el total del carrito
-> cambiaría solo mientras el cliente decide. Lo que se copia es el precio **con la promoción ya
-> aplicada** (CU-12, migración `0007`).
+> **`carrito` y `carrito_detalle` no se crean acá.** Ya existen desde la `0009_ciclo3_carrito`
+> (CU-26, de Karen). La `0006` no las toca. Lo único que hay que saber al escribir CU-27 es que
+> **`carrito_detalle` no guarda precio**: el precio se lee en vivo contra `variante_producto`, y se
+> congela recién al crear la venta. La razón está en la decisión 4, más abajo.
 
 #### `venta` — CU-27, CU-31
 La tabla central. **Un solo concepto para los dos canales (D2).**
@@ -196,15 +175,34 @@ Devolver **reingresa** al inventario con un `movimiento_inventario` de tipo devo
    alternativa —`pedido` y `venta` separadas— obligaría a copiar los detalles de una a otra.
 2. **P8 va en la misma migración que P7.** Los identificadores reservados solo nombran `ventas` y
    `promociones`, y pagos no tiene número propio. Una venta digital sin su fila de pago está a
-   medias, así que las diez tablas nacen juntas.
+   medias, así que las nueve tablas nacen juntas.
 3. **`venta.reserva_id` es único y nullable.** Es el puente de D2: el Encargado atiende una reserva
    (CU-24) y esa misma reserva se cobra como venta presencial, sin transformar datos.
-4. **El precio se congela en tres lugares** —`item_carrito`, `detalle_venta` y `pago.monto`— y
-   ninguno se recalcula después. Es la misma regla que ya rige en `variante_producto.precio`.
+4. **El precio se congela en dos lugares** —`detalle_venta` y `pago.monto`— y ninguno se
+   recalcula después. **Corrección del 17/09: eran tres, y `item_carrito` salió.** El carrito
+   **no** congela precio, y no es un descuido de CU-26 sino lo correcto:
+
+   - **El carrito no caduca.** Es uno solo por cliente (`UNIQUE` en `cliente_id`), sin estado y sin
+     vencimiento. Congelar ahí es congelar para siempre: una prenda agregada hoy se cobraría en
+     diciembre al precio de hoy. La versión del 15/09 sí daba una frontera —`carrito.estado`
+     `ABIERTO`/`CONVERTIDO`/`ABANDONADO`— pero esa columna no existe.
+   - **Se rompe hacia el lado que cobra de más.** Si la boutique baja un precio —rebajas, fin de
+     temporada, que en ropa es lo normal— el cliente con la prenda en el carrito seguiría pagando
+     el precio viejo.
+   - **CU-12 lo volvería un error.** Si lo que se copiara fuera el precio con la promoción ya
+     aplicada, una promoción vencida se honraría indefinidamente y una que arranca hoy no
+     alcanzaría lo agregado ayer. En vivo, `_armar_carrito` aplica lo vigente.
+   - **El proyecto ya eligió esto antes.** `reserva_detalle` (CU-22, `0003`) no tiene ninguna
+     columna de dinero. No se congela en una intención; se congela al comprometer.
+
+   Lo que sí hay que hacer es **de CU-27, no del esquema**: si el precio cambió entre que el
+   cliente miró el carrito y confirmó el pedido, CU-27 lo avisa en vez de cobrar callado.
 
 ## 4. Lo que NO entra acá
 
-- **Promociones (CU-12)** van en la `0007_ciclo3_promociones`, que también es nuestra. `item_carrito`
-  y `detalle_venta` ya tienen la columna de descuento para recibirlas.
+- **Promociones (CU-12)** van en la `0007_ciclo3_promociones`, que también es nuestra.
+  `detalle_venta` ya tiene `descuento_unitario` y `venta` ya tiene `descuento` para recibirlas. En
+  el carrito el único punto de enganche es `_armar_carrito`, en `ventas/carrito_service.py`.
+- **`carrito` y `carrito_detalle` (CU-26)**, que ya existen en la `0009`.
 - **CU-39** (disponibilidad y plazo de abastecimiento) toca `inventario`, no ventas.
 - **CU-40** (notificaciones) se apoya en la costura de correo que ya dejó Karen.
