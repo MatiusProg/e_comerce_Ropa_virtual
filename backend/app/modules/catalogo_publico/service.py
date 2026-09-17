@@ -88,6 +88,7 @@ def listar_productos(
     coleccion_id: int | None = None,
     precio_min: Decimal | None = None,
     precio_max: Decimal | None = None,
+    solo_vestidor: bool = False,
 ) -> PaginaVitrina:
     """Paso 2: la vitrina con sus filtros, su orden y su paginacion.
 
@@ -116,6 +117,7 @@ def listar_productos(
         coleccion_id=coleccion_id,
         precio_min=precio_min,
         precio_max=precio_max,
+        solo_vestidor=solo_vestidor,
     )
 
     total = repository.contar_productos(db, **filtros)

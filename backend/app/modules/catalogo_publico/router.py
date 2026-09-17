@@ -95,6 +95,15 @@ def listar_productos(
     coleccion_id: Annotated[int | None, Query()] = None,
     precio_min: Annotated[Decimal | None, Query(ge=0)] = None,
     precio_max: Annotated[Decimal | None, Query(ge=0)] = None,
+    solo_vestidor: Annotated[
+        bool,
+        Query(
+            description=(
+                "Solo las prendas que se pueden probar en el vestidor virtual "
+                "(CU-21): las que tienen el PNG transparente de alguna variante."
+            )
+        ),
+    ] = False,
     orden: Annotated[
         Literal["novedades", "precio_asc", "precio_desc", "nombre"], Query()
     ] = "novedades",
@@ -114,6 +123,12 @@ def listar_productos(
 
     **Falta el filtro por sucursal** que el caso de uso también enuncia: depende
     de `existencia` y llega con la costura C1, junto con CU-19.
+
+    `solo_vestidor` es de **CU-21** y no de la vitrina: es cómo el vestidor
+    virtual pregunta «¿qué me puedo probar?». Antes no había forma de
+    preguntarlo y la pantalla pedía la primera página y filtraba en el
+    teléfono, así que las prendas probables que cayeran más allá de la
+    posición 48 no aparecían nunca.
     """
     return service.listar_productos(
         db,
@@ -128,6 +143,7 @@ def listar_productos(
         coleccion_id=coleccion_id,
         precio_min=precio_min,
         precio_max=precio_max,
+        solo_vestidor=solo_vestidor,
     )
 
 

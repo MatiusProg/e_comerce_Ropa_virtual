@@ -508,3 +508,90 @@ def test_los_filtros_traen_la_jerarquia_de_categorias(api: TestClient, vitrina) 
     filtros = api.get(FILTROS).json()
     hoja = next(c for c in filtros["categorias"] if c["nombre"] == "Blusas")
     assert hoja["categoria_padre_id"] == vitrina["categoria_raiz"]
+
+
+# --- CU-21 · el filtro del vestidor virtual -------------------------------
+#
+# No es de la vitrina: es como el vestidor pregunta «que me puedo probar».
+# Vive aca porque el filtro es de esta consulta, y porque probarlo exige el
+# mismo catalogo montado.
+
+
+def test_sin_el_filtro_la_vitrina_devuelve_todo(api: TestClient, vitrina) -> None:
+    """Control: el filtro es opt-in y no cambia la vitrina de CU-17.
+
+    Importa porque `solo_vestidor` se agrego a una consulta que ya estaba en
+    produccion: si por omision recortara, la vitrina entera se vaciaria el dia
+    que nadie haya cargado PNG transparentes.
+    """
+    completo = api.get(VITRINA).json()["total"]
+    sin_declarar = api.get(VITRINA, params={"solo_vestidor": False}).json()["total"]
+    assert completo == sin_declarar
+    assert completo >= 2
+
+
+def test_solo_vestidor_deja_unicamente_lo_que_se_puede_probar(
+    api: TestClient, vitrina
+) -> None:
+    """CU-21. Un PNG transparente en UNA variante hace probable al producto."""
+    # Antes de marcar nada, no hay nada que probarse.
+    assert api.get(VITRINA, params={"solo_vestidor": True}).json()["total"] == 0
+
+    imagen = _subir(
+        api,
+        vitrina["admin"],
+        vitrina["blusa"],
+        _png(alfa=0),
+        variante_id=vitrina["variante_s"],
+    )
+    r = api.patch(
+        f"{IMAGENES}/{imagen['id']}/transparente",
+        headers=vitrina["admin"],
+        json={"es_transparente": True},
+    )
+    assert r.status_code == 200, r.text
+
+    pagina = api.get(VITRINA, params={"solo_vestidor": True}).json()
+    assert pagina["total"] == 1
+    assert pagina["items"][0]["id"] == vitrina["blusa"]
+    assert pagina["items"][0]["tiene_vestidor"] is True
+
+
+def test_una_foto_comun_no_vuelve_probable_al_producto(
+    api: TestClient, vitrina
+) -> None:
+    """Sin `es_transparente`, el vestidor no tiene que recortar contra el fondo.
+
+    Es la comprobacion que separa «tiene fotos» de «se puede probar»: una
+    galeria llena de fotos de catalogo no habilita la realidad aumentada.
+    """
+    _subir(api, vitrina["admin"], vitrina["blusa"], _png(alfa=255))
+    assert api.get(VITRINA, params={"solo_vestidor": True}).json()["total"] == 0
+
+
+def test_el_filtro_cuenta_lo_mismo_que_lista(api: TestClient, vitrina) -> None:
+    """El conteo y el listado comparten la funcion de filtros a proposito.
+
+    Si se separaran, el paginador del vestidor anunciaria prendas que no
+    existen, y el defecto solo aparece paginando hasta el final. Es la misma
+    razon por la que se comparten en CU-17.
+    """
+    for producto, variante in (
+        (vitrina["blusa"], vitrina["variante_s"]),
+        (vitrina["pantalon"], None),
+    ):
+        if variante is None:
+            continue
+        imagen = _subir(
+            api, vitrina["admin"], producto, _png(alfa=0), variante_id=variante
+        )
+        api.patch(
+            f"{IMAGENES}/{imagen['id']}/transparente",
+            headers=vitrina["admin"],
+            json={"es_transparente": True},
+        )
+
+    pagina = api.get(VITRINA, params={"solo_vestidor": True, "tamano": 1}).json()
+    assert pagina["total"] == len(
+        api.get(VITRINA, params={"solo_vestidor": True, "tamano": 48}).json()["items"]
+    )
