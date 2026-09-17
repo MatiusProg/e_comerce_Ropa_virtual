@@ -51,10 +51,35 @@ class Settings(BaseSettings):
     RESERVA_ANTICIPACION_MAXIMA_HORAS: int = 72
 
     # --- Pasarela de pago (P8, ciclo 3) ----------------------------------
-    STRIPE_SECRET_KEY: str = ""
-    STRIPE_WEBHOOK_SECRET: str = ""
-    STRIPE_SUCCESS_URL: str = "http://localhost:4200/pago/exito"
-    STRIPE_CANCEL_URL: str = "http://localhost:4200/pago/cancelado"
+    #
+    # Los nombres NO llevan la marca adentro, por la misma leccion que la IA y
+    # el correo: antes se llamaban STRIPE_SECRET_KEY y STRIPE_WEBHOOK_SECRET, y
+    # con esos nombres cambiar de pasarela --- el plan de respaldo es PayPal,
+    # seccion 6.7 --- obligaba a tocar el despliegue ademas del codigo.
+    #
+    # `simulada` NO cobra nada: aprueba el pago al instante y escribe la sesion
+    # en el log. Es el valor por defecto A PROPOSITO, para poder construir y
+    # demostrar el flujo entero sin claves de Stripe. La misma decision que
+    # tomo Karen con CORREO_PROVEEDOR=consola.
+    PAGO_PROVEEDOR: str = "simulada"
+    PAGO_API_KEY: str = ""
+    PAGO_WEBHOOK_SECRET: str = ""
+    PAGO_URL_EXITO: str = "http://localhost:4200/pago/exito"
+    PAGO_URL_CANCELADO: str = "http://localhost:4200/pago/cancelado"
+
+    # La moneda con la que se le habla a la PASARELA, que no es la del negocio.
+    # Stripe no admite el boliviano en las cuentas de prueba, asi que en la
+    # demostracion se cobra en dolares. La venta se guarda en su moneda; lo
+    # unico que se traduce es lo que sale hacia afuera. Es limitacion del
+    # sandbox, no del diseno, y queda anotada en la ficha de CU-27.
+    PAGO_MONEDA: str = "usd"
+
+    # Cuanto aguanta un pedido sin pagar antes de que se cancele y devuelva el
+    # stock que aparto (CU-27). Es el equivalente de RESERVA_VIGENCIA_HORAS
+    # para la compra digital, y es mucho mas corto por la misma razon por la
+    # que la anticipacion de una reserva se acota: un pedido sin pagar
+    # inmoviliza unidades que nadie mas puede comprar.
+    PEDIDO_VIGENCIA_MINUTOS: int = 30
 
     # --- Inteligencia artificial (P10, ciclo 3) --------------------------
     #
