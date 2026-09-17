@@ -185,6 +185,12 @@ class _PendientesDelCiclo extends StatelessWidget {
         Icons.camera_alt_outlined,
         Rutas.vestidor,
       ),
+      (
+        'Mi carrito',
+        'CU-26 · CU-27',
+        Icons.shopping_bag_outlined,
+        Rutas.carrito,
+      ),
     ];
 
     return Card(

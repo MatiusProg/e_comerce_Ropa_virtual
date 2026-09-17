@@ -14,6 +14,10 @@ import '../../features/auth/pantalla_login.dart';
 import '../../features/auth/pantalla_registro.dart';
 import '../../features/catalogo/pantalla_catalogo.dart';
 import '../../features/catalogo/pantalla_ficha.dart';
+import '../../data/modelos/compra.dart';
+import '../../features/compra/pantalla_carrito.dart';
+import '../../features/compra/pantalla_checkout.dart';
+import '../../features/compra/pantalla_pedido.dart';
 import '../../features/inicio/pantalla_carga.dart';
 import '../../features/reservas/pantalla_detalle_reserva.dart';
 import '../../features/reservas/pantalla_mis_reservas.dart';
@@ -71,6 +75,24 @@ class Rutas {
   /// riesgo que se construye en el Ciclo 2 para saber, antes del Ciclo 3, si
   /// la deteccion de pose sobre este telefono da un ritmo usable.
   static const String vestidor = '/vestidor';
+
+  /// CU-26 · el carrito. Es la puerta del paquete de compra, igual que
+  /// `/reservas` lo es del de reservas: se llega a pagar desde aca.
+  static const String carrito = '/carrito';
+
+  /// CU-27 · confirmar el pedido. Anidada bajo el carrito y declarada ANTES
+  /// que `:codigo`, por lo mismo que `nueva` en reservas: `go_router` prueba
+  /// en orden y 'checkout' encajaria en el patron del codigo.
+  static const String checkout = '/carrito/checkout';
+
+  /// CU-27 · la ficha del pedido. Patron para el enrutador; para navegar se
+  /// usa [pedidoDe].
+  static const String pedidoPatron = '/carrito/:codigo';
+
+  /// La ruta concreta de un pedido. **Por codigo y no por identificador**: es
+  /// `VB-20260917-A3F2`, lo que el cliente ve y puede leer por telefono. El
+  /// backend tampoco expone el `id` de la venta.
+  static String pedidoDe(String codigo) => '/carrito/$codigo';
 }
 
 /// Rutas accesibles sin sesion: el registro (CU-01) y el login (CU-02).
@@ -171,6 +193,38 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // Mateo: reservas (CU-22, CU-23).
+      GoRoute(
+        path: Rutas.carrito,
+        builder: (context, estado) => const PantallaCarrito(),
+        routes: [
+          GoRoute(
+            // ANTES que ':codigo': 'checkout' encajaria en el patron.
+            path: 'checkout',
+            builder: (context, estado) => const PantallaCheckout(),
+          ),
+          GoRoute(
+            // Anidada y no suelta, igual que el detalle de una reserva: asi el
+            // boton de volver del telefono lleva del pedido al carrito.
+            path: ':codigo',
+            builder: (context, estado) {
+              final codigo = estado.pathParameters['codigo'];
+              if (codigo == null || codigo.isEmpty) {
+                return const PantallaCarrito();
+              }
+              // `extra` trae el PedidoCreado cuando se llega desde el
+              // checkout, porque la URL de pago NO esta en la ficha del
+              // pedido: es de una sesion concreta de la pasarela. Llegando de
+              // cualquier otro lado viene nulo, y la pantalla lo contempla.
+              return PantallaPedido(
+                codigo: codigo,
+                recienCreado: estado.extra is PedidoCreado
+                    ? estado.extra! as PedidoCreado
+                    : null,
+              );
+            },
+          ),
+        ],
+      ),
       GoRoute(
         path: Rutas.reservas,
         builder: (context, estado) => const PantallaMisReservas(),

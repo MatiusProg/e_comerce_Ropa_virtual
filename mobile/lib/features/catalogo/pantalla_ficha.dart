@@ -28,6 +28,7 @@ import '../../core/red/excepciones.dart';
 import '../../core/tema.dart';
 import '../../data/modelos/catalogo.dart';
 import '../../data/repositorios/repositorio_catalogo.dart';
+import '../compra/estado_compra.dart';
 import 'estado_catalogo.dart';
 
 class PantallaFicha extends ConsumerStatefulWidget {
@@ -175,6 +176,12 @@ class _EstadoPantallaFicha extends ConsumerState<PantallaFicha> {
                 ),
 
               const SizedBox(height: 20),
+              // CU-26. El boton de agregar esta en la FICHA y no en la tarjeta
+              // del catalogo: el carrito guarda variantes, y desde el listado
+              // no hay talla ni color elegidos. Es la misma decision que tomo
+              // la web.
+              _BotonAgregar(variante: variante),
+              const SizedBox(height: 10),
               _BotonVestidor(prenda: prenda, variante: variante),
 
               const SizedBox(height: 8),
@@ -374,6 +381,89 @@ class _BotonColor extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// CU-26 · Agregar la variante elegida al carrito.
+///
+/// Deshabilitado hasta que haya talla y color: el carrito apunta a la VARIANTE
+/// y no al producto (decision D1), asi que «una blusa» sin talla ni color no se
+/// puede convertir en pedido.
+///
+/// AGREGAR NO NAVEGA AL CARRITO
+/// -----------------------------
+/// Quien esta mirando una ficha suele querer seguir mirando; llevarlo de golpe
+/// le corta el recorrido. El aviso le OFRECE ir, y ahi decide el. Es la misma
+/// decision que tomo la web.
+class _BotonAgregar extends ConsumerStatefulWidget {
+  const _BotonAgregar({required this.variante});
+
+  final VariantePrenda? variante;
+
+  @override
+  ConsumerState<_BotonAgregar> createState() => _BotonAgregarState();
+}
+
+class _BotonAgregarState extends ConsumerState<_BotonAgregar> {
+  bool _agregando = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final variante = widget.variante;
+    // Se puede agregar algo agotado a proposito: el carrito es una intencion y
+    // no inmoviliza inventario. Quien se planta es CU-27, al confirmar.
+    final sePuede = variante != null && !_agregando;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            icon: _agregando
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.add_shopping_cart),
+            label: Text(_agregando ? 'Agregando…' : 'Agregar al carrito'),
+            onPressed: sePuede ? () => _agregar(variante) : null,
+          ),
+        ),
+        if (variante == null)
+          const Padding(
+            padding: EdgeInsets.only(top: 6),
+            child: Text(
+              'Elija talla y color para agregarla al carrito.',
+              style: TextStyle(fontSize: 13, color: Color(0xFF7A6A72)),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _agregar(VariantePrenda variante) async {
+    setState(() => _agregando = true);
+    final fallo = await ref
+        .read(carritoProvider.notifier)
+        .agregar(varianteId: variante.id);
+    if (!mounted) return;
+    setState(() => _agregando = false);
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(fallo ?? 'Agregada al carrito.'),
+          action: fallo == null
+              ? SnackBarAction(
+                  label: 'Ver carrito',
+                  onPressed: () => context.push(Rutas.carrito),
+                )
+              : null,
+        ),
+      );
   }
 }
 

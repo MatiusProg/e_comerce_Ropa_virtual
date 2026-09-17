@@ -22,6 +22,7 @@ import '../../core/red/excepciones.dart';
 import '../../core/tema.dart';
 import '../../data/modelos/catalogo.dart';
 import '../../data/repositorios/repositorio_catalogo.dart';
+import '../compra/estado_compra.dart';
 import 'estado_catalogo.dart';
 
 class PantallaCatalogo extends ConsumerStatefulWidget {
@@ -62,6 +63,10 @@ class _EstadoPantallaCatalogo extends ConsumerState<PantallaCatalogo> {
       appBar: AppBar(
         title: const Text('Catálogo'),
         actions: [
+          // CU-26. La burbuja sale del estado compartido del carrito, no de una
+          // consulta de esta pantalla: si cada una lo pidiera por su cuenta se
+          // desincronizarian en cuanto el cliente agregue algo desde una ficha.
+          const _BurbujaCarrito(),
           IconButton(
             tooltip: 'Filtros',
             icon: Badge(
@@ -617,6 +622,33 @@ class _Aviso extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+
+/// El icono del carrito con la cantidad encima.
+///
+/// Observa el estado compartido, asi que se actualiza sola cuando el cliente
+/// agrega algo desde la ficha de un producto --- que es desde donde se agrega.
+class _BurbujaCarrito extends ConsumerWidget {
+  const _BurbujaCarrito();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Mientras carga, o si fallo, se muestra el icono sin numero. Un carrito
+    // que todavia no se leyo no es un carrito vacio, y poner un cero seria
+    // afirmar algo que no se sabe.
+    final unidades = ref.watch(carritoProvider).value?.unidades ?? 0;
+
+    return IconButton(
+      tooltip: 'Mi carrito',
+      icon: Badge(
+        isLabelVisible: unidades > 0,
+        label: Text('$unidades'),
+        child: const Icon(Icons.shopping_bag_outlined),
+      ),
+      onPressed: () => context.push(Rutas.carrito),
     );
   }
 }
