@@ -863,3 +863,132 @@ def test_el_candado_es_por_cliente_y_no_frena_a_los_demas(
         sesion_b.rollback()
         sesion_a.close()
         sesion_b.close()
+
+
+# --- De qué sucursal sale un envío ----------------------------------------
+
+
+def test_el_envio_sale_de_una_sucursal_de_la_ciudad_del_cliente(
+    api: TestClient,
+    cabeceras_cliente: dict[str, str],
+    cabeceras_admin: dict[str, str],
+    catalogo: dict,
+) -> None:
+    """Decisión 2, la mitad que no se ve hasta que alguien mira un envío.
+
+    Las sucursales se listan por ciudad y nombre. Tomar «la primera que pueda»
+    hacía que un cliente de Santa Cruz recibiera su pedido desde Cochabamba
+    —que va antes alfabéticamente— si esa sucursal podía abastecerlo. El
+    pedido salía bien, el inventario cuadraba, y nadie lo habría notado hasta
+    ver la mercadería cruzando el país.
+    """
+    ciudades = api.get(CIUDADES, headers=cabeceras_admin).json()
+    assert len(ciudades) >= 2, "hacen falta dos ciudades para esta comprobación"
+    lejana, cercana = ciudades[0], ciudades[1]
+
+    def _sucursal_en(ciudad_id: int, nombre: str) -> int:
+        r = api.post(
+            SUCURSALES,
+            headers=cabeceras_admin,
+            json={
+                "ciudad_id": ciudad_id,
+                "nombre": nombre,
+                "direccion": f"Avenida {nombre} 100",
+                "telefono": None,
+                "horario_apertura": "09:00:00",
+                "horario_cierre": "20:00:00",
+                "capacidad_vestidores": 4,
+                "activa": True,
+            },
+        )
+        assert r.status_code == 201, r.text
+        return r.json()["id"]
+
+    # Las dos pueden abastecer el pedido entero: lo único que las diferencia es
+    # la ciudad. Así la prueba falla solo si se elige por el motivo equivocado.
+    suc_lejana = _sucursal_en(lejana["id"], "Aaa Lejana")
+    suc_cercana = _sucursal_en(cercana["id"], "Zzz Cercana")
+    for suc in (suc_lejana, suc_cercana):
+        _ingresar(api, cabeceras_admin, sucursal_id=suc, lineas=[(catalogo["v_uno"], 5)])
+
+    # La dirección del cliente está en la ciudad de la sucursal «Zzz», que por
+    # nombre y por ciudad iría ÚLTIMA en la lista.
+    r = api.post(
+        DIRECCIONES,
+        headers=cabeceras_cliente,
+        json={
+            "ciudad_id": cercana["id"],
+            "alias": "Casa",
+            "direccion": "Calle Falsa 123",
+            "referencia": None,
+            "predeterminada": True,
+        },
+    )
+    assert r.status_code in (200, 201), r.text
+    direccion_id = api.get("/api/v1/perfil", headers=cabeceras_cliente).json()[
+        "direcciones"
+    ][0]["id"]
+
+    _agregar(api, cabeceras_cliente, catalogo["v_uno"], 1)
+    respuesta = _pedir(api, cabeceras_cliente, total="250.00", direccion_id=direccion_id)
+    assert respuesta.status_code == 201, respuesta.text
+
+    pedido = respuesta.json()["pedido"]
+    assert pedido["sucursal_id"] == suc_cercana, (
+        f"el envío salió de la sucursal {pedido['sucursal_id']} "
+        f"({pedido['sucursal_nombre']}) en vez de la de la ciudad del cliente"
+    )
+
+
+def test_si_su_ciudad_no_puede_el_envio_sale_de_otra(
+    api: TestClient,
+    cabeceras_cliente: dict[str, str],
+    cabeceras_admin: dict[str, str],
+    catalogo: dict,
+) -> None:
+    """Preferir la ciudad del cliente NO puede volverse un impedimento.
+
+    Si la sucursal de su ciudad no tiene la prenda, mandarla de lejos es mejor
+    que no vender. Sin esta prueba, «preferir» y «exigir» se confunden fácil.
+    """
+    ciudades = api.get(CIUDADES, headers=cabeceras_admin).json()
+    lejana, cercana = ciudades[0], ciudades[1]
+
+    r = api.post(
+        SUCURSALES,
+        headers=cabeceras_admin,
+        json={
+            "ciudad_id": lejana["id"],
+            "nombre": "Única con stock",
+            "direccion": "Avenida Lejana 100",
+            "telefono": None,
+            "horario_apertura": "09:00:00",
+            "horario_cierre": "20:00:00",
+            "capacidad_vestidores": 4,
+            "activa": True,
+        },
+    )
+    assert r.status_code == 201, r.text
+    suc_lejana = r.json()["id"]
+    _ingresar(api, cabeceras_admin, sucursal_id=suc_lejana, lineas=[(catalogo["v_uno"], 5)])
+
+    r = api.post(
+        DIRECCIONES,
+        headers=cabeceras_cliente,
+        json={
+            "ciudad_id": cercana["id"],
+            "alias": "Casa",
+            "direccion": "Calle Falsa 123",
+            "referencia": None,
+            "predeterminada": True,
+        },
+    )
+    assert r.status_code in (200, 201), r.text
+    direccion_id = api.get("/api/v1/perfil", headers=cabeceras_cliente).json()[
+        "direcciones"
+    ][0]["id"]
+
+    _agregar(api, cabeceras_cliente, catalogo["v_uno"], 1)
+    respuesta = _pedir(api, cabeceras_cliente, total="250.00", direccion_id=direccion_id)
+    assert respuesta.status_code == 201, respuesta.text
+    assert respuesta.json()["pedido"]["sucursal_id"] == suc_lejana

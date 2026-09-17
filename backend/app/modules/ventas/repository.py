@@ -79,6 +79,7 @@ def listar_sucursales_activas(db: Session) -> list[Row]:
                 Sucursal.id,
                 Sucursal.nombre,
                 Sucursal.direccion,
+                Sucursal.ciudad_id,
                 Ciudad.nombre.label("ciudad"),
             )
             .join(Ciudad, Ciudad.id == Sucursal.ciudad_id)
@@ -161,6 +162,7 @@ def obtener_direccion(
             DireccionCliente.alias,
             DireccionCliente.direccion,
             DireccionCliente.referencia,
+            DireccionCliente.ciudad_id,
             Ciudad.nombre.label("ciudad"),
         )
         .join(Ciudad, Ciudad.id == DireccionCliente.ciudad_id)

@@ -192,12 +192,13 @@ def _vence_en(creado_en: datetime) -> datetime:
     return creado_en + timedelta(minutes=settings.PEDIDO_VIGENCIA_MINUTOS)
 
 
-def _cobertura(
-    db: Session, lineas
-) -> tuple[dict[int, list[str]], list[int]]:
+def _cobertura(db: Session, lineas) -> tuple[dict[int, list[str]], list]:
     """Que le falta a cada sucursal para abastecer el carrito entero.
 
-    Devuelve `({sucursal_id: [nombres que le faltan]}, [sucursales que pueden])`.
+    Devuelve `({sucursal_id: [nombres que le faltan]}, [filas que pueden])`.
+
+    Las que pueden vuelven como FILAS y no como identificadores porque quien
+    elige necesita ademas su `ciudad_id`: ver `_elegir_sucursal_de_envio`.
 
     Se calcula en memoria sobre UNA consulta de stock, no con una consulta por
     sucursal.
@@ -209,7 +210,7 @@ def _cobertura(
     stock = repository.stock_por_sucursal(db, list(necesario))
 
     faltantes: dict[int, list[str]] = {}
-    completas: list[int] = []
+    completas: list = []
     for fila in repository.listar_sucursales_activas(db):
         de_esta = stock.get(fila.id, {})
         le_faltan = [
@@ -219,8 +220,29 @@ def _cobertura(
         ]
         faltantes[fila.id] = le_faltan
         if not le_faltan:
-            completas.append(fila.id)
+            completas.append(fila)
     return faltantes, completas
+
+
+def _elegir_sucursal_de_envio(completas: list, ciudad_destino: int) -> int:
+    """De que sucursal sale un envio. Ver la decision 2.
+
+    **Primero, una de la ciudad del destino.** No es un lujo: con el orden
+    alfabetico a secas, un cliente de Santa Cruz recibia su pedido desde
+    Cochabamba si esa sucursal podia abastecerlo --- las sucursales se listan
+    por ciudad y nombre, y Cochabamba va antes que La Paz y que Santa Cruz.
+    Nadie lo habria notado hasta ver un envio cruzando el pais.
+
+    Si ninguna de la ciudad puede con el pedido entero, se toma la primera que
+    pueda. Sigue siendo mejor mandarlo de lejos que no venderlo, y la lista
+    viene ordenada, asi que la eleccion es estable y reproducible --- no depende
+    del orden en que PostgreSQL devuelva las filas.
+
+    Elegir «la mas cercana» de verdad exigiria geolocalizar la direccion, que es
+    otro caso de uso. Esto es lo que se puede hacer con los datos que hay.
+    """
+    del_destino = [f for f in completas if f.ciudad_id == ciudad_destino]
+    return (del_destino or completas)[0].id
 
 
 def _linea_pedido(fila, imagenes: dict[int, str]) -> LineaPedidoOut:
@@ -442,12 +464,7 @@ def crear_pedido(
             raise DestinoInvalido()
         if not completas:
             raise NingunaSucursalAbastece()
-        # La primera que puede. `listar_sucursales_activas` viene ordenada por
-        # ciudad y nombre, asi que la eleccion es estable y reproducible --- no
-        # depende del orden en que PostgreSQL devuelva las filas ---. Elegir
-        # «la mas cercana» exigiria geolocalizar la direccion, que es otro caso
-        # de uso; queda anotado en la ficha.
-        sucursal_id = completas[0]
+        sucursal_id = _elegir_sucursal_de_envio(completas, direccion.ciudad_id)
         direccion_id = direccion.id
 
     # --- La sesion de pago, ANTES de bloquear inventario ------------------
