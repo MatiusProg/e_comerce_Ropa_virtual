@@ -113,7 +113,17 @@ def prenda(api: TestClient, cabeceras_admin: dict[str, str], db) -> dict:
             },
         )
 
-    # Un producto SIN tabla: una categoría para la que no hay holgura definida.
+    # Un producto SIN tabla: una prenda que NO es de torso.
+    #
+    # Lo que decide es el TIPO DE TALLA, no la categoría. Se probó al revés
+    # ---una cartera con talla M--- y era dato imposible: en la base real las
+    # carteras y los cinturones son talla Única, y los pantalones usan la serie
+    # numérica. Con talla M la prueba pasaba por el motivo equivocado.
+    talla_unica = api.post(
+        TALLAS,
+        headers=cabeceras_admin,
+        json={"tipo_prenda": "Unica", "codigo": "U", "orden": 9, "activa": True},
+    ).json()["id"]
     otra_categoria = api.post(
         CATEGORIAS,
         headers=cabeceras_admin,
@@ -134,7 +144,7 @@ def prenda(api: TestClient, cabeceras_admin: dict[str, str], db) -> dict:
         f"{PRODUCTOS}/{sin_tabla}/variantes",
         headers=cabeceras_admin,
         json={
-            "talla_id": tallas["M"],
+            "talla_id": talla_unica,
             "color_id": color,
             "precio": "150.00",
             "activa": True,
@@ -177,7 +187,13 @@ def test_sin_medidas_el_ajuste_responde_que_no_hay_en_vez_de_fallar(
 def test_un_producto_sin_tabla_de_tallas_tampoco_falla(
     api: TestClient, cabeceras_cliente: dict[str, str], prenda: dict
 ) -> None:
-    """Carteras, cinturones y pantalones no tienen tabla, y no son un error."""
+    """Carteras, cinturones y pantalones no tienen tabla, y no son un error.
+
+    No la tienen porque no son prendas de TORSO --- su talla no es de la serie
+    XS..XXXL ---, no porque su categoria sea desconocida. Una categoria de
+    torso que no encaje en ninguna regla igual recibe tabla, con una holgura
+    generica: mas vale una respuesta aproximada que dejar el vestidor mudo.
+    """
     api.put(MEDIDAS, headers=cabeceras_cliente, json=CUERPO_M)
     cuerpo = _ajuste(api, cabeceras_cliente, prenda["sin_tabla"])
     assert cuerpo["hay_tabla"] is False
