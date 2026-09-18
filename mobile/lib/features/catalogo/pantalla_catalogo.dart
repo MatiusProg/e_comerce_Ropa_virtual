@@ -23,6 +23,7 @@ import '../../core/tema.dart';
 import '../../data/modelos/catalogo.dart';
 import '../../data/repositorios/repositorio_catalogo.dart';
 import '../compra/estado_compra.dart';
+import 'boton_favorito.dart';
 import 'estado_catalogo.dart';
 
 class PantallaCatalogo extends ConsumerStatefulWidget {
@@ -200,13 +201,13 @@ class _Resultados extends ConsumerWidget {
   }
 }
 
-class _TarjetaPrenda extends StatelessWidget {
+class _TarjetaPrenda extends ConsumerWidget {
   const _TarjetaPrenda({required this.producto});
 
   final ProductoVitrina producto;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final url = RepositorioCatalogo.urlDeImagen(producto.imagenUrl);
 
     return Card(
@@ -261,6 +262,17 @@ class _TarjetaPrenda extends StatelessWidget {
                       bottom: 6,
                       child: _InsigniaVestidor(),
                     ),
+                  // CU-20. Arriba a la derecha y no junto a la insignia: son
+                  // dos cosas distintas --- una informa, la otra se toca --- y
+                  // juntas el dedo tapa las dos.
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: BotonFavorito(
+                      productoId: producto.id,
+                      sobreFoto: true,
+                    ),
+                  ),
                 ],
               ),
             ),

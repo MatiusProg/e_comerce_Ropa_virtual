@@ -22,6 +22,7 @@ import '../../features/inicio/pantalla_carga.dart';
 import '../../features/reservas/pantalla_detalle_reserva.dart';
 import '../../features/reservas/pantalla_mis_reservas.dart';
 import '../../features/reservas/pantalla_nueva_reserva.dart';
+import '../../features/catalogo/pantalla_favoritos.dart';
 import '../../features/vestidor/pantalla_vestidor.dart';
 import '../../features/inicio/pantalla_inicio.dart';
 import '../../features/perfil/pantalla_perfil.dart';
@@ -51,6 +52,13 @@ class Rutas {
   /// la ruta y no como parametro de consulta para que la pantalla sea
   /// enlazable y el boton de volver del telefono la deje bien apilada.
   static const String fichaProducto = '/catalogo/:id';
+
+  /// CU-20 · mis prendas favoritas.
+  ///
+  /// Cuelga del catalogo y no de la raiz porque es una VISTA del catalogo
+  /// ---las mismas tarjetas, filtradas por lo que el cliente guardo--- y asi
+  /// el boton de volver la deja apilada donde corresponde.
+  static const String favoritos = '/catalogo/favoritos';
 
   // Mateo:
   /// CU-23 · mis reservas, que es la puerta de entrada del paquete: el cliente
@@ -161,6 +169,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Rutas.catalogo,
         builder: (context, estado) => const PantallaCatalogo(),
         routes: [
+          // CU-20. VA ANTES que ':id' a proposito: la ficha es una ruta
+          // ANIDADA con parametro, asi que '/catalogo/favoritos' tambien
+          // encaja en ella. go_router se queda con la primera que coincide;
+          // al reves, tocar Favoritos abriria la vitrina --- la ficha no
+          // revienta porque ya descarta un identificador no numerico, pero
+          // la pantalla de favoritos no se veria NUNCA.
+          GoRoute(
+            path: 'favoritos',
+            builder: (context, estado) => const PantallaFavoritos(),
+          ),
           GoRoute(
             // Anidada y no suelta: asi el boton de volver del telefono lleva de
             // la ficha a la vitrina y no a la pantalla de inicio.

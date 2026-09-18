@@ -186,6 +186,12 @@ class _PendientesDelCiclo extends StatelessWidget {
         Rutas.vestidor,
       ),
       (
+        'Mis favoritos',
+        'CU-20',
+        Icons.favorite_border,
+        Rutas.favoritos,
+      ),
+      (
         'Mi carrito',
         'CU-26 · CU-27',
         Icons.shopping_bag_outlined,
