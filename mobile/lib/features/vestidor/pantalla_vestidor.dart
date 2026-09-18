@@ -52,10 +52,12 @@ import '../../core/enrutado/router.dart';
 import '../../core/tema.dart';
 import '../../data/modelos/catalogo.dart';
 import '../../data/repositorios/repositorio_catalogo.dart';
+import '../../data/repositorios/repositorio_medidas.dart';
 import '../../data/repositorios/repositorio_vestidor.dart';
 import '../auth/estado_sesion.dart';
 import '../catalogo/estado_catalogo.dart';
 import '../compra/estado_compra.dart';
+import 'pantalla_medidas.dart';
 import 'pintor_prenda.dart';
 
 class PantallaVestidor extends ConsumerStatefulWidget {
@@ -139,6 +141,24 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
   /// ficha en cada cambio dejaria la camara esperando a la red.
   FichaPrenda? _ficha;
   VariantePrenda? _variante;
+
+  /// Como le queda cada talla de la prenda puesta a ESTE cliente (CU-21).
+  ///
+  /// Se pide una sola vez por prenda, junto con la ficha, y trae TODAS las
+  /// tallas: cambiar de M a L no vuelve a hablar con el servidor, igual que el
+  /// cambio de color.
+  ///
+  /// Cuando no sirve ---el cliente no cargo sus medidas, el producto no tiene
+  /// tabla, o la consulta fallo--- vale `ninguno` y la prenda se dibuja como
+  /// se dibujaba antes de que existieran las medidas.
+  AjusteDeProducto _ajuste = AjusteDeProducto.ninguno;
+
+  /// El ajuste de la talla puesta, o `null` si no hay.
+  AjusteDeTalla? get _ajusteDeLaPuesta {
+    final variante = _variante;
+    if (variante == null || !_ajuste.sirve) return null;
+    return _ajuste.de(variante.tallaId);
+  }
 
   /// El PNG de la prenda YA DECODIFICADO.
   ///
@@ -316,17 +336,37 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
       _urlPrenda = null;
       _ficha = null;
       _variante = null;
+      // Se limpia YA y no al llegar la respuesta: si quedara el de la prenda
+      // anterior, durante el viaje de red la prenda nueva se dibujaria con los
+      // factores de otra --- una XS con el largo de un abrigo ---.
+      _ajuste = AjusteDeProducto.ninguno;
     });
     try {
-      final ficha = await ref
-          .read(repositorioCatalogoProvider)
-          .obtenerFicha(prenda.id);
+      // Las dos consultas van juntas: son independientes y encadenarlas
+      // duplicaria la espera con la camara ya andando.
+      final (ficha, ajuste) = await (
+        ref.read(repositorioCatalogoProvider).obtenerFicha(prenda.id),
+        RepositorioMedidas(ref.read(clienteApiProvider)).deProducto(prenda.id),
+      ).wait;
       final probables = ficha.variantes.where((v) => v.sePuedeProbar).toList();
       if (!mounted) return;
       setState(() {
         _ficha = ficha;
+        _ajuste = ajuste;
       });
-      if (probables.isNotEmpty) _ponerse(probables.first);
+      // Si hay una talla recomendada, se pone ESA. Hasta hoy se ponia siempre
+      // la primera de la lista, que es la mas chica: al cliente le caia una XS
+      // sin ningun motivo, y con la foto de una variante que ademas podia ser
+      // una silueta dibujada en vez de la prenda real.
+      final recomendada = _ajuste.tallaRecomendadaId;
+      final elegida = recomendada == null
+          ? null
+          : probables.where((v) => v.tallaId == recomendada).firstOrNull;
+      if (elegida != null) {
+        _ponerse(elegida);
+      } else if (probables.isNotEmpty) {
+        _ponerse(probables.first);
+      }
     } catch (_) {
       /* se queda sin prenda; el aviso lo da la pantalla */
     }
@@ -681,6 +721,9 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
           child: CustomPaint(
             painter: PintorPrenda(
               prenda: imagen,
+              // 1.0 cuando no hay medidas: se dibuja como siempre.
+              factorAncho: _ajusteDeLaPuesta?.factorAncho ?? 1.0,
+              factorLargo: _ajusteDeLaPuesta?.factorLargo ?? 1.0,
               torso: TorsoEnPantalla(
                 hombroA: hombroA,
                 hombroB: hombroB,
@@ -771,6 +814,7 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
                   ),
                 ],
               ),
+              _comoTeQueda(),
               // CU-21: cambiar talla y color EN VIVO, sin salir de la cámara.
               // Es medio caso de uso: probarse una prenda sin poder cambiar la
               // talla es mirar una foto.
@@ -780,6 +824,99 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  /// Abre el formulario de medidas y, si se guardaron, vuelve a pedir el
+  /// ajuste de la prenda puesta.
+  ///
+  /// Se vuelve a pedir y no se supone nada: los factores y la talla
+  /// recomendada los calcula el servidor, y dejarlos sin refrescar mostraria
+  /// «cargá tus medidas» a alguien que las acaba de cargar.
+  Future<void> _abrirMedidas() async {
+    final guardadas = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => const PantallaMedidas()),
+    );
+    if (guardadas != true || !mounted) return;
+    final prenda = _prendaElegida;
+    if (prenda == null) return;
+    final ajuste = await RepositorioMedidas(
+      ref.read(clienteApiProvider),
+    ).deProducto(prenda.id);
+    if (!mounted) return;
+    setState(() => _ajuste = ajuste);
+  }
+
+  /// Cómo le queda al cliente la talla que tiene puesta (CU-21).
+  ///
+  /// Es la mitad visible de las medidas: la otra mitad es que la prenda se
+  /// DIBUJA distinta según la talla. Sin este cartel el cliente ve que la XS
+  /// es más chica pero no sabe si eso significa que no le entra.
+  ///
+  /// Cuando no hay medidas cargadas no se calla: ofrece cargarlas. Un probador
+  /// que puede decirte tu talla y no lo menciona es una función que nadie
+  /// encuentra.
+  Widget _comoTeQueda() {
+    if (!_ajuste.hayTabla) return const SizedBox.shrink();
+
+    if (!_ajuste.hayMedidas) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: Row(
+          children: [
+            const Icon(Icons.straighten, size: 15, color: Colors.white54),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'Cargá tus medidas y te digo qué talla te va.',
+                style: TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+            ),
+            TextButton(
+              onPressed: _abrirMedidas,
+              child: const Text('Cargar'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final ajuste = _ajusteDeLaPuesta;
+    if (ajuste == null) return const SizedBox.shrink();
+
+    // El color dice lo mismo que el texto, para que se lea de un vistazo sobre
+    // el video: rojo no entra, ámbar apretada o suelta, verde te queda bien.
+    final color = switch (ajuste.ajuste) {
+      Ajuste.noEntra => const Color(0xFFFF6B6B),
+      Ajuste.aTuMedida => const Color(0xFF7BD88F),
+      _ => const Color(0xFFFFC46B),
+    };
+    final recomendada = _ajuste.tallaRecomendada;
+    final esLaRecomendada = ajuste.codigo == recomendada;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        children: [
+          Icon(
+            ajuste.ajuste == Ajuste.aTuMedida
+                ? Icons.check_circle
+                : Icons.info_outline,
+            size: 15,
+            color: color,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              esLaRecomendada || recomendada == null
+                  ? ajuste.ajuste.texto
+                  : '${ajuste.ajuste.texto} · te va la $recomendada',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: color, fontSize: 12.5),
+            ),
+          ),
+        ],
       ),
     );
   }

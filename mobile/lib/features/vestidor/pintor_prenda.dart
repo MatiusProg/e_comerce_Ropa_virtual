@@ -122,10 +122,35 @@ const int _columnas = 6;
 const int _filas = 10;
 
 class PintorPrenda extends CustomPainter {
-  const PintorPrenda({required this.prenda, required this.torso});
+  const PintorPrenda({
+    required this.prenda,
+    required this.torso,
+    this.factorAncho = 1.0,
+    this.factorLargo = 1.0,
+  });
 
   final ui.Image prenda;
   final TorsoEnPantalla torso;
+
+  /// Cuanto se aparta ESTA talla de la que le corresponde al cuerpo (CU-21).
+  ///
+  /// 1.0 ---el valor por omision--- dibuja exactamente como se dibujaba antes
+  /// de que existieran las medidas, que es lo que pasa cuando el cliente no
+  /// las cargo o el producto no tiene tabla de tallas.
+  ///
+  /// POR QUE ESTO ES LA MITAD DEL CASO DE USO
+  /// -----------------------------------------
+  /// Sin estos dos factores la prenda se escala SIEMPRE para calzar el cuerpo,
+  /// y entonces la XS y la XXL se ven identicas en pantalla. El cliente elige
+  /// talla a ciegas dentro de un probador, que es justo lo que el probador
+  /// tendria que resolver. Los factores los calcula el servidor a partir de
+  /// las medidas del cuerpo y de la prenda; aca solo se aplican.
+  final double factorAncho;
+
+  /// Lo mismo para el largo. Es lo que hace que una XS se vea CORTA y no solo
+  /// angosta --- sin esto el largo lo seguiria mandando el torso de la persona
+  /// y todas las tallas caerian a la misma altura.
+  final double factorLargo;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -176,7 +201,12 @@ class PintorPrenda extends CustomPainter {
         ? anchoHombros
         : math.max(anchoHombros, largoTorsoRef * 0.62);
 
-    final anchoArriba = hombrosEfectivos * anchoRespectoAHombros;
+    // `factorAncho` entra ACA y no en la escala final a proposito: tiene que
+    // afectar tanto al ancho de arriba como al de abajo ---que sale de este
+    // por proporcion--- para que la prenda se ensanche entera y no se abra
+    // como una campana.
+    final anchoArriba =
+        hombrosEfectivos * anchoRespectoAHombros * factorAncho;
 
     // La cadera manda el ancho de abajo, pero ACOTADA contra los hombros.
     //
@@ -229,6 +259,10 @@ class PintorPrenda extends CustomPainter {
         escalaY = (largoTorso * 1.25) / altoDePrenda;
       }
     }
+    // El largo de la talla. Va aparte de `escalaX` porque el largo NO se
+    // deduce del ancho: una talla mas grande es mas ancha y mas larga, pero no
+    // en la misma proporcion.
+    escalaY *= factorLargo;
     // Donde cae la linea de hombros DENTRO del PNG, en coordenadas 0..1 de su
     // alto. Sale de la convencion de carga: `subida x ancho del PNG`.
     final vHombros = (subida * prenda.width) / prenda.height;
@@ -316,6 +350,8 @@ class PintorPrenda extends CustomPainter {
   @override
   bool shouldRepaint(PintorPrenda anterior) =>
       anterior.prenda != prenda ||
+      anterior.factorAncho != factorAncho ||
+      anterior.factorLargo != factorLargo ||
       anterior.torso.hombroA != torso.hombroA ||
       anterior.torso.hombroB != torso.hombroB ||
       anterior.torso.caderaA != torso.caderaA ||

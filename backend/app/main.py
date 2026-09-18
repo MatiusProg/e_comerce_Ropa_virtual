@@ -56,6 +56,8 @@ from app.modules.catalogo.proveedor_router import router as catalogo_proveedor_r
 # CU-26 es de Karen y vive en archivos propios dentro del paquete de Mateo,
 # con el mismo patron que consolidado_* dentro de inventario/.
 from app.modules.ventas.carrito_router import router as carrito_router
+from app.modules.medidas.router import ajuste_router as medidas_ajuste_router
+from app.modules.medidas.router import router as medidas_router
 from app.modules.ventas.router import router as pedidos_router
 from app.modules.ventas.router import router_operacion as pedidos_operacion_router
 # CU-36 es de Karen y vive en archivos propios dentro de P11, con el mismo
@@ -168,6 +170,8 @@ app.include_router(reservas_mantenimiento_router, prefix=API)
 # --- Ciclo 3 -------------------------------------------------------------
 app.include_router(catalogo_proveedor_router, prefix=API)
 app.include_router(carrito_router, prefix=API)
+app.include_router(medidas_router, prefix=API)
+app.include_router(medidas_ajuste_router, prefix=API)
 app.include_router(tablero_router, prefix=API)
 # CU-27. Van los dos: `/tienda/pedidos` es del cliente y `/pedidos` es de la
 # operacion --- la barrida de vencidos ---, con otro rol. Mismo reparto que
