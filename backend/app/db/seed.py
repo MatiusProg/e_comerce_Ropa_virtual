@@ -27,7 +27,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.security import hash_password
-from app.db import seed_catalogo
+from app.db import seed_catalogo, seed_medidas
 from app.db.session import SessionLocal
 from app.modules.organizacion.models import Ciudad
 from app.modules.seguridad.models import Rol, Usuario
@@ -110,6 +110,14 @@ def main() -> None:
         # administrador --- entre sesenta productos de demostracion.
         seed_catalogo.sembrar(db)
         db.commit()
+
+        # CU-21: la tabla de tallas va DESPUES del catalogo, porque se arma a
+        # partir de las variantes que existen. Es idempotente, asi que volver a
+        # correr el sembrado sobre una base ya poblada no la duplica.
+        escritas = seed_medidas.sembrar(db)
+        db.commit()
+        if escritas:
+            print(f"  tabla de tallas: {escritas} filas")
     print("Listo.")
 
 

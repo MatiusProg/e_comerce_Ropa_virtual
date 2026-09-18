@@ -227,6 +227,7 @@ class VariantePrenda {
     this.colorNombre,
     this.colorHexadecimal,
     this.imagenVestidorUrl,
+    this.vestidorEsSilueta = false,
   });
 
   final int id;
@@ -239,7 +240,17 @@ class VariantePrenda {
   final String? colorHexadecimal;
   final String? imagenVestidorUrl;
 
+  /// Si ese PNG es el DIBUJO que genera el sembrado y no una foto (CU-21).
+  ///
+  /// El vestidor lo usa para ponerse primero una variante fotografiada: sin
+  /// esto, al abrir una prenda puede caer una silueta de color aunque otra
+  /// talla del mismo producto tenga la foto de verdad.
+  final bool vestidorEsSilueta;
+
   bool get sePuedeProbar => imagenVestidorUrl != null;
+
+  /// Se puede probar Y es una foto, no un dibujo.
+  bool get tieneFotoReal => sePuedeProbar && !vestidorEsSilueta;
 
   factory VariantePrenda.desdeJson(Map<String, dynamic> json) {
     return VariantePrenda(
@@ -252,6 +263,9 @@ class VariantePrenda {
       colorNombre: json['color_nombre'] as String?,
       colorHexadecimal: json['color_hexadecimal'] as String?,
       imagenVestidorUrl: json['imagen_vestidor_url'] as String?,
+      // Por omision NO es silueta: un servidor viejo que no mande el campo
+      // deja el vestidor eligiendo como elegia antes, sin romperse.
+      vestidorEsSilueta: json['vestidor_es_silueta'] as bool? ?? false,
     );
   }
 }

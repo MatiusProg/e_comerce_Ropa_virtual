@@ -249,15 +249,20 @@ def _ordenadas(variantes: list) -> list:
     )
 
 
-def _variante(variante, vestidor: dict[int, str]) -> VarianteVitrinaOut:
+def _variante(variante, vestidor: dict[int, tuple[str, bool]]) -> VarianteVitrinaOut:
     salida = VarianteVitrinaOut.model_validate(variante, from_attributes=True)
     if variante.talla is not None:
         salida.talla_codigo = variante.talla.codigo
     if variante.color is not None:
         salida.color_nombre = variante.color.nombre
         salida.color_hexadecimal = variante.color.hexadecimal
-    ruta = vestidor.get(variante.id)
-    salida.imagen_vestidor_url = almacen.url_de(ruta) if ruta else None
+    entrada = vestidor.get(variante.id)
+    if entrada is not None:
+        ruta, es_silueta = entrada
+        salida.imagen_vestidor_url = almacen.url_de(ruta)
+        salida.vestidor_es_silueta = es_silueta
+    else:
+        salida.imagen_vestidor_url = None
     return salida
 
 

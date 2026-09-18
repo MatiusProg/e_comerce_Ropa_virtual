@@ -147,6 +147,12 @@ class VarianteVitrinaOut(BaseModel):
     color_hexadecimal: str | None = None
     imagen_vestidor_url: str | None = None
 
+    #: Si ese PNG es el DIBUJO que genera el sembrado y no una foto (CU-21).
+    #: El vestidor lo usa para ponerse primero una variante fotografiada: sin
+    #: esto, al abrir una prenda puede caer una silueta de color aunque otra
+    #: talla del mismo producto tenga la foto de verdad.
+    vestidor_es_silueta: bool = False
+
 
 class FichaProductoOut(BaseModel):
     """El detalle del paso 3 de CU-18.

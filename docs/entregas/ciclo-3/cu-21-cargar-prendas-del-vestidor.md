@@ -9,13 +9,14 @@ catálogo se pueda probar en el vestidor, y por qué cada paso es como es.
 
 ---
 
-## 1. La regla que no se deduce mirando el PNG
+## 1. Las dos reglas que no se deducen mirando el PNG
 
-`mobile/lib/features/vestidor/pantalla_vestidor.dart` coloca la prenda así:
+`mobile/lib/features/vestidor/pintor_prenda.dart` no mide la prenda: **la da
+por encuadrada**. Toda la escala sale de dos constantes, una por eje:
 
 ```dart
-ancho = distancia entre hombros * 2.1      // _anchoRespectoAHombros
-top   = centro de hombros - ancho * 0.18   // _subida
+const double subida     = 0.18;  // los hombros, a lo alto
+const double torsoEnPng = 0.60;  // el torso, a lo ancho
 ```
 
 De ahí salen **tres condiciones que el archivo tiene que cumplir**, y ninguna
@@ -24,10 +25,24 @@ se ve abriendo la imagen:
 | | Por qué |
 |---|---|
 | **La línea de los hombros va a `0.18 × ancho del PNG` desde el borde superior** | Si está más abajo, la prenda cuelga del cuello. Con 600 px de ancho, la línea va en `y = 108`. |
-| **La prenda ocupa todo el ancho del PNG y está centrada** | El alto se ajusta con `BoxFit.contain`. Si el archivo tiene márgenes laterales, la prenda sale más chica que el cuerpo. |
+| **El torso ocupa `0.60 × ancho del PNG`, centrado** | El torso es el punto más angosto bajo la axila. Es lo que fija el tamaño de la prenda sobre el cuerpo: si ocupa de más, la prenda sale enorme. |
 | **El alfa tiene borde suave**, no escalonado | En la cámara, un borde dentado se lee como un recorte mal hecho. Se consigue dibujando o exportando al doble o cuádruple de tamaño y reduciendo. |
 
 **El alto es libre.** Lo que fija la escala es el ancho.
+
+> **Cambió el 18/09/2026.** Antes la regla decía «la prenda ocupa *todo* el
+> ancho del PNG» y la escala venía de un número calibrado a ojo en el teléfono
+> (`anchoRespectoAHombros = 1.78`). Ese número **solo valía para la prenda
+> contra la que se había calibrado**: una blusa de mangas con vuelo ocupa mucho
+> más ancho de PNG que una remera lisa, así que la misma constante deja bien a
+> una y enorme o angosta a la otra. Ahora el encuadre rellena los costados
+> hasta que el torso da 60 %, y **la escala se deduce sola para cualquier
+> prenda**. La constante que queda en la app —`holguraDelTorso = 1.08`— es
+> cuánto más ancha cae la ropa que la distancia entre los hombros: eso es del
+> cuerpo, no de la foto, y por eso ya no hay que recalibrarla.
+>
+> Consecuencia práctica: **el PNG ahora sí lleva márgenes laterales.** Un
+> archivo sin márgenes es señal de que no pasó por el encuadre.
 
 ---
 
@@ -147,8 +162,21 @@ ve es una **foto real del producto recortada con fondo transparente**:
    hombros).
 2. Recortar el fondo. Cualquier herramienta de quitar fondo sirve; lo que
    importa es que el resultado tenga **alfa de verdad**, no un blanco.
-3. Encuadrar respetando la §1: hombros al 18 % del ancho, prenda centrada y a
-   todo lo ancho.
+3. Encuadrar respetando la §1. **Esto no se hace a ojo**: el script
+   `encuadrar_prenda.py` del *scratchpad* mide el torso, calcula el lienzo que
+   cumple las dos convenciones a la vez y rellena los costados. Se le pasa a
+   qué altura están los hombros, como fracción del alto de la prenda recortada
+   —lo único que no se puede deducir, porque en una prenda de mangas con vuelo
+   el punto más ancho son las mangas y toda heurística se equivoca:
+
+   ```
+   python encuadrar_prenda.py entrada.png salida.png 0.138
+   ```
+
+   Deja además una `salida-revision.png` con las dos guías dibujadas —roja los
+   hombros, azul el torso— **y hay que mirarla**: el 18/09 la línea del torso
+   cayó en el vuelo de la manga en vez de la axila y dio el número correcto de
+   pura casualidad.
 4. Exportar **PNG** (no JPG: no tiene canal alfa).
 5. Subirla con los tres pasos de la §2.
 

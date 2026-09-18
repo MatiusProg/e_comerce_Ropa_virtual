@@ -56,12 +56,18 @@ from app.modules.catalogo.proveedor_router import router as catalogo_proveedor_r
 # CU-26 es de Karen y vive en archivos propios dentro del paquete de Mateo,
 # con el mismo patron que consolidado_* dentro de inventario/.
 from app.modules.ventas.carrito_router import router as carrito_router
+from app.modules.medidas.router import ajuste_router as medidas_ajuste_router
+from app.modules.medidas.router import router as medidas_router
 from app.modules.ventas.router import router as pedidos_router
 from app.modules.ventas.router import router_operacion as pedidos_operacion_router
 # CU-36 es de Karen y vive en archivos propios dentro de P11, con el mismo
 # patron que consolidado_* y carrito_*. El `router.py` del paquete queda para
 # CU-37 (exportar a PDF y Excel), que es el otro caso de uso de P11.
 from app.modules.reportes.tablero_router import router as tablero_router
+# CU-21. El vestidor vive casi entero en el telefono; del servidor solo
+# necesita esto: el probado por IA, que es OPCIONAL y no puede correr en
+# el dispositivo porque necesita un modelo grande y una clave.
+from app.modules.vestidor_virtual.router import router as vestidor_router
 # from app.modules.ventas.router import router as ventas_router
 # CU-28 es el webhook de la pasarela. El paquete P8 lo tomamos entre los
 # dos: Mateo escribio `iniciar_cobro` con CU-27 y CU-28 se sumo encima.
@@ -166,13 +172,16 @@ app.include_router(reservas_mantenimiento_router, prefix=API)
 # --- Ciclo 3 -------------------------------------------------------------
 app.include_router(catalogo_proveedor_router, prefix=API)
 app.include_router(carrito_router, prefix=API)
+app.include_router(medidas_router, prefix=API)
+app.include_router(medidas_ajuste_router, prefix=API)
 app.include_router(tablero_router, prefix=API)
 # CU-27. Van los dos: `/tienda/pedidos` es del cliente y `/pedidos` es de la
 # operacion --- la barrida de vencidos ---, con otro rol. Mismo reparto que
 # tienen reservas y su router de mantenimiento.
 app.include_router(pedidos_router, prefix=API)
 app.include_router(pedidos_operacion_router, prefix=API)
+app.include_router(vestidor_router, prefix=API)
+# CU-28. El webhook de la pasarela.
 app.include_router(pagos_router, prefix=API)
-# app.include_router(vestidor_router, prefix=API)
 # app.include_router(ia_router, prefix=API)
 # app.include_router(reportes_router, prefix=API)
