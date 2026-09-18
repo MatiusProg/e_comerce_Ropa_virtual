@@ -90,6 +90,31 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
   Pose? _pose;
   Size? _tamanoImagen;
 
+  /// Los puntos del torso SUAVIZADOS, en coordenadas de la imagen.
+  ///
+  /// POR QUE HACE FALTA
+  /// ------------------
+  /// La deteccion devuelve puntos con ruido: de un fotograma al siguiente un
+  /// hombro se mueve varios pixeles aunque la persona este quieta. A 10 fps
+  /// eso se ve como si la prenda temblara y «descuadrara», y es lo que mas
+  /// delata que esta pegada encima en vez de puesta.
+  ///
+  /// Se aplica un promedio exponencial: cada punto nuevo pesa [_suavizado] y
+  /// el anterior el resto. No hay forma de tener las dos cosas --- responder
+  /// rapido y no temblar --- asi que el valor es un equilibrio, medido en el
+  /// telefono.
+  final Map<PoseLandmarkType, Offset> _suave = {};
+
+  /// Cuanto pesa el punto nuevo. Mas bajo = mas estable y mas lento.
+  static const double _suavizado = 0.35;
+
+  /// Cuantos fotogramas se sigue mostrando la prenda despues de perder el
+  /// cuerpo. Sin esto, un parpadeo de la deteccion ---que pasa seguido cuando
+  /// la persona mueve los brazos--- hace desaparecer la prenda y volver, que
+  /// se ve peor que dejarla un instante donde estaba.
+  static const int _fotogramasDeGracia = 6;
+  int _sinCuerpo = 0;
+
   int _fotogramas = 0;
   double _fps = 0;
   DateTime _ultimoCorte = DateTime.now();
@@ -401,14 +426,51 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
       }
 
       if (!mounted) return;
+      final nueva = poses.isEmpty ? null : poses.first;
       setState(() {
-        _pose = poses.isEmpty ? null : poses.first;
         _tamanoImagen = tamano;
+        if (nueva != null) {
+          _sinCuerpo = 0;
+          _pose = nueva;
+          _suavizar(nueva);
+        } else if (_sinCuerpo < _fotogramasDeGracia) {
+          // Parpadeo de la deteccion: se deja la prenda donde estaba.
+          _sinCuerpo++;
+        } else {
+          _pose = null;
+          _suave.clear();
+        }
       });
     } catch (_) {
       /* un fotograma perdido no es un error: llega otro en 33 ms */
     } finally {
       _ocupado = false;
+    }
+  }
+
+  /// Mezcla los puntos nuevos con los anteriores. Ver `_suave`.
+  void _suavizar(Pose pose) {
+    const interesan = [
+      PoseLandmarkType.leftShoulder,
+      PoseLandmarkType.rightShoulder,
+      PoseLandmarkType.leftHip,
+      PoseLandmarkType.rightHip,
+    ];
+    for (final tipo in interesan) {
+      final punto = pose.landmarks[tipo];
+      if (punto == null) continue;
+      final crudo = Offset(punto.x, punto.y);
+      final anterior = _suave[tipo];
+      if (anterior == null) {
+        _suave[tipo] = crudo;
+        continue;
+      }
+      // Un salto grande NO se suaviza: es la persona moviendose de verdad, y
+      // arrastrarlo haria que la prenda la siguiera con retraso visible. Solo
+      // se suaviza el temblor chico, que es el ruido del detector.
+      final salto = (crudo - anterior).distance;
+      final peso = salto > 60 ? 1.0 : _suavizado;
+      _suave[tipo] = anterior + (crudo - anterior) * peso;
     }
   }
 
@@ -509,19 +571,19 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
   /// pantalla; la deformacion la hace `PintorPrenda`, y el por que esta
   /// explicado alli.
   List<Widget> _prendaSobreElCuerpo(Size caja) {
-    final pose = _pose!;
     final img = _tamanoImagen!;
     final imagen = _imagenPrenda;
     // Mientras el PNG se decodifica no hay nada que dibujar. Dura un
     // fotograma o dos y solo pasa al cambiar de prenda.
     if (imagen == null) return const [];
 
-    final hi = pose.landmarks[PoseLandmarkType.leftShoulder];
-    final hd = pose.landmarks[PoseLandmarkType.rightShoulder];
+    // Los SUAVIZADOS, no los crudos: ver `_suave`.
+    final hi = _suave[PoseLandmarkType.leftShoulder];
+    final hd = _suave[PoseLandmarkType.rightShoulder];
     if (hi == null || hd == null) return const [];
 
-    final ci = pose.landmarks[PoseLandmarkType.leftHip];
-    final cd = pose.landmarks[PoseLandmarkType.rightHip];
+    final ci = _suave[PoseLandmarkType.leftHip];
+    final cd = _suave[PoseLandmarkType.rightHip];
 
     // La misma geometria que usa el BoxFit.cover de la vista, para que la
     // prenda y el cuerpo queden en el mismo sistema de coordenadas.
@@ -534,8 +596,8 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
     Offset aPantalla(double x, double y) =>
         Offset(dx + (img.width - x) * escala, dy + y * escala);
 
-    final pHi = aPantalla(hi.x, hi.y);
-    final pHd = aPantalla(hd.x, hd.y);
+    final pHi = aPantalla(hi.dx, hi.dy);
+    final pHd = aPantalla(hd.dx, hd.dy);
 
     // ORDENADOS POR SU X EN PANTALLA, no por su nombre anatomico.
     //
@@ -551,8 +613,8 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
     Offset? caderaA;
     Offset? caderaB;
     if (ci != null && cd != null) {
-      final pCi = aPantalla(ci.x, ci.y);
-      final pCd = aPantalla(cd.x, cd.y);
+      final pCi = aPantalla(ci.dx, ci.dy);
+      final pCd = aPantalla(cd.dx, cd.dy);
       caderaA = pCi.dx <= pCd.dx ? pCi : pCd;
       caderaB = pCi.dx <= pCd.dx ? pCd : pCi;
     }

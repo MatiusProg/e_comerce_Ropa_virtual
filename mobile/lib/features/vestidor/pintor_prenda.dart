@@ -73,7 +73,26 @@ class TorsoEnPantalla {
 }
 
 /// Cuanto mas ancha es la prenda que la distancia entre los hombros.
-const double anchoRespectoAHombros = 2.1;
+///
+/// 2.1 venia del prototipo I3 y estaba calibrado contra las siluetas que
+/// dibuja el `seed`: rectangulos angostos, sin mangas, que necesitaban
+/// ensancharse bastante para cubrir el torso.
+///
+/// **Una foto real de una prenda ya trae las mangas adentro**, asi que con 2.1
+/// sale enorme --- se probo el 18/09 con una blusa de verdad y tapaba media
+/// pantalla. Lo que hay que cubrir es el ancho de hombros mas lo que sobresale
+/// la manga, que en una prenda de frente es alrededor de 1.5 veces.
+///
+/// SE AJUSTA MIRANDO EL TELEFONO, NO RAZONANDO
+/// --------------------------------------------
+/// Este numero y `subida` son los dos que hay que calibrar con una persona
+/// delante de la camara. No hay forma de deducirlos: dependen de como se
+/// fotografio la prenda.
+///
+/// Lo que lo resolveria de verdad es una convencion mas: fijar tambien cuanto
+/// ocupan los HOMBROS dentro del PNG ---por ejemplo, el 60 % de su ancho--- y
+/// derivar la escala de ahi. Cada prenda se corregiria sola. Queda anotado.
+const double anchoRespectoAHombros = 1.78;
 
 /// Cuanto sube la prenda por encima de la linea de hombros, en proporcion a su
 /// propio ancho. **Es el mismo 0.18 que la guia de carga le pide al PNG.**
@@ -124,15 +143,58 @@ class PintorPrenda extends CustomPainter {
 
     // --- Las dos anchuras que gobiernan la deformacion --------------------
     final anchoArriba = anchoHombros * anchoRespectoAHombros;
-    // La cadera manda el ancho de abajo. **Aqui esta el cambio**: antes el
-    // ancho era uno solo para toda la prenda, asi que un cuerpo girado --- que
-    // muestra los hombros anchos y la cadera angosta, o al reves --- llevaba
-    // una prenda con forma de tabla.
-    final anchoAbajo = (torso.anchoCadera ?? anchoHombros * 0.88) *
-        anchoRespectoAHombros;
+
+    // La cadera manda el ancho de abajo, pero ACOTADA contra los hombros.
+    //
+    // La idea de que la cadera gobierne el ruedo es la que hace que un cuerpo
+    // girado ---hombros anchos y cadera angosta, o al reves--- lleve una
+    // prenda que se estrecha donde el cuerpo se estrecha, en vez de una tabla.
+    //
+    // Sin acotar se rompe, y se vio en el telefono el 18/09: parada de costado
+    // y con las manos en la cintura, la deteccion pone los puntos de cadera
+    // mas separados que los hombros y la prenda **se abria abajo hasta salirse
+    // del cuerpo**, flotando sobre el fondo.
+    //
+    // Dos razones para acotar y no confiar:
+    //   - una blusa REAL no se ensancha en la cadera: cae recta o afina;
+    //   - los puntos de cadera son los menos fiables de la pose --- quedan
+    //     tapados por los brazos, por la ropa suelta y por el encuadre.
+    //
+    // Asi que se usa la PROPORCION cadera/hombros, no el ancho crudo, y se
+    // acota: puede angostar hasta un 22 % y ensanchar apenas un 2 %.
+    final proporcion = torso.anchoCadera == null
+        ? 0.92
+        : (torso.anchoCadera! / anchoHombros).clamp(0.78, 1.02);
+    final anchoAbajo = anchoArriba * proporcion;
 
     // --- De la imagen a la pantalla ---------------------------------------
-    final escala = anchoArriba / prenda.width;
+    //
+    // DOS ESCALAS, NO UNA. El ancho sale de los hombros y el LARGO del torso.
+    //
+    // Con una sola escala pasaba esto, visto en el telefono el 18/09: al
+    // girarse, la distancia entre hombros se achica en pantalla ---es cierto,
+    // el cuerpo se ve mas angosto--- y el largo, que salia del ancho, se
+    // achicaba con el. La blusa quedaba como un top a media panza. Pero el
+    // torso de la persona NO se acorto al girarse.
+    //
+    // El largo del torso ---de hombros a cadera--- casi no cambia al girar,
+    // asi que es la medida correcta para el largo. Que las dos escalas sean
+    // distintas no es un defecto: es lo que hace que la prenda se estire para
+    // cubrir el cuerpo en vez de encogerse entera.
+    final escalaX = anchoArriba / prenda.width;
+
+    // Lo que hay del hombro al ruedo DENTRO del PNG, en pixeles de la imagen.
+    final altoDePrenda = prenda.height - subida * prenda.width;
+
+    double escalaY = escalaX;
+    if (centroCadera != null) {
+      final largoTorso = (centroCadera - centroHombros).distance;
+      if (largoTorso > 20 && altoDePrenda > 1) {
+        // El ruedo de una blusa cae un poco por debajo de la cadera. 1.25 sale
+        // de mirarlo en el telefono, como las otras dos constantes.
+        escalaY = (largoTorso * 1.25) / altoDePrenda;
+      }
+    }
     // Donde cae la linea de hombros DENTRO del PNG, en coordenadas 0..1 de su
     // alto. Sale de la convencion de carga: `subida x ancho del PNG`.
     final vHombros = (subida * prenda.width) / prenda.height;
@@ -145,7 +207,7 @@ class PintorPrenda extends CustomPainter {
       final v = fila / _filas;
 
       // Cuanto se avanzo por el eje del cuerpo desde la linea de hombros.
-      final avance = (v - vHombros) * prenda.height * escala;
+      final avance = (v - vHombros) * prenda.height * escalaY;
 
       // El ancho en esta altura. Se interpola de la linea de hombros hacia
       // abajo; por encima de los hombros --- el cuello --- se mantiene.
