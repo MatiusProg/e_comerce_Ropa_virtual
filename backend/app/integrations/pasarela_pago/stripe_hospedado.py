@@ -36,11 +36,19 @@ from decimal import Decimal, ROUND_HALF_UP
 from app.core.config import settings
 from app.integrations.pasarela_pago.base import (
     ErrorDePasarela,
+    EventoDePago,
+    FirmaInvalida,
     SesionDePago,
     SolicitudDePago,
 )
 
 _log = logging.getLogger("violetboutique.pago")
+
+#: Los eventos de Stripe que hablan del resultado del cobro de una sesion.
+#: Cualquier otro se registra y no mueve nada --- una cuenta emite decenas ---.
+TIPO_COMPLETADA = "checkout.session.completed"
+TIPO_EXPIRADA = "checkout.session.expired"
+TIPOS_DE_COBRO = (TIPO_COMPLETADA, TIPO_EXPIRADA)
 
 
 def a_unidad_minima(monto: Decimal) -> int:
@@ -91,9 +99,16 @@ class ProveedorStripe:
                 params={
                     "mode": "payment",
                     "line_items": lineas,
+                    # `pedido` va ADEMAS de la sesion: la pantalla de
+                    # retorno lo necesita para saber que consultar, y con solo
+                    # la sesion tendria que guardarselo aparte. El simulado ya
+                    # lo mandaba; esto los deja iguales.
                     "success_url": solicitud.url_exito
-                    + "?sesion={CHECKOUT_SESSION_ID}",
-                    "cancel_url": solicitud.url_cancelado,
+                    + "?sesion={CHECKOUT_SESSION_ID}&pedido="
+                    + solicitud.referencia,
+                    "cancel_url": solicitud.url_cancelado
+                    + "?pedido="
+                    + solicitud.referencia,
                     "customer_email": solicitud.correo_cliente,
                     # Vuelven intactos en el webhook: es como CU-28 sabe a que
                     # venta corresponde el evento sin adivinarlo por el monto.
@@ -114,3 +129,64 @@ class ProveedorStripe:
             raise ErrorDePasarela("Stripe devolvio una sesion sin URL de pago.")
 
         return SesionDePago(id_externo=sesion.id, url_redireccion=sesion.url)
+
+
+    # --- CU-28: la notificacion ------------------------------------------
+
+    def interpretar_webhook(self, cuerpo: bytes, firma: str | None) -> EventoDePago:
+        """Verifica la firma de Stripe y traduce el evento.
+
+        `construct_event` hace las dos cosas: comprueba el HMAC contra
+        `PAGO_WEBHOOK_SECRET` --- el `whsec_...` que da el panel al registrar
+        el endpoint, que **no es** la clave de API --- y devuelve el evento ya
+        interpretado. Si la firma no cuadra levanta, y eso se traduce a
+        `FirmaInvalida`.
+
+        **El cuerpo tiene que llegar en bytes y sin tocar.** Stripe firma los
+        bytes exactos que mando; volver a serializar el JSON cambia espacios y
+        orden de claves y la verificacion falla aunque el mensaje sea legitimo.
+        Es el error mas comun de esta integracion y por eso el router lee
+        `await request.body()` en vez de recibir un modelo de Pydantic.
+
+        La marca de tiempo de la firma tiene tolerancia de cinco minutos, que
+        es la de Stripe: una notificacion vieja reenviada por un tercero no
+        sirve para nada.
+        """
+        secreto = settings.PAGO_WEBHOOK_SECRET.strip()
+        if not secreto:
+            # Sin secreto no hay nada que verificar, y aceptar sin verificar
+            # seria dejar que cualquiera de por pagado un pedido.
+            raise FirmaInvalida(
+                "PAGO_WEBHOOK_SECRET no esta configurado: no se puede verificar."
+            )
+        if not firma:
+            raise FirmaInvalida("La peticion no trae la cabecera Stripe-Signature.")
+
+        import stripe
+
+        try:
+            evento = stripe.Webhook.construct_event(cuerpo, firma, secreto)
+        except ValueError as error:
+            raise ErrorDePasarela(f"El cuerpo no es JSON valido: {error}") from error
+        except Exception as error:  # SignatureVerificationError y parientes
+            raise FirmaInvalida(str(error)) from error
+
+        tipo = str(evento.get("type") or "")
+        objeto = (evento.get("data") or {}).get("object") or {}
+        metadatos = objeto.get("metadata") or {}
+
+        # `checkout.session.completed` es el que interesa: la sesion se cerro
+        # con el pago hecho. `expired` es su contraparte --- el cliente nunca
+        # pago y Stripe cerro la sesion ---. El resto se registra y no mueve
+        # nada: una cuenta de Stripe emite decenas de tipos distintos.
+        aprobado = tipo == TIPO_COMPLETADA and objeto.get("payment_status") == "paid"
+
+        return EventoDePago(
+            id_evento=str(evento.get("id") or ""),
+            tipo=tipo,
+            id_sesion=(str(objeto["id"]) if objeto.get("id") else None),
+            referencia=(str(metadatos["codigo"]) if metadatos.get("codigo") else None),
+            aprobado=aprobado,
+            es_de_cobro=tipo in TIPOS_DE_COBRO,
+            carga_util=cuerpo.decode("utf-8", errors="replace"),
+        )

@@ -353,3 +353,50 @@ mat-card-content {
   color: var(--mat-sys-on-surface-variant);
 }
 
+
+
+// --- La barra de navegación del cliente -----------------------------------
+//
+// Misma forma que la de `proveedor-layout` y `sucursal-layout`: el Cliente era
+// el único rol sin una, y quien iniciaba sesión quedaba encerrado en su perfil
+// sin forma de llegar a la tienda. Ver la nota en la plantilla.
+.navegacion {
+  display: flex;
+  align-items: stretch;
+  gap: 0.25rem;
+  padding: 0 1rem;
+  background: var(--mat-sys-surface);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  // A 390 px no entran las cinco secciones: se desplaza en vez de apretarlas
+  // hasta que dejen de leerse.
+  overflow-x: auto;
+
+  a {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.85rem 1rem;
+    font-size: 0.94rem;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+    color: var(--mat-sys-on-surface-variant);
+    border-bottom: 3px solid transparent;
+    transition: color 120ms ease, border-color 120ms ease;
+
+    mat-icon {
+      width: 1.15rem;
+      height: 1.15rem;
+      font-size: 1.15rem;
+    }
+
+    &:hover {
+      color: var(--vb-malva);
+    }
+
+    &.activo {
+      color: var(--vb-malva);
+      border-bottom-color: var(--vb-malva);
+    }
+  }
+}

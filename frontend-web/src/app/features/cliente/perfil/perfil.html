@@ -19,6 +19,52 @@
   }
 </mat-toolbar>
 
+<!--
+  LA BARRA QUE LE FALTABA AL CLIENTE
+  ----------------------------------
+  Admin, Proveedor y Encargado tienen cada uno su `*-layout` con navegación; el
+  Cliente era el único rol sin ninguna. Quien iniciaba sesión caía acá ---es su
+  `INICIO_POR_ROL`--- y desde el perfil no había forma de llegar a la tienda:
+  había que escribir la URL a mano.
+
+  El comentario de «Mis reservas» decía que un menú «para dos pantallas sería
+  más de lo que hace falta», y era cierto cuando se escribió. Hoy el Cliente
+  tiene ocho pantallas ---catálogo, ficha, carrito, favoritos, confirmación,
+  retorno de pago, perfil y reservas--- y la premisa dejó de valer.
+
+  No se hizo un `cliente-layout` como los otros roles porque `/tienda` es
+  PÚBLICA: envolverla en un layout con sesión rompería la vitrina para quien
+  todavía no tiene cuenta. La navegación vive en las dos cáscaras que sí son
+  del cliente, y la vitrina ofrece la vuelta con su propio enlace a Mi cuenta.
+-->
+<nav class="navegacion" aria-label="Secciones del cliente">
+  <a routerLink="/tienda" routerLinkActive="activo">
+    <mat-icon>storefront</mat-icon>
+    Catálogo
+  </a>
+  <a routerLink="/tienda/carrito" routerLinkActive="activo">
+    <mat-icon
+      [matBadge]="itemsEnCarrito() || null"
+      matBadgeColor="accent"
+      matBadgeSize="small"
+      >shopping_bag</mat-icon
+    >
+    Mi carrito
+  </a>
+  <a routerLink="/tienda/favoritos" routerLinkActive="activo">
+    <mat-icon>favorite</mat-icon>
+    Mis favoritos
+  </a>
+  <a routerLink="/mi-cuenta/reservas" routerLinkActive="activo">
+    <mat-icon>event_available</mat-icon>
+    Mis reservas
+  </a>
+  <a routerLink="/mi-cuenta" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }">
+    <mat-icon>person</mat-icon>
+    Mi perfil
+  </a>
+</nav>
+
 <main class="contenido">
   <header class="encabezado">
     <div>
@@ -27,17 +73,6 @@
         Tus datos, tus tallas habituales y las direcciones a las que te entregamos.
       </p>
     </div>
-    <!-- CU-22/CU-23. Es la única puerta de entrada a las reservas que tiene hoy
-         el cliente: el área de cliente no tiene menú propio, y agregarle uno
-         para dos pantallas sería más de lo que hace falta. -->
-    <a
-      matButton="filled"
-      class="vb-boton-marca"
-      routerLink="/mi-cuenta/reservas"
-    >
-      <mat-icon>event_available</mat-icon>
-      Mis reservas
-    </a>
   </header>
 
   @if (cargando()) {
