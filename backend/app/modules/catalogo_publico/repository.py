@@ -86,6 +86,7 @@ def _filtrar(
     coleccion_id: int | None,
     precio_min: Decimal | None,
     precio_max: Decimal | None,
+    solo_vestidor: bool = False,
 ) -> Select:
     """Los filtros del paso 2 de CU-17, compartidos entre el listado y el conteo.
 
@@ -151,6 +152,33 @@ def _filtrar(
             exists(
                 select(VarianteProducto.id).where(
                     _variante_ofrecible(), VarianteProducto.precio <= precio_max
+                )
+            )
+        )
+    if solo_vestidor:
+        # CU-21. Lo que el vestidor virtual necesita preguntar es «que me puedo
+        # probar», y hasta el 17/09 no habia forma de preguntarlo: la pantalla
+        # pedia la primera pagina y filtraba por `tiene_vestidor` en el
+        # telefono. Con 58 productos y una pagina de 48, las prendas probables
+        # que cayeran despues de la posicion 48 no se veian NUNCA --- y cuales
+        # caen ahi depende del orden, asi que el defecto aparece y desaparece
+        # solo al agregar productos.
+        #
+        # EXISTS y no JOIN, por lo mismo que talla y color: un producto con seis
+        # variantes con PNG apareceria seis veces y el LIMIT cortaria por la
+        # mitad de un producto.
+        #
+        # Se exige `variante_id IS NOT NULL` ademas de `es_transparente` porque
+        # el PNG del vestidor es de una VARIANTE (decision D1): una silueta «del
+        # producto», sin talla ni color, no se puede probar. El servicio de
+        # imagenes ya lo impide al marcarla, y repetirlo aca vuelve la consulta
+        # independiente de que esa regla siga estando.
+        consulta = consulta.where(
+            exists(
+                select(ImagenProducto.id).where(
+                    ImagenProducto.producto_id == Producto.id,
+                    ImagenProducto.es_transparente.is_(True),
+                    ImagenProducto.variante_id.is_not(None),
                 )
             )
         )

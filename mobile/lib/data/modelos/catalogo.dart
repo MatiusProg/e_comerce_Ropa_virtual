@@ -476,6 +476,7 @@ class ConsultaVitrina {
     this.orden = 'novedades',
     this.pagina = 1,
     this.tamano = 12,
+    this.soloVestidor = false,
   });
 
   final String? busqueda;
@@ -489,6 +490,18 @@ class ConsultaVitrina {
 
   final int pagina;
   final int tamano;
+
+  /// CU-21. Deja solo las prendas que se pueden probar en el vestidor virtual.
+  ///
+  /// NO es un filtro de la vitrina y por eso no cuenta en [hayFiltros]: la
+  /// burbuja de «hay filtros puestos» avisa de lo que el cliente eligio, y
+  /// esto lo pone la pantalla del vestidor, no el cliente.
+  ///
+  /// Existe desde el 17/09. Antes el vestidor pedia la primera pagina y
+  /// filtraba por `tieneVestidor` en el telefono, asi que las prendas
+  /// probables que cayeran mas alla de la posicion 48 no se veian NUNCA ---
+  /// medido: 10 de 32 en el conjunto de demostracion.
+  final bool soloVestidor;
 
   bool get hayFiltros =>
       (busqueda != null && busqueda!.isNotEmpty) ||
@@ -522,6 +535,7 @@ class ConsultaVitrina {
       orden: orden ?? this.orden,
       pagina: pagina ?? this.pagina,
       tamano: tamano,
+      soloVestidor: soloVestidor,
     );
   }
 
@@ -532,6 +546,7 @@ class ConsultaVitrina {
       if (tallaId != null) 'talla_id': tallaId,
       if (colorId != null) 'color_id': colorId,
       if (temporadaId != null) 'temporada_id': temporadaId,
+      if (soloVestidor) 'solo_vestidor': true,
       'orden': orden,
       'pagina': pagina,
       'tamano': tamano,
@@ -551,7 +566,8 @@ class ConsultaVitrina {
         otro.temporadaId == temporadaId &&
         otro.orden == orden &&
         otro.pagina == pagina &&
-        otro.tamano == tamano;
+        otro.tamano == tamano &&
+        otro.soloVestidor == soloVestidor;
   }
 
   @override
@@ -564,5 +580,6 @@ class ConsultaVitrina {
     orden,
     pagina,
     tamano,
+    soloVestidor,
   );
 }

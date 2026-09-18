@@ -192,13 +192,21 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
 
   Future<void> _cargarPrendas() async {
     try {
-      // Se piden las ofrecibles y se filtran las que tienen PNG de vestidor.
-      // `tiene_vestidor` viaja en el listado justamente para no abrir la ficha
-      // de cada una solo para saberlo.
+      // El SERVIDOR filtra, no esta pantalla.
+      //
+      // Hasta el 17/09 se pedia la primera pagina de 48 y se filtraba aca por
+      // `tieneVestidor`. Parecia razonable y tenia un defecto que no se veia:
+      // con mas de 48 productos, las prendas probables que quedaran fuera de
+      // esa pagina NO APARECIAN NUNCA --- medido sobre el conjunto de
+      // demostracion, 10 de 32 ---. Y cuales quedaban fuera cambiaba al
+      // agregar productos, asi que el defecto aparecia y desaparecia solo.
+      //
+      // `solo_vestidor` existe para esto. Ver
+      // docs/entregas/ciclo-3/cu-21-cargar-prendas-del-vestidor.md.
       final pagina = await ref
           .read(repositorioCatalogoProvider)
-          .listar(const ConsultaVitrina(tamano: 48));
-      final con = pagina.items.where((p) => p.tieneVestidor).toList();
+          .listar(const ConsultaVitrina(tamano: 48, soloVestidor: true));
+      final con = pagina.items;
       if (!mounted) return;
       setState(() {
         _prendas = con;

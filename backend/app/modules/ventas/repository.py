@@ -79,6 +79,7 @@ def listar_sucursales_activas(db: Session) -> list[Row]:
                 Sucursal.id,
                 Sucursal.nombre,
                 Sucursal.direccion,
+                Sucursal.ciudad_id,
                 Ciudad.nombre.label("ciudad"),
             )
             .join(Ciudad, Ciudad.id == Sucursal.ciudad_id)
@@ -161,6 +162,7 @@ def obtener_direccion(
             DireccionCliente.alias,
             DireccionCliente.direccion,
             DireccionCliente.referencia,
+            DireccionCliente.ciudad_id,
             Ciudad.nombre.label("ciudad"),
         )
         .join(Ciudad, Ciudad.id == DireccionCliente.ciudad_id)
@@ -331,12 +333,53 @@ def detalles_de(db: Session, venta_id: int) -> list[DetalleVenta]:
     )
 
 
+def bloquear_cliente(db: Session, cliente_id: int) -> None:
+    """Serializa las confirmaciones de pedido de UN cliente. **Sin commit.**
+
+    POR QUE HACE FALTA, Y POR QUE NO ALCANZABA EL `FOR UPDATE` DE ABAJO
+    -------------------------------------------------------------------
+    `pedido_pendiente_de` toma `SELECT ... FOR UPDATE` sobre la venta pendiente,
+    y eso protege bien cuando la venta existe --- es lo que impide que cancelar
+    y expirar se crucen ---. Pero **una consulta que no devuelve filas no
+    bloquea nada**: cuando el cliente todavia no tiene pedido pendiente, dos
+    peticiones simultaneas leen las dos "no hay ninguno", las dos pasan la
+    comprobacion y las dos crean su pedido.
+
+    No es teorico: se reprodujo el 17/09 disparando dos POST a la vez contra el
+    servidor --- los dos devolvieron 201 ---. El caso real es el cliente que
+    pulsa "Confirmar" dos veces porque la primera tardo, o el reintento
+    automatico de una peticion que parecio fallar.
+
+    El dano no es sobreventa --- el inventario sigue cuadrando, porque quien lo
+    protege es el `FOR UPDATE` de `apartar_para_reserva` --- sino que el cliente
+    inmoviliza el doble de mercaderia y queda con dos sesiones de pago abiertas.
+
+    LA SOLUCION: BLOQUEAR UNA FILA QUE SI EXISTE
+    ---------------------------------------------
+    Se toma el `FOR UPDATE` sobre la fila de `cliente`, que existe siempre. La
+    segunda peticion espera ahi, y cuando entra ya ve el pedido que creo la
+    primera. Es el patron de "bloquear al padre para poder crear un hijo unico".
+
+    La alternativa de fondo es un indice unico parcial
+    ---`UNIQUE (cliente_id) WHERE estado = 'PENDIENTE_PAGO'`--- que lo
+    garantizaria en la base y no en el servicio. Es mejor y queda anotado: exige
+    una migracion, y el 17/09 no se abrio una para no dejar el arbol con dos
+    cabezas mientras otra persona trabajaba en el backend.
+    """
+    db.execute(
+        select(Cliente.id).where(Cliente.id == cliente_id).with_for_update()
+    ).first()
+
+
 def pedido_pendiente_de(db: Session, cliente_id: int) -> Venta | None:
     """El pedido sin pagar que el cliente ya tenga abierto, si hay alguno.
 
     Se usa para no dejar abrir un segundo: cada pedido sin pagar aparta stock,
     y un cliente que confirma cinco veces seguidas ---porque la pasarela tardo
     y volvio atras--- dejaria cinco veces la mercaderia inmovilizada.
+
+    **El `FOR UPDATE` de aqui NO alcanza solo.** Ver `bloquear_cliente`, que hay
+    que llamar antes.
     """
     return db.scalar(
         select(Venta)

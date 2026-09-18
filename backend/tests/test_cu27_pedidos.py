@@ -756,3 +756,239 @@ def test_la_barrida_cancela_el_pedido_vencido_y_devuelve_su_stock(
     )
     assert _disponible(api, cabeceras_admin, tienda["v_uno"], tienda["sucursal"]) == antes
     assert _reservada(api, cabeceras_admin, tienda["v_uno"], tienda["sucursal"]) == 0
+
+
+# --- El candado que faltaba (defecto encontrado el 17/09) ------------------
+
+
+def test_confirmar_toma_un_candado_sobre_el_cliente(
+    api: TestClient, cabeceras_cliente: dict[str, str], fabrica_sesiones
+) -> None:
+    """La regla de «un solo pedido pendiente» necesita bloquear al CLIENTE.
+
+    EL DEFECTO QUE ESTA PRUEBA IMPIDE QUE VUELVA
+    ---------------------------------------------
+    `pedido_pendiente_de` toma `SELECT ... FOR UPDATE` sobre la venta
+    pendiente. Protege bien cuando la venta existe, y **no protege nada cuando
+    no existe**: una consulta que no devuelve filas no bloquea nada. Dos POST
+    simultáneos leían los dos «no hay pendiente», pasaban los dos y creaban dos
+    pedidos, cada uno apartando stock.
+
+    Se reprodujo el 17/09 disparando dos peticiones a la vez contra el servidor
+    levantado: los dos devolvieron 201. Con `bloquear_cliente`, uno devuelve
+    409.
+
+    Acá no se simula la carrera —pytest corre en un hilo— sino que se comprueba
+    lo que la hace imposible: que el candado sea **exclusivo** y esté sobre una
+    fila que **existe siempre**. Con `lock_timeout`, la segunda sesión falla en
+    vez de colgar la prueba.
+    """
+    from sqlalchemy import select, text
+
+    from app.modules.seguridad.models import Cliente, Usuario
+    from app.modules.ventas import repository
+
+    from .conftest import CORREO_CLIENTE
+
+    sesion_a = fabrica_sesiones()
+    sesion_b = fabrica_sesiones()
+    try:
+        cliente_id = sesion_a.scalar(
+            select(Cliente.id)
+            .join(Usuario, Usuario.id == Cliente.usuario_id)
+            .where(Usuario.correo == CORREO_CLIENTE)
+        )
+        assert cliente_id is not None, "el cliente de las pruebas tiene que existir"
+
+        # La primera sesión se queda con el candado, sin cerrar la transacción.
+        repository.bloquear_cliente(sesion_a, cliente_id)
+
+        # La segunda no puede tomarlo. Sin `lock_timeout` esperaría para
+        # siempre, que es justamente lo que prueba que el candado sirve.
+        sesion_b.execute(text("SET LOCAL lock_timeout = '400ms'"))
+        with pytest.raises(Exception) as fallo:
+            repository.bloquear_cliente(sesion_b, cliente_id)
+        assert "lock" in str(fallo.value).lower() or "timeout" in str(fallo.value).lower()
+    finally:
+        sesion_a.rollback()
+        sesion_b.rollback()
+        sesion_a.close()
+        sesion_b.close()
+
+
+def test_el_candado_es_por_cliente_y_no_frena_a_los_demas(
+    api: TestClient, cabeceras_cliente: dict[str, str], fabrica_sesiones
+) -> None:
+    """Dos clientes distintos confirman a la vez sin estorbarse.
+
+    Importa tanto como lo anterior: un candado global —sobre una tabla, o uno
+    solo para toda la tienda— serializaría TODAS las compras del negocio detrás
+    de la más lenta, y en la demostración eso se ve como una tienda trabada.
+    """
+    from sqlalchemy import select, text
+
+    from app.modules.seguridad.models import Cliente
+    from app.modules.ventas import repository
+
+    # Un segundo cliente de verdad, por la API de CU-01. No se saltea la prueba
+    # si no existe: una prueba saltada no protege nada, y esta cubre que el
+    # candado no sea global.
+    otra = api.post(
+        "/api/v1/auth/registro",
+        json={
+            "correo": "segunda.cu27@violetboutique.bo",
+            "contrasena": "Segunda12345",
+            "nombres": "Segunda",
+            "apellidos": "Clienta",
+            "telefono": None,
+        },
+    )
+    assert otra.status_code in (200, 201, 409), otra.text
+
+    sesion_a = fabrica_sesiones()
+    sesion_b = fabrica_sesiones()
+    try:
+        ids = list(sesion_a.scalars(select(Cliente.id).order_by(Cliente.id).limit(2)))
+        assert len(ids) == 2, (
+            "hacen falta dos clientes; los crea la fixture de arriba"
+        )
+
+        repository.bloquear_cliente(sesion_a, ids[0])
+
+        # El segundo cliente pasa sin esperar.
+        sesion_b.execute(text("SET LOCAL lock_timeout = '400ms'"))
+        repository.bloquear_cliente(sesion_b, ids[1])
+    finally:
+        sesion_a.rollback()
+        sesion_b.rollback()
+        sesion_a.close()
+        sesion_b.close()
+
+
+# --- De qué sucursal sale un envío ----------------------------------------
+
+
+def test_el_envio_sale_de_una_sucursal_de_la_ciudad_del_cliente(
+    api: TestClient,
+    cabeceras_cliente: dict[str, str],
+    cabeceras_admin: dict[str, str],
+    catalogo: dict,
+) -> None:
+    """Decisión 2, la mitad que no se ve hasta que alguien mira un envío.
+
+    Las sucursales se listan por ciudad y nombre. Tomar «la primera que pueda»
+    hacía que un cliente de Santa Cruz recibiera su pedido desde Cochabamba
+    —que va antes alfabéticamente— si esa sucursal podía abastecerlo. El
+    pedido salía bien, el inventario cuadraba, y nadie lo habría notado hasta
+    ver la mercadería cruzando el país.
+    """
+    ciudades = api.get(CIUDADES, headers=cabeceras_admin).json()
+    assert len(ciudades) >= 2, "hacen falta dos ciudades para esta comprobación"
+    lejana, cercana = ciudades[0], ciudades[1]
+
+    def _sucursal_en(ciudad_id: int, nombre: str) -> int:
+        r = api.post(
+            SUCURSALES,
+            headers=cabeceras_admin,
+            json={
+                "ciudad_id": ciudad_id,
+                "nombre": nombre,
+                "direccion": f"Avenida {nombre} 100",
+                "telefono": None,
+                "horario_apertura": "09:00:00",
+                "horario_cierre": "20:00:00",
+                "capacidad_vestidores": 4,
+                "activa": True,
+            },
+        )
+        assert r.status_code == 201, r.text
+        return r.json()["id"]
+
+    # Las dos pueden abastecer el pedido entero: lo único que las diferencia es
+    # la ciudad. Así la prueba falla solo si se elige por el motivo equivocado.
+    suc_lejana = _sucursal_en(lejana["id"], "Aaa Lejana")
+    suc_cercana = _sucursal_en(cercana["id"], "Zzz Cercana")
+    for suc in (suc_lejana, suc_cercana):
+        _ingresar(api, cabeceras_admin, sucursal_id=suc, lineas=[(catalogo["v_uno"], 5)])
+
+    # La dirección del cliente está en la ciudad de la sucursal «Zzz», que por
+    # nombre y por ciudad iría ÚLTIMA en la lista.
+    r = api.post(
+        DIRECCIONES,
+        headers=cabeceras_cliente,
+        json={
+            "ciudad_id": cercana["id"],
+            "alias": "Casa",
+            "direccion": "Calle Falsa 123",
+            "referencia": None,
+            "predeterminada": True,
+        },
+    )
+    assert r.status_code in (200, 201), r.text
+    direccion_id = api.get("/api/v1/perfil", headers=cabeceras_cliente).json()[
+        "direcciones"
+    ][0]["id"]
+
+    _agregar(api, cabeceras_cliente, catalogo["v_uno"], 1)
+    respuesta = _pedir(api, cabeceras_cliente, total="250.00", direccion_id=direccion_id)
+    assert respuesta.status_code == 201, respuesta.text
+
+    pedido = respuesta.json()["pedido"]
+    assert pedido["sucursal_id"] == suc_cercana, (
+        f"el envío salió de la sucursal {pedido['sucursal_id']} "
+        f"({pedido['sucursal_nombre']}) en vez de la de la ciudad del cliente"
+    )
+
+
+def test_si_su_ciudad_no_puede_el_envio_sale_de_otra(
+    api: TestClient,
+    cabeceras_cliente: dict[str, str],
+    cabeceras_admin: dict[str, str],
+    catalogo: dict,
+) -> None:
+    """Preferir la ciudad del cliente NO puede volverse un impedimento.
+
+    Si la sucursal de su ciudad no tiene la prenda, mandarla de lejos es mejor
+    que no vender. Sin esta prueba, «preferir» y «exigir» se confunden fácil.
+    """
+    ciudades = api.get(CIUDADES, headers=cabeceras_admin).json()
+    lejana, cercana = ciudades[0], ciudades[1]
+
+    r = api.post(
+        SUCURSALES,
+        headers=cabeceras_admin,
+        json={
+            "ciudad_id": lejana["id"],
+            "nombre": "Única con stock",
+            "direccion": "Avenida Lejana 100",
+            "telefono": None,
+            "horario_apertura": "09:00:00",
+            "horario_cierre": "20:00:00",
+            "capacidad_vestidores": 4,
+            "activa": True,
+        },
+    )
+    assert r.status_code == 201, r.text
+    suc_lejana = r.json()["id"]
+    _ingresar(api, cabeceras_admin, sucursal_id=suc_lejana, lineas=[(catalogo["v_uno"], 5)])
+
+    r = api.post(
+        DIRECCIONES,
+        headers=cabeceras_cliente,
+        json={
+            "ciudad_id": cercana["id"],
+            "alias": "Casa",
+            "direccion": "Calle Falsa 123",
+            "referencia": None,
+            "predeterminada": True,
+        },
+    )
+    assert r.status_code in (200, 201), r.text
+    direccion_id = api.get("/api/v1/perfil", headers=cabeceras_cliente).json()[
+        "direcciones"
+    ][0]["id"]
+
+    _agregar(api, cabeceras_cliente, catalogo["v_uno"], 1)
+    respuesta = _pedir(api, cabeceras_cliente, total="250.00", direccion_id=direccion_id)
+    assert respuesta.status_code == 201, respuesta.text
+    assert respuesta.json()["pedido"]["sucursal_id"] == suc_lejana

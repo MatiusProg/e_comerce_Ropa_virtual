@@ -34,6 +34,15 @@ dependencies:
   image: ^4.9.2 # composicion de la captura
   permission_handler: ^13.0.1 # permiso de camara
 
+  # --- Compra (P7 y P8, ciclo 3) ----------------------------------------
+  # Abre la pasarela de pago en el navegador del telefono. NO se usa un
+  # WebView adentro de la app a proposito: la pagina de pago es de un tercero
+  # y meterla en un WebView propio es exactamente lo que los navegadores
+  # ensenan a desconfiar --- el cliente no puede ver la barra de direcciones
+  # ni el candado, que es como comprueba que le esta dando la tarjeta a quien
+  # cree. Ademas Stripe lo desaconseja.
+  url_launcher: ^6.3.1
+
   # --- Utilidades --------------------------------------------------------
   intl: ^0.20.3 # formato de fechas y moneda
 
