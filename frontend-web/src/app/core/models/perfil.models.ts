@@ -41,7 +41,6 @@ export interface Perfil {
   telefono: string | null;
   talla_superior: string | null;
   talla_inferior: string | null;
-  talla_calzado: string | null;
   direcciones: Direccion[];
   /** Diferidas del Ciclo 1: dependían de que CU-08 creara categorías. */
   categorias_preferidas: CategoriaPreferida[];
@@ -65,7 +64,6 @@ export type PerfilEditar = Partial<{
   telefono: string | null;
   talla_superior: string | null;
   talla_inferior: string | null;
-  talla_calzado: string | null;
 }>;
 
 /** Cuerpo de POST /perfil/direcciones — flujo alternativo 3a. */
@@ -93,4 +91,3 @@ export interface CambioContrasena {
  */
 export const TALLAS_SUPERIOR = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const;
 export const TALLAS_INFERIOR = ['28', '30', '32', '34', '36', '38', '40', '42'] as const;
-export const TALLAS_CALZADO = ['35', '36', '37', '38', '39', '40', '41', '42', '43', '44'] as const;

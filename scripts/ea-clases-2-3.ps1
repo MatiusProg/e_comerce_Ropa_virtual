@@ -203,7 +203,7 @@ Set-Operaciones $rol @(
 Set-Atributos $cli @(
   @{n='id';t='BIGSERIAL'}, @{n='usuario_id';t='BIGINT'}, @{n='documento';t='VARCHAR(20)'},
   @{n='telefono';t='VARCHAR(20)'}, @{n='talla_superior';t='VARCHAR(10)'},
-  @{n='talla_inferior';t='VARCHAR(10)'}, @{n='talla_calzado';t='VARCHAR(10)'},
+  @{n='talla_inferior';t='VARCHAR(10)'},
   @{n='creado_en';t='TIMESTAMPTZ'}, @{n='actualizado_en';t='TIMESTAMPTZ'}
 )
 Set-Operaciones $cli @(

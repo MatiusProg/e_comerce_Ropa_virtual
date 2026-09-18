@@ -82,6 +82,40 @@ export const routes: Routes = [
       import('./features/tienda/favoritos/favoritos').then((m) => m.Favoritos),
   },
 
+  // --- Ciclo 3 · CU-27 Realizar pedido y pagar en línea ------------------
+  {
+    path: 'tienda/checkout',
+    title: 'Confirmar el pedido · Violet Boutique',
+    canActivate: [sesionGuard, rolGuard('CLIENTE')],
+    loadComponent: () =>
+      import('./features/tienda/checkout/checkout').then((m) => m.Checkout),
+  },
+  // Las dos salidas de la pasarela. Los caminos NO son libres: los fija el
+  // backend con `PAGO_URL_EXITO` y `PAGO_URL_CANCELADO`, que por omisión
+  // apuntan acá. Cambiar uno sin cambiar el otro deja al cliente en un 404
+  // justo después de pagar.
+  //
+  // `data.salida` llega al componente como entrada gracias a
+  // `withComponentInputBinding()` (ver app.config.ts): es la misma pantalla
+  // con dos encabezados, porque las dos hacen lo mismo —preguntarle a la base
+  // en qué estado quedó el pedido—.
+  {
+    path: 'pago/exito',
+    title: 'Resultado del pago · Violet Boutique',
+    canActivate: [sesionGuard, rolGuard('CLIENTE')],
+    data: { salida: 'exito' },
+    loadComponent: () =>
+      import('./features/tienda/pago/pago-retorno').then((m) => m.PagoRetorno),
+  },
+  {
+    path: 'pago/cancelado',
+    title: 'Pago cancelado · Violet Boutique',
+    canActivate: [sesionGuard, rolGuard('CLIENTE')],
+    data: { salida: 'cancelado' },
+    loadComponent: () =>
+      import('./features/tienda/pago/pago-retorno').then((m) => m.PagoRetorno),
+  },
+
   // --- Con sesión, una por rol ------------------------------------------
   {
     path: 'admin',

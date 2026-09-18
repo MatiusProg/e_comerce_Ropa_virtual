@@ -152,7 +152,6 @@ class Cliente(Auditoria, Base):
     telefono: Mapped[str | None] = mapped_column(String(20))
     talla_superior: Mapped[str | None] = mapped_column(String(10))
     talla_inferior: Mapped[str | None] = mapped_column(String(10))
-    talla_calzado: Mapped[str | None] = mapped_column(String(10))
 
     usuario: Mapped[Usuario] = relationship(back_populates="cliente")
     direcciones: Mapped[list["DireccionCliente"]] = relationship(

@@ -1,0 +1,230 @@
+<a matButton routerLink="/tienda/carrito" class="volver">
+  <mat-icon>arrow_back</mat-icon>
+  Volver al carrito
+</a>
+
+<mat-card class="tarjeta">
+  <mat-card-header class="encabezado">
+    <mat-card-title>Confirmar el pedido</mat-card-title>
+  </mat-card-header>
+
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <mat-card-content>
+    @if (error(); as e) {
+      <p class="aviso aviso-error">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ e }}</span>
+        <button matButton type="button" (click)="reintentar()">Reintentar</button>
+      </p>
+    }
+
+    @if (opciones(); as o) {
+      <!--
+        El total cambió entre mirar el carrito y confirmar. No es un error: es
+        una respuesta que el cliente tiene que poder leer y decidir de nuevo.
+      -->
+      @if (conflicto(); as c) {
+        <div class="conflicto" role="alert">
+          <mat-icon>price_change</mat-icon>
+          <div>
+            <p class="titulo">El precio cambió mientras decidía</p>
+            <p class="cuerpo">
+              Cuando abrió esta pantalla el total era
+              <strong>{{ c.total_esperado | currency: 'BOB' : 'symbol-narrow' }}</strong>
+              y ahora es
+              <strong>{{ c.total_actual | currency: 'BOB' : 'symbol-narrow' }}</strong>.
+              No cobramos nada: revise el detalle y confirme otra vez si está de
+              acuerdo.
+            </p>
+          </div>
+          <button matIconButton type="button" (click)="cerrarConflicto()" aria-label="Cerrar">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      }
+
+      @if (!o.se_puede_pedir) {
+        <p class="aviso aviso-bloqueo">
+          <mat-icon>block</mat-icon>
+          <span>{{ o.motivo ?? 'Todavía no se puede confirmar este pedido.' }}</span>
+        </p>
+      }
+
+      <!-- Lo que se está por comprar -->
+      <section class="bloque">
+        <h2>Su pedido</h2>
+        <ul class="lineas">
+          @for (linea of o.lineas; track linea.variante_id) {
+            <li class="linea" [class.no-disponible]="!linea.disponible">
+              @if (linea.imagen_url) {
+                <img [src]="linea.imagen_url" [alt]="linea.producto_nombre" />
+              } @else {
+                <span class="sin-foto"><mat-icon>checkroom</mat-icon></span>
+              }
+              <span class="datos">
+                <span class="nombre">{{ linea.producto_nombre }}</span>
+                <span class="detalle">
+                  {{ linea.talla_codigo }} · {{ linea.color_nombre }} ·
+                  {{ linea.cantidad }} u.
+                </span>
+                @if (!linea.disponible) {
+                  <span class="apagada">Ya no se ofrece — quítela del carrito</span>
+                }
+              </span>
+              <span class="importe">
+                {{ linea.subtotal | currency: 'BOB' : 'symbol-narrow' }}
+              </span>
+            </li>
+          }
+        </ul>
+        <p class="total">
+          <span>Total</span>
+          <strong>{{ o.total | currency: 'BOB' : 'symbol-narrow' }}</strong>
+        </p>
+      </section>
+
+      <!-- Cómo lo recibe -->
+      <section class="bloque">
+        <h2>¿Cómo lo recibe?</h2>
+        <mat-radio-group class="modalidades" [formControl]="modalidad">
+          <mat-radio-button value="RETIRO">Retiro en sucursal</mat-radio-button>
+          <mat-radio-button value="ENVIO">Envío a domicilio</mat-radio-button>
+        </mat-radio-group>
+
+        @if (modalidad.value === 'RETIRO') {
+          @if (sucursalesUtiles().length === 0) {
+            <p class="aviso aviso-bloqueo">
+              <mat-icon>storefront</mat-icon>
+              <span>Ninguna sucursal tiene hoy todo lo que pidió.</span>
+            </p>
+          }
+          <ul class="destinos">
+            @for (s of sucursalesUtiles(); track s.id) {
+              <li>
+                <button
+                  type="button"
+                  class="destino"
+                  [class.elegido]="sucursalElegida() === s.id"
+                  (click)="elegirSucursal(s.id)"
+                >
+                  <mat-icon>{{
+                    sucursalElegida() === s.id ? 'radio_button_checked' : 'radio_button_unchecked'
+                  }}</mat-icon>
+                  <span class="datos">
+                    <span class="nombre">{{ s.nombre }}</span>
+                    <span class="detalle">{{ s.direccion }} · {{ s.ciudad }}</span>
+                  </span>
+                </button>
+              </li>
+            }
+            <!--
+              Las que no llegan se muestran apagadas y CON EL MOTIVO, en vez de
+              esconderse: un cliente que no ve su sucursal habitual necesita
+              saber que existe y qué le falta, no que desapareció.
+            -->
+            @for (s of sucursalesCortas(); track s.id) {
+              <li>
+                <div class="destino corto">
+                  <mat-icon>do_not_disturb_on</mat-icon>
+                  <span class="datos">
+                    <span class="nombre">{{ s.nombre }}</span>
+                    <span class="detalle">Le falta: {{ s.faltantes.join(', ') }}</span>
+                  </span>
+                </div>
+              </li>
+            }
+          </ul>
+        } @else {
+          @if (o.direcciones.length === 0) {
+            <p class="aviso aviso-bloqueo">
+              <mat-icon>home</mat-icon>
+              <span>
+                No tiene direcciones guardadas.
+                <a routerLink="/mi-cuenta">Agregue una en su perfil</a> para poder
+                recibir el pedido en casa.
+              </span>
+            </p>
+          }
+          <ul class="destinos">
+            @for (d of o.direcciones; track d.id) {
+              <li>
+                <button
+                  type="button"
+                  class="destino"
+                  [class.elegido]="direccionElegida() === d.id"
+                  (click)="elegirDireccion(d.id)"
+                >
+                  <mat-icon>{{
+                    direccionElegida() === d.id ? 'radio_button_checked' : 'radio_button_unchecked'
+                  }}</mat-icon>
+                  <span class="datos">
+                    <span class="nombre">
+                      {{ d.alias }}
+                      @if (d.predeterminada) {
+                        <span class="etiqueta">predeterminada</span>
+                      }
+                    </span>
+                    <span class="detalle">
+                      {{ d.direccion }} · {{ d.ciudad }}
+                      @if (d.referencia) {
+                        · {{ d.referencia }}
+                      }
+                    </span>
+                  </span>
+                </button>
+              </li>
+            }
+          </ul>
+          <p class="nota">
+            En un envío, la sucursal que despacha la elige el sistema según dónde
+            haya stock.
+          </p>
+        }
+      </section>
+
+      <!--
+        Si el proveedor de pago no mueve dinero, se dice ANTES de que el cliente
+        pulse. En la demostración el pago es simulado, y dejar que parezca real
+        sería engañar a quien mira.
+      -->
+      @if (!o.pago_real) {
+        <p class="aviso aviso-simulado">
+          <mat-icon>science</mat-icon>
+          <span>
+            <strong>El pago es simulado.</strong> No se va a cobrar nada ni hace
+            falta una tarjeta. El pedido se crea igual y recorre el mismo camino
+            que con una pasarela real.
+          </span>
+        </p>
+      }
+
+      <footer class="pie">
+        <p class="plazo">
+          <mat-icon>schedule</mat-icon>
+          Tiene {{ o.minutos_para_pagar }} minutos para pagar. Pasado ese plazo el
+          pedido se cancela solo y las prendas vuelven a la tienda.
+        </p>
+
+        <button
+          matButton="filled"
+          type="button"
+          class="vb-boton-marca confirmar"
+          [disabled]="!puedeConfirmar()"
+          (click)="confirmar()"
+        >
+          <!--
+            El icono va FUERA del @if y sólo cambia su nombre. Dentro, cada
+            rama tendría dos nodos raíz —el icono y el texto— y Material no
+            proyectaría el icono en su ranura: quedaría suelto, sin el espaciado
+            del botón. Lo avisa NG8011 al compilar.
+          -->
+          <mat-icon>{{ confirmando() ? 'hourglass_top' : 'lock' }}</mat-icon>
+          {{ confirmando() ? 'Confirmando…' : 'Confirmar y pagar' }}
+        </button>
+      </footer>
+    }
+  </mat-card-content>
+</mat-card>

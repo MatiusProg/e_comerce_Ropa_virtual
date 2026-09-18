@@ -166,16 +166,34 @@
             <p class="nota-promos">Sin promociones aplicadas todavía.</p>
           </div>
 
-          <button
-            matButton="filled"
-            type="button"
-            class="vb-boton-marca pagar"
-            disabled
-            matTooltip="El pago en línea llega con el siguiente caso de uso"
-          >
-            <mat-icon>lock</mat-icon>
-            Continuar al pago
-          </button>
+          <!--
+            CU-27 ya existe. Con prendas que dejaron de ofrecerse el backend no
+            deja confirmar, así que acá se corta antes: mandar al cliente a la
+            pantalla siguiente para que rebote ahí sería hacerle dar un paso al
+            vacío.
+
+            Son dos elementos y no un `<a>` con `aria-disabled` porque un
+            enlace deshabilitado sólo de nombre SIGUE navegando: basta pulsarlo
+            con el teclado. Un `<button disabled>` no se puede activar de
+            ninguna manera.
+          -->
+          @if (c.no_disponibles > 0) {
+            <button
+              matButton="filled"
+              type="button"
+              class="vb-boton-marca pagar"
+              disabled
+              matTooltip="Quite las prendas que ya no se ofrecen para poder continuar"
+            >
+              <mat-icon>lock</mat-icon>
+              Continuar al pago
+            </button>
+          } @else {
+            <a matButton="filled" class="vb-boton-marca pagar" routerLink="/tienda/checkout">
+              <mat-icon>lock</mat-icon>
+              Continuar al pago
+            </a>
+          }
         </footer>
       }
     }
