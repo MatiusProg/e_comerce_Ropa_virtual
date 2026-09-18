@@ -26,6 +26,15 @@
       >
       Mi carrito
     </a>
+    <!--
+      La vuelta al área de cliente. Sin esto la vitrina era un callejón sin
+      salida en el otro sentido: se podía ir del perfil a la tienda, pero no
+      volver ni llegar a las reservas sin escribir la URL.
+    -->
+    <a matButton routerLink="/mi-cuenta" class="acceso">
+      <mat-icon>person</mat-icon>
+      Mi cuenta
+    </a>
   } @else {
     <a matButton routerLink="/login" class="acceso">
       <mat-icon>person</mat-icon>
