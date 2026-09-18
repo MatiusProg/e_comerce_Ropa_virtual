@@ -1,0 +1,149 @@
+<mat-card class="tarjeta">
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <mat-card-content>
+    @if (sinCodigo()) {
+      <!--
+        No se supo de qué pedido se trata: ni la URL lo traía ni quedó guardado.
+        Pasa si alguien entra a esta dirección a mano, o si pagó en otra pestaña.
+      -->
+      <div class="estado">
+        <mat-icon class="icono neutro">help_outline</mat-icon>
+        <h1>No sabemos de qué pedido se trata</h1>
+        <p class="bajada">
+          Puede que haya entrado a esta página directamente, o que su navegador
+          no nos deje recordar la compra. <strong>Su pedido no se perdió</strong>:
+          si lo pagó, se confirmó igual. Escriba su código y se lo mostramos.
+        </p>
+
+        <form class="buscar" (ngSubmit)="buscarAMano()">
+          <mat-form-field appearance="outline">
+            <mat-label>Código del pedido</mat-label>
+            <input
+              matInput
+              [formControl]="codigoAMano"
+              placeholder="VB-20260917-A3F9C1"
+              autocomplete="off"
+            />
+          </mat-form-field>
+          <button matButton="filled" type="submit" class="vb-boton-marca">
+            Buscar
+          </button>
+        </form>
+
+        <a matButton routerLink="/tienda">Volver a la tienda</a>
+      </div>
+    } @else if (error(); as e) {
+      <div class="estado">
+        <mat-icon class="icono malo">error_outline</mat-icon>
+        <h1>No pudimos consultar su pedido</h1>
+        <p class="bajada">{{ e }}</p>
+        <!--
+          Se ofrece volver a intentar con otro código: si la persona llegó acá
+          escribiéndolo a mano y se equivocó en un carácter, dejarla sólo con
+          «volver a la tienda» la obliga a rehacer todo el camino.
+        -->
+        <div class="acciones">
+          <button matButton type="button" (click)="pedirCodigo()">
+            Probar con otro código
+          </button>
+          <a matButton routerLink="/tienda">Volver a la tienda</a>
+        </div>
+      </div>
+    } @else if (pedido(); as p) {
+      <div class="estado">
+        <mat-icon
+          class="icono"
+          [class.bueno]="p.estado === 'PAGADA' || p.estado === 'ENTREGADA'"
+          [class.malo]="p.estado === 'CANCELADA'"
+          [class.neutro]="p.estado === 'PENDIENTE_PAGO'"
+          >{{ icono() }}</mat-icon
+        >
+        <h1>{{ titulo() }}</h1>
+        <p class="codigo">
+          Pedido <strong>{{ p.codigo }}</strong>
+        </p>
+
+        <!--
+          Este párrafo es la decisión D5 dicha en voz alta. La pantalla NO
+          decide si se pagó: muestra lo que dice la base, que se mueve sólo con
+          el webhook firmado de la pasarela.
+        -->
+        @if (esperandoPago()) {
+          <p class="bajada">
+            Todavía no nos llegó la confirmación de la pasarela. Si acaba de
+            pagar, puede tardar unos segundos: el estado lo fija la pasarela, no
+            esta pantalla.
+            @if (p.pagar_antes_de) {
+              Tiene tiempo hasta las
+              <strong>{{ p.pagar_antes_de | date: 'HH:mm' }}</strong>
+              antes de que el pedido se cancele solo.
+            }
+          </p>
+        }
+      </div>
+
+      <section class="detalle">
+        <h2>Qué pidió</h2>
+        <ul class="lineas">
+          @for (linea of p.lineas; track linea.variante_id) {
+            <li class="linea">
+              @if (linea.imagen_url) {
+                <img [src]="linea.imagen_url" [alt]="linea.producto_nombre" />
+              } @else {
+                <span class="sin-foto"><mat-icon>checkroom</mat-icon></span>
+              }
+              <span class="datos">
+                <span class="nombre">{{ linea.producto_nombre }}</span>
+                <span class="sub">
+                  {{ linea.talla_codigo }} · {{ linea.color_nombre }} ·
+                  {{ linea.cantidad }} u.
+                </span>
+              </span>
+              <span class="importe">
+                {{ linea.subtotal | currency: 'BOB' : 'symbol-narrow' }}
+              </span>
+            </li>
+          }
+        </ul>
+
+        <p class="total">
+          <span>Total</span>
+          <strong>{{ p.total | currency: 'BOB' : 'symbol-narrow' }}</strong>
+        </p>
+
+        <dl class="entrega">
+          @if (p.modalidad_entrega === 'ENVIO') {
+            <dt>Envío a</dt>
+            <dd>{{ p.direccion_envio }}</dd>
+            <dt>Despacha</dt>
+            <dd>{{ p.sucursal_nombre }}</dd>
+          } @else {
+            <dt>Retira en</dt>
+            <dd>{{ p.sucursal_nombre }}</dd>
+          }
+          <dt>Hecho el</dt>
+          <dd>{{ p.creado_en | date: 'dd/MM/yyyy HH:mm' }}</dd>
+        </dl>
+      </section>
+
+      <footer class="acciones acciones-pie">
+        <a matButton routerLink="/tienda">Seguir comprando</a>
+        @if (esperandoPago()) {
+          <button
+            matButton
+            type="button"
+            class="cancelar"
+            [disabled]="cancelando()"
+            (click)="cancelar()"
+          >
+            <mat-icon>close</mat-icon>
+            {{ cancelando() ? 'Cancelando…' : 'Cancelar el pedido' }}
+          </button>
+        }
+      </footer>
+    }
+  </mat-card-content>
+</mat-card>

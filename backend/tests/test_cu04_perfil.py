@@ -99,14 +99,16 @@ def test_guardar_las_tallas_habituales(
     respuesta = api.patch(
         PERFIL,
         headers=cabeceras_cliente,
-        json={"talla_superior": "M", "talla_inferior": "32", "talla_calzado": "38"},
+        json={"talla_superior": "M", "talla_inferior": "32"},
     )
     assert respuesta.status_code == 200
 
     perfil = respuesta.json()
     assert perfil["talla_superior"] == "M"
     assert perfil["talla_inferior"] == "32"
-    assert perfil["talla_calzado"] == "38"
+    # Sin talla de calzado: la tienda no vende zapatos y la columna se quito
+    # en la 0010. Ver su docstring.
+    assert "talla_calzado" not in perfil
 
 
 def test_enviar_un_campo_vacio_borra_el_dato(

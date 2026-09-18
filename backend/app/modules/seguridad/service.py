@@ -630,7 +630,6 @@ def obtener_perfil(db: Session, usuario_id: int) -> PerfilOut:
         telefono=cliente.telefono,
         talla_superior=cliente.talla_superior,
         talla_inferior=cliente.talla_inferior,
-        talla_calzado=cliente.talla_calzado,
         direcciones=_direcciones(db, cliente.id),
         categorias_preferidas=[
             CategoriaPreferidaOut.model_validate(c, from_attributes=True)
@@ -710,7 +709,6 @@ def editar_perfil(db: Session, usuario_id: int, datos: PerfilEditarIn) -> Perfil
             "telefono",
             "talla_superior",
             "talla_inferior",
-            "talla_calzado",
         ):
             if campo in enviados:
                 setattr(cliente, campo, getattr(datos, campo))

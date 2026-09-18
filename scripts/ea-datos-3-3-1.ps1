@@ -163,8 +163,7 @@ $entidades = @(
        @{n='documento';      t='VARCHAR(20)'},
        @{n='telefono';       t='VARCHAR(20)'},
        @{n='talla_superior'; t='VARCHAR(10)'},
-       @{n='talla_inferior'; t='VARCHAR(10)'},
-       @{n='talla_calzado';  t='VARCHAR(10)'}
+       @{n='talla_inferior'; t='VARCHAR(10)'}
      ) + $AUD },
   @{ n='DIRECCION_CLIENTE'; nt='Tabla direccion_cliente. Entidad que el diseno agrega: CU-04 permite varias direcciones de entrega por cliente, y una relacion uno-a-muchos no se puede representar como atributo de Cliente.'
      cols=@(

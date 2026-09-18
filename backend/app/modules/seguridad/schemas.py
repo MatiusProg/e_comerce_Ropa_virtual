@@ -336,7 +336,6 @@ class PerfilOut(BaseModel):
     telefono: str | None
     talla_superior: str | None
     talla_inferior: str | None
-    talla_calzado: str | None
     direcciones: list[DireccionOut]
     categorias_preferidas: list[CategoriaPreferidaOut] = []
 
@@ -398,7 +397,6 @@ class PerfilEditarIn(BaseModel):
     telefono: str | None = Field(default=None, max_length=20)
     talla_superior: str | None = Field(default=None, max_length=10)
     talla_inferior: str | None = Field(default=None, max_length=10)
-    talla_calzado: str | None = Field(default=None, max_length=10)
 
     @field_validator(
         "nombres",
@@ -407,7 +405,6 @@ class PerfilEditarIn(BaseModel):
         "telefono",
         "talla_superior",
         "talla_inferior",
-        "talla_calzado",
     )
     @classmethod
     def _recortar(cls, valor: str | None) -> str | None:
