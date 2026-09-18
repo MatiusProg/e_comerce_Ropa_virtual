@@ -140,6 +140,30 @@ def guardar(contenido: bytes, *, producto_id: int, formato: str) -> str:
     return relativa.as_posix()
 
 
+def leer(ruta: str) -> bytes:
+    """El contenido del archivo, a partir de la ruta que guarda la base.
+
+    Lo estrena CU-21: el probado por IA necesita mandarle el PNG de la prenda
+    al modelo, y el modelo esta del lado del servidor. Las pantallas NO usan
+    esto --- ellas piden la imagen por HTTP con `url_de`, que es mas barato y
+    se cachea.
+
+    Levanta `FileNotFoundError` si la fila existe pero el archivo no, que es lo
+    que pasa cuando se restaura la base sin el volumen. Quien llama decide como
+    contarlo; devolver bytes vacios lo convertiria en un defecto silencioso.
+
+    La ruta llega de la BASE y no del cliente, asi que no hay recorrido de
+    directorios que temer --- pero se comprueba igual que el resultado caiga
+    dentro de MEDIA_ROOT: es una linea, y una fila manipulada no deberia poder
+    leer /etc/passwd.
+    """
+    destino = (_raiz() / ruta).resolve()
+    raiz = _raiz().resolve()
+    if not destino.is_relative_to(raiz):
+        raise FileNotFoundError(f"La ruta {ruta!r} sale del almacén.")
+    return destino.read_bytes()
+
+
 def borrar(ruta: str) -> None:
     """Borra el archivo. Que no exista no es un error.
 

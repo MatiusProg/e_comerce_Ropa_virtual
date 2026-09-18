@@ -1,42 +1,60 @@
-/// I3 · Prototipo del vestidor virtual.
+/// CU-21 · Utilizar vestidor virtual (RA).  RF13.
 ///
-/// **Es un prototipo de riesgo, no el CU-21.** Existe para contestar UNA
-/// pregunta antes del Ciclo 3: ¿se puede detectar la pose del cuerpo en este
-/// telefono, a una velocidad usable, y colocar la prenda encima siguiendo al
-/// que se mueve? Si la respuesta hubiera sido que no, CU-21 habria que
-/// replantearlo entero, y es mejor saberlo ahora que en el ultimo ciclo.
+/// Nacio como el prototipo de riesgo I3, que existia para contestar UNA
+/// pregunta antes del Ciclo 3: ¿se puede detectar la pose en este telefono, a
+/// una velocidad usable, y poner la prenda encima siguiendo al que se mueve?
+/// La respuesta fue que si, y el 18/09 se completo hasta ser el caso de uso.
 ///
-/// Lo que el prototipo SI hace:
+/// Lo que hace:
 ///   - abre la camara frontal y corre la deteccion de pose sobre sus fotogramas
 ///   - superpone el PNG transparente de una variante real, tomado del catalogo
 ///   - lo escala, lo ubica y lo rota siguiendo los hombros y la cadera
+///   - **cambia talla y color en vivo**, sin volver a pedir nada al servidor
+///   - **captura** lo que se ve y lo guarda en el telefono
+///   - **deriva al carrito o a la reserva** desde la propia captura
 ///   - informa cuantos fotogramas por segundo esta procesando
 ///
-/// Lo que NO hace, y es del Ciclo 3:
-///   - no guarda la captura ni la comparte (eso es el flujo de CU-21)
-///   - no ajusta la prenda a la profundidad ni a la rotacion del torso
-///   - no distingue talla: pega el PNG de la variante que se elija
+/// LOS FOTOGRAMAS POR SEGUNDO NO SON UN ADORNO DE DESARROLLO
+/// ----------------------------------------------------------
+/// Son el dato que el prototipo existia para medir, y se dejan a la vista: si
+/// la deteccion no llega a un ritmo usable en el telefono de la defensa, eso
+/// se tiene que ver mientras se demuestra y no descubrirse despues.
+///
+/// LO QUE SIGUE SIN HACER, Y ES DELIBERADO
+/// ----------------------------------------
+/// No ajusta la prenda a la profundidad ni a la rotacion del torso: es un
+/// recorte plano que sigue hombros y cadera. Para eso esta la opcion de
+/// «amoldar» por IA, que es otro camino y no parte del flujo obligatorio.
 ///
 /// POR QUE NO SE PUEDE PROBAR EN EMULADOR
 /// -------------------------------------
 /// `google_mlkit_pose_detection` corre sobre los fotogramas de la camara y un
 /// emulador entrega una camara sintetica --- una imagen de prueba que no tiene
-/// cuerpo que detectar. Este prototipo solo dice algo cuando corre en un
-/// telefono de verdad.
+/// cuerpo que detectar. Esta pantalla solo dice algo en un telefono de verdad.
 library;
 
+import 'dart:io';
 import 'dart:math' as math;
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../../core/enrutado/router.dart';
 import '../../core/tema.dart';
 import '../../data/modelos/catalogo.dart';
 import '../../data/repositorios/repositorio_catalogo.dart';
+import '../../data/repositorios/repositorio_vestidor.dart';
+import '../auth/estado_sesion.dart';
 import '../catalogo/estado_catalogo.dart';
+import '../compra/estado_compra.dart';
 
 /// Cuanto mas ancha es la prenda que la distancia entre los hombros.
 ///
@@ -90,6 +108,23 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
   ProductoVitrina? _prendaElegida;
   String? _urlPrenda;
 
+  /// La ficha completa de la prenda puesta. Se guarda ENTERA y no solo la URL
+  /// porque CU-21 pide cambiar talla y color EN VIVO: para ofrecer las
+  /// opciones hay que tener todas las variantes a mano, y volver a pedir la
+  /// ficha en cada cambio dejaria la camara esperando a la red.
+  FichaPrenda? _ficha;
+  VariantePrenda? _variante;
+
+  /// Para capturar lo que se ve. `RepaintBoundary` solo sabe pintarse a si
+  /// mismo si tiene una llave con la que encontrarlo en el arbol.
+  final GlobalKey _lienzo = GlobalKey();
+  bool _capturando = false;
+
+  /// Si el probado por IA esta habilitado en este entorno. Se pregunta UNA vez
+  /// al abrir, y si es `false` el boton no se dibuja --- en vez de dibujarlo y
+  /// fallar al tocarlo.
+  bool _hayProbador = false;
+
   /// El nombre de la prenda cuando llego desde la ficha y todavia no esta en
   /// la lista del selector.
   String? _nombreSuelto;
@@ -107,6 +142,18 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
       _nombreSuelto = widget.nombreInicial;
     }
     _cargarPrendas();
+    _mirarSiHayProbador();
+  }
+
+  /// Pregunta si se puede ofrecer el «amoldar por IA».
+  ///
+  /// No bloquea nada ni corta el arranque: si la consulta falla, el vestidor
+  /// abre igual y sin el boton. Es una comodidad opcional.
+  Future<void> _mirarSiHayProbador() async {
+    final hay = await RepositorioVestidor(
+      ref.read(clienteApiProvider),
+    ).hayProbador();
+    if (mounted) setState(() => _hayProbador = hay);
   }
 
   @override
@@ -226,23 +273,40 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
     setState(() {
       _prendaElegida = prenda;
       _urlPrenda = null;
+      _ficha = null;
+      _variante = null;
     });
     try {
       final ficha = await ref
           .read(repositorioCatalogoProvider)
           .obtenerFicha(prenda.id);
-      final variante = ficha.variantes.firstWhere(
-        (v) => v.sePuedeProbar,
-        orElse: () => ficha.variantes.first,
-      );
+      final probables = ficha.variantes.where((v) => v.sePuedeProbar).toList();
       if (!mounted) return;
       setState(() {
-        _urlPrenda = RepositorioCatalogo.urlDeImagen(variante.imagenVestidorUrl);
+        _ficha = ficha;
       });
+      if (probables.isNotEmpty) _ponerse(probables.first);
     } catch (_) {
       /* se queda sin prenda; el aviso lo da la pantalla */
     }
   }
+
+  /// Cambia la variante puesta SIN volver a pedir nada al servidor.
+  ///
+  /// Es el «cambiar talla y color» que pide CU-21. La ficha ya trae el PNG de
+  /// cada variante, asi que el cambio es instantaneo: lo unico que pasa es que
+  /// el `Image.network` de la superposicion apunta a otra URL, y `Flutter` ya
+  /// la tiene en cache si el cliente la probo antes.
+  void _ponerse(VariantePrenda variante) {
+    setState(() {
+      _variante = variante;
+      _urlPrenda = RepositorioCatalogo.urlDeImagen(variante.imagenVestidorUrl);
+    });
+  }
+
+  /// Las variantes que se pueden probar, sin repetir talla ni color vacios.
+  List<VariantePrenda> get _probables =>
+      _ficha?.variantes.where((v) => v.sePuedeProbar).toList() ?? const [];
 
   // --- deteccion -----------------------------------------------------------
 
@@ -359,19 +423,30 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
         return Stack(
           fit: StackFit.expand,
           children: [
-            // La vista de la camara, recortada para llenar la pantalla.
-            FittedBox(
-              fit: BoxFit.cover,
-              child: SizedBox(
-                width: camara.value.previewSize?.height ?? caja.width,
-                height: camara.value.previewSize?.width ?? caja.height,
-                child: CameraPreview(camara),
+            // Lo que entra en la captura: la camara y la prenda, NO el panel.
+            // El `RepaintBoundary` marca exactamente ese recorte; si envolviera
+            // el Stack entero, la foto saldria con los botones encima.
+            RepaintBoundary(
+              key: _lienzo,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // La vista de la camara, recortada para llenar la pantalla.
+                  FittedBox(
+                    fit: BoxFit.cover,
+                    child: SizedBox(
+                      width: camara.value.previewSize?.height ?? caja.width,
+                      height: camara.value.previewSize?.width ?? caja.height,
+                      child: CameraPreview(camara),
+                    ),
+                  ),
+
+                  // La prenda, ubicada sobre el cuerpo detectado.
+                  if (_pose != null && _tamanoImagen != null && _urlPrenda != null)
+                    ..._prendaSobreElCuerpo(caja),
+                ],
               ),
             ),
-
-            // La prenda, ubicada sobre el cuerpo detectado.
-            if (_pose != null && _tamanoImagen != null && _urlPrenda != null)
-              ..._prendaSobreElCuerpo(caja),
 
             _panel(),
           ],
@@ -524,7 +599,7 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
                 'Ninguna prenda del catálogo tiene su PNG para el vestidor.',
                 style: TextStyle(color: Colors.white70, fontSize: 13),
               )
-            else
+            else ...[
               Row(
                 children: [
                   const Icon(Icons.checkroom, size: 16, color: Colors.white54),
@@ -538,14 +613,435 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
                   ),
                   TextButton(
                     onPressed: _abrirSelector,
-                    child: const Text('Cambiar'),
+                    child: const Text('Otra prenda'),
                   ),
                 ],
               ),
+              // CU-21: cambiar talla y color EN VIVO, sin salir de la cámara.
+              // Es medio caso de uso: probarse una prenda sin poder cambiar la
+              // talla es mirar una foto.
+              _selectorDeVariante(),
+              const SizedBox(height: 10),
+              _acciones(hayCuerpo),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  /// Las tallas y los colores que se pueden probar, en fila y sobre la cámara.
+  ///
+  /// Solo se ofrecen las variantes que TIENEN PNG de vestidor: una talla sin
+  /// activo no se puede probar, y ofrecerla sería prometer algo que al tocarlo
+  /// no pasa nada. Las que faltan se ven en la ficha, no acá.
+  Widget _selectorDeVariante() {
+    final probables = _probables;
+    if (probables.isEmpty) return const SizedBox.shrink();
+
+    // Una fila por talla, y dentro los colores de esa talla. Agrupar así —y no
+    // una lista plana de variantes— es como la persona piensa: primero «cuál
+    // es mi talla» y después «de qué color».
+    final tallas = <String, List<VariantePrenda>>{};
+    for (final v in probables) {
+      tallas.putIfAbsent(v.tallaCodigo ?? '—', () => []).add(v);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 34,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              for (final entrada in tallas.entries)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: _Ficha(
+                    texto: entrada.key,
+                    activa: _variante?.tallaCodigo == entrada.key,
+                    alTocar: () => _ponerse(entrada.value.first),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        if (_variante != null)
+          Builder(
+            builder: (_) {
+              final delMismoTalle = tallas[_variante!.tallaCodigo ?? '—'] ?? [];
+              if (delMismoTalle.length < 2) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: SizedBox(
+                  height: 30,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      for (final v in delMismoTalle)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: _Punto(
+                            hex: v.colorHexadecimal,
+                            nombre: v.colorNombre ?? '',
+                            activo: v.id == _variante!.id,
+                            alTocar: () => _ponerse(v),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+      ],
+    );
+  }
+
+  /// Capturar y llevarse la prenda. Los dos pasos que le faltaban a CU-21.
+  Widget _acciones(bool hayCuerpo) {
+    return Row(
+      children: [
+        Expanded(
+          child: FilledButton.icon(
+            icon: _capturando
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.camera_alt),
+            label: Text(_capturando ? 'Capturando…' : 'Capturar'),
+            // Sin cuerpo detectado la prenda no está puesta: la captura sería
+            // una foto de la persona y nada más.
+            onPressed: (hayCuerpo && _urlPrenda != null && !_capturando)
+                ? _capturar
+                : null,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(foregroundColor: Colors.white),
+            icon: const Icon(Icons.add_shopping_cart),
+            label: const Text('Al carrito'),
+            onPressed: _variante == null ? null : _agregarAlCarrito,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // --- Capturar y llevarse la prenda (CU-21, pasos 5 y 6) ------------------
+
+  /// Guarda lo que se ve —cámara y prenda— en un PNG y lo muestra.
+  ///
+  /// Se pinta el `RepaintBoundary`, que contiene la vista de la cámara y la
+  /// superposición y **no** el panel de botones. Tomar la foto con la cámara
+  /// (`takePicture`) no serviría: devolvería el fotograma limpio, sin la
+  /// prenda encima, que es justo lo que el cliente quiere llevarse.
+  ///
+  /// `pixelRatio` sale del dispositivo para que la captura tenga la resolución
+  /// real de la pantalla y no la lógica: con 1.0 sale borrosa en un teléfono
+  /// moderno.
+  Future<void> _capturar() async {
+    setState(() => _capturando = true);
+    try {
+      final limite =
+          _lienzo.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (limite == null) throw StateError('la vista todavía no está pintada');
+
+      final imagen = await limite.toImage(
+        pixelRatio: MediaQuery.of(context).devicePixelRatio,
+      );
+      final datos = await imagen.toByteData(format: ui.ImageByteFormat.png);
+      imagen.dispose();
+      if (datos == null) throw StateError('no se pudo codificar la captura');
+
+      final bytes = datos.buffer.asUint8List();
+
+      // Se guarda en el directorio de la aplicación y no en la galería: llevar
+      // la foto a la galería exige otro permiso y otro paquete, y para el flujo
+      // de CU-21 —mirarla y decidir— no hace falta salir de la app.
+      final carpeta = await getApplicationDocumentsDirectory();
+      final archivo = File(
+        '${carpeta.path}/vestidor-${DateTime.now().millisecondsSinceEpoch}.png',
+      );
+      await archivo.writeAsBytes(bytes);
+
+      if (!mounted) return;
+      await _mostrarCaptura(bytes, archivo);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo capturar: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _capturando = false);
+    }
+  }
+
+  /// La hoja con la captura y qué hacer con ella.
+  ///
+  /// Las dos salidas son las que nombra la ficha de CU-21: **al carrito** o
+  /// **a la reserva**. Probarse una prenda y no poder hacer nada con ella
+  /// dejaría el caso de uso a medias.
+  Future<void> _mostrarCaptura(Uint8List bytes, File archivo) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: ColoresVB.marfil,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(radioVB)),
+      ),
+      builder: (hoja) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.black26,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Así te queda',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: ColoresVB.malvaOscuro,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (_variante != null)
+                Text(
+                  '${_prendaElegida?.nombre ?? _nombreSuelto ?? ""} · '
+                  '${_variante!.tallaCodigo ?? ""} ${_variante!.colorNombre ?? ""}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              const SizedBox(height: 12),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.42,
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.memory(bytes, fit: BoxFit.contain),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      icon: const Icon(Icons.add_shopping_cart),
+                      label: const Text('Al carrito'),
+                      onPressed: _variante == null
+                          ? null
+                          : () {
+                              Navigator.pop(hoja);
+                              _agregarAlCarrito();
+                            },
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.event_available_outlined),
+                      label: const Text('Reservar'),
+                      // Lleva al formulario de CU-22 para ir a probársela de
+                      // verdad en la sucursal. Es la otra salida que nombra la
+                      // ficha, y la que cierra el recorrido de la defensa:
+                      // vestidor → reserva → atención en sucursal.
+                      onPressed: () {
+                        Navigator.pop(hoja);
+                        context.push(Rutas.reservaNueva);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              if (_hayProbador && _variante != null) ...[
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    icon: const Icon(Icons.auto_fix_high),
+                    label: const Text('Ver cómo me queda de verdad'),
+                    onPressed: () {
+                      Navigator.pop(hoja);
+                      _amoldar(bytes);
+                    },
+                  ),
+                ),
+                Text(
+                  'Ajusta la prenda al cuerpo con inteligencia artificial. '
+                  'Tarda unos segundos y es opcional.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+              const SizedBox(height: 8),
+              Text(
+                'La captura quedó guardada en el teléfono como '
+                '${archivo.path.split("/").last}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Manda la captura al servidor para que la prenda se vea PUESTA.
+  ///
+  /// Es lo OPCIONAL de CU-21. El recorrido obligatorio ya termino: el cliente
+  /// tiene su captura guardada pase lo que pase acá.
+  ///
+  /// Se muestra un diálogo bloqueante mientras tanto, y no un indicador
+  /// discreto: tarda segundos, y sin algo que diga que está trabajando el
+  /// cliente vuelve a tocar el botón o cierra la pantalla.
+  Future<void> _amoldar(Uint8List captura) async {
+    final variante = _variante;
+    if (variante == null) return;
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AlertDialog(
+        content: Row(
+          children: [
+            SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            SizedBox(width: 16),
+            Expanded(child: Text('Ajustando la prenda a tu cuerpo…')),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final resultado = await RepositorioVestidor(
+        ref.read(clienteApiProvider),
+      ).amoldar(varianteId: variante.id, captura: captura);
+      if (!mounted) return;
+      Navigator.of(context).pop();          // cierra el diálogo de espera
+      await _mostrarAmoldada(resultado);
+    } on ErrorProbador catch (fallo) {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      // Si resultó estar apagado, se esconde el botón: no tiene sentido
+      // ofrecerlo otra vez en esta sesión.
+      if (fallo.tipo == TipoErrorProbador.apagado) {
+        setState(() => _hayProbador = false);
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(fallo.mensaje)));
+    }
+  }
+
+  /// La imagen amoldada, con su aviso de que fue generada.
+  Future<void> _mostrarAmoldada(PrendaAmoldada resultado) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: ColoresVB.marfil,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(radioVB)),
+      ),
+      builder: (hoja) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Así te quedaría',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: ColoresVB.malvaOscuro,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 10),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.5,
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.memory(resultado.imagen, fit: BoxFit.contain),
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Que la imagen fue generada NO puede quedar implícito. Mostrarla
+              // sin decirlo sería hacer pasar por foto algo que no lo es, y en
+              // una tienda de ropa eso es una promesa sobre cómo le va a
+              // quedar la prenda a esa persona.
+              Row(
+                children: [
+                  const Icon(Icons.auto_fix_high, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Imagen generada por ${resultado.generadaPor}. Es una '
+                      'aproximación: la prenda real puede caer distinto.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  icon: const Icon(Icons.add_shopping_cart),
+                  label: const Text('Al carrito'),
+                  onPressed: () {
+                    Navigator.pop(hoja);
+                    _agregarAlCarrito();
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _agregarAlCarrito() async {
+    final variante = _variante;
+    if (variante == null) return;
+    final fallo = await ref
+        .read(carritoProvider.notifier)
+        .agregar(varianteId: variante.id);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(fallo ?? 'Agregada al carrito.'),
+          action: fallo == null
+              ? SnackBarAction(
+                  label: 'Ver carrito',
+                  onPressed: () => context.push(Rutas.carrito),
+                )
+              : null,
+        ),
+      );
   }
 
   void _abrirSelector() {
@@ -584,6 +1080,103 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
                 },
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Una talla, sobre la cámara.
+///
+/// Fondo semiopaco y no un `Chip` de Material: encima del vídeo, un control con
+/// fondo claro se pierde cuando la persona lleva ropa clara. El contraste lo
+/// tiene que poner el control, no la escena.
+class _Ficha extends StatelessWidget {
+  const _Ficha({
+    required this.texto,
+    required this.activa,
+    required this.alTocar,
+  });
+
+  final String texto;
+  final bool activa;
+  final VoidCallback alTocar;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: activa ? ColoresVB.malva : Colors.black.withValues(alpha: 0.45),
+      borderRadius: BorderRadius.circular(17),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(17),
+        onTap: alTocar,
+        child: Container(
+          alignment: Alignment.center,
+          constraints: const BoxConstraints(minWidth: 44),
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(17),
+            border: Border.all(
+              color: activa ? Colors.white : Colors.white24,
+              width: activa ? 2 : 1,
+            ),
+          ),
+          child: Text(
+            texto,
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: activa ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Un color, sobre la cámara.
+///
+/// El color se muestra como una moneda y no como texto: es más rápido de leer
+/// y no depende de que el nombre del color sea claro —«Oro rosa» no le dice
+/// nada a nadie hasta verlo—. El nombre queda en el tooltip, para lectores de
+/// pantalla y para quien dude.
+class _Punto extends StatelessWidget {
+  const _Punto({
+    required this.hex,
+    required this.nombre,
+    required this.activo,
+    required this.alTocar,
+  });
+
+  final String? hex;
+  final String nombre;
+  final bool activo;
+  final VoidCallback alTocar;
+
+  @override
+  Widget build(BuildContext context) {
+    Color color = ColoresVB.malvaClaro;
+    final crudo = hex?.replaceAll('#', '');
+    if (crudo != null && crudo.length == 6) {
+      final valor = int.tryParse(crudo, radix: 16);
+      if (valor != null) color = Color(0xFF000000 | valor);
+    }
+
+    return Tooltip(
+      message: nombre,
+      child: GestureDetector(
+        onTap: alTocar,
+        child: Container(
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: activo ? Colors.white : Colors.white30,
+              width: activo ? 3 : 1,
+            ),
+          ),
         ),
       ),
     );

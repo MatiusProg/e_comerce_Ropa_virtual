@@ -92,6 +92,21 @@ class Settings(BaseSettings):
     IA_MODELO: str = ""
     IA_MAX_PETICIONES_DIA: int = 50       # tope por usuario, control de costo
 
+    # --- Probado por IA (CU-21, OPCIONAL) --------------------------------
+    #
+    # El vestidor de CU-21 funciona entero sin esto: pega el PNG recortado
+    # sobre el cuerpo, en el telefono. Esto es el boton de despues --- mandar
+    # la captura a un modelo para que la prenda se vea PUESTA de verdad ---, y
+    # es opcional por tres razones: tarda segundos, depende de un tercero y
+    # consume cuota (riesgo R9).
+    #
+    # Por eso el valor por defecto NO llama a nadie. Se enciende poniendo
+    # `gemini` y una IA_API_KEY; el modelo se puede cambiar sin tocar codigo,
+    # que hace falta porque los nombres de los modelos de imagen cambian
+    # seguido.
+    PROBADOR_IA_PROVEEDOR: str = "no_disponible"
+    PROBADOR_IA_MODELO: str = ""
+
     # --- Correo saliente (CU-40 y CU-41, ciclo 3) ------------------------
     #
     # Misma leccion que la IA: los nombres no llevan la marca adentro, asi que
