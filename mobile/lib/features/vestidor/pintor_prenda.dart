@@ -142,7 +142,27 @@ class PintorPrenda extends CustomPainter {
     final perp = Offset(-eje.dy, eje.dx);
 
     // --- Las dos anchuras que gobiernan la deformacion --------------------
-    final anchoArriba = anchoHombros * anchoRespectoAHombros;
+    // EL ANCHO NO PUEDE COLAPSAR AL GIRARSE.
+    //
+    // Al ponerse de perfil, los dos hombros se proyectan casi en el mismo
+    // punto y `anchoHombros` cae a una fraccion. El ancho de la prenda caia
+    // con el mientras el largo ---que sale del torso--- se mantenia, y la
+    // blusa quedaba como una tira larga y angosta pegada de costado. Se vio en
+    // el telefono el 18/09.
+    //
+    // El cuerpo SI se ve mas angosto al girar, asi que la prenda tiene que
+    // angostarse; lo que no puede es desaparecer. En una persona de frente el
+    // ancho de hombros y el largo del torso son parecidos ---hombros algo mas
+    // angostos---, asi que el largo del torso sirve de referencia para poner
+    // un piso.
+    final largoTorsoRef = centroCadera == null
+        ? null
+        : (centroCadera - centroHombros).distance;
+    final hombrosEfectivos = largoTorsoRef == null
+        ? anchoHombros
+        : math.max(anchoHombros, largoTorsoRef * 0.62);
+
+    final anchoArriba = hombrosEfectivos * anchoRespectoAHombros;
 
     // La cadera manda el ancho de abajo, pero ACOTADA contra los hombros.
     //
@@ -164,7 +184,7 @@ class PintorPrenda extends CustomPainter {
     // acota: puede angostar hasta un 22 % y ensanchar apenas un 2 %.
     final proporcion = torso.anchoCadera == null
         ? 0.92
-        : (torso.anchoCadera! / anchoHombros).clamp(0.78, 1.02);
+        : (torso.anchoCadera! / hombrosEfectivos).clamp(0.78, 1.02);
     final anchoAbajo = anchoArriba * proporcion;
 
     // --- De la imagen a la pantalla ---------------------------------------
