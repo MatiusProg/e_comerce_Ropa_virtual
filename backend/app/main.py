@@ -63,7 +63,9 @@ from app.modules.ventas.router import router_operacion as pedidos_operacion_rout
 # CU-37 (exportar a PDF y Excel), que es el otro caso de uso de P11.
 from app.modules.reportes.tablero_router import router as tablero_router
 # from app.modules.ventas.router import router as ventas_router
-# from app.modules.pagos.router import router as pagos_router
+# CU-28 es el webhook de la pasarela. El paquete P8 lo tomamos entre los
+# dos: Mateo escribio `iniciar_cobro` con CU-27 y CU-28 se sumo encima.
+from app.modules.pagos.router import router as pagos_router
 # from app.modules.vestidor_virtual.router import router as vestidor_router
 # from app.modules.ia.router import router as ia_router
 # from app.modules.reportes.router import router as reportes_router
@@ -170,7 +172,7 @@ app.include_router(tablero_router, prefix=API)
 # tienen reservas y su router de mantenimiento.
 app.include_router(pedidos_router, prefix=API)
 app.include_router(pedidos_operacion_router, prefix=API)
-# app.include_router(pagos_router, prefix=API)
+app.include_router(pagos_router, prefix=API)
 # app.include_router(vestidor_router, prefix=API)
 # app.include_router(ia_router, prefix=API)
 # app.include_router(reportes_router, prefix=API)

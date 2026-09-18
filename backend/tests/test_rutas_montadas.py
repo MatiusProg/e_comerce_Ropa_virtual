@@ -50,6 +50,7 @@ MODULOS_CON_ROUTER = (
     "app.modules.reservas.router",
     "app.modules.ventas.carrito_router",
     "app.modules.reportes.tablero_router",
+    "app.modules.pagos.router",
 )
 
 

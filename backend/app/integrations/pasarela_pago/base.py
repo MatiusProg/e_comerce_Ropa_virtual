@@ -93,6 +93,53 @@ class SesionDePago:
     url_redireccion: str
 
 
+@dataclass(frozen=True)
+class EventoDePago:
+    """Lo que el sistema entiende de una notificacion de la pasarela (CU-28).
+
+    Es el traductor: cada proveedor manda su propio JSON con sus propios
+    nombres, y a partir de aca **nadie mas vuelve a mirar ese JSON**. El
+    servicio de CU-28 trabaja solo con esta forma, que es la misma para Stripe,
+    para el simulado y para el que venga.
+
+    Se declara `frozen` porque un evento es un hecho ya ocurrido: nada de lo
+    que pase despues puede cambiar lo que la pasarela dijo.
+    """
+
+    #: El identificador del evento EN LA PASARELA. Es lo que se guarda en
+    #: `transaccion_pasarela.evento_id`, que es UNICO, y por lo tanto **es toda
+    #: la idempotencia de CU-28**: una notificacion repetida choca contra esa
+    #: restriccion y no vuelve a tocar nada.
+    id_evento: str
+
+    #: El tipo, tal como lo nombra la pasarela. Se guarda sin traducir para que
+    #: el registro diga lo que de verdad llego.
+    tipo: str
+
+    #: La sesion de pago. Es lo que cruza con `pago.referencia_externa` y la
+    #: forma normal de encontrar la venta.
+    id_sesion: str | None
+
+    #: El codigo de la venta, si el proveedor lo devolvio en sus metadatos. Es
+    #: el camino de respaldo cuando la sesion no se encuentra.
+    referencia: str | None
+
+    #: Si este evento dice que el dinero entro. `False` cubre tanto el rechazo
+    #: como los eventos que no hablan de cobro --- ver `es_de_cobro`.
+    aprobado: bool
+
+    #: Si el evento habla del resultado de un cobro. Las pasarelas mandan
+    #: muchos eventos que no interesan; los que no son de cobro **se registran
+    #: igual** y no mueven nada. Distinguirlo evita que un evento cualquiera
+    #: parezca un rechazo.
+    es_de_cobro: bool
+
+    #: El cuerpo tal cual llego, para `transaccion_pasarela.carga_util`. Es el
+    #: registro de lo que la pasarela dijo, se haya aplicado o no, y es lo
+    #: primero que uno quiere mirar cuando algo sale mal.
+    carga_util: str
+
+
 @runtime_checkable
 class ProveedorPasarela(Protocol):
     """Lo unico que el sistema le pide a una pasarela de pago."""
@@ -107,4 +154,23 @@ class ProveedorPasarela(Protocol):
 
     def crear_sesion(self, solicitud: SolicitudDePago) -> SesionDePago:
         """Abre la sesion de pago, o levanta ErrorDePasarela."""
+        ...
+
+    def interpretar_webhook(self, cuerpo: bytes, firma: str | None) -> EventoDePago:
+        """Verifica la firma y traduce la notificacion (CU-28).
+
+        **Verificar y traducir son la misma operacion, a proposito.** Separarlas
+        dejaria abierta la puerta a leer el contenido antes de comprobar quien
+        lo mando, que es exactamente el agujero que la firma existe para tapar:
+        cualquiera puede hacer un POST al webhook diciendo que un pedido se
+        pago. Con una sola funcion no hay forma de saltearse el paso.
+
+        Recibe el cuerpo **en bytes y sin tocar**: la firma se calcula sobre
+        los bytes exactos que viajaron, y volver a serializar un JSON ya
+        interpretado cambia los espacios y el orden, y la verificacion falla
+        aunque el mensaje sea legitimo.
+
+        Levanta `FirmaInvalida` si no la puede verificar, y `ErrorDePasarela`
+        si el cuerpo no se entiende.
+        """
         ...
