@@ -9,6 +9,7 @@ import { Router, RouterLink } from '@angular/router';
 
 import { TiendaService, type ErrorTienda } from '../../../core/services/tienda.service';
 import type { PaginaFavoritos, ProductoVitrina } from '../../../core/models/tienda.models';
+import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion-cliente';
 
 /**
  * CU-20 · Gestionar favoritos — «boundary» PantallaFavoritos.
@@ -29,6 +30,7 @@ import type { PaginaFavoritos, ProductoVitrina } from '../../../core/models/tien
 @Component({
   selector: 'app-favoritos',
   imports: [
+    NavegacionCliente,
     RouterLink,
     MatButtonModule,
     MatCardModule,

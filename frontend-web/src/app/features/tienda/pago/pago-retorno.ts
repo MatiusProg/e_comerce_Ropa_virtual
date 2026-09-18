@@ -12,6 +12,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { PedidosService, type ErrorPedido } from '../../../core/services/pedidos.service';
 import type { Pedido } from '../../../core/models/pedidos.models';
 import { CLAVE_PEDIDO_EN_CURSO } from '../checkout/checkout';
+import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion-cliente';
 
 /**
  * CU-27 · Paso 5 — «boundary» PantallaRetornoDePago.
@@ -58,6 +59,7 @@ import { CLAVE_PEDIDO_EN_CURSO } from '../checkout/checkout';
 @Component({
   selector: 'app-pago-retorno',
   imports: [
+    NavegacionCliente,
     CurrencyPipe,
     DatePipe,
     ReactiveFormsModule,
