@@ -79,6 +79,15 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
   CameraController? _camara;
   PoseDetector? _detector;
 
+  /// Las camaras del telefono y cual se esta usando.
+  ///
+  /// La FRONTAL es la que sirve para probarse solo: se ve la pantalla mientras
+  /// se mueve. La TRASERA es mejor sensor en casi todos los telefonos y es la
+  /// que corresponde cuando alguien mas sostiene el aparato --- que es como se
+  /// va a demostrar ---, asi que se ofrecen las dos.
+  List<CameraDescription> _camaras = const [];
+  bool _usandoFrontal = true;
+
   bool _iniciando = true;
   String? _error;
 
@@ -223,14 +232,20 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
     }
 
     try {
-      final camaras = await availableCameras();
-      final frontal = camaras.firstWhere(
-        (c) => c.lensDirection == CameraLensDirection.front,
-        orElse: () => camaras.first,
+      _camaras = await availableCameras();
+      final buscada = _usandoFrontal
+          ? CameraLensDirection.front
+          : CameraLensDirection.back;
+      final elegida = _camaras.firstWhere(
+        (c) => c.lensDirection == buscada,
+        orElse: () => _camaras.first,
       );
+      // Si el telefono no tiene la que se pidio, se deja constancia de cual
+      // quedo: el espejo depende de esto, y suponerlo daria la prenda al reves.
+      _usandoFrontal = elegida.lensDirection == CameraLensDirection.front;
 
       final control = CameraController(
-        frontal,
+        elegida,
         ResolutionPreset.medium,
         enableAudio: false,
         // NV21 y no YUV420: es el formato que ML Kit consume de una sola
@@ -483,6 +498,18 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
       appBar: AppBar(
         title: const Text('Vestidor virtual'),
         actions: [
+          if (_hayDosCamaras)
+            IconButton(
+              tooltip: _usandoFrontal
+                  ? 'Usar la cámara trasera'
+                  : 'Usar la cámara frontal',
+              icon: Icon(
+                _usandoFrontal
+                    ? Icons.camera_rear_outlined
+                    : Icons.camera_front_outlined,
+              ),
+              onPressed: _iniciando ? null : _cambiarCamara,
+            ),
           if (_prendas.isNotEmpty)
             IconButton(
               tooltip: 'Elegir prenda',
@@ -493,6 +520,29 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
       ),
       body: _cuerpo(),
     );
+  }
+
+  bool get _hayDosCamaras =>
+      _camaras.map((c) => c.lensDirection).toSet().length > 1;
+
+  /// Cambia entre la frontal y la trasera.
+  ///
+  /// Se suelta la camara anterior ANTES de abrir la otra: son un recurso
+  /// exclusivo del sistema y abrir la segunda sin cerrar la primera falla en
+  /// algunos telefonos. Y se limpia el suavizado, porque los puntos de la
+  /// camara vieja ya no valen --- sin eso, la prenda viaja desde donde estaba
+  /// hasta la posicion nueva, que se ve como un salto raro.
+  Future<void> _cambiarCamara() async {
+    final anterior = _camara;
+    setState(() {
+      _camara = null;
+      _iniciando = true;
+      _usandoFrontal = !_usandoFrontal;
+      _pose = null;
+      _suave.clear();
+    });
+    await anterior?.dispose();
+    await _arrancar();
   }
 
   Widget _cuerpo() {
@@ -591,10 +641,16 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
     final dx = (caja.width - img.width * escala) / 2;
     final dy = (caja.height - img.height * escala) / 2;
 
-    // La camara frontal muestra el espejo: hay que invertir la X o la prenda
-    // se mueve al reves que la persona.
-    Offset aPantalla(double x, double y) =>
-        Offset(dx + (img.width - x) * escala, dy + y * escala);
+    // EL ESPEJO ES SOLO DE LA FRONTAL.
+    //
+    // La camara frontal muestra la imagen reflejada --- es lo que espera quien
+    // se mira ---, asi que hay que invertir la X o la prenda se mueve al reves
+    // que la persona. La TRASERA no refleja: invertir ahi seria introducir el
+    // defecto en vez de corregirlo.
+    Offset aPantalla(double x, double y) => Offset(
+      dx + (_usandoFrontal ? (img.width - x) : x) * escala,
+      dy + y * escala,
+    );
 
     final pHi = aPantalla(hi.dx, hi.dy);
     final pHd = aPantalla(hd.dx, hd.dy);
