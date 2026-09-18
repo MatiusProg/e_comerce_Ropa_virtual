@@ -30,6 +30,26 @@ URL_PRUEBAS = os.environ.get("TEST_DATABASE_URL")
 if URL_PRUEBAS:
     os.environ["DATABASE_URL"] = URL_PRUEBAS
 
+# LA PASARELA DE PAGO DE LAS PRUEBAS ES SIEMPRE LA SIMULADA
+# ----------------------------------------------------------
+# Se impone aqui por el mismo motivo que la base: para que la suite NO dependa
+# de lo que diga el `.env`. Sin esto, poner PAGO_PROVEEDOR=stripe para
+# desarrollar en local haria que las pruebas de CU-27 y CU-28 **salgan a
+# internet a hablar con Stripe de verdad**: abririan sesiones de cobro con la
+# clave que este configurada, tardarian lo que tarde la red, y fallarian sin
+# conexion --- ademas de que la ruta de simulacion responde 404 cuando la
+# pasarela cobra en serio, que es justamente lo que esas pruebas usan.
+#
+# Una suite que llama a un servicio de terceros no prueba el sistema: prueba el
+# servicio de terceros y la conexion a internet.
+os.environ["PAGO_PROVEEDOR"] = "simulada"
+
+# Y con secreto, para que la firma del webhook se VERIFIQUE en las pruebas en
+# vez de saltearse. El proveedor simulado no comprueba nada cuando esta vacio
+# (y avisa por el log), asi que sin esto la parte mas delicada de CU-28 ---que
+# un cuerpo sin firma valida no puede mover nada--- quedaria sin probar.
+os.environ["PAGO_WEBHOOK_SECRET"] = "secreto-de-pruebas-no-es-de-nadie"
+
 from app.core.security import hash_password  # noqa: E402
 from app.db.base import Base  # noqa: E402
 from app.db.session import get_db  # noqa: E402

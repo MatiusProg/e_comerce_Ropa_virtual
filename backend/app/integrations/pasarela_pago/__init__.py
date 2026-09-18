@@ -40,6 +40,7 @@ from functools import lru_cache
 from app.core.config import settings
 from app.integrations.pasarela_pago.base import (
     ErrorDePasarela,
+    EventoDePago,
     FirmaInvalida,
     LineaDePago,
     ProveedorPasarela,
@@ -51,6 +52,7 @@ from app.integrations.pasarela_pago.stripe_hospedado import ProveedorStripe
 
 __all__ = [
     "ErrorDePasarela",
+    "EventoDePago",
     "FirmaInvalida",
     "LineaDePago",
     "ProveedorPasarela",
@@ -58,6 +60,7 @@ __all__ = [
     "SolicitudDePago",
     "cobra_de_verdad",
     "crear_sesion",
+    "interpretar_webhook",
     "obtener_proveedor",
 ]
 
@@ -104,3 +107,14 @@ def cobra_de_verdad() -> bool:
     del proveedor: eso obligaria a la web a conocer la lista.
     """
     return obtener_proveedor().cobra_de_verdad
+
+
+def interpretar_webhook(cuerpo: bytes, firma: str | None) -> EventoDePago:
+    """Verifica y traduce una notificacion con el proveedor configurado (CU-28).
+
+    Levanta `FirmaInvalida` si no se puede comprobar quien la mando, y
+    `ErrorDePasarela` si el cuerpo no se entiende. Ver la nota del protocolo:
+    verificar y traducir son una sola operacion para que no haya forma de leer
+    el contenido sin haberlo verificado.
+    """
+    return obtener_proveedor().interpretar_webhook(cuerpo, firma)
