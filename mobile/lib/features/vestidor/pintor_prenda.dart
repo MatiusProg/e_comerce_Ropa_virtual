@@ -72,27 +72,41 @@ class TorsoEnPantalla {
       (caderaA != null && caderaB != null) ? (caderaA! - caderaB!).distance : null;
 }
 
-/// Cuanto mas ancha es la prenda que la distancia entre los hombros.
+/// Cuanto del ancho del PNG ocupa el TORSO de la prenda.
 ///
-/// 2.1 venia del prototipo I3 y estaba calibrado contra las siluetas que
-/// dibuja el `seed`: rectangulos angostos, sin mangas, que necesitaban
-/// ensancharse bastante para cubrir el torso.
+/// **Es una convencion de carga, no un ajuste.** El script de encuadre rellena
+/// los costados hasta que se cumple, asi que todo PNG que entra al vestidor la
+/// respeta. La app no la mide: la da por cierta.
 ///
-/// **Una foto real de una prenda ya trae las mangas adentro**, asi que con 2.1
-/// sale enorme --- se probo el 18/09 con una blusa de verdad y tapaba media
-/// pantalla. Lo que hay que cubrir es el ancho de hombros mas lo que sobresale
-/// la manga, que en una prenda de frente es alrededor de 1.5 veces.
+/// Se eligio el torso ---el punto mas angosto bajo la axila--- porque es lo
+/// unico que se puede medir sin ambiguedad en una foto de prenda: en una blusa
+/// de mangas con vuelo no hay ningun borde que diga donde termina el hombro y
+/// empieza la manga.
+const double torsoEnPng = 0.60;
+
+/// Cuanto mas ancho que la distancia entre hombros es el torso de la prenda
+/// PUESTA sobre el cuerpo.
 ///
-/// SE AJUSTA MIRANDO EL TELEFONO, NO RAZONANDO
-/// --------------------------------------------
-/// Este numero y `subida` son los dos que hay que calibrar con una persona
-/// delante de la camara. No hay forma de deducirlos: dependen de como se
-/// fotografio la prenda.
+/// **Esto si es del cuerpo y de como cae la ropa, no de la foto.** La pose da
+/// la distancia entre las articulaciones de los hombros; la prenda tiene que
+/// pasar por fuera del cuerpo, con algo de holgura. 1.08 se midio el 18/09
+/// contra una persona de verdad.
 ///
-/// Lo que lo resolveria de verdad es una convencion mas: fijar tambien cuanto
-/// ocupan los HOMBROS dentro del PNG ---por ejemplo, el 60 % de su ancho--- y
-/// derivar la escala de ahi. Cada prenda se corregiria sola. Queda anotado.
-const double anchoRespectoAHombros = 1.78;
+/// Lo importante es que **este numero ya no cambia al cambiar de prenda**, que
+/// era el defecto de la version anterior.
+const double holguraDelTorso = 1.08;
+
+/// Cuanto mas ancha se pinta la prenda entera que la distancia entre hombros.
+///
+/// Ya no se calibra: **sale de las dos constantes de arriba**. Hasta el 18/09
+/// era un 1.78 puesto a ojo mirando el telefono, y solo valia para LA blusa
+/// contra la que se habia calibrado --- una remera lisa ocupa mucho menos
+/// ancho de PNG y con el mismo numero salia angosta.
+///
+/// Da practicamente el mismo 1.8, que es la comprobacion de que la convencion
+/// y la calibracion a ojo coinciden; la diferencia es que ahora se corrige
+/// sola en la siguiente prenda.
+const double anchoRespectoAHombros = holguraDelTorso / torsoEnPng;
 
 /// Cuanto sube la prenda por encima de la linea de hombros, en proporcion a su
 /// propio ancho. **Es el mismo 0.18 que la guia de carga le pide al PNG.**
