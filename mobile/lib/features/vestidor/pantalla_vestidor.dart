@@ -33,6 +33,7 @@
 /// cuerpo que detectar. Esta pantalla solo dice algo en un telefono de verdad.
 library;
 
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -55,17 +56,7 @@ import '../../data/repositorios/repositorio_vestidor.dart';
 import '../auth/estado_sesion.dart';
 import '../catalogo/estado_catalogo.dart';
 import '../compra/estado_compra.dart';
-
-/// Cuanto mas ancha es la prenda que la distancia entre los hombros.
-///
-/// Los hombros que devuelve la deteccion son las articulaciones, no el borde
-/// del cuerpo: una remera cubre bastante mas. El valor sale de probar sobre el
-/// telefono, que es la unica forma de calibrarlo.
-const double _anchoRespectoAHombros = 2.1;
-
-/// Cuanto sube la prenda por encima de la linea de los hombros, en proporcion
-/// a su propio ancho. Sin esto el cuello queda cortado.
-const double _subida = 0.18;
+import 'pintor_prenda.dart';
 
 class PantallaVestidor extends ConsumerStatefulWidget {
   /// [urlInicial] y [nombreInicial] llegan cuando se entra desde la ficha de
@@ -115,6 +106,14 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
   FichaPrenda? _ficha;
   VariantePrenda? _variante;
 
+  /// El PNG de la prenda YA DECODIFICADO.
+  ///
+  /// Hace falta como `ui.Image` y no como widget porque la malla lo usa de
+  /// TEXTURA: `drawVertices` pinta triangulos leyendo pixeles de una imagen,
+  /// y un `Image.network` no expone esos pixeles. Se decodifica una vez por
+  /// prenda y se reusa en cada fotograma.
+  ui.Image? _imagenPrenda;
+
   /// Para capturar lo que se ve. `RepaintBoundary` solo sabe pintarse a si
   /// mismo si tiene una llave con la que encontrarlo en el arbol.
   final GlobalKey _lienzo = GlobalKey();
@@ -140,6 +139,7 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
       // catalogo. Igual se cargan las demas, para poder cambiar sin salir.
       _urlPrenda = widget.urlInicial;
       _nombreSuelto = widget.nombreInicial;
+      _decodificar(widget.urlInicial);
     }
     _cargarPrendas();
     _mirarSiHayProbador();
@@ -161,6 +161,7 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
     WidgetsBinding.instance.removeObserver(this);
     _camara?.dispose();
     _detector?.close();
+    _imagenPrenda?.dispose();
     super.dispose();
   }
 
@@ -298,10 +299,57 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
   /// el `Image.network` de la superposicion apunta a otra URL, y `Flutter` ya
   /// la tiene en cache si el cliente la probo antes.
   void _ponerse(VariantePrenda variante) {
+    final url = RepositorioCatalogo.urlDeImagen(variante.imagenVestidorUrl);
     setState(() {
       _variante = variante;
-      _urlPrenda = RepositorioCatalogo.urlDeImagen(variante.imagenVestidorUrl);
+      _urlPrenda = url;
     });
+    _decodificar(url);
+  }
+
+  /// Baja el PNG y lo decodifica para poder usarlo de textura.
+  ///
+  /// La imagen anterior se libera: cada `ui.Image` retiene su mapa de bits en
+  /// memoria de GPU, y cambiando de talla y de color varias veces se acumulan
+  /// hasta que el sistema mata la aplicacion. Es el mismo cuidado que ya
+  /// obligaba a soltar la camara al pasar a segundo plano.
+  Future<void> _decodificar(String? url) async {
+    if (url == null) {
+      setState(() {
+        _imagenPrenda?.dispose();
+        _imagenPrenda = null;
+      });
+      return;
+    }
+    try {
+      final flujo = NetworkImage(url).resolve(const ImageConfiguration());
+      final completado = Completer<ui.Image>();
+      late ImageStreamListener oyente;
+      oyente = ImageStreamListener(
+        (info, _) {
+          if (!completado.isCompleted) completado.complete(info.image);
+          flujo.removeListener(oyente);
+        },
+        onError: (e, _) {
+          if (!completado.isCompleted) completado.completeError(e);
+          flujo.removeListener(oyente);
+        },
+      );
+      flujo.addListener(oyente);
+
+      final imagen = await completado.future;
+      if (!mounted) {
+        imagen.dispose();
+        return;
+      }
+      setState(() {
+        _imagenPrenda?.dispose();
+        _imagenPrenda = imagen;
+      });
+    } catch (_) {
+      // Sin prenda decodificada la camara sigue andando y no se dibuja nada.
+      // El aviso lo da la pantalla, que ya contempla no tener prenda.
+    }
   }
 
   /// Las variantes que se pueden probar, sin repetir talla ni color vacios.
@@ -455,14 +503,18 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
     );
   }
 
-  /// Coloca el PNG usando los hombros y la cadera.
+  /// Dibuja la prenda DEFORMADA sobre el cuerpo.
   ///
-  /// Los hombros dan el ancho y la inclinacion; la cadera, el alto. Es la
-  /// aproximacion mas simple que sigue al cuerpo cuando se mueve, y alcanza
-  /// para saber si el camino es viable.
+  /// Lo unico que hace esta funcion es traducir la pose a coordenadas de
+  /// pantalla; la deformacion la hace `PintorPrenda`, y el por que esta
+  /// explicado alli.
   List<Widget> _prendaSobreElCuerpo(Size caja) {
     final pose = _pose!;
     final img = _tamanoImagen!;
+    final imagen = _imagenPrenda;
+    // Mientras el PNG se decodifica no hay nada que dibujar. Dura un
+    // fotograma o dos y solo pasa al cambiar de prenda.
+    if (imagen == null) return const [];
 
     final hi = pose.landmarks[PoseLandmarkType.leftShoulder];
     final hd = pose.landmarks[PoseLandmarkType.rightShoulder];
@@ -485,54 +537,38 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
     final pHi = aPantalla(hi.x, hi.y);
     final pHd = aPantalla(hd.x, hd.y);
 
-    final centroHombros = Offset(
-      (pHi.dx + pHd.dx) / 2,
-      (pHi.dy + pHd.dy) / 2,
-    );
-    final anchoHombros = (pHi - pHd).distance;
-    if (anchoHombros < 8) return const [];
+    // ORDENADOS POR SU X EN PANTALLA, no por su nombre anatomico.
+    //
+    // Es la misma correccion del 13/09 que ya se habia hecho para el angulo:
+    // el espejo de la camara frontal invierte cual hombro cae a la izquierda,
+    // y tomarlos por su nombre daba la prenda dada vuelta. Con la malla el
+    // sintoma seria peor --- la textura sale reflejada ---, asi que el orden
+    // se resuelve aca, una sola vez, y el pintor no tiene que saber nada del
+    // espejo.
+    final hombroA = pHi.dx <= pHd.dx ? pHi : pHd;
+    final hombroB = pHi.dx <= pHd.dx ? pHd : pHi;
 
-    final ancho = anchoHombros * _anchoRespectoAHombros;
-
-    double alto = ancho * 1.35;
+    Offset? caderaA;
+    Offset? caderaB;
     if (ci != null && cd != null) {
-      final pCentroCadera = Offset(
-        (aPantalla(ci.x, ci.y).dx + aPantalla(cd.x, cd.y).dx) / 2,
-        (aPantalla(ci.x, ci.y).dy + aPantalla(cd.x, cd.y).dy) / 2,
-      );
-      final torso = (pCentroCadera - centroHombros).distance;
-      if (torso > 20) alto = torso * 1.45;
+      final pCi = aPantalla(ci.x, ci.y);
+      final pCd = aPantalla(cd.x, cd.y);
+      caderaA = pCi.dx <= pCd.dx ? pCi : pCd;
+      caderaB = pCi.dx <= pCd.dx ? pCd : pCi;
     }
 
-    // El angulo se mide SIEMPRE del hombro que quedo mas a la izquierda EN
-    // PANTALLA hacia el otro, no de «izquierdo» a «derecho» del cuerpo.
-    //
-    // Es la correccion del 13/09: el espejo de la camara frontal invierte cual
-    // de los dos hombros cae a la izquierda, asi que tomarlos por su nombre
-    // anatomico daba un vector apuntando al reves y `atan2` devolvia un angulo
-    // cercano a 180 grados. La prenda salia dada vuelta, apuntando hacia
-    // arriba. Ordenandolos por su x en pantalla, dx es siempre positivo y el
-    // angulo queda cerca de cero, que es lo que corresponde a hombros
-    // nivelados.
-    final izq = pHi.dx <= pHd.dx ? pHi : pHd;
-    final der = pHi.dx <= pHd.dx ? pHd : pHi;
-    final angulo = math.atan2(der.dy - izq.dy, der.dx - izq.dx);
-
     return [
-      Positioned(
-        left: centroHombros.dx - ancho / 2,
-        top: centroHombros.dy - ancho * _subida,
-        width: ancho,
-        height: alto,
+      Positioned.fill(
         child: IgnorePointer(
-          child: Transform.rotate(
-            angle: angulo,
-            alignment: Alignment.topCenter,
-            child: Image.network(
-              _urlPrenda!,
-              fit: BoxFit.contain,
-              gaplessPlayback: true,
-              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          child: CustomPaint(
+            painter: PintorPrenda(
+              prenda: imagen,
+              torso: TorsoEnPantalla(
+                hombroA: hombroA,
+                hombroB: hombroB,
+                caderaA: caderaA,
+                caderaB: caderaB,
+              ),
             ),
           ),
         ),
