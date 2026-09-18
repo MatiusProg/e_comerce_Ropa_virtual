@@ -48,22 +48,60 @@ from app.modules.medidas.tallaje import CUERPO_POR_TALLA, ORDEN
 # `app/modules/medidas/tallaje.py`, porque el servicio que recomienda la talla
 # necesita exactamente los mismos numeros. Dos copias se separan.
 
-#: Cuanto mas grande que el cuerpo es la prenda, por categoria: (busto,
-#: cintura, cadera) en centimetros, y el largo de hombro a ruedo en la talla M.
+#: Cuanto mas grande que el cuerpo es la prenda ---(busto, cintura, cadera) en
+#: centimetros--- y el largo de hombro a ruedo en la talla M, segun QUE es la
+#: prenda. Gana la primera regla cuyo texto aparezca en el nombre de la
+#: categoria, sin distinguir mayusculas ni acentos.
+#:
+#: POR PALABRA Y NO POR NOMBRE EXACTO  ---  ESTO YA FALLO
+#: ------------------------------------------------------
+#: La primera version indexaba por el nombre completo de la categoria, con las
+#: de la base local: «Blusas», «Casacas», «Abrigos de mujer». **En produccion
+#: no coincidio ni una**: ahi las categorias se llaman «Blusas y Camisas»,
+#: «Chaquetas, Abrigos y Sudaderas», «Tops y Camisetas». El sembrado escribio
+#: cero filas y, como saltarse lo desconocido es deliberado, no fallo: la
+#: funcionalidad simplemente no hacia nada, en silencio.
+#:
+#: La leccion es que **el nombre para mostrar de una categoria no es una clave**
+#: --- se escribe distinto en cada base y se renombra sin avisar a nadie ---.
+#: Lo estable es de que tipo de prenda se trata, y eso se lee de una palabra.
 #:
 #: El largo crece 2 cm por talla: una XS no es solo mas angosta, tambien es mas
 #: corta, y eso es la mitad de lo que se ve en el vestidor al cambiar de talla.
-HOLGURA_POR_CATEGORIA: dict[str, tuple[float, float, float, float]] = {
-    "Blusas": (8.0, 10.0, 10.0, 62.0),
-    "Camisas": (10.0, 12.0, 12.0, 66.0),
-    "Poleras": (8.0, 10.0, 10.0, 64.0),
-    "Casacas": (14.0, 16.0, 16.0, 60.0),
-    "Abrigos de mujer": (18.0, 20.0, 20.0, 85.0),
-    "Vestidos": (6.0, 8.0, 8.0, 95.0),
-}
+REGLAS_DE_HOLGURA: tuple[tuple[tuple[str, ...], tuple[float, float, float, float]], ...] = (
+    # Lo de abrigo va primero: «Chaquetas, Abrigos y Sudaderas» tambien
+    # contiene palabras de otras reglas si alguna vez se renombra.
+    (("abrigo", "chaqueta", "casaca", "sudadera", "parka", "campera"),
+     (18.0, 20.0, 20.0, 72.0)),
+    (("vestido", "pieza", "conjunto", "enterizo", "mono"),
+     (6.0, 8.0, 8.0, 95.0)),
+    (("descanso", "pijama", "bata", "dormir"),
+     (14.0, 16.0, 16.0, 70.0)),
+    (("blusa", "camisa"), (8.0, 10.0, 10.0, 62.0)),
+    (("top", "camiseta", "polera", "playera"), (8.0, 10.0, 10.0, 64.0)),
+)
+
+#: Para una categoria de torso que no encaje en ninguna regla.
+#:
+#: Aca SI se usa un valor por omision, al reves que con la talla del cuerpo, y
+#: la diferencia importa. Una talla fuera de la serie conocida no se puede
+#: adivinar: inventarla seria decirle al cliente que le queda bien algo que no
+#: se midio. La holgura de una prenda de torso, en cambio, cae siempre en un
+#: rango estrecho, y usar un valor generico da una respuesta aproximada en vez
+#: de ninguna. Es lo que evita que una categoria nueva deje el vestidor mudo.
+HOLGURA_POR_OMISION = (10.0, 12.0, 12.0, 66.0)
 
 #: Lo que se le suma al largo por cada talla por encima de la M.
 PASO_DE_LARGO = 2.0
+
+
+def holgura_de(categoria: str) -> tuple[float, float, float, float]:
+    """La holgura que le toca a una categoria, por las palabras de su nombre."""
+    nombre = categoria.casefold()
+    for palabras, holgura in REGLAS_DE_HOLGURA:
+        if any(palabra in nombre for palabra in palabras):
+            return holgura
+    return HOLGURA_POR_OMISION
 
 
 def sembrar(db: Session) -> int:
@@ -109,12 +147,13 @@ def sembrar(db: Session) -> int:
     for producto_id, categoria, talla_id, codigo in combinaciones:
         if (producto_id, talla_id) in ya_estan:
             continue
-        holgura = HOLGURA_POR_CATEGORIA.get(categoria)
+        holgura = holgura_de(categoria)
         cuerpo = CUERPO_POR_TALLA.get(codigo)
-        # Una categoria sin holgura definida o una talla fuera de la serie se
-        # SALTAN, no se inventan. Que falte la fila es visible --- el vestidor
-        # dice que no hay tabla ---; un numero inventado no.
-        if holgura is None or cuerpo is None:
+        # Una talla fuera de la serie conocida se SALTA, no se inventa: sin
+        # saber a que cuerpo corresponde, cualquier medida seria un numero
+        # dicho al azar y el vestidor recomendaria sobre el. Que falte la fila
+        # es visible ---dice que no hay tabla---; un numero inventado no.
+        if cuerpo is None:
             continue
 
         d_busto, d_cintura, d_cadera, largo_m = holgura
