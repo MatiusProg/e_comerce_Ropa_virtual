@@ -354,22 +354,40 @@ class _EstadoPantallaVestidor extends ConsumerState<PantallaVestidor>
         _ficha = ficha;
         _ajuste = ajuste;
       });
-      // Si hay una talla recomendada, se pone ESA. Hasta hoy se ponia siempre
-      // la primera de la lista, que es la mas chica: al cliente le caia una XS
-      // sin ningun motivo, y con la foto de una variante que ademas podia ser
-      // una silueta dibujada en vez de la prenda real.
-      final recomendada = _ajuste.tallaRecomendadaId;
-      final elegida = recomendada == null
-          ? null
-          : probables.where((v) => v.tallaId == recomendada).firstOrNull;
-      if (elegida != null) {
-        _ponerse(elegida);
-      } else if (probables.isNotEmpty) {
-        _ponerse(probables.first);
-      }
+      final elegida = _cualPonerse(probables);
+      if (elegida != null) _ponerse(elegida);
     } catch (_) {
       /* se queda sin prenda; el aviso lo da la pantalla */
     }
+  }
+
+  /// Con cual de las variantes se abre la prenda.
+  ///
+  /// SE PRIORIZA LA FOTO POR ENCIMA DE LA TALLA
+  /// -------------------------------------------
+  /// Dos criterios compiten. La talla recomendada es sobre CÓMO LE QUEDA; la
+  /// foto real es sobre QUÉ SE VE. Gana la foto, y por una razón concreta: si
+  /// se abre con una silueta rellena de color, el cliente ya juzgó el probador
+  /// antes de tocar nada --- y esa primera impresión es justamente la que hacía
+  /// que el vestidor «se viera chafa» aunque la realidad aumentada funcionara
+  /// bien. La talla se cambia con un botón; la impresión no se deshace.
+  ///
+  /// Dentro de las fotografiadas sí manda la talla recomendada, así que cuando
+  /// la prenda está bien cargada --- foto en todas las variantes --- los dos
+  /// criterios coinciden y esto no hace nada.
+  VariantePrenda? _cualPonerse(List<VariantePrenda> probables) {
+    if (probables.isEmpty) return null;
+
+    final conFoto = probables.where((v) => v.tieneFotoReal).toList();
+    final candidatas = conFoto.isNotEmpty ? conFoto : probables;
+
+    final recomendada = _ajuste.tallaRecomendadaId;
+    if (recomendada != null) {
+      final deLaTalla =
+          candidatas.where((v) => v.tallaId == recomendada).firstOrNull;
+      if (deLaTalla != null) return deLaTalla;
+    }
+    return candidatas.first;
   }
 
   /// Cambia la variante puesta SIN volver a pedir nada al servidor.

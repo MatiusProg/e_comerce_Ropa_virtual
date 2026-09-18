@@ -185,6 +185,27 @@ def _filtrar(
     return consulta
 
 
+#: Si el producto tiene al menos una FOTO de vestidor, y no solo dibujos.
+#:
+#: Es lo que ordena el selector del probador (CU-21). Sin esto el orden sale
+#: del id del producto y **la primera prenda que ve el cliente al abrir el
+#: vestidor es una silueta rellena de color**, aunque en el catalogo haya
+#: fotos reales mas abajo en la lista.
+#:
+#: EXISTS y no JOIN, por lo mismo que el filtro de `solo_vestidor`: un producto
+#: con seis variantes fotografiadas apareceria seis veces. `exists()` ya es una
+#: expresion booleana correlacionada --- no lleva `scalar_subquery()`, que es lo
+#: que pide una subconsulta que devuelve un VALOR, como el precio de abajo.
+_TIENE_FOTO_DE_VESTIDOR = exists(
+    select(ImagenProducto.id).where(
+        ImagenProducto.producto_id == Producto.id,
+        ImagenProducto.es_transparente.is_(True),
+        ImagenProducto.variante_id.is_not(None),
+        ImagenProducto.es_silueta_generada.is_(False),
+    )
+)
+
+
 #: Precio mas bajo entre las variantes ofrecibles del producto de la fila.
 #: Es subconsulta correlacionada y no un JOIN con GROUP BY porque se necesita
 #: como expresion de ORDER BY, donde un agregado obligaria a agrupar toda la
@@ -220,7 +241,22 @@ def listar_productos(
     y la 2, y el mismo producto aparecer dos veces o ninguna.
     """
     consulta = _filtrar(select(Producto), **filtros)
-    consulta = consulta.order_by(*ORDENES[orden]).limit(limite).offset(desplazamiento)
+
+    # EN EL VESTIDOR, LAS PRENDAS FOTOGRAFIADAS VAN PRIMERO.
+    #
+    # Solo ahi: en la vitrina el cliente pidio un orden ---novedades, precio,
+    # nombre--- y pasarle las fotos adelante seria desobedecerlo. En el
+    # probador no hay orden pedido, y que lo primero que se ofrezca sea un
+    # relleno de color con hombros rectos es la razon por la que el vestidor
+    # «se ve chafa» aunque la realidad aumentada funcione bien.
+    #
+    # Va ANTES del orden pedido y no en su lugar: dentro de las fotografiadas
+    # se sigue respetando el criterio, y el desempate por id se conserva.
+    ordenes = ORDENES[orden]
+    if filtros.get("solo_vestidor"):
+        ordenes = (_TIENE_FOTO_DE_VESTIDOR.desc(), *ordenes)
+
+    consulta = consulta.order_by(*ordenes).limit(limite).offset(desplazamiento)
     return list(db.scalars(consulta))
 
 
@@ -363,8 +399,8 @@ def imagenes_de_producto(db: Session, producto_id: int) -> list[ImagenProducto]:
     )
 
 
-def rutas_de_vestidor(db: Session, producto_id: int) -> dict[int, str]:
-    """La ruta del PNG transparente de cada variante del producto.
+def rutas_de_vestidor(db: Session, producto_id: int) -> dict[int, tuple[str, bool]]:
+    """La ruta del PNG transparente de cada variante, y si es un DIBUJO.
 
     Es la mitad de la costura C5: la ficha entrega, por variante, el activo que
     el vestidor virtual necesita, para que la pantalla de realidad aumentada no
@@ -373,13 +409,17 @@ def rutas_de_vestidor(db: Session, producto_id: int) -> dict[int, str]:
     asi que el diccionario no pierde nada.
     """
     filas = db.execute(
-        select(ImagenProducto.variante_id, ImagenProducto.ruta).where(
+        select(
+            ImagenProducto.variante_id,
+            ImagenProducto.ruta,
+            ImagenProducto.es_silueta_generada,
+        ).where(
             ImagenProducto.producto_id == producto_id,
             ImagenProducto.es_transparente.is_(True),
             ImagenProducto.variante_id.is_not(None),
         )
     ).all()
-    return {fila[0]: fila[1] for fila in filas}
+    return {fila[0]: (fila[1], fila[2]) for fila in filas}
 
 
 def variante_ofrecible(db: Session, variante_id: int) -> VarianteProducto | None:

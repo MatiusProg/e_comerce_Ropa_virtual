@@ -283,6 +283,20 @@ class ImagenProducto(Auditoria, Base):
     ruta: Mapped[str] = mapped_column(String(255))
     es_principal: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     es_transparente: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+
+    #: Si este PNG es el DIBUJO que genera el sembrado y no una foto (CU-21).
+    #:
+    #: La omision es falso ---o sea, es una foto--- a proposito: lo que sube un
+    #: administrador por CU-11 es una foto, y si hubiera que acordarse de
+    #: marcarla, alguna vez no se haria. Lo unico que se marca es lo que genera
+    #: el propio sembrado, que lo hace solo.
+    #:
+    #: El vestidor lo usa para OFRECER PRIMERO las prendas fotografiadas: sin
+    #: esto, la primera prenda que ve el cliente al abrir el probador es un
+    #: relleno de color con hombros rectos.
+    es_silueta_generada: Mapped[bool] = mapped_column(
+        Boolean, server_default=text("false")
+    )
     orden: Mapped[int] = mapped_column(SmallInteger, server_default=text("0"))
 
     producto: Mapped[Producto] = relationship(back_populates="imagenes")
