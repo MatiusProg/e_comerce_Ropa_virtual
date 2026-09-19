@@ -6,10 +6,21 @@ Caso de uso: CU-36 Consultar tablero de indicadores
 
 Es de solo lectura, asi que no hay transaccion que controlar. Lo que vive aqui
 son las tres cosas que la consulta no sabe: que periodo se mira cuando nadie lo
-dice, como se calculan las tasas, y que hacer con los indicadores cuyas tablas
-todavia no existen.
+dice, como se calculan las tasas, y que cuenta como venta.
+
+LOS SIETE INDICADORES YA ESTAN COMPLETOS
+-----------------------------------------
+Se entrego con cuatro apagados ---ventas del dia y del mes, ticket promedio y
+prendas mas vendidas--- porque `venta` y `detalle_venta` nacian con la `0006` y
+todavia no existian. Ya existen y hay ventas pagadas de verdad, asi que el
+bloque se encendio el 19/09.
+
+Lo que la nota vieja prometia se cumplio: **hubo que tocar UNA sola funcion**,
+`_ventas`. El contrato, el router y la pantalla no cambiaron --- la web ya traia
+escrita la rama de `disponible: true` desde el primer dia.
 """
 from datetime import date, datetime, time, timedelta, timezone
+from decimal import ROUND_HALF_UP, Decimal
 
 from sqlalchemy.orm import Session
 
@@ -198,20 +209,68 @@ def _inventario(db: Session, sucursal_id: int | None) -> tuple[SaludInventarioOu
     return salud, cortadas
 
 
-def _ventas() -> VentasOut:
-    """El bloque de ventas mientras la `0006_ciclo3_ventas` no exista.
+def _dinero(valor) -> Decimal:
+    """Un monto con dos decimales, siempre.
 
-    **Esta funcion es el unico lugar que hay que tocar cuando aterrice.** Se
-    deja sola, sin parametros y sin base, justamente para que se vea que no hay
-    nada mas repartido por el archivo: cuando existan `venta` y `detalle_venta`,
-    recibe la sesion y el periodo, y ni el router ni el contrato cambian.
+    `SUM` sobre cero filas devuelve el entero 0 del `coalesce`, y sin esto el
+    tablero diria «0» un dia y «640.00» al siguiente para el mismo campo. Que un
+    importe cambie de forma segun si hubo ventas obliga a cada pantalla a
+    normalizarlo por su cuenta, y basta con que una se olvide para que el
+    numero se vea distinto en dos lugares.
+
+    Redondeo comercial, el mismo que usa la conversion a centavos de Stripe.
     """
+    return Decimal(valor or 0).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+def _ventas(
+    db: Session, *, desde: datetime, hasta: datetime, sucursal_id: int | None
+) -> VentasOut:
+    """Los cuatro indicadores que dependen de `venta` y `detalle_venta`.
+
+    Estuvo devolviendo `disponible=False` desde que se escribio CU-36: las
+    tablas nacian con la `0006` de Mateo y todavia no existian. Ya existen, y
+    **hay ventas pagadas de verdad**, asi que se enciende.
+
+    Se cumplio lo que decia la nota vieja: fue el UNICO lugar que hubo que
+    tocar. Ni el contrato ni el router ni la pantalla cambiaron --- la web ya
+    tenia escrita la rama de `disponible: true` desde el primer dia.
+
+    QUE CUENTA COMO VENTA
+    ---------------------
+    Solo PAGADA y ENTREGADA. Un pedido en PENDIENTE_PAGO no es una venta: es una
+    intencion con stock apartado, el dinero no entro, y la barrida de vencidos
+    puede cancelarlo en veinte minutos. Contarlo inflaria el monto del dia con
+    compras que nadie pago. La regla vive en `ESTADOS_VENDIDOS`, en el
+    repositorio, junto a las consultas que la usan.
+
+    EL TICKET PROMEDIO SE DIVIDE ACA, NO EN SQL
+    --------------------------------------------
+    Porque el caso de cero ventas es una decision de negocio y no de consulta:
+    **nulo, no cero**. Cero pesos de ticket promedio se lee como «vendemos y no
+    cobramos»; la ausencia de ventas se lee como «todavia no vendimos». Es el
+    mismo criterio que rige las dos tasas de conversion --- ver `_porcentaje`.
+    """
+    resumen = repository.resumen_de_ventas(
+        db, desde=desde, hasta=hasta, sucursal_id=sucursal_id
+    )
+    monto = _dinero(resumen.monto)
+    cantidad = int(resumen.cantidad or 0)
+
+    ranking = repository.top_variantes_vendidas(
+        db, desde=desde, hasta=hasta, sucursal_id=sucursal_id, limite=TOPE_RANKING
+    )
+
     return VentasOut(
-        disponible=False,
-        motivo=(
-            "Los indicadores de venta se activan cuando exista la tabla de ventas "
-            "(migración 0006). Hoy el tablero mide reservas e inventario."
-        ),
+        disponible=True,
+        # «Vendido hoy» es SIEMPRE hoy, aunque se este mirando otro periodo:
+        # es el pulso del negocio. Ver `monto_vendido_hoy`.
+        monto_hoy=_dinero(repository.monto_vendido_hoy(db, sucursal_id=sucursal_id)),
+        monto_periodo=monto,
+        cantidad_periodo=cantidad,
+        ticket_promedio=_dinero(monto / cantidad) if cantidad else None,
+        mas_vendidas=[_prenda(fila) for fila in ranking],
+        motivo=None,
     )
 
 
@@ -272,5 +331,5 @@ def consultar(
         mas_reservadas=[_prenda(fila) for fila in ranking],
         inventario=salud,
         alertas=alertas,
-        ventas=_ventas(),
+        ventas=_ventas(db, desde=inicio, hasta=fin, sucursal_id=sucursal_id),
     )

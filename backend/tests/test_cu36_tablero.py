@@ -34,6 +34,8 @@ from app.modules.reportes.tablero_service import ESTADOS_ABIERTOS, ESTADOS_CERRA
 from app.modules.reservas.models import ESTADOS_RESERVA
 
 TABLERO = "/api/v1/reportes/tablero"
+CARRITO = "/api/v1/tienda/carrito"
+PEDIDOS = "/api/v1/tienda/pedidos"
 RESERVAS = "/api/v1/reservas"
 PANEL = "/api/v1/sucursal/reservas"
 INGRESOS = "/api/v1/inventario/ingresos"
@@ -49,6 +51,10 @@ TALLAS = "/api/v1/catalogo/tallas"
 COLORES = "/api/v1/catalogo/colores"
 
 BOLIVIA = timezone(timedelta(hours=-4))
+
+#: El precio de la variante que arma `_crear_variantes`, para que las cuentas
+#: de las pruebas se lean sin tener que ir a buscarlo.
+PRECIO = 320
 
 
 def _manana(hora: int) -> datetime:
@@ -676,21 +682,184 @@ def test_el_tablero_pide_la_alerta_a_p4_en_vez_de_definirla(
 
 
 # =====================================================================
-# Ventas: el bloque que todavia no tiene tablas
+# Ventas
 # =====================================================================
+#
+# El bloque estuvo apagado desde que se entrego CU-36: `venta` y `detalle_venta`
+# nacian con la `0006` y no existian. Ya existen, y estas pruebas son las que
+# fijan lo que cuenta como venta --- que es la unica decision dificil de aca.
 
-def test_el_bloque_de_ventas_viaja_aunque_no_exista_la_tabla(
+def _vender(
+    api: TestClient,
+    cabeceras_cliente: dict[str, str],
+    tienda: dict,
+    *,
+    cantidad: int,
+    pagar: bool = True,
+) -> str:
+    """Un pedido, opcionalmente pagado. Devuelve su codigo.
+
+    Pasa por el flujo real ---carrito, pedido, webhook simulado--- en vez de
+    escribir filas a mano: una venta insertada directamente no tendria ni el
+    `pago` ni los movimientos de inventario, y el tablero estaria midiendo algo
+    que el sistema nunca produce.
+    """
+    api.post(
+        f"{CARRITO}/items",
+        headers=cabeceras_cliente,
+        json={"variante_id": tienda["variante"], "cantidad": cantidad},
+    )
+    r = api.post(
+        PEDIDOS,
+        headers=cabeceras_cliente,
+        json={
+            "modalidad_entrega": "RETIRO",
+            "sucursal_id": tienda["sucursal"],
+            "total_esperado": f"{PRECIO * cantidad}.00",
+        },
+    )
+    assert r.status_code == 201, r.text
+    cuerpo = r.json()
+    if pagar:
+        sesion = cuerpo["url_pago"].split("sesion=")[1].split("&")[0]
+        confirmado = api.post(
+            "/api/v1/pagos/simulacion",
+            json={"sesion": sesion, "pedido": cuerpo["pedido"]["codigo"], "aprobado": True},
+        )
+        assert confirmado.json()["resultado"] == "aplicado", confirmado.text
+    return cuerpo["pedido"]["codigo"]
+
+
+@pytest.fixture
+def tienda(api: TestClient, cabeceras_admin: dict[str, str], sucursal: int, variantes: list[int]):
+    """Stock suficiente para varias compras de la misma prenda."""
+    _ingresar(api, cabeceras_admin, sucursal_id=sucursal, lineas=[(variantes[0], 40)])
+    return {"variante": variantes[0], "sucursal": sucursal}
+
+
+def test_sin_ventas_el_ticket_promedio_es_NULO_y_no_cero(
     api: TestClient, cabeceras_admin: dict[str, str]
 ) -> None:
-    """Es lo que permite que la pantalla no cambie cuando aterrice la `0006`.
+    """Es la misma distincion que rige las dos tasas de conversion.
 
-    Un bloque que apareciera de la nada obligaria a tocar la interfaz dos veces:
-    una para dibujar el aviso y otra para dibujar las tarjetas.
+    Cero pesos de ticket promedio se lee como «vendemos y no cobramos»; la
+    ausencia de ventas se lee como «todavia no vendimos». Son cosas opuestas.
     """
     ventas = _tablero(api, cabeceras_admin)["ventas"]
 
-    assert ventas["disponible"] is False
-    assert ventas["motivo"]
-    assert ventas["monto_periodo"] is None
+    assert ventas["disponible"] is True, "el bloque ya no espera ninguna migración"
+    assert ventas["motivo"] is None
+    assert ventas["cantidad_periodo"] == 0
+    assert ventas["monto_periodo"] == "0.00"
     assert ventas["ticket_promedio"] is None
     assert ventas["mas_vendidas"] == []
+
+
+def test_una_venta_pagada_suma_al_monto_y_al_ticket(
+    api: TestClient,
+    cabeceras_admin: dict[str, str],
+    cabeceras_cliente: dict[str, str],
+    tienda: dict,
+) -> None:
+    _vender(api, cabeceras_cliente, tienda, cantidad=2)
+
+    ventas = _tablero(api, cabeceras_admin)["ventas"]
+
+    assert ventas["cantidad_periodo"] == 1
+    assert ventas["monto_periodo"] == "640.00"
+    assert ventas["ticket_promedio"] == "640.00"
+    assert ventas["monto_hoy"] == "640.00"
+
+
+def test_un_pedido_SIN_pagar_no_es_una_venta(
+    api: TestClient,
+    cabeceras_admin: dict[str, str],
+    cabeceras_cliente: dict[str, str],
+    tienda: dict,
+) -> None:
+    """**La decision que mas importa de este bloque.**
+
+    Un pedido en PENDIENTE_PAGO es una intencion con stock apartado: el dinero
+    no entro y la barrida de vencidos puede cancelarlo en veinte minutos.
+    Contarlo inflaria el monto del dia con compras que nadie pago.
+    """
+    _vender(api, cabeceras_cliente, tienda, cantidad=3, pagar=False)
+
+    ventas = _tablero(api, cabeceras_admin)["ventas"]
+
+    assert ventas["cantidad_periodo"] == 0
+    assert ventas["monto_periodo"] == "0.00"
+    assert ventas["mas_vendidas"] == []
+
+
+def test_el_ticket_promedio_es_el_monto_entre_las_ventas(
+    api: TestClient,
+    cabeceras_admin: dict[str, str],
+    cabeceras_cliente: dict[str, str],
+    tienda: dict,
+) -> None:
+    """Dos compras de tamanio distinto, para que el promedio no coincida con
+    ninguna de las dos y la prueba distinga de verdad."""
+    _vender(api, cabeceras_cliente, tienda, cantidad=1)   # 320
+    _vender(api, cabeceras_cliente, tienda, cantidad=3)   # 960
+
+    ventas = _tablero(api, cabeceras_admin)["ventas"]
+
+    assert ventas["cantidad_periodo"] == 2
+    assert ventas["monto_periodo"] == "1280.00"
+    assert ventas["ticket_promedio"] == "640.00"
+
+
+def test_las_mas_vendidas_suman_unidades_y_no_pedidos(
+    api: TestClient,
+    cabeceras_admin: dict[str, str],
+    cabeceras_cliente: dict[str, str],
+    tienda: dict,
+) -> None:
+    """Dos unidades de la misma prenda son DOS vendidas, no una."""
+    _vender(api, cabeceras_cliente, tienda, cantidad=2)
+    _vender(api, cabeceras_cliente, tienda, cantidad=3)
+
+    ranking = _tablero(api, cabeceras_admin)["ventas"]["mas_vendidas"]
+
+    assert len(ranking) == 1
+    assert ranking[0]["variante_id"] == tienda["variante"]
+    assert ranking[0]["unidades"] == 5
+    assert ranking[0]["reservas"] == 2, "aparecio en dos pedidos distintos"
+
+
+def test_vendido_hoy_no_sigue_al_periodo(
+    api: TestClient,
+    cabeceras_admin: dict[str, str],
+    cabeceras_cliente: dict[str, str],
+    tienda: dict,
+) -> None:
+    """«Vendido hoy» es SIEMPRE hoy, aunque se mire otro periodo.
+
+    Consultando una semana vieja, el monto del periodo es cero ---no hubo
+    ventas entonces--- pero el del dia sigue mostrando lo de hoy. Si siguiera al
+    periodo diria «vendido hoy: 0» sobre un dia que no es hoy.
+    """
+    _vender(api, cabeceras_cliente, tienda, cantidad=2)
+    viejo = (datetime.now(timezone.utc).date() - timedelta(days=90)).isoformat()
+
+    ventas = _tablero(api, cabeceras_admin, desde=viejo, hasta=viejo)["ventas"]
+
+    assert ventas["monto_periodo"] == "0.00"
+    assert ventas["monto_hoy"] == "640.00"
+
+
+def test_el_filtro_por_sucursal_tambien_separa_las_ventas(
+    api: TestClient,
+    cabeceras_admin: dict[str, str],
+    cabeceras_cliente: dict[str, str],
+    tienda: dict,
+) -> None:
+    otra = _crear_sucursal(api, cabeceras_admin, nombre="Norte")
+    _vender(api, cabeceras_cliente, tienda, cantidad=2)
+
+    propio = _tablero(api, cabeceras_admin, sucursal_id=tienda["sucursal"])["ventas"]
+    ajeno = _tablero(api, cabeceras_admin, sucursal_id=otra)["ventas"]
+
+    assert propio["monto_periodo"] == "640.00"
+    assert ajeno["monto_periodo"] == "0.00"

@@ -40,7 +40,8 @@ con CU-14, que pagina en Python porque la costura le entrega el consolidado
 entero. Un tablero que contara filas en Python tendria que traerse las reservas
 de todo el mes para decir cuantas hay.
 """
-from datetime import datetime
+from datetime import datetime, time, timedelta, timezone
+from decimal import Decimal
 
 from sqlalchemy import Row, Select, and_, func, select
 from sqlalchemy.orm import Session
@@ -49,6 +50,7 @@ from app.modules.catalogo.models import Color, Producto, Talla, VarianteProducto
 from app.modules.inventario.models import Existencia
 from app.modules.organizacion.models import Sucursal
 from app.modules.reservas.models import DetalleReserva, Reserva
+from app.modules.ventas.models import DetalleVenta, Venta
 
 
 # --- Ayudas comunes ------------------------------------------------------
@@ -229,3 +231,120 @@ def salud_inventario(db: Session, *, sucursal_id: int | None) -> Row:
 def nombre_de_sucursal(db: Session, sucursal_id: int) -> str | None:
     """El nombre, para rotular el periodo. Nulo si no existe."""
     return db.scalar(select(Sucursal.nombre).where(Sucursal.id == sucursal_id))
+
+
+# --- Ventas (P7) ---------------------------------------------------------
+#
+# QUE CUENTA COMO VENTA, Y QUE NO
+# --------------------------------
+# Solo PAGADA y ENTREGADA. Un pedido en PENDIENTE_PAGO **no es una venta**: es
+# una intencion con stock apartado, y el dinero todavia no entro --- contarlo
+# inflaria el monto del dia con compras que nadie pago y que la barrida de
+# vencidos puede cancelar en veinte minutos.
+#
+# CANCELADA tampoco, por lo obvio. Y ENTREGADA si, porque es una PAGADA que
+# ademas se entrego: excluirla haria que el monto del mes bajara solo a medida
+# que los pedidos se van entregando.
+
+#: Los estados en los que una venta ya represento dinero cobrado.
+ESTADOS_VENDIDOS = ("PAGADA", "ENTREGADA")
+
+
+def _venta_del_periodo(desde: datetime, hasta: datetime, sucursal_id: int | None):
+    """El filtro que comparten las consultas de ventas.
+
+    Se corta por `creado_en` ---cuando se hizo la compra--- y no por cuando se
+    pago. Son instantes distintos: un pedido de las 23:50 que el webhook
+    confirma a las 00:05 pertenece al dia en que el cliente compro, que es lo
+    que responde «como nos fue hoy».
+
+    El extremo derecho es `<` por el mismo motivo que en las reservas: quien
+    llama pasa el instante siguiente al ultimo dia.
+    """
+    condiciones = [
+        Venta.creado_en >= desde,
+        Venta.creado_en < hasta,
+        Venta.estado.in_(ESTADOS_VENDIDOS),
+    ]
+    if sucursal_id is not None:
+        condiciones.append(Venta.sucursal_id == sucursal_id)
+    return and_(*condiciones)
+
+
+def resumen_de_ventas(
+    db: Session, *, desde: datetime, hasta: datetime, sucursal_id: int | None
+) -> Row:
+    """Cuanto se vendio en el periodo, en cuantas ventas.
+
+    El ticket promedio **no se calcula aca**: sale de dividir estos dos en el
+    servicio, que es quien sabe que hacer cuando no hay ninguna venta. Pedirle
+    el promedio a la base devolveria NULL y habria que tratarlo igual, con la
+    diferencia de que el motor ya habria hecho la division.
+    """
+    return db.execute(
+        select(
+            func.coalesce(func.sum(Venta.total), 0).label("monto"),
+            func.count(Venta.id).label("cantidad"),
+        ).where(_venta_del_periodo(desde, hasta, sucursal_id))
+    ).one()
+
+
+def monto_vendido_hoy(db: Session, *, sucursal_id: int | None) -> Decimal:
+    """Lo vendido en el dia de hoy. **Ignora el periodo, a proposito.**
+
+    El enunciado pide «ventas del dia Y del mes» como dos numeros distintos, y
+    el del dia es siempre HOY: es el pulso del negocio, lo que el Administrador
+    mira al abrir la pantalla. Si siguiera el periodo, al consultar la semana
+    pasada diria «vendido hoy: 0» sobre un dia que no es hoy, que es una lectura
+    que confunde mas de lo que informa.
+    """
+    inicio = datetime.combine(datetime.now(timezone.utc).date(), time.min, tzinfo=timezone.utc)
+    fin = inicio + timedelta(days=1)
+    return db.scalar(
+        select(func.coalesce(func.sum(Venta.total), 0)).where(
+            _venta_del_periodo(inicio, fin, sucursal_id)
+        )
+    ) or Decimal("0")
+
+
+def top_variantes_vendidas(
+    db: Session,
+    *,
+    desde: datetime,
+    hasta: datetime,
+    sucursal_id: int | None,
+    limite: int,
+) -> list[Row]:
+    """Las prendas mas vendidas del periodo, de mas a menos unidades.
+
+    Se suma `cantidad` de `detalle_venta`, no filas: dos unidades de la misma
+    prenda en un pedido son dos unidades vendidas, no una.
+
+    Mismo desempate por SKU que el ranking de reservas, y por lo mismo: sin un
+    orden estable, dos prendas empatadas se intercambian entre recargas y la
+    pantalla parpadea sin que nada haya cambiado.
+    """
+    consulta = _unir_variante(
+        select(
+            *_columnas_de_variante(),
+            func.sum(DetalleVenta.cantidad).label("unidades"),
+            func.count(func.distinct(DetalleVenta.venta_id)).label("reservas"),
+        )
+        .select_from(DetalleVenta)
+        .join(Venta, Venta.id == DetalleVenta.venta_id)
+        .join(VarianteProducto, VarianteProducto.id == DetalleVenta.variante_id)
+    ).where(_venta_del_periodo(desde, hasta, sucursal_id))
+
+    return list(
+        db.execute(
+            consulta.group_by(
+                VarianteProducto.id,
+                VarianteProducto.sku,
+                Producto.nombre,
+                Talla.codigo,
+                Color.nombre,
+            )
+            .order_by(func.sum(DetalleVenta.cantidad).desc(), VarianteProducto.sku)
+            .limit(limite)
+        ).all()
+    )
