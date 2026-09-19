@@ -158,3 +158,116 @@ def test_sin_clave_de_api_el_proveedor_no_se_construye(monkeypatch) -> None:
     monkeypatch.setattr(config.settings, "PAGO_API_KEY", "", raising=False)
     with pytest.raises(ValueError):
         ProveedorStripe()
+
+
+# =====================================================================
+# CU-28 - Interpretar la notificacion de Stripe
+# =====================================================================
+#
+# ESTE BLOQUE EXISTE POR UN DEFECTO QUE LLEGO A PRODUCCION
+# --------------------------------------------------------
+# Las pruebas de arriba cubrian `crear_sesion` y nada mas. `interpretar_webhook`
+# quedo sin mirar, y ahi habia un error que solo se ve con un evento DE VERDAD:
+#
+#     AttributeError: 'get' is a dict method, but a Event is not a dict
+#
+# `stripe.Webhook.construct_event` devuelve un `stripe.Event`, que **no es un
+# diccionario**: en el SDK 15.x `StripeObject` niega `.get()` a proposito. El
+# codigo lo trataba como dict, el router respondia 500, y Stripe reintentaba
+# durante dias contra un endpoint que nunca iba a aceptarlo --- con el dinero
+# cobrado y la venta en PENDIENTE_PAGO.
+#
+# La leccion: no alcanza con probar la peticion que sale. Hay que probar
+# tambien la que entra, y con la forma REAL del SDK, no con un diccionario
+# comodo que se comporta distinto.
+
+def _evento_stripe(tipo: str, *, payment_status: str = "paid"):
+    """Un `stripe.Event` de verdad, construido sin red.
+
+    `construct_from` es como el SDK arma sus objetos al recibir una respuesta,
+    asi que esto tiene **exactamente** la forma que llega por el webhook ---
+    incluida la negativa de `StripeObject` a comportarse como diccionario, que
+    es justamente lo que hay que probar.
+    """
+    import stripe
+
+    return stripe.Event.construct_from(
+        {
+            "id": "evt_de_prueba",
+            "type": tipo,
+            "data": {
+                "object": {
+                    "id": "cs_test_de_prueba",
+                    "payment_status": payment_status,
+                    "metadata": {"venta_id": "7", "codigo": "VB-20260918-ABC123"},
+                }
+            },
+        },
+        "sk_test_de_mentira",
+    )
+
+
+@pytest.fixture
+def interpretar(proveedor: ProveedorStripe, monkeypatch):
+    """Llama a `interpretar_webhook` saltandose solo la verificacion de firma.
+
+    La firma la comprueba Stripe con su propio HMAC y ya tiene sus pruebas; lo
+    que hay que fijar aca es que lo que devuelve se sepa LEER.
+    """
+    import stripe
+
+    def _llamar(evento):
+        monkeypatch.setattr(
+            stripe.Webhook, "construct_event", lambda *a, **k: evento
+        )
+        return proveedor.interpretar_webhook(b"{}", "t=1,v1=loquesea")
+
+    return _llamar
+
+
+def test_se_puede_leer_un_evento_real_del_sdk(interpretar) -> None:
+    """**La prueba que faltaba.**
+
+    Un `stripe.Event` no es un dict. Si el codigo lo trata como tal, esto
+    levanta AttributeError y el webhook responde 500.
+    """
+    e = interpretar(_evento_stripe("checkout.session.completed"))
+
+    assert e.id_evento == "evt_de_prueba"
+    assert e.tipo == "checkout.session.completed"
+    assert e.id_sesion == "cs_test_de_prueba"
+    assert e.referencia == "VB-20260918-ABC123"
+    assert e.aprobado is True
+    assert e.es_de_cobro is True
+
+
+def test_una_sesion_completada_pero_SIN_pagar_no_se_aprueba(interpretar) -> None:
+    """`completed` no alcanza: lo que decide es `payment_status`.
+
+    Una sesion puede cerrarse con el pago pendiente ---transferencias, metodos
+    diferidos---. Aprobar por el tipo de evento descontaria inventario por algo
+    que todavia no se cobro.
+    """
+    e = interpretar(_evento_stripe("checkout.session.completed", payment_status="unpaid"))
+
+    assert e.es_de_cobro is True
+    assert e.aprobado is False
+
+
+def test_la_sesion_expirada_es_de_cobro_pero_no_aprueba(interpretar) -> None:
+    e = interpretar(_evento_stripe("checkout.session.expired", payment_status="unpaid"))
+
+    assert e.es_de_cobro is True
+    assert e.aprobado is False
+
+
+def test_un_evento_de_otro_tipo_no_es_de_cobro(interpretar) -> None:
+    """Una cuenta de Stripe emite decenas de tipos que no interesan.
+
+    Se registran ---el registro es de todo lo que la pasarela dijo--- y no se
+    los confunde con un rechazo.
+    """
+    e = interpretar(_evento_stripe("customer.updated"))
+
+    assert e.es_de_cobro is False
+    assert e.aprobado is False
