@@ -143,6 +143,33 @@ export class ReservaFormulario {
   protected readonly error = signal<string | null>(null);
 
   protected readonly lineas = signal<LineaEnPantalla[]>([]);
+
+  /**
+   * Si se llegó desde la ficha de una prenda, y no desde «Mis reservas».
+   *
+   * Cambia la CARA del diálogo, no lo que hace. Al llegar con una prenda
+   * elegida, lo primero que se veía era un buscador que decía «Buscá una
+   * prenda» ---justo lo que el cliente acababa de hacer--- y su prenda
+   * aparecía como una fila de tabla más abajo. Se leía como un formulario
+   * genérico, no como «estás reservando esta blusa».
+   */
+  protected readonly desdeFicha: boolean;
+
+  /** La prenda con la que se entró, para mostrarla arriba con su foto. */
+  protected readonly destacada = signal<{
+    nombre: string;
+    foto: string | null;
+    etiqueta: string;
+  } | null>(null);
+
+  /**
+   * Si el buscador está a la vista.
+   *
+   * Arranca cerrado cuando se llegó desde una ficha: reservar UNA prenda es
+   * el caso normal, y agregar otras es la excepción. Un buscador abierto al
+   * entrar invita a buscar algo que ya se encontró.
+   */
+  protected readonly buscadorAbierto = signal(false);
   protected readonly unidades = computed(() =>
     this.lineas().reduce((suma, l) => suma + l.cantidad, 0),
   );
@@ -188,6 +215,8 @@ export class ReservaFormulario {
       .pipe(debounceTime(300), distinctUntilChanged())
       .subscribe((texto) => this.buscarProductos(texto));
 
+    this.desdeFicha = !!this.inicial;
+    this.buscadorAbierto.set(!this.inicial);
     if (this.inicial) this.abrirCon(this.inicial);
   }
 
@@ -210,6 +239,15 @@ export class ReservaFormulario {
         if (!variante) return;
         this.varianteElegida.setValue(variante.id);
         this.agregarLinea();
+        this.destacada.set({
+          nombre: ficha.nombre,
+          foto: this.tienda.urlDeImagen(
+            (ficha.imagenes.find((i) => i.variante_id === variante.id) ??
+              ficha.imagenes.find((i) => i.es_principal) ??
+              ficha.imagenes[0])?.url ?? null,
+          ),
+          etiqueta: this.etiquetaDeVariante(variante),
+        });
       },
       error: (e: ErrorReservas) => this.error.set(e.mensaje),
     });
@@ -405,6 +443,10 @@ export class ReservaFormulario {
           }
         },
       });
+  }
+
+  protected alternarBuscador(): void {
+    this.buscadorAbierto.update((abierto) => !abierto);
   }
 
   protected cancelar(): void {

@@ -1,7 +1,9 @@
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MatBadgeModule } from '@angular/material/badge';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { AuthService } from '../../core/services/auth.service';
 import { CarritoService } from '../../core/services/carrito.service';
@@ -30,7 +32,14 @@ import { CarritoService } from '../../core/services/carrito.service';
  */
 @Component({
   selector: 'app-navegacion-cliente',
-  imports: [RouterLink, RouterLinkActive, MatBadgeModule, MatIconModule],
+  imports: [
+    RouterLink,
+    RouterLinkActive,
+    MatBadgeModule,
+    MatButtonModule,
+    MatIconModule,
+    MatTooltipModule,
+  ],
   templateUrl: './navegacion-cliente.html',
   styleUrl: './navegacion-cliente.scss',
 })
@@ -42,4 +51,21 @@ export class NavegacionCliente {
   protected readonly visible = computed(() => this.auth.rol() === 'CLIENTE');
 
   protected readonly itemsEnCarrito = this.carrito.items;
+
+  /**
+   * Cerrar sesión vive ACÁ y no en cada pantalla.
+   *
+   * Hasta el 19/09 el botón estaba en el encabezado propio de «Mi perfil»,
+   * «Mis reservas» e «Inicio», y en ninguna otra. O sea que **aparecía y
+   * desaparecía al cambiar de pestaña**: desde el catálogo, el carrito o los
+   * favoritos no había forma de salir sin volver antes a una de las tres.
+   *
+   * La barra es lo único que está en todas las pantallas del Cliente, así que
+   * es el único lugar donde el botón puede ser consistente. Que cada pantalla
+   * tuviera su propio encabezado es lo que hizo que se olvidara en seis.
+   */
+  protected salir(): void {
+    // `cerrarSesion` ya navega a /login, gane o falle la llamada al servidor.
+    this.auth.cerrarSesion();
+  }
 }

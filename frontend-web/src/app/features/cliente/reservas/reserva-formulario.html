@@ -1,5 +1,11 @@
 <!-- CU-22 · Crear reserva de prendas — pasos 2 a 7. -->
-<h2 mat-dialog-title>Reservar prendas para probarme</h2>
+<h2 mat-dialog-title>
+  @if (destacada(); as prenda) {
+    Reservar {{ prenda.nombre }}
+  } @else {
+    Reservar prendas para probarme
+  }
+</h2>
 
 @if (guardando()) {
   <mat-progress-bar mode="indeterminate" />
@@ -9,9 +15,37 @@
   <!-- Paso 1: las prendas. Van ANTES de la sucursal a propósito: sabiendo qué
        querés probarte, el selector de abajo solo ofrece los locales que las
        tienen todas. -->
-  <section class="selector">
-    <h3>¿Qué querés probarte?</h3>
+  <!-- LA PRENDA CON LA QUE SE ENTRÓ VA PRIMERO, CON SU FOTO.
+       Sin esto, al llegar desde la ficha lo primero que se veía era un
+       buscador que decía «Buscá una prenda» ---justo lo que el cliente acababa
+       de hacer--- y su prenda quedaba como una fila de tabla más abajo. Se
+       leía como un formulario genérico y no como «estás reservando esta». -->
+  @if (destacada(); as prenda) {
+    <section class="destacada">
+      @if (prenda.foto) {
+        <img [src]="prenda.foto" [alt]="prenda.nombre" />
+      } @else {
+        <div class="sin-foto"><mat-icon>checkroom</mat-icon></div>
+      }
+      <div class="datos">
+        <span class="rotulo">Vas a probarte</span>
+        <strong>{{ prenda.nombre }}</strong>
+        <span class="variante">{{ prenda.etiqueta }}</span>
+      </div>
+    </section>
+  }
 
+  <section class="selector" [class.plegado]="!buscadorAbierto()">
+    @if (desdeFicha) {
+      <button matButton type="button" class="otra-prenda" (click)="alternarBuscador()">
+        <mat-icon>{{ buscadorAbierto() ? 'expand_less' : 'add' }}</mat-icon>
+        {{ buscadorAbierto() ? 'Listo, solo esta' : '¿Querés probarte otra prenda también?' }}
+      </button>
+    } @else {
+      <h3>¿Qué querés probarte?</h3>
+    }
+
+    @if (buscadorAbierto()) {
     <div class="fila">
       <mat-form-field appearance="outline" class="buscar">
         <mat-label>Buscá una prenda</mat-label>
@@ -63,6 +97,7 @@
           Agregar
         </button>
       </div>
+    }
     }
   </section>
 
