@@ -59,6 +59,10 @@ from app.modules.ventas.carrito_router import router as carrito_router
 from app.modules.medidas.router import ajuste_router as medidas_ajuste_router
 from app.modules.medidas.router import router as medidas_router
 from app.modules.ventas.router import router as pedidos_router
+# CU-29 es de Karen y vive en archivos propios dentro de P7, con el mismo
+# patron que carrito_*. Prefijo /tienda/compras: un «pedido» es el flujo de
+# comprar y una «compra» es lo que quedo despues.
+from app.modules.ventas.historial_router import router as compras_router
 from app.modules.ventas.router import router_operacion as pedidos_operacion_router
 # CU-36 es de Karen y vive en archivos propios dentro de P11, con el mismo
 # patron que consolidado_* y carrito_*. El `router.py` del paquete queda para
@@ -180,6 +184,7 @@ app.include_router(tablero_router, prefix=API)
 # tienen reservas y su router de mantenimiento.
 app.include_router(pedidos_router, prefix=API)
 app.include_router(pedidos_operacion_router, prefix=API)
+app.include_router(compras_router, prefix=API)
 app.include_router(vestidor_router, prefix=API)
 # CU-28. El webhook de la pasarela.
 app.include_router(pagos_router, prefix=API)

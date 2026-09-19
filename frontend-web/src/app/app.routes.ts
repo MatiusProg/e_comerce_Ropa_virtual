@@ -90,6 +90,18 @@ export const routes: Routes = [
     loadComponent: () => import('./features/tienda/para-vos/para-vos').then((m) => m.ParaVos),
   },
 
+  // --- Ciclo 3 · CU-29 Consultar historial de compras --------------------
+  // Vive bajo /mi-cuenta y no bajo /tienda: la tienda es donde se compra, y
+  // esto es lo que quedó de haber comprado. Es la misma distinción que hay
+  // entre «pedidos» y «compras» en la API.
+  {
+    path: 'mi-cuenta/compras',
+    title: 'Mis compras · Violet Boutique',
+    canActivate: [sesionGuard, rolGuard('CLIENTE')],
+    loadComponent: () =>
+      import('./features/cliente/compras/compras').then((m) => m.Compras),
+  },
+
   // --- Ciclo 3 · CU-27 Realizar pedido y pagar en línea ------------------
   {
     path: 'tienda/checkout',
