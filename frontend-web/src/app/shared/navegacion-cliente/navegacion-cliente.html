@@ -1,5 +1,6 @@
 @if (visible()) {
   <nav class="navegacion" aria-label="Secciones del cliente">
+    <div class="enlaces">
     <a routerLink="/tienda" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }">
       <mat-icon>storefront</mat-icon>
       Catálogo
@@ -13,6 +14,10 @@
       >
       Mi carrito
     </a>
+    <a routerLink="/tienda/para-vos" routerLinkActive="activo">
+      <mat-icon>auto_awesome</mat-icon>
+      Para vos
+    </a>
     <a routerLink="/tienda/favoritos" routerLinkActive="activo">
       <mat-icon>favorite</mat-icon>
       Mis favoritos
@@ -25,5 +30,20 @@
       <mat-icon>person</mat-icon>
       Mi perfil
     </a>
+
+    </div>
+
+    <!-- Salir va al final y separado: no es una sección más, y ponerlo entre
+         las pestañas lo vuelve fácil de tocar por error. -->
+    <button
+      matIconButton
+      type="button"
+      class="salir"
+      matTooltip="Cerrar sesión"
+      aria-label="Cerrar sesión"
+      (click)="salir()"
+    >
+      <mat-icon>logout</mat-icon>
+    </button>
   </nav>
 }

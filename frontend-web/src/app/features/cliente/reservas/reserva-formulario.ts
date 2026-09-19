@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDatepickerModule } from '@angular/material/datepicker';
@@ -82,6 +82,12 @@ function conDesfase(fecha: Date): string {
  * variantes; un desplegable con eso no se puede usar. Mismo criterio que el
  * remito de CU-13.
  */
+/** Lo que la ficha le pasa al diálogo para abrirlo con la prenda puesta. */
+export interface PrendaInicial {
+  productoId: number;
+  varianteId?: number | null;
+}
+
 @Component({
   selector: 'app-reserva-formulario',
   imports: [
@@ -108,6 +114,28 @@ export class ReservaFormulario {
   private readonly fb = inject(FormBuilder);
   private readonly dialogo = inject(MatDialogRef<ReservaFormulario>);
 
+  /**
+   * La prenda con la que se abre el formulario, si se llegó desde la ficha.
+   *
+   * POR QUÉ ESTO EXISTE
+   * -------------------
+   * Hasta el 19/09 la única forma de reservar era entrar a «Mis reservas» y
+   * **escribir el nombre de la prenda** en el buscador de este diálogo. O sea
+   * que para reservar había que saber de memoria cómo se llama: no se veía
+   * una foto, no se podía recorrer el catálogo, y el probador virtual ---que
+   * existe justamente para decidir si te queda--- no desembocaba en nada.
+   *
+   * Comprar, en cambio, ya era catálogo → ficha → carrito → pago.
+   *
+   * Con esto la ficha ofrece «Reservar para probarme» al lado de «Agregar al
+   * carrito», y el catálogo pasa a ser la entrada de los dos flujos. El
+   * buscador se queda para AGREGAR más prendas, que es para lo que sirve;
+   * deja de ser el único camino.
+   */
+  private readonly inicial = inject<PrendaInicial | null>(MAT_DIALOG_DATA, {
+    optional: true,
+  });
+
   protected readonly columnas = ['sku', 'prenda', 'cantidad', 'quitar'];
   protected readonly duraciones = DURACIONES;
 
@@ -115,6 +143,33 @@ export class ReservaFormulario {
   protected readonly error = signal<string | null>(null);
 
   protected readonly lineas = signal<LineaEnPantalla[]>([]);
+
+  /**
+   * Si se llegó desde la ficha de una prenda, y no desde «Mis reservas».
+   *
+   * Cambia la CARA del diálogo, no lo que hace. Al llegar con una prenda
+   * elegida, lo primero que se veía era un buscador que decía «Buscá una
+   * prenda» ---justo lo que el cliente acababa de hacer--- y su prenda
+   * aparecía como una fila de tabla más abajo. Se leía como un formulario
+   * genérico, no como «estás reservando esta blusa».
+   */
+  protected readonly desdeFicha: boolean;
+
+  /** La prenda con la que se entró, para mostrarla arriba con su foto. */
+  protected readonly destacada = signal<{
+    nombre: string;
+    foto: string | null;
+    etiqueta: string;
+  } | null>(null);
+
+  /**
+   * Si el buscador está a la vista.
+   *
+   * Arranca cerrado cuando se llegó desde una ficha: reservar UNA prenda es
+   * el caso normal, y agregar otras es la excepción. Un buscador abierto al
+   * entrar invita a buscar algo que ya se encontró.
+   */
+  protected readonly buscadorAbierto = signal(false);
   protected readonly unidades = computed(() =>
     this.lineas().reduce((suma, l) => suma + l.cantidad, 0),
   );
@@ -159,6 +214,43 @@ export class ReservaFormulario {
     this.busqueda.valueChanges
       .pipe(debounceTime(300), distinctUntilChanged())
       .subscribe((texto) => this.buscarProductos(texto));
+
+    this.desdeFicha = !!this.inicial;
+    this.buscadorAbierto.set(!this.inicial);
+    if (this.inicial) this.abrirCon(this.inicial);
+  }
+
+  /**
+   * Carga la ficha de la prenda con la que se llegó y la agrega sola.
+   *
+   * Se agrega SOLA y no se deja solo seleccionada: quien viene de la ficha ya
+   * eligió, y hacerle tocar «Agregar» otra vez es pedirle que repita una
+   * decisión que acaba de tomar. Si la variante no llegó ---se entró desde la
+   * tarjeta y no desde una talla concreta--- se deja la ficha abierta para que
+   * elija talla y color, que es el único dato que falta.
+   */
+  private abrirCon(prenda: PrendaInicial): void {
+    this.tienda.obtenerFicha(prenda.productoId).subscribe({
+      next: (ficha) => {
+        this.ficha.set(ficha);
+        const variante = prenda.varianteId
+          ? ficha.variantes.find((v) => v.id === prenda.varianteId)
+          : null;
+        if (!variante) return;
+        this.varianteElegida.setValue(variante.id);
+        this.agregarLinea();
+        this.destacada.set({
+          nombre: ficha.nombre,
+          foto: this.tienda.urlDeImagen(
+            (ficha.imagenes.find((i) => i.variante_id === variante.id) ??
+              ficha.imagenes.find((i) => i.es_principal) ??
+              ficha.imagenes[0])?.url ?? null,
+          ),
+          etiqueta: this.etiquetaDeVariante(variante),
+        });
+      },
+      error: (e: ErrorReservas) => this.error.set(e.mensaje),
+    });
   }
 
   private manana(): Date {
@@ -351,6 +443,10 @@ export class ReservaFormulario {
           }
         },
       });
+  }
+
+  protected alternarBuscador(): void {
+    this.buscadorAbierto.update((abierto) => !abierto);
   }
 
   protected cancelar(): void {

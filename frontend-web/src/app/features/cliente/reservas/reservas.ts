@@ -229,11 +229,6 @@ export class Reservas implements OnInit {
       });
   }
 
-  protected salir(): void {
-    // `cerrarSesion` ya navega a /login, gane o falle la llamada.
-    this.auth.cerrarSesion();
-  }
-
   // --- Presentación ---------------------------------------------------------
 
   protected leyenda(estado: EstadoReserva): string {

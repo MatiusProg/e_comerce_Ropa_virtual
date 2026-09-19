@@ -170,6 +170,29 @@
           </a>
         }
 
+        <!-- CU-22 · reservar para probársela en la sucursal.
+             VA AL LADO DE «Agregar al carrito» Y NO EN OTRA PANTALLA.
+             Hasta el 19/09 la única forma de reservar era entrar a «Mis
+             reservas» y escribir el nombre de la prenda en un buscador: para
+             reservar había que saber cómo se llama. Comprar, en cambio, ya se
+             hacía desde acá. Eran dos flujos para la misma decisión, y uno
+             estaba mucho peor. -->
+        @if (puedeComprar()) {
+          <button
+            matButton
+            type="button"
+            class="reservar"
+            [disabled]="!variante()"
+            [matTooltip]="
+              variante() ? 'Apartala y probátela en la sucursal' : 'Elija talla y color primero'
+            "
+            (click)="reservar()"
+          >
+            <mat-icon>event_available</mat-icon>
+            Reservar para probarme
+          </button>
+        }
+
         <!-- El vestidor virtual es de la app móvil (RF13): la cámara y la
              detección de pose corren en el teléfono. -->
         <button

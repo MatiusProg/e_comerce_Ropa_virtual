@@ -1,0 +1,90 @@
+<!-- CU-33 · Recibir recomendaciones de prendas. Realiza el RF25. -->
+<app-navegacion-cliente />
+
+<section class="para-vos">
+  <header>
+    <div>
+      <h1>Para vos</h1>
+      <p class="bajada">Prendas elegidas según tu talla, lo que te gusta y la temporada.</p>
+    </div>
+    <button
+      matButton
+      type="button"
+      [disabled]="cargando()"
+      matTooltip="Vuelve a calcularlas ahora, sin esperar a que caduquen"
+      (click)="traer(true)"
+    >
+      <mat-icon>refresh</mat-icon>
+      Actualizar
+    </button>
+  </header>
+
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+    <p class="esperando">Eligiendo prendas para vos…</p>
+  } @else if (error(); as mensaje) {
+    <div class="vacio">
+      <mat-icon>cloud_off</mat-icon>
+      <h2>No se pudieron cargar</h2>
+      <p>{{ mensaje }}</p>
+      <button matButton="filled" class="vb-boton-marca" type="button" (click)="traer()">
+        Reintentar
+      </button>
+    </div>
+  } @else if (datos(); as recomendacion) {
+    @if (recomendacion.prendas.length) {
+      <div class="rejilla">
+        @for (prenda of recomendacion.prendas; track prenda.producto_id) {
+          <mat-card class="tarjeta" appearance="outlined">
+            <a [routerLink]="['/tienda/producto', prenda.producto_id]" class="foto">
+              @if (urlDe(prenda.imagen_url); as foto) {
+                <img [src]="foto" [alt]="prenda.nombre" loading="lazy" />
+              } @else {
+                <div class="sin-foto"><mat-icon>checkroom</mat-icon></div>
+              }
+            </a>
+            <div class="cuerpo">
+              <span class="categoria">{{ prenda.categoria }}</span>
+              <a [routerLink]="['/tienda/producto', prenda.producto_id]" class="nombre">
+                {{ prenda.nombre }}
+              </a>
+              @if (prenda.precio_desde) {
+                <span class="precio">Bs {{ prenda.precio_desde }}</span>
+              }
+              <!-- El motivo viene VACÍO cuando ordenó la popularidad. No se
+                   dibuja la etiqueta en vez de inventar un texto: repetirlo
+                   seis veces se lee como un error de la aplicación. -->
+              @if (prenda.motivo) {
+                <p class="motivo">
+                  <mat-icon inline>auto_awesome</mat-icon>
+                  {{ prenda.motivo }}
+                </p>
+              }
+            </div>
+          </mat-card>
+        }
+      </div>
+
+      <!-- Se dice con qué se generó: una sugerencia hecha por un modelo tiene
+           que poder decir que lo es. -->
+      <footer class="origen">
+        @if (porIa()) {
+          <mat-icon inline>auto_awesome</mat-icon>
+          Sugeridas por inteligencia artificial a partir de tu perfil.
+        } @else {
+          <mat-icon inline>trending_up</mat-icon>
+          Lo más elegido de la temporada. Cargá tus medidas y marcá favoritos
+          para que sean tuyas de verdad.
+        }
+        <span class="cuando">Actualizado el {{ recomendacion.generada_en | date: 'short' }}</span>
+      </footer>
+    } @else {
+      <div class="vacio">
+        <mat-icon>checkroom</mat-icon>
+        <h2>Todavía no hay nada que sugerirte</h2>
+        <p>Cuando la tienda tenga prendas disponibles, van a aparecer acá.</p>
+        <a matButton="filled" class="vb-boton-marca" routerLink="/tienda">Ver el catálogo</a>
+      </div>
+    }
+  }
+</section>

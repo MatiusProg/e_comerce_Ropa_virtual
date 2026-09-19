@@ -183,3 +183,39 @@ export interface ConsultaVitrina {
   pagina?: number;
   tamano?: number;
 }
+
+// --- CU-33 · Recomendaciones ------------------------------------------------
+
+/** Una prenda sugerida por el recomendador (RF25). */
+export interface PrendaSugerida {
+  producto_id: number;
+  nombre: string;
+  categoria: string;
+  precio_desde: string | null;
+  imagen_url: string | null;
+
+  /**
+   * Por qué se sugiere, en una línea.
+   *
+   * **Viene vacío cuando el modelo no estuvo disponible** y la lista salió por
+   * popularidad. La pantalla entonces no dibuja la etiqueta, en vez de
+   * inventar un texto: repetir «de lo más vendido» seis veces se lee como un
+   * error, y le atribuye a la tienda una razón que nadie eligió.
+   */
+  motivo: string;
+}
+
+export interface Recomendaciones {
+  prendas: PrendaSugerida[];
+
+  /**
+   * `gemini` cuando las ordenó el modelo, `popularidad` cuando no.
+   *
+   * Se muestra: **una sugerencia hecha por un modelo tiene que poder decir que
+   * lo es.** Presentarla sin distinguir sería atribuirle a la tienda un
+   * criterio que no eligió.
+   */
+  motor: string;
+
+  generada_en: string;
+}

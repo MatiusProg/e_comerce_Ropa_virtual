@@ -139,3 +139,63 @@ code {
     flex: none;
   }
 }
+
+/* La prenda con la que se entró desde la ficha (CU-22 desde CU-18). */
+.destacada {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  margin-bottom: 16px;
+  border-radius: 10px;
+  background: #f6e6ec;
+
+  img,
+  .sin-foto {
+    width: 64px;
+    height: 84px;
+    border-radius: 6px;
+    object-fit: cover;
+    flex: none;
+  }
+
+  .sin-foto {
+    display: grid;
+    place-items: center;
+    background: #fbf6f4;
+    color: #b57f9a;
+  }
+
+  .datos {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .rotulo {
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #8e4a67;
+  }
+
+  strong {
+    font-size: 1.02rem;
+    line-height: 1.2;
+  }
+
+  .variante {
+    font-size: 0.86rem;
+    color: rgb(0 0 0 / 60%);
+  }
+}
+
+/* Cuando se entró con una prenda, el buscador es la excepción y no el camino. */
+.selector.plegado {
+  margin-bottom: 4px;
+}
+
+.otra-prenda {
+  padding-left: 0;
+}

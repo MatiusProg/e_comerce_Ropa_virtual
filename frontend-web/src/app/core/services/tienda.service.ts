@@ -11,6 +11,7 @@ import {
   FiltrosDisponibles,
   PaginaFavoritos,
   PaginaVitrina,
+  Recomendaciones,
 } from '../models/tienda.models';
 
 /**
@@ -133,6 +134,28 @@ export class TiendaService {
   desmarcarFavorito(productoId: number): Observable<void> {
     return this.http
       .delete<void>(`${this.base}/favoritos/${productoId}`)
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
+
+  // --- CU-33 · Recomendaciones ---------------------------------------------
+
+  /**
+   * Las prendas que el recomendador sugiere para quien pregunta (RF25).
+   *
+   * **Nunca falla por falta de datos ni por el modelo.** Sin talla cargada,
+   * sin categorías elegidas, sin historial, sin proveedor de IA o sin cuota,
+   * responde igual con las prendas ordenadas por popularidad y `motor` en
+   * `popularidad`. Una lista vacía significa que la tienda no tiene ninguna
+   * prenda activa con existencia, no que algo se rompió.
+   *
+   * La primera llamada del día tarda unos segundos ---la hace el modelo--- y
+   * las siguientes doce horas salen de lo guardado, así que la pantalla tiene
+   * que mostrar que está trabajando.
+   */
+  recomendaciones(forzar = false): Observable<Recomendaciones> {
+    const params = forzar ? new HttpParams().set('forzar', true) : undefined;
+    return this.http
+      .get<Recomendaciones>(`${this.base}/recomendaciones`, { params })
       .pipe(catchError((e) => throwError(() => this.traducir(e))));
   }
 

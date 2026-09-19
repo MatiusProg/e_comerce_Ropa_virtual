@@ -6,6 +6,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
@@ -20,6 +21,8 @@ import type {
   VarianteVitrina,
 } from '../../../core/models/tienda.models';
 import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion-cliente';
+import { ReservaFormulario } from '../../cliente/reservas/reserva-formulario';
+import type { Reserva } from '../../../core/models/reservas.models';
 
 /**
  * CU-18 · Consultar ficha de producto — «boundary» PantallaFichaProducto.
@@ -64,6 +67,7 @@ export class Ficha implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly carrito = inject(CarritoService);
   private readonly aviso = inject(MatSnackBar);
+  private readonly dialogo = inject(MatDialog);
 
   // --- CU-26 · Agregar al carrito ----------------------------------------
   //
@@ -278,5 +282,38 @@ export class Ficha implements OnInit {
         this.aviso.open(e.mensaje, 'Cerrar', { duration: 6000 });
       },
     });
+  }
+
+  /**
+   * CU-22 · abre la reserva con esta prenda y esta variante ya puestas.
+   *
+   * SE ABRE DESDE ACÁ Y NO SE NAVEGA A «Mis reservas».
+   * Quien está mirando una prenda ya decidió cuál quiere; mandarlo a otra
+   * pantalla a buscarla por nombre es hacerle repetir la decisión. Es el mismo
+   * criterio que «Agregar al carrito», que tampoco navega.
+   */
+  protected reservar(): void {
+    const elegida = this.variante();
+    const prenda = this.ficha();
+    if (!elegida || !prenda) return;
+
+    this.dialogo
+      .open(ReservaFormulario, {
+        width: '900px',
+        disableClose: true,
+        data: { productoId: prenda.id, varianteId: elegida.id },
+      })
+      .afterClosed()
+      // El diálogo cierra con la Reserva creada, o con null si se canceló.
+      // El mensaje es el mismo que el de «Mis reservas» a propósito: la misma
+      // acción tiene que decir lo mismo desde donde sea que se haga.
+      .subscribe((reserva: Reserva | null) => {
+        if (!reserva) return;
+        this.aviso.open(
+          `Reserva confirmada en ${reserva.sucursal}. Te esperamos.`,
+          'Cerrar',
+          { duration: 7000 },
+        );
+      });
   }
 }

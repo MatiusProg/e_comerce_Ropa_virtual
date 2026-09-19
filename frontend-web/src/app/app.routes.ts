@@ -82,6 +82,14 @@ export const routes: Routes = [
       import('./features/tienda/favoritos/favoritos').then((m) => m.Favoritos),
   },
 
+  // --- Ciclo 3 · CU-33 Recibir recomendaciones de prendas (RF25) ---------
+  {
+    path: 'tienda/para-vos',
+    title: 'Para vos · Violet Boutique',
+    canActivate: [sesionGuard, rolGuard('CLIENTE')],
+    loadComponent: () => import('./features/tienda/para-vos/para-vos').then((m) => m.ParaVos),
+  },
+
   // --- Ciclo 3 · CU-27 Realizar pedido y pagar en línea ------------------
   {
     path: 'tienda/checkout',

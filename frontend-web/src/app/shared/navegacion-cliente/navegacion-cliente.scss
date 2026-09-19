@@ -4,12 +4,44 @@
   display: flex;
   align-items: stretch;
   gap: 0.25rem;
-  padding: 0 1rem;
+  padding: 0 0.5rem 0 1rem;
   background: var(--mat-sys-surface);
   border-bottom: 1px solid var(--mat-sys-outline-variant);
-  // A 390 px no entran las cinco secciones: se desplaza en vez de apretarlas
-  // hasta que dejen de leerse.
+}
+
+// A 390 px no entran las secciones: SE DESPLAZAN, en vez de apretarlas hasta
+// que dejen de leerse.
+//
+// El desplazamiento es de los ENLACES y no de la barra entera, a propósito: si
+// se desplazara todo, «Cerrar sesión» se iría fuera de la pantalla en el
+// teléfono y habría que arrastrar para encontrarlo. Salir tiene que estar
+// siempre a la vista.
+.enlaces {
+  display: flex;
+  align-items: stretch;
+  gap: 0.25rem;
+  flex: 1 1 auto;
+  min-width: 0;
   overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.salir {
+  flex: none;
+  align-self: center;
+  margin-left: 0.5rem;
+  color: var(--mat-sys-on-surface-variant);
+
+  &:hover {
+    color: var(--vb-malva);
+  }
+}
+
+.navegacion {
 
   a {
     display: flex;

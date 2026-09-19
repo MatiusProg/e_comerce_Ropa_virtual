@@ -373,8 +373,4 @@ export class Perfil {
         this.auth.cerrarSesion();
       });
   }
-
-  protected salir(): void {
-    this.auth.cerrarSesion();
-  }
 }
