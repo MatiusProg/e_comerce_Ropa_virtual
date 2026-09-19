@@ -1,4 +1,6 @@
 <!-- CU-17 · Consultar catálogo — «boundary» PantallaCatalogo. -->
+<app-navegacion-cliente />
+
 <header class="encabezado">
   <div>
     <h1 class="vb-titulo">Catálogo</h1>
@@ -7,35 +9,12 @@
       colores y en qué sucursales está disponible.
     </p>
   </div>
-  @if (puedeMarcar()) {
-    <a matButton routerLink="/tienda/favoritos" class="acceso">
-      <mat-icon>favorite</mat-icon>
-      Mis favoritos
-    </a>
-    <!--
-      La burbuja sale de la señal compartida del servicio: la pantalla del
-      carrito y este número muestran siempre lo mismo. Sin esa señal se
-      desincronizarían en cuanto el cliente agregara algo desde una ficha.
-    -->
-    <a matButton routerLink="/tienda/carrito" class="acceso">
-      <mat-icon
-        [matBadge]="itemsEnCarrito() || null"
-        matBadgeColor="accent"
-        matBadgeSize="small"
-        >shopping_bag</mat-icon
-      >
-      Mi carrito
-    </a>
-    <!--
-      La vuelta al área de cliente. Sin esto la vitrina era un callejón sin
-      salida en el otro sentido: se podía ir del perfil a la tienda, pero no
-      volver ni llegar a las reservas sin escribir la URL.
-    -->
-    <a matButton routerLink="/mi-cuenta" class="acceso">
-      <mat-icon>person</mat-icon>
-      Mi cuenta
-    </a>
-  } @else {
+  <!--
+    Los accesos del cliente viven ahora en `<app-navegacion-cliente />`, arriba.
+    Aca queda solo la puerta para quien NO tiene sesion: la vitrina es publica y
+    a un visitante anonimo hay que ofrecerle entrar, no un menu de cliente.
+  -->
+  @if (!puedeMarcar()) {
     <a matButton routerLink="/login" class="acceso">
       <mat-icon>person</mat-icon>
       Ingresar

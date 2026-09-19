@@ -23,6 +23,7 @@ import type {
   PaginaVitrina,
   ProductoVitrina,
 } from '../../../core/models/tienda.models';
+import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion-cliente';
 
 /**
  * CU-17 · Consultar catálogo — «boundary» PantallaCatalogo.
@@ -47,6 +48,7 @@ import type {
 @Component({
   selector: 'app-catalogo',
   imports: [
+    NavegacionCliente,
     ReactiveFormsModule,
     RouterLink,
     MatBadgeModule,

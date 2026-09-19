@@ -1,7 +1,5 @@
-import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -16,7 +14,6 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { AuthService } from '../../../core/services/auth.service';
-import { CarritoService } from '../../../core/services/carrito.service';
 import { PerfilService, type ErrorPerfil } from '../../../core/services/perfil.service';
 import { TiendaService } from '../../../core/services/tienda.service';
 import {
@@ -31,6 +28,7 @@ import type { CategoriaTienda } from '../../../core/models/tienda.models';
 import { Confirmacion, type DatosConfirmacion } from '../../../shared/confirmacion/confirmacion';
 import { CambioContrasenaDialogo } from './cambio-contrasena';
 import { DireccionFormulario, type DatosDireccion } from './direccion-formulario';
+import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion-cliente';
 
 /**
  * CU-04 · Gestionar perfil del cliente — «boundary» PantallaPerfil.
@@ -52,9 +50,7 @@ import { DireccionFormulario, type DatosDireccion } from './direccion-formulario
 @Component({
   selector: 'app-perfil',
   imports: [
-    MatBadgeModule,
-    RouterLinkActive,
-    RouterLink,
+    NavegacionCliente,
     ReactiveFormsModule,
     MatButtonModule,
     MatCardModule,
@@ -90,15 +86,7 @@ export class Perfil {
 
   // --- Categorías preferidas (Ciclo 2) ---------------------------------
   private readonly tienda = inject(TiendaService);
-  private readonly carrito = inject(CarritoService);
 
-  /** La burbuja del carrito, de la misma senal que usa la vitrina.
-   *
-   * Compartir la senal es lo que hace que el numero de aca y el de la pantalla
-   * del carrito digan siempre lo mismo: con dos contadores propios se
-   * desincronizarian en cuanto el cliente agregara algo desde una ficha.
-   */
-  protected readonly itemsEnCarrito = this.carrito.items;
   protected readonly maximoPreferencias = PREFERENCIAS_MAXIMAS;
   protected readonly categorias = signal<CategoriaTienda[]>([]);
   /** Los identificadores elegidos, en edición. Se confirman con «Guardar». */
