@@ -214,7 +214,9 @@
     }
   </section>
 
-  <!-- Ventas: el bloque que espera a la migración 0006 -->
+  <!-- Ventas. Estuvo apagado hasta que existió `venta`; el `@else` se deja
+       porque el backend puede seguir devolviendo `disponible: false` si alguna
+       vez se despliega contra una base sin esas tablas. -->
   <section class="tarjeta panel panel-pendiente">
     <h2>Ventas</h2>
     @if (d.ventas.disponible) {
@@ -233,10 +235,35 @@
         <article class="kpi">
           <p class="rotulo">Ticket promedio</p>
           <p class="cifra">
-            {{ d.ventas.ticket_promedio | currency: 'BOB' : 'symbol-narrow' }}
+            @if (hayImporte(d.ventas.ticket_promedio)) {
+              {{ d.ventas.ticket_promedio | currency: 'BOB' : 'symbol-narrow' }}
+            } @else {
+              —
+            }
           </p>
+          @if (!hayImporte(d.ventas.ticket_promedio)) {
+            <p class="pie">Todavía no hubo ventas en el período</p>
+          }
         </article>
       </div>
+
+      <!--
+        Las más vendidas: el séptimo indicador del enunciado. Va acá y no en la
+        rejilla de arriba porque es un ranking, no una cifra.
+      -->
+      @if (d.ventas.mas_vendidas.length > 0) {
+        <h3 class="subtitulo">Prendas más vendidas</h3>
+        <div class="lienzo lienzo-barras">
+          <canvas
+            baseChart
+            type="bar"
+            [data]="datosVendidas()"
+            [options]="opcionesRanking"
+          ></canvas>
+        </div>
+      } @else {
+        <p class="vacio">Todavía no hay ventas que rankear.</p>
+      }
     } @else {
       <p class="vacio">
         <mat-icon>schedule</mat-icon>

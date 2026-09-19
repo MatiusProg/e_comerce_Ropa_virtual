@@ -40,39 +40,69 @@
 
 ## Lo que no se lee en la ficha
 
-### 1. Cuatro de los siete indicadores todavía no tienen tablas
+### 1. Los siete indicadores están completos — desde el 19/09
 
-El enunciado pide siete. **Cuatro salen de `venta` y `detalle_venta`**, que nacen
-con la `0006_ciclo3_ventas` y son de Mateo:
+Se entregó con **cuatro apagados** —ventas del día y del mes, ticket promedio y
+prendas más vendidas— porque `venta` y `detalle_venta` nacían con la `0006` de
+Mateo y todavía no existían. El bloque viajaba igual, con `disponible: false` y
+un motivo en texto.
 
-| Indicador | ¿Hoy? | De dónde sale |
-|---|---|---|
-| Reservas pendientes y atendidas | **sí** | `reserva` |
-| Conversión | **sí**, en dos tasas | `reserva` y `reserva_detalle.resultado_prueba` |
-| Stock crítico | **sí** | costura de P4 (`alertas_de_stock`) |
-| Prendas más reservadas | **sí** (propio) | `reserva_detalle` |
-| Ventas del día y del mes | no | `venta` |
-| Ticket promedio | no | `venta` |
-| Prendas más vendidas | no | `detalle_venta` |
+**Ya existen, y hay ventas pagadas de verdad**, así que se encendió.
 
-**El bloque de ventas viaja igual**, con `disponible: false` y un motivo en
-texto, y la pantalla dibuja un aviso del tamaño de las tarjetas que vendrán.
+> **Lo que la decisión prometía se cumplió: hubo que tocar UNA sola función**,
+> `_ventas`. El contrato, el router y la pantalla no cambiaron — la web ya traía
+> escrita la rama de `disponible: true` desde el primer día. Es la prueba de que
+> declarar el contrato entero antes de tener los datos valió la pena.
 
-Es la misma decisión que se tomó en CU-14 con `proxima_a_ingresar`: declarado en
-el contrato, sin filas que lo devuelvan, y documentado el porqué. La razón es
-que **cuando la `0006` aterrice, la pantalla no cambia**. Un bloque que aparece
-de la nada obliga a tocar la interfaz dos veces, una para el aviso y otra para
-las tarjetas.
+| Indicador | De dónde sale |
+|---|---|
+| Reservas pendientes y atendidas | `reserva` |
+| Conversión, **en dos tasas** | `reserva` y `reserva_detalle.resultado_prueba` |
+| Stock crítico | costura de P4 (`alertas_de_stock`) |
+| Prendas más reservadas (propio) | `reserva_detalle` |
+| **Vendido hoy y del período** | `venta` |
+| **Ticket promedio** | `venta` |
+| **Prendas más vendidas** | `detalle_venta` |
 
-En el backend, lo único que hay que tocar es `tablero_service._ventas()`, que
-está escrita sin parámetros y sin sesión a propósito, justamente para que se vea
-que no hay nada más repartido por el archivo.
+#### Qué cuenta como venta
+
+**Sólo `PAGADA` y `ENTREGADA`.** Un pedido en `PENDIENTE_PAGO` no es una venta:
+es una intención con stock apartado, el dinero no entró, y la barrida de
+vencidos puede cancelarlo en veinte minutos. Contarlo **inflaría el monto del
+día con compras que nadie pagó**.
+
+`ENTREGADA` sí, porque es una `PAGADA` que además se entregó: excluirla haría
+que el monto del mes bajara solo a medida que los pedidos se entregan.
+
+Hay una prueba dedicada a esto, porque es la decisión más fácil de romper sin
+darse cuenta.
+
+#### «Vendido hoy» es siempre hoy
+
+Aunque se esté mirando otro período. Es el pulso del negocio, lo que el
+Administrador mira al abrir la pantalla. Si siguiera al período, al consultar la
+semana pasada diría «vendido hoy: 0» sobre un día que no es hoy — una lectura
+que confunde más de lo que informa.
+
+#### El dinero va en `Decimal`, no en `float`
+
+Se entregó mal la primera vez: los tres montos estaban declarados `float`. Lo
+encontró una prueba al comparar `0.0` con `"0.00"`.
+
+Es la misma regla que rige `variante_producto.precio` y `venta.total`, y la
+razón está escrita en `stripe_hospedado.py`: con `float`, 150.55 se guarda como
+150.54999999999998 y cualquier truncado pierde un centavo. **Un tablero que
+informa un monto distinto del que suma la tabla de ventas es peor que uno que no
+informa nada.**
+
+Y todos los importes salen con **dos decimales siempre**. `SUM` sobre cero filas
+devuelve el entero `0`, así que sin normalizar el tablero diría «0» un día y
+«640.00» al siguiente para el mismo campo.
 
 ### 2. La conversión son DOS tasas, y la diferencia es la que importa
 
-El enunciado dice «conversión de reserva a venta», y hoy no hay ventas. Pero la
-pregunta de fondo —¿esto termina en algo?— sí se puede responder, y con más
-precisión de la que pedía el enunciado, porque CU-24 escribe
+El enunciado dice «conversión de reserva a venta». Se responde con más
+precisión de la que pedía, porque CU-24 escribe
 `reserva_detalle.resultado_prueba`:
 
 - **Tasa de atención** = atendidas / cerradas. **Mide si la gente aparece.**
@@ -172,7 +202,7 @@ orden por unidades solo no deja verlo.
 | `backend/app/modules/reportes/tablero_repository.py` | los agregados en SQL |
 | `backend/app/modules/reportes/tablero_service.py` | período, tasas y el bloque de ventas |
 | `backend/app/modules/reportes/tablero_router.py` | `GET /api/v1/reportes/tablero` |
-| `backend/tests/test_cu36_tablero.py` | 21 pruebas |
+| `backend/tests/test_cu36_tablero.py` | **27 pruebas** (21 + 6 de ventas) |
 
 **No hay migración.** P11 no define ninguna entidad: es el primer caso de uso
 del proyecto que no toca el esquema. La cadena de Alembic queda como estaba.
