@@ -38,6 +38,7 @@ from app.integrations.pasarela_pago import (
 from app.modules.inventario import service as inventario
 from app.modules.pagos import repository
 from app.modules.ventas import carrito_repository
+from app.modules.ventas import historial_service
 from app.modules.ventas import repository as ventas_repository
 from app.modules.ventas.models import Venta
 
@@ -356,6 +357,13 @@ def _aplicar_cobro(db: Session, pago) -> None:
             usuario_id=None,
             motivo=f"Venta {venta.codigo}",
         )
+
+    # EL RECIBO SE EMITE ACA, cuando el dinero entro --- que es cuando
+    # corresponde emitirlo --- y no cuando alguien se acuerda de descargarlo.
+    # Es idempotente por el UNIQUE sobre `comprobante.venta_id`, y CU-29 vuelve
+    # a llamarla al descargar para cubrir las ventas que se pagaron ANTES de
+    # que este paso existiera.
+    historial_service.asegurar_comprobante(db, venta)
 
     _vaciar_carrito(db, venta.cliente_id)
 

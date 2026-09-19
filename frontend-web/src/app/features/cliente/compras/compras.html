@@ -1,0 +1,130 @@
+<app-navegacion-cliente />
+
+<main class="contenido">
+  <header class="encabezado">
+    <div>
+      <h1 class="vb-titulo">Mis compras</h1>
+      <p class="bajada">
+        Todo lo que pediste, con su estado y su recibo. Las canceladas también
+        están: así siempre podés encontrar lo que buscás.
+      </p>
+    </div>
+  </header>
+
+  <mat-card class="panel vb-filete-superior" appearance="outlined">
+    @if (cargando()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+
+    <mat-card-content>
+      @if (error(); as e) {
+        <div class="aviso" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ e }}</span>
+        </div>
+      }
+
+      @if (pagina(); as p) {
+        @if (vacio()) {
+          <div class="vacio">
+            <mat-icon>receipt_long</mat-icon>
+            <p>Todavía no hiciste ninguna compra.</p>
+            <a matButton="filled" routerLink="/tienda" class="vb-boton-marca">
+              Ver el catálogo
+            </a>
+          </div>
+        } @else {
+          <mat-accordion class="compras">
+            @for (compra of p.items; track compra.codigo) {
+              <mat-expansion-panel class="compra">
+                <mat-expansion-panel-header>
+                  <mat-panel-title>
+                    <span class="codigo">{{ compra.codigo }}</span>
+                    <span class="estado" [class]="tono(compra.estado)">
+                      {{ rotulo(compra.estado) }}
+                    </span>
+                  </mat-panel-title>
+                  <mat-panel-description>
+                    <span class="fecha">{{ compra.creado_en | date: 'dd/MM/yyyy' }}</span>
+                    <span class="importe">
+                      {{ compra.total | currency: 'BOB' : 'symbol-narrow' }}
+                    </span>
+                  </mat-panel-description>
+                </mat-expansion-panel-header>
+
+                <ul class="lineas">
+                  @for (linea of compra.lineas; track linea.variante_id) {
+                    <li class="linea">
+                      @if (linea.imagen_url) {
+                        <img [src]="linea.imagen_url" [alt]="linea.producto_nombre" />
+                      } @else {
+                        <span class="sin-foto"><mat-icon>checkroom</mat-icon></span>
+                      }
+                      <span class="datos">
+                        <span class="nombre">{{ linea.producto_nombre }}</span>
+                        <span class="detalle">
+                          {{ linea.talla_codigo }} · {{ linea.color_nombre }} ·
+                          {{ linea.cantidad }} u.
+                        </span>
+                      </span>
+                      <span class="subtotal">
+                        {{ linea.subtotal | currency: 'BOB' : 'symbol-narrow' }}
+                      </span>
+                    </li>
+                  }
+                </ul>
+
+                <dl class="entrega">
+                  @if (compra.modalidad_entrega === 'ENVIO') {
+                    <dt>Envío a</dt>
+                    <dd>{{ compra.direccion_envio }}</dd>
+                  } @else {
+                    <dt>Retiro en</dt>
+                    <dd>{{ compra.sucursal_nombre }}</dd>
+                  }
+                  <dt>Total</dt>
+                  <dd class="total">{{ compra.total | currency: 'BOB' : 'symbol-narrow' }}</dd>
+                </dl>
+
+                <mat-action-row>
+                  @if (tieneComprobante(compra)) {
+                    <button
+                      matButton
+                      type="button"
+                      [disabled]="descargando() !== null"
+                      (click)="descargar(compra)"
+                    >
+                      <mat-icon>download</mat-icon>
+                      {{ descargando() === compra.codigo ? 'Preparando…' : 'Descargar recibo' }}
+                    </button>
+                  } @else {
+                    <!--
+                      Se dice POR QUÉ no hay recibo en vez de esconder el botón:
+                      un botón que falta no explica nada, y el cliente se queda
+                      preguntándose si lo perdió.
+                    -->
+                    <span
+                      class="sin-recibo"
+                      matTooltip="El recibo se emite cuando se confirma el pago"
+                    >
+                      <mat-icon>info_outline</mat-icon>
+                      Sin recibo todavía
+                    </span>
+                  }
+                </mat-action-row>
+              </mat-expansion-panel>
+            }
+          </mat-accordion>
+
+          <mat-paginator
+            [length]="p.total"
+            [pageSize]="p.tamano"
+            [pageIndex]="p.pagina - 1"
+            [pageSizeOptions]="[5, 10, 25]"
+            (page)="paginar($event)"
+          />
+        }
+      }
+    </mat-card-content>
+  </mat-card>
+</main>
