@@ -45,13 +45,14 @@ const COLORES = {
  *
  * Los KPIs del negocio en tiempo real (RF24), para el Administrador.
  *
- * **Qué se ve y qué todavía no.** El enunciado pide siete indicadores y cuatro
- * de ellos —ventas del día y del mes, ticket promedio y prendas más vendidas—
- * salen de tablas que nacen con la migración `0006_ciclo3_ventas`, que es de
- * Mateo. El contrato los declara igual y el backend los manda con
- * `disponible: false`; esta pantalla dibuja en su lugar un aviso del mismo
- * tamaño que las tarjetas que vendrán. Cuando la `0006` aterrice, acá no hay
- * nada que cambiar.
+ * **Los siete indicadores del enunciado están completos.** Cuatro —ventas del
+ * día y del mes, ticket promedio y prendas más vendidas— estuvieron apagados
+ * hasta el 19/09 porque `venta` y `detalle_venta` no existían; el contrato los
+ * declaraba igual y esta pantalla dibujaba un aviso en su lugar.
+ *
+ * Cuando las tablas llegaron, **acá no hubo nada que cambiar**: la rama de
+ * `disponible: true` ya estaba escrita desde el primer día. Es la razón por la
+ * que valió la pena declarar el contrato entero antes de tener los datos.
  *
  * **Por qué el inventario se rotula «ahora» y no con el período.** Un saldo es
  * una foto del instante: `existencia` guarda cuánto hay, no cuánto hubo, y no
@@ -203,6 +204,18 @@ export class Tablero implements OnInit {
     return valor === null ? '—' : `${valor} %`;
   }
 
+  /**
+   * Si hay un importe que mostrar.
+   *
+   * El ticket promedio es nulo cuando no hubo ninguna venta ---no cero: son
+   * cosas distintas---. El pipe de moneda sobre un nulo no dibuja nada, y una
+   * tarjeta vacia se lee como un error de la pantalla; la raya dice «no hay
+   * dato», que es lo que pasa.
+   */
+  protected hayImporte(valor: string | null): boolean {
+    return valor !== null && valor !== undefined;
+  }
+
   // --- Gráficos ----------------------------------------------------------
 
   /**
@@ -259,6 +272,29 @@ export class Tablero implements OnInit {
           label: 'Unidades reservadas',
           data: filas.map((f) => f.unidades),
           backgroundColor: COLORES.malva,
+          borderRadius: 6,
+        },
+      ],
+    };
+  });
+
+  /**
+   * Las prendas más vendidas del período.
+   *
+   * Mismo tipo de gráfico que el de reservadas —barras horizontales, por las
+   * etiquetas largas— y **las mismas opciones**, a propósito: las dos responden
+   * la misma forma de pregunta y ponerlas lado a lado con escalas distintas
+   * invitaría a compararlas como si fueran lo mismo.
+   */
+  protected readonly datosVendidas = computed<ChartConfiguration<'bar'>['data']>(() => {
+    const filas = this.datos()?.ventas.mas_vendidas ?? [];
+    return {
+      labels: filas.map((f) => `${f.producto} · ${f.talla} · ${f.color}`),
+      datasets: [
+        {
+          label: 'Unidades vendidas',
+          data: filas.map((f) => f.unidades),
+          backgroundColor: COLORES.oro,
           borderRadius: 6,
         },
       ],

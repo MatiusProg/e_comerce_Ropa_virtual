@@ -315,3 +315,11 @@
     min-width: 30rem;
   }
 }
+
+// Encabezado de segundo nivel dentro de un panel, para el ranking de ventas.
+.subtitulo {
+  margin: 1.25rem 0 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--vb-malva-oscuro);
+}

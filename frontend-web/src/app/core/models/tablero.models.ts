@@ -92,10 +92,17 @@ export interface AlertaStock {
  */
 export interface IndicadoresVentas {
   disponible: boolean;
-  monto_hoy: number | null;
-  monto_periodo: number | null;
+  /**
+   * El dinero viaja como **cadena**, no como número.
+   *
+   * Es la misma regla que el resto del proyecto: con `number` el JSON pasa por
+   * el `float` de JavaScript y 150.55 deja de ser 150.55. El pipe de moneda
+   * acepta la cadena tal cual, así que la pantalla no cambia.
+   */
+  monto_hoy: string | null;
+  monto_periodo: string | null;
   cantidad_periodo: number | null;
-  ticket_promedio: number | null;
+  ticket_promedio: string | null;
   mas_vendidas: PrendaRankeada[];
   /** Por qué no hay datos, en una frase. Nulo cuando `disponible` es true. */
   motivo: string | null;

@@ -28,6 +28,7 @@ que---. La razon es la misma: cuando la `0006` aterrice, la pantalla no cambia.
 Un bloque que aparece de la nada obliga a tocar la interfaz dos veces.
 """
 from datetime import date, datetime
+from decimal import Decimal
 
 from pydantic import BaseModel
 
@@ -161,10 +162,21 @@ class VentasOut(BaseModel):
     #: tiene que mirar para decidir si dibuja las tarjetas o el aviso.
     disponible: bool
 
-    monto_hoy: float | None = None
-    monto_periodo: float | None = None
+    #: DINERO EN `Decimal`, NO EN `float`.
+    #:
+    #: Es la misma regla que rige `variante_producto.precio`, `venta.total` y
+    #: `detalle_venta.precio_unitario`, y la razon esta escrita en
+    #: `stripe_hospedado.py`: con `float`, 150.55 se guarda como
+    #: 150.54999999999998 y cualquier truncado pierde un centavo. Un tablero que
+    #: informa un monto distinto del que suma la tabla de ventas es peor que uno
+    #: que no informa nada.
+    #:
+    #: Viajan como cadena en el JSON ---«640.00»---, igual que el resto del
+    #: dinero del proyecto, y la pantalla los formatea con el pipe de moneda.
+    monto_hoy: Decimal | None = None
+    monto_periodo: Decimal | None = None
     cantidad_periodo: int | None = None
-    ticket_promedio: float | None = None
+    ticket_promedio: Decimal | None = None
 
     #: Las mas vendidas del periodo. Lista vacia mientras no haya ventas.
     mas_vendidas: list[PrendaReservadaOut] = []
