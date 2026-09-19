@@ -29,6 +29,7 @@ import '../../core/tema.dart';
 import '../../data/modelos/catalogo.dart';
 import '../../data/repositorios/repositorio_catalogo.dart';
 import '../compra/estado_compra.dart';
+import 'boton_favorito.dart';
 import 'estado_catalogo.dart';
 
 class PantallaFicha extends ConsumerStatefulWidget {
@@ -50,7 +51,18 @@ class _EstadoPantallaFicha extends ConsumerState<PantallaFicha> {
     final ficha = ref.watch(fichaProvider(widget.productoId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Prenda')),
+      appBar: AppBar(
+        title: const Text('Prenda'),
+        actions: [
+          // CU-20. En la barra y no junto al precio: es la posicion en la que
+          // ya esta en el catalogo ---arriba a la derecha--- y el cliente que
+          // entro tocandolo ahi lo vuelve a buscar en el mismo lado.
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: BotonFavorito(productoId: widget.productoId),
+          ),
+        ],
+      ),
       body: ficha.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (fallo, _) => _Aviso(

@@ -26,9 +26,11 @@ ese y la trazabilidad de D4 se mantiene sin que haya que acordarse de ella.
 """
 from datetime import datetime
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.modules.inventario import repository
+from app.modules.catalogo.models import VarianteProducto
 from app.modules.inventario.models import Existencia
 from app.modules.inventario.schemas import (
     AjusteIn,
@@ -912,3 +914,37 @@ def inventario_consolidado(
             solo_con_saldo=solo_con_saldo,
         )
     ]
+
+
+def productos_con_stock(db: Session, producto_ids: list[int]) -> set[int]:
+    """CU-33: cuales de estos productos tienen alguna unidad DISPONIBLE.
+
+    POR QUE ESTA FUNCION EXISTE, Y NO SE CONSULTA `existencia` DESDE P10
+    ---------------------------------------------------------------------
+    `disponibilidad_por_sucursal` resuelve UNA variante y sirve para la ficha
+    (CU-19). El recomendador necesita lo contrario: filtrar treinta productos
+    de una vez, y llamar a la otra una vez por variante serian cientos de
+    consultas para dibujar seis tarjetas.
+
+    Va aca y no en `ia/repository.py` por la costura C1: `existencia` es de P4
+    y se consulta por la funcion que P4 expone, no leyendo su tabla desde
+    otro paquete. Lo mismo que ya hace el catalogo publico.
+
+    **Disponible y no total**: lo reservado sigue siendo de la tienda pero ya
+    esta comprometido con otro cliente. Recomendar sobre el seria ofrecer algo
+    que no se puede vender --- exactamente lo que el paso 1 de CU-33 existe
+    para impedir.
+    """
+    if not producto_ids:
+        return set()
+    filas = db.execute(
+        select(VarianteProducto.producto_id)
+        .join(Existencia, Existencia.variante_id == VarianteProducto.id)
+        .where(
+            VarianteProducto.producto_id.in_(producto_ids),
+            VarianteProducto.activa.is_(True),
+            Existencia.cantidad_disponible > 0,
+        )
+        .distinct()
+    ).all()
+    return {fila[0] for fila in filas}
