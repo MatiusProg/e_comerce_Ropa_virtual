@@ -1,0 +1,29 @@
+@if (visible()) {
+  <nav class="navegacion" aria-label="Secciones del cliente">
+    <a routerLink="/tienda" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }">
+      <mat-icon>storefront</mat-icon>
+      Catálogo
+    </a>
+    <a routerLink="/tienda/carrito" routerLinkActive="activo">
+      <mat-icon
+        [matBadge]="itemsEnCarrito() || null"
+        matBadgeColor="accent"
+        matBadgeSize="small"
+        >shopping_bag</mat-icon
+      >
+      Mi carrito
+    </a>
+    <a routerLink="/tienda/favoritos" routerLinkActive="activo">
+      <mat-icon>favorite</mat-icon>
+      Mis favoritos
+    </a>
+    <a routerLink="/mi-cuenta/reservas" routerLinkActive="activo">
+      <mat-icon>event_available</mat-icon>
+      Mis reservas
+    </a>
+    <a routerLink="/mi-cuenta" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }">
+      <mat-icon>person</mat-icon>
+      Mi perfil
+    </a>
+  </nav>
+}

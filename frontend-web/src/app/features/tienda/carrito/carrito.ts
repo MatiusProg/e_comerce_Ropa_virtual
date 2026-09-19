@@ -11,6 +11,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { CarritoService, type ErrorCarrito } from '../../../core/services/carrito.service';
 import { CANTIDAD_MAXIMA, type LineaCarrito } from '../../../core/models/carrito.models';
 import { Confirmacion, type DatosConfirmacion } from '../../../shared/confirmacion/confirmacion';
+import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion-cliente';
 
 /**
  * CU-26 · Gestionar carrito de compras — «boundary» PantallaCarrito.
@@ -33,6 +34,7 @@ import { Confirmacion, type DatosConfirmacion } from '../../../shared/confirmaci
 @Component({
   selector: 'app-carrito',
   imports: [
+    NavegacionCliente,
     RouterLink,
     MatButtonModule,
     MatCardModule,

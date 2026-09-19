@@ -27,6 +27,7 @@ import type {
 } from '../../../core/models/reservas.models';
 import { Confirmacion, type DatosConfirmacion } from '../../../shared/confirmacion/confirmacion';
 import { ReservaFormulario } from './reserva-formulario';
+import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion-cliente';
 
 /** Cómo se explica cada estado al cliente, que no leyó el diagrama. */
 const LEYENDA: Record<EstadoReserva, string> = {
@@ -54,6 +55,7 @@ const LEYENDA: Record<EstadoReserva, string> = {
 @Component({
   selector: 'app-reservas',
   imports: [
+    NavegacionCliente,
     DatePipe,
     RouterLink,
     ReactiveFormsModule,

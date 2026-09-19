@@ -95,7 +95,7 @@ class ProveedorStripe:
         ]
 
         try:
-            sesion = self._cliente.checkout.sessions.create(
+            sesion = self._cliente.v1.checkout.sessions.create(
                 params={
                     "mode": "payment",
                     "line_items": lineas,
@@ -113,13 +113,25 @@ class ProveedorStripe:
                     # Vuelven intactos en el webhook: es como CU-28 sabe a que
                     # venta corresponde el evento sin adivinarlo por el monto.
                     "metadata": solicitud.metadatos,
-                    # Idempotencia del lado de Stripe: si esta peticion se
-                    # reintenta ---por un corte de red al responder--- Stripe
-                    # devuelve la MISMA sesion en vez de abrir una segunda.
-                    # Sin esto, un reintento dejaria dos sesiones cobrables
-                    # para un mismo pedido.
-                    "idempotency_key": "pedido-" + solicitud.referencia,
-                }
+                },
+                # LA CLAVE DE IDEMPOTENCIA VA EN `options`, NO EN `params`.
+                #
+                # No es un detalle de estilo: `params` es el cuerpo de la
+                # peticion y Stripe **rechaza los parametros que no conoce**.
+                # Puesta ahi adentro, TODA la llamada fallaba con
+                # «Received unknown parameter: idempotency_key», el proveedor lo
+                # traducia a ErrorDePasarela y el cliente veia «perdida de
+                # comunicacion con la pasarela» --- un mensaje honesto y
+                # enganoso a la vez: Stripe contestaba perfecto, lo que estaba
+                # mal era lo que le mandabamos.
+                #
+                # Lo que hace, bien puesta: si esta peticion se reintenta
+                # ---por un corte de red al responder--- Stripe devuelve la
+                # MISMA sesion en vez de abrir una segunda. Sin eso, un
+                # reintento dejaria dos sesiones cobrables para un mismo pedido.
+                # Comprobado contra Stripe: dos llamadas con la misma clave
+                # devuelven el mismo `cs_test_...`.
+                options={"idempotency_key": "pedido-" + solicitud.referencia},
             )
         except Exception as e:  # el SDK levanta su propia jerarquia
             _log.exception("Stripe rechazo la sesion del pedido %s", solicitud.referencia)

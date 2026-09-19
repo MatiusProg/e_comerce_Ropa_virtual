@@ -19,6 +19,7 @@ import type {
   TallaTienda,
   VarianteVitrina,
 } from '../../../core/models/tienda.models';
+import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion-cliente';
 
 /**
  * CU-18 · Consultar ficha de producto — «boundary» PantallaFichaProducto.
@@ -44,6 +45,7 @@ import type {
 @Component({
   selector: 'app-ficha',
   imports: [
+    NavegacionCliente,
     RouterLink,
     MatButtonModule,
     MatCardModule,
