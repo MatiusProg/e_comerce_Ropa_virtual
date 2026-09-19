@@ -23,6 +23,7 @@ import '../../features/reservas/pantalla_detalle_reserva.dart';
 import '../../features/reservas/pantalla_mis_reservas.dart';
 import '../../features/reservas/pantalla_nueva_reserva.dart';
 import '../../features/catalogo/pantalla_favoritos.dart';
+import '../../features/catalogo/pantalla_para_vos.dart';
 import '../../features/vestidor/pantalla_vestidor.dart';
 import '../../features/inicio/pantalla_inicio.dart';
 import '../../features/perfil/pantalla_perfil.dart';
@@ -59,6 +60,12 @@ class Rutas {
   /// ---las mismas tarjetas, filtradas por lo que el cliente guardo--- y asi
   /// el boton de volver la deja apilada donde corresponde.
   static const String favoritos = '/catalogo/favoritos';
+
+  /// CU-33 · las prendas que el recomendador sugiere (RF25).
+  ///
+  /// Cuelga del catalogo por lo mismo que favoritos: es una VISTA del
+  /// catalogo, filtrada por lo que le conviene a este cliente.
+  static const String paraVos = '/catalogo/para-vos';
 
   // Mateo:
   /// CU-23 · mis reservas, que es la puerta de entrada del paquete: el cliente
@@ -178,6 +185,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'favoritos',
             builder: (context, estado) => const PantallaFavoritos(),
+          ),
+          // Igual que favoritos: ANTES de ':id', que si no la ficha se la come.
+          GoRoute(
+            path: 'para-vos',
+            builder: (context, estado) => const PantallaParaVos(),
           ),
           GoRoute(
             // Anidada y no suelta: asi el boton de volver del telefono lleva de
