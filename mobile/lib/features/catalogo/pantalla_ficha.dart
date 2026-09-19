@@ -29,6 +29,7 @@ import '../../core/tema.dart';
 import '../../data/modelos/catalogo.dart';
 import '../../data/repositorios/repositorio_catalogo.dart';
 import '../compra/estado_compra.dart';
+import '../reservas/estado_reservas.dart';
 import 'boton_favorito.dart';
 import 'estado_catalogo.dart';
 
@@ -193,6 +194,16 @@ class _EstadoPantallaFicha extends ConsumerState<PantallaFicha> {
               // no hay talla ni color elegidos. Es la misma decision que tomo
               // la web.
               _BotonAgregar(variante: variante),
+              const SizedBox(height: 10),
+              // CU-22. Va JUNTO a «Agregar al carrito» y no en otra pantalla.
+              //
+              // Hasta el 19/09 la unica forma de reservar en el movil era
+              // entrar a «Mis reservas» y buscar la prenda por su nombre en un
+              // selector de texto: para reservar habia que saber como se
+              // llama. Comprar, en cambio, ya se hacia desde aca. Eran dos
+              // flujos para la misma decision, y uno estaba mucho peor. La web
+              // tenia el mismo hueco y se arreglo igual.
+              _BotonReservar(prenda: prenda, variante: variante),
               const SizedBox(height: 10),
               _BotonVestidor(prenda: prenda, variante: variante),
 
@@ -395,6 +406,52 @@ class _BotonColor extends StatelessWidget {
     );
   }
 }
+
+/// CU-22 · Reservar la variante elegida para probarsela en la sucursal.
+///
+/// Agrega la prenda al BORRADOR de la reserva y navega al formulario, que ya
+/// la encuentra puesta. No se duplica nada del formulario: se reutiliza
+/// entero, igual que en la web.
+///
+/// Deshabilitado hasta que haya talla y color, por lo mismo que el carrito: la
+/// reserva aparta UNIDADES de una variante concreta (decision D1).
+class _BotonReservar extends ConsumerWidget {
+  const _BotonReservar({required this.prenda, required this.variante});
+
+  final FichaPrenda prenda;
+  final VariantePrenda? variante;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final elegida = variante;
+
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        icon: const Icon(Icons.event_available),
+        label: const Text('Reservar para probarme'),
+        onPressed: elegida == null ? null : () => _reservar(context, ref, elegida),
+      ),
+    );
+  }
+
+  void _reservar(BuildContext context, WidgetRef ref, VariantePrenda elegida) {
+    final fallo = ref.read(borradorProvider.notifier).agregar(
+      prenda: prenda,
+      variante: elegida,
+      cantidad: 1,
+    );
+    // `agregar` devuelve el motivo si no se pudo ---ya estaba, o el borrador
+    // esta lleno---. Se avisa y NO se navega: llevarlo a un formulario que no
+    // cambio seria hacerle creer que algo paso.
+    if (fallo != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(fallo)));
+      return;
+    }
+    context.push(Rutas.reservaNueva);
+  }
+}
+
 
 /// CU-26 · Agregar la variante elegida al carrito.
 ///

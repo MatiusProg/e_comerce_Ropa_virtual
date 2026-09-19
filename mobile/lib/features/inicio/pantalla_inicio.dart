@@ -186,6 +186,12 @@ class _PendientesDelCiclo extends StatelessWidget {
         Rutas.vestidor,
       ),
       (
+        'Para vos',
+        'CU-33 · IA',
+        Icons.auto_awesome,
+        Rutas.paraVos,
+      ),
+      (
         'Mis favoritos',
         'CU-20',
         Icons.favorite_border,
