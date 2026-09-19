@@ -183,8 +183,23 @@ class ProveedorStripe:
         except Exception as error:  # SignatureVerificationError y parientes
             raise FirmaInvalida(str(error)) from error
 
-        tipo = str(evento.get("type") or "")
-        objeto = (evento.get("data") or {}).get("object") or {}
+        # A DICCIONARIO, DE UNA VEZ Y EN UN SOLO LUGAR.
+        #
+        # `construct_event` devuelve un `stripe.Event`, que **no es un dict**:
+        # en el SDK 15.x `StripeObject` niega `.get()` a proposito y levanta
+        # «'get' is a dict method, but a Event is not a dict». Tratarlo como
+        # diccionario reventaba con AttributeError, el router respondia 500 y
+        # Stripe reintentaba durante dias contra un endpoint que nunca iba a
+        # aceptarlo --- con el pedido pagado y la venta en PENDIENTE_PAGO.
+        #
+        # Se convierte una sola vez y el resto de la funcion trabaja con datos
+        # planos: asi no queda ningun acceso que dependa de la forma del SDK, y
+        # una version futura que cambie esa forma rompe aqui y no en cinco
+        # lugares distintos.
+        datos = evento.to_dict()
+
+        tipo = str(datos.get("type") or "")
+        objeto = (datos.get("data") or {}).get("object") or {}
         metadatos = objeto.get("metadata") or {}
 
         # `checkout.session.completed` es el que interesa: la sesion se cerro
@@ -194,7 +209,7 @@ class ProveedorStripe:
         aprobado = tipo == TIPO_COMPLETADA and objeto.get("payment_status") == "paid"
 
         return EventoDePago(
-            id_evento=str(evento.get("id") or ""),
+            id_evento=str(datos.get("id") or ""),
             tipo=tipo,
             id_sesion=(str(objeto["id"]) if objeto.get("id") else None),
             referencia=(str(metadatos["codigo"]) if metadatos.get("codigo") else None),
