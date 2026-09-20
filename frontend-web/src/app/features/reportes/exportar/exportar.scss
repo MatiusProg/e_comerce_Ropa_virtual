@@ -119,3 +119,104 @@ header {
     color: #b57f9a;
   }
 }
+
+/* Los filtros propios de cada reporte (CU-37). */
+.tarjeta .filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+
+  mat-form-field {
+    // 150 px es el ancho al que «Forma de pago» entra sin cortarse y siguen
+    // entrando dos por fila en una tarjeta de 300 px.
+    width: 150px;
+    font-size: 0.85rem;
+  }
+
+  .limpiar {
+    font-size: 0.8rem;
+  }
+}
+
+/* CU-35 · pedir el reporte hablando. */
+.por-voz {
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #f6e6ec 0%, #fbf6f4 100%);
+
+  .linea {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .microfono {
+    flex: none;
+
+    /* Mientras escucha late, para que se vea que está grabando sin tener que
+       leer el texto. Un micrófono quieto no se distingue de uno apagado. */
+    &.escuchando {
+      animation: latido 1.4s ease-in-out infinite;
+    }
+  }
+
+  .dicho {
+    flex: 1 1 240px;
+    min-width: 0;
+  }
+
+  .rotulo {
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #8e4a67;
+
+    &.error {
+      color: #8c1d18;
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 0.88rem;
+    }
+  }
+
+  .frase {
+    margin: 2px 0 0;
+    font-size: 1rem;
+    line-height: 1.3;
+
+    &.apagada {
+      color: rgb(0 0 0 / 50%);
+      font-size: 0.9rem;
+    }
+  }
+
+  .ejemplos {
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    color: rgb(0 0 0 / 55%);
+  }
+
+  .fallo-voz {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 10px 0 0;
+    font-size: 0.85rem;
+    color: #8c1d18;
+  }
+}
+
+@keyframes latido {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(142 74 103 / 45%); }
+  50% { box-shadow: 0 0 0 12px rgb(142 74 103 / 0%); }
+}
+
+/* Quien prefiera no ver animaciones no las ve. */
+@media (prefers-reduced-motion: reduce) {
+  .por-voz .microfono.escuchando {
+    animation: none;
+    outline: 3px solid rgb(142 74 103 / 60%);
+  }
+}

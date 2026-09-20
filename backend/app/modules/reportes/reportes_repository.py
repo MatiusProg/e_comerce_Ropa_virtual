@@ -49,6 +49,16 @@ def _acotar_sucursal(consulta: Select, columna, sucursal_id: int | None) -> Sele
     return consulta if sucursal_id is None else consulta.where(columna == sucursal_id)
 
 
+def _si(consulta: Select, columna, valor) -> Select:
+    """Aplica el filtro solo si vino. Sin valor, el reporte no se acota.
+
+    Es lo que permite que cada reporte declare sus filtros y que la pantalla
+    mande solo los que el usuario eligio: un `None` significa «todos», no
+    «ninguno».
+    """
+    return consulta if valor in (None, "") else consulta.where(columna == valor)
+
+
 # --- 1. Ventas --------------------------------------------------------------
 
 
@@ -58,6 +68,9 @@ def ventas(
     desde: datetime,
     hasta: datetime,
     sucursal_id: int | None,
+    canal: str | None = None,
+    estado: str | None = None,
+    metodo_pago: str | None = None,
 ) -> list[tuple]:
     consulta = (
         select(
@@ -78,13 +91,21 @@ def ventas(
         .order_by(Venta.creado_en.desc())
     )
     consulta = _acotar_sucursal(consulta, Venta.sucursal_id, sucursal_id)
+    consulta = _si(consulta, Venta.canal, canal)
+    consulta = _si(consulta, Venta.metodo_pago, metodo_pago)
+    # El estado ACOTA dentro de las consumadas, no las reemplaza: pedir
+    # «canceladas» en un reporte de ventas no puede devolver ventas que no
+    # existieron. El filtro elige entre PAGADA y ENTREGADA.
+    consulta = _si(consulta, Venta.estado, estado)
     return [tuple(f) for f in db.execute(consulta).all()]
 
 
 # --- 2. Inventario ----------------------------------------------------------
 
 
-def inventario(db: Session, *, sucursal_id: int | None) -> list[tuple]:
+def inventario(
+    db: Session, *, sucursal_id: int | None, bajo_minimo: str | None = None
+) -> list[tuple]:
     """Saldos por variante y sucursal.
 
     Sin periodo: un inventario es una FOTO de ahora, no un acumulado. Pedirle
@@ -110,6 +131,12 @@ def inventario(db: Session, *, sucursal_id: int | None) -> list[tuple]:
         .order_by(Sucursal.nombre, Producto.nombre, Talla.codigo)
     )
     consulta = _acotar_sucursal(consulta, Existencia.sucursal_id, sucursal_id)
+    if bajo_minimo == "si":
+        # Lo que hay que reponer. Es la consulta que de verdad se imprime: un
+        # inventario completo de 2.355 filas no se lee, se archiva.
+        consulta = consulta.where(
+            Existencia.cantidad_disponible <= Existencia.stock_minimo
+        )
     return [tuple(f) for f in db.execute(consulta).all()]
 
 
@@ -122,6 +149,7 @@ def movimientos(
     desde: datetime,
     hasta: datetime,
     sucursal_id: int | None,
+    tipo: str | None = None,
 ) -> list[tuple]:
     consulta = (
         select(
@@ -148,6 +176,7 @@ def movimientos(
         .order_by(MovimientoInventario.creado_en.desc())
     )
     consulta = _acotar_sucursal(consulta, Existencia.sucursal_id, sucursal_id)
+    consulta = _si(consulta, MovimientoInventario.tipo, tipo)
     return [tuple(f) for f in db.execute(consulta).all()]
 
 
@@ -160,6 +189,7 @@ def reservas(
     desde: datetime,
     hasta: datetime,
     sucursal_id: int | None,
+    estado: str | None = None,
 ) -> list[tuple]:
     # `Reserva` NO tiene columna `codigo` ---se identifica por id--- y
     # `cliente_id` apunta a `cliente`, no a `usuario`: el correo esta un salto
@@ -180,6 +210,7 @@ def reservas(
         .order_by(Reserva.franja_inicio.desc())
     )
     consulta = _acotar_sucursal(consulta, Reserva.sucursal_id, sucursal_id)
+    consulta = _si(consulta, Reserva.estado, estado)
     return [tuple(f) for f in db.execute(consulta).all()]
 
 
@@ -187,7 +218,12 @@ def reservas(
 
 
 def rendimiento(
-    db: Session, *, desde: datetime, hasta: datetime, sucursal_id: int | None
+    db: Session,
+    *,
+    desde: datetime,
+    hasta: datetime,
+    sucursal_id: int | None,
+    temporada_id: int | None = None,
 ) -> list[tuple]:
     """Cuanto se vendio de cada temporada y coleccion.
 
@@ -220,6 +256,7 @@ def rendimiento(
         .order_by(func.sum(_subtotal_de_linea()).desc())
     )
     consulta = _acotar_sucursal(consulta, Venta.sucursal_id, sucursal_id)
+    consulta = _si(consulta, Producto.temporada_id, temporada_id)
     return [tuple(f) for f in db.execute(consulta).all()]
 
 
@@ -227,7 +264,12 @@ def rendimiento(
 
 
 def compras(
-    db: Session, *, desde: datetime, hasta: datetime, sucursal_id: int | None
+    db: Session,
+    *,
+    desde: datetime,
+    hasta: datetime,
+    sucursal_id: int | None,
+    proveedor_id: int | None = None,
 ) -> list[tuple]:
     """Lo que entro por ingreso de mercaderia, por proveedor.
 
@@ -259,7 +301,41 @@ def compras(
         .order_by(func.sum(MovimientoInventario.cantidad).desc())
     )
     consulta = _acotar_sucursal(consulta, Existencia.sucursal_id, sucursal_id)
+    consulta = _si(consulta, MovimientoInventario.proveedor_id, proveedor_id)
     return [tuple(f) for f in db.execute(consulta).all()]
+
+
+def opciones_de_sucursal(db: Session) -> list[tuple[str, str]]:
+    return [
+        (str(f[0]), f[1])
+        for f in db.execute(
+            select(Sucursal.id, Sucursal.nombre)
+            .where(Sucursal.activa.is_(True))
+            .order_by(Sucursal.nombre)
+        ).all()
+    ]
+
+
+def opciones_de_proveedor(db: Session) -> list[tuple[str, str]]:
+    return [
+        (str(f[0]), f[1])
+        for f in db.execute(
+            select(Proveedor.id, Proveedor.razon_social)
+            .where(Proveedor.activo.is_(True))
+            .order_by(Proveedor.razon_social)
+        ).all()
+    ]
+
+
+def opciones_de_temporada(db: Session) -> list[tuple[str, str]]:
+    from app.modules.catalogo.models import Temporada as T
+
+    return [
+        (str(f[0]), f[1])
+        for f in db.execute(
+            select(T.id, T.nombre).order_by(T.fecha_inicio.desc())
+        ).all()
+    ]
 
 
 def nombre_de_sucursal(db: Session, sucursal_id: int) -> str | None:

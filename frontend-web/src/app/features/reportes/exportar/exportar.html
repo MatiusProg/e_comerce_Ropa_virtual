@@ -16,6 +16,77 @@
       <p>{{ mensaje }}</p>
     </div>
   } @else {
+    <!-- CU-35 · pedirlo hablando. Es un ATAJO: la lista de abajo sigue
+         funcionando igual, y el micrófono solo aparece si el navegador y el
+         servidor pueden. -->
+    @if (sePuedeHablar()) {
+      <mat-card appearance="outlined" class="por-voz">
+        <div class="linea">
+          <button
+            matFab
+            type="button"
+            class="microfono"
+            [class.escuchando]="dictado.escuchando()"
+            [disabled]="interpretando()"
+            [matTooltip]="dictado.escuchando() ? 'Tocá para terminar' : 'Pedilo hablando'"
+            (click)="hablar()"
+          >
+            <mat-icon>{{ dictado.escuchando() ? 'stop' : 'mic' }}</mat-icon>
+          </button>
+
+          <div class="dicho">
+            @if (dictado.escuchando()) {
+              <span class="rotulo">Escuchando…</span>
+              <p class="frase">{{ dictado.texto() || 'Decí qué reporte necesitás' }}</p>
+            } @else if (interpretando()) {
+              <span class="rotulo">Interpretando…</span>
+              <p class="frase">{{ dictado.texto() }}</p>
+            } @else if (entendido(); as pedido) {
+              @if (pedido.entendido) {
+                <span class="rotulo">Entendí</span>
+                <p class="frase">{{ pedido.resumen }}</p>
+              } @else {
+                <span class="rotulo error">{{ pedido.motivo }}</span>
+                @if (pedido.ejemplos?.length) {
+                  <p class="ejemplos">
+                    Probá con: «{{ pedido.ejemplos![0] }}»
+                  </p>
+                }
+              }
+            } @else {
+              <span class="rotulo">Pedí un reporte hablando</span>
+              <p class="frase apagada">
+                Por ejemplo: «las ventas de este mes en Excel»
+              </p>
+            }
+          </div>
+
+          <!-- Descargar es un paso APARTE y no automático: es la única
+               oportunidad de notar que entendió otra cosa antes de abrir el
+               archivo. -->
+          @if (entendido()?.entendido) {
+            <button
+              matButton="filled"
+              type="button"
+              class="vb-boton-marca"
+              [disabled]="bajando() !== null"
+              (click)="descargarLoEntendido()"
+            >
+              <mat-icon>download</mat-icon>
+              Descargar
+            </button>
+          }
+        </div>
+
+        @if (dictado.error(); as fallo) {
+          <p class="fallo-voz">
+            <mat-icon inline>mic_off</mat-icon>
+            {{ fallo }}
+          </p>
+        }
+      </mat-card>
+    }
+
     <mat-card appearance="outlined" class="periodo">
       <div class="titulo-periodo">
         <mat-icon>date_range</mat-icon>
@@ -60,6 +131,41 @@
               <mat-icon inline>info_outline</mat-icon>
               Situación actual — no usa el período de arriba
             </p>
+          }
+
+          <!-- Los filtros los declara el servidor: si un reporte acepta uno
+               más, aparece acá sin tocar este archivo. -->
+          @if (reporte.filtros.length) {
+            <div class="filtros">
+              @for (filtro of reporte.filtros; track filtro.campo) {
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <mat-label>{{ filtro.etiqueta }}</mat-label>
+                  <mat-select
+                    [value]="valorDe(reporte.tipo, filtro.campo)"
+                    (valueChange)="elegir(reporte.tipo, filtro.campo, $event)"
+                  >
+                    <!-- «Todas» tiene que existir: sin una opción vacía, un
+                         filtro elegido por error no se puede deshacer. -->
+                    <mat-option value="">Todas</mat-option>
+                    @for (o of filtro.opciones; track o.valor) {
+                      <mat-option [value]="o.valor">{{ o.etiqueta }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              }
+
+              @if (cuantosFiltros(reporte.tipo) > 0) {
+                <button
+                  matButton
+                  type="button"
+                  class="limpiar"
+                  (click)="limpiar(reporte.tipo)"
+                >
+                  <mat-icon>filter_alt_off</mat-icon>
+                  Quitar {{ cuantosFiltros(reporte.tipo) }}
+                </button>
+              }
+            </div>
           }
 
           <div class="acciones">
