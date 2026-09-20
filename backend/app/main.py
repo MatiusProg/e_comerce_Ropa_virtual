@@ -203,6 +203,9 @@ app.include_router(vestidor_router, prefix=API)
 # CU-28. El webhook de la pasarela.
 app.include_router(pagos_router, prefix=API)
 app.include_router(caja_router, prefix=API)
+# CU-39: lo que el proveedor anuncia que va a traer.
+app.include_router(abastecimiento_router, prefix=API)
+# CU-31 y CU-32: la venta presencial y la devolucion.
 app.include_router(pos_router, prefix=API)
 app.include_router(devoluciones_router, prefix=API)
 app.include_router(abastecimiento_router, prefix=API)
