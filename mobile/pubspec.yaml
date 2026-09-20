@@ -32,7 +32,11 @@ dependencies:
   camera: ^0.12.0+2 # vista de camara en vivo
   google_mlkit_pose_detection: ^0.16.1 # deteccion de pose en el dispositivo
   image: ^4.9.2 # composicion de la captura
-  permission_handler: ^13.0.1 # permiso de camara
+  permission_handler: ^13.0.1 # permiso de camara y de microfono
+  # CU-35: el reconocimiento de voz corre EN EL TELEFONO, con el motor del
+  # sistema. Es gratis, no consume cuota del modelo y no sube audio a ningun
+  # lado: al servidor le llega el texto ya transcrito.
+  speech_to_text: ^7.0.0
 
   # --- Compra (P7 y P8, ciclo 3) ----------------------------------------
   # Abre la pasarela de pago en el navegador del telefono. NO se usa un

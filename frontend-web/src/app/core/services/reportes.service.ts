@@ -37,6 +37,22 @@ export interface ReporteDisponible {
 /** Lo que viaja en la URL. Las claves extra son los filtros propios. */
 export type FiltrosDeReporte = Record<string, string | number | null | undefined>;
 
+/** Lo que el servidor entendió de la frase (CU-35). */
+export interface PedidoEntendido {
+  entendido: boolean;
+
+  /** Qué se entendió, en una frase. Se muestra ANTES de descargar. */
+  resumen?: string | null;
+
+  tipo?: string | null;
+  formato?: string | null;
+  url?: string | null;
+
+  /** Por qué no se entendió, y frases que sí funcionan. */
+  motivo?: string | null;
+  ejemplos?: string[];
+}
+
 export interface ErrorReportes {
   mensaje: string;
   codigo: number;
@@ -108,6 +124,33 @@ export class ReportesService {
         })),
         catchError((e) => throwError(() => this.traducir(e))),
       );
+  }
+
+  // --- CU-35 · pedido por voz -----------------------------------------------
+
+  /** Si el servidor puede interpretar pedidos hablados. */
+  hayVoz(): Observable<boolean> {
+    return this.http
+      .get<{ disponible: boolean }>(`${this.base}/voz/disponible`)
+      .pipe(
+        map((r) => r.disponible),
+        // Que la consulta falle NO puede impedir usar la pantalla: lo peor
+        // que pasa es que no se ofrezca el micrófono.
+        catchError(() => [false]),
+      );
+  }
+
+  /**
+   * Traduce lo que se dijo a uno de los reportes que existen.
+   *
+   * **Manda texto, no audio.** El reconocimiento corre en el navegador con
+   * Web Speech API: es gratis, no consume cuota del modelo y no sube
+   * megabytes por cada pedido.
+   */
+  interpretarVoz(texto: string): Observable<PedidoEntendido> {
+    return this.http
+      .post<PedidoEntendido>(`${this.base}/voz`, { texto })
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
   }
 
   private nombreDe(disposicion: string | null, tipo: string, formato: string): string {

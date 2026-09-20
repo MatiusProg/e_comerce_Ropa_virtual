@@ -4,6 +4,9 @@
     <!-- Vestidor virtual (P9). Declarado desde ahora porque la camara es
          requisito del prototipo I3; ver mobile/README.md. -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- CU-35: el dictado del pedido de reporte. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
@@ -47,6 +50,13 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- CU-35. Android 11 en adelante exige declarar a QUE otras
+             aplicaciones se les va a preguntar. Sin esto `speech_to_text` no
+             encuentra el motor de reconocimiento del sistema y dice que no
+             esta disponible, aunque este instalado. -->
+        <intent>
+            <action android:name="android.speech.RecognitionService"/>
         </intent>
     </queries>
 </manifest>

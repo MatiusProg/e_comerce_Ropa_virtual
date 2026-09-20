@@ -312,3 +312,51 @@ def generar(
         subtitulos=subtitulos,
         total=_totales(definicion, filas),
     )
+
+
+# --- CU-35 · el pedido por voz ---------------------------------------------
+
+
+def catalogo_para_el_interprete(es_admin: bool) -> list:
+    """Los reportes, descritos como el interprete los necesita.
+
+    Se arma del MISMO diccionario `REPORTES` que usa la descarga. No hay una
+    lista aparte para el modelo: si la hubiera, el dia que se agregue un
+    reporte el interprete seguiria sin conocerlo y diria «no entendi» a un
+    pedido perfectamente valido.
+    """
+    from app.integrations.interprete import ReporteConocido
+
+    salida = []
+    for tipo, definicion in sorted(REPORTES.items()):
+        filtros: dict[str, list[str]] = {}
+        for filtro in definicion.filtros:
+            # La sucursal NO se le ofrece al modelo: sus valores son ids de
+            # base de datos y nadie dice «sucursal 3» hablando. Ademas al
+            # encargado se le fuerza la suya, asi que ni siquiera aplica.
+            if filtro.campo == "sucursal_id" or not filtro.opciones:
+                continue
+            filtros[filtro.campo] = [v for v, _ in filtro.opciones]
+        salida.append(
+            ReporteConocido(
+                tipo=tipo,
+                titulo=definicion.titulo,
+                filtros=filtros,
+                usa_periodo=not definicion.sin_periodo,
+            )
+        )
+    return salida
+
+
+#: Frases que SI funcionan, para mostrarlas cuando no se entendio.
+#:
+#: Se escriben aca y no en la pantalla porque dependen de los reportes que
+#: existen: si manana se agrega uno, el ejemplo se actualiza donde estan los
+#: reportes y no en dos frentes.
+EJEMPLOS = (
+    "las ventas de este mes en Excel",
+    "el inventario de lo que hay que reponer",
+    "los movimientos de ingreso de la semana pasada",
+    "las reservas atendidas de septiembre en PDF",
+    "el rendimiento por temporada del año",
+)
