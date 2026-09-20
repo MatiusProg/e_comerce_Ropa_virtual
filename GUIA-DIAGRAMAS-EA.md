@@ -949,6 +949,16 @@ Si el caso tiene dos disparadores distintos —en US-31 del proyecto médico, el
 y el administrador que dispara la indexación— **van los dos**, cada uno contra la frontera que le
 corresponde. Es la mitad del diagrama que explica por qué existe la otra mitad.
 
+> **Al 20/09/2026 Violet Boutique NO cumple esta regla en el 2.3, y es a sabiendas.**
+> `ea-clases-2-3.ps1` y `ea-clases-2-3-ciclo2.ps1` no crean ni un actor —comprobado— mientras que
+> los dos generadores del **2.2 sí los ponen**, incluidos los casos con dos disparadores: CU-07
+> (Administrador **y** Proveedor) y CU-13 (Administrador **y** Encargado de Sucursal).
+>
+> No se aplicó al 2.3 porque obligaría a regenerar los 23 diagramas de clases a días de la defensa,
+> y lo que se gana es de lectura, no de correctitud: el actor ya está en el 2.2 del mismo caso de
+> uso, que es el diagrama donde se lee quién empieza. **Queda anotado para el segundo parcial**, que
+> retoma este mismo proyecto.
+
 #### Las operaciones se escriben con `Parameters`, no con la firma en el nombre
 
 Si la operación se crea con la firma entera en el nombre —`AddNew('check(question)', 'TriageResult')`—
