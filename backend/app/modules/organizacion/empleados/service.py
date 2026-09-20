@@ -15,10 +15,11 @@ en la seccion 6.11.1 de docs/06-decisiones-tecnicas.md. Las dos puertas crean lo
 mismo; la diferencia es desde donde se mira el alta -- desde la cuenta o desde
 la persona -- y que solo esta admite el flujo 3c.
 """
-from datetime import date
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+
+from app.core import tiempo
 
 from app.core.security import hash_password
 from app.modules.organizacion.empleados import repository
@@ -327,7 +328,7 @@ def dar_de_baja(db: Session, empleado_id: int, datos: BajaEmpleadoIn) -> Emplead
     if empleado.fecha_baja is not None:
         raise EmpleadoYaDadoDeBaja(str(empleado_id))
 
-    fecha = datos.fecha_baja or date.today()
+    fecha = datos.fecha_baja or tiempo.hoy()
     if fecha < empleado.fecha_ingreso:
         raise FechaDeBajaInvalida(str(fecha))
 

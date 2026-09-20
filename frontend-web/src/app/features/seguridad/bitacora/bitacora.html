@@ -1,0 +1,154 @@
+<div class="bitacora">
+  <header class="bitacora__cabecera">
+    <div>
+      <h1>Bitácora del sistema</h1>
+      <p class="bitacora__ayuda">
+        Todo lo que cambió el sistema, con quién lo hizo y cuándo. Las
+        consultas no se registran; los intentos fallidos, sí.
+      </p>
+    </div>
+    <span class="bitacora__solo-lectura" matTooltip="Los asientos los escribe el sistema y no se pueden editar ni borrar.">
+      <mat-icon>lock</mat-icon> Solo lectura
+    </span>
+  </header>
+
+  <mat-accordion class="bitacora__filtros">
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          <mat-icon>filter_list</mat-icon>&nbsp;Filtros
+        </mat-panel-title>
+        <mat-panel-description>
+          @if (cuantosFiltros() > 0) {
+            {{ cuantosFiltros() }} puesto{{ cuantosFiltros() === 1 ? '' : 's' }}
+          } @else {
+            Sin filtrar
+          }
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+
+      <form [formGroup]="filtros" class="bitacora__campos" (ngSubmit)="aplicar()">
+        <mat-form-field appearance="outline">
+          <mat-label>Desde</mat-label>
+          <input matInput [matDatepicker]="dp1" formControlName="desde" />
+          <mat-datepicker-toggle matIconSuffix [for]="dp1" />
+          <mat-datepicker #dp1 />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Hasta</mat-label>
+          <input matInput [matDatepicker]="dp2" formControlName="hasta" />
+          <mat-datepicker-toggle matIconSuffix [for]="dp2" />
+          <mat-datepicker #dp2 />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Acción</mat-label>
+          <mat-select formControlName="accion">
+            <mat-option [value]="null">Todas</mat-option>
+            @for (a of acciones(); track a) {
+              <mat-option [value]="a">{{ comoSeLee(a) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Recurso</mat-label>
+          <mat-select formControlName="entidad">
+            <mat-option [value]="null">Todos</mat-option>
+            @for (e of entidades(); track e) {
+              <mat-option [value]="e">{{ e }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Resultado</mat-label>
+          <mat-select formControlName="exito">
+            <mat-option [value]="null">Todos</mat-option>
+            <mat-option value="si">Salió bien</mat-option>
+            <mat-option value="no">Falló o fue rechazado</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="bitacora__buscar">
+          <mat-label>Buscar</mat-label>
+          <input matInput formControlName="busqueda" placeholder="Correo o ruta" />
+          <mat-icon matIconSuffix>search</mat-icon>
+        </mat-form-field>
+
+        <div class="bitacora__acciones">
+          <button mat-stroked-button type="button" (click)="limpiar()">Limpiar</button>
+          <button mat-flat-button color="primary" type="submit">Aplicar</button>
+        </div>
+      </form>
+    </mat-expansion-panel>
+  </mat-accordion>
+
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  @if (vacio()) {
+    <mat-card class="bitacora__vacio">
+      <mat-icon>history</mat-icon>
+      <p>No hay nada registrado con esos filtros.</p>
+    </mat-card>
+  }
+
+  <div class="bitacora__lista">
+    @for (a of asientos(); track a.id) {
+      <mat-card class="asiento" [class.asiento--fallo]="!a.exito">
+        <div class="asiento__linea">
+          <!-- La zona va EXPLICITA. Sin el tercer argumento, DatePipe formatea en
+               la del navegador: una computadora con la hora mal puesta mostraria
+               una bitacora distinta a la de al lado, sobre un registro cuyo unico
+               valor es que todos vean lo mismo. -->
+          <span class="asiento__hora">{{ a.ocurrido_en | date: 'dd/MM/yyyy HH:mm' : '-0400' }}</span>
+
+          <span class="asiento__accion" [class.asiento__accion--fallo]="!a.exito">
+            <mat-icon>{{ a.exito ? 'check_circle' : 'error' }}</mat-icon>
+            {{ comoSeLee(a.accion) }}
+          </span>
+
+          @if (a.entidad) {
+            <span class="asiento__recurso">
+              {{ a.entidad }}@if (a.entidad_id) {<b> #{{ a.entidad_id }}</b>}
+            </span>
+          }
+        </div>
+
+        <div class="asiento__linea asiento__linea--secundaria">
+          <span class="asiento__quien">
+            <mat-icon>person</mat-icon> {{ quien(a) }}
+          </span>
+          @if (a.rol) {
+            <span class="asiento__rol">{{ a.rol }}</span>
+          }
+          <code class="asiento__ruta">{{ a.metodo }} {{ a.ruta }}</code>
+          <span class="asiento__estado">{{ a.estado_http }}</span>
+          @if (a.ip) {
+            <span class="asiento__ip" matTooltip="Desde dónde se pidió">{{ a.ip }}</span>
+          }
+        </div>
+
+        @if (hayDetalle(a)) {
+          <details class="asiento__detalle">
+            <summary>Ver detalle</summary>
+            <pre>{{ detalleLegible(a) }}</pre>
+          </details>
+        }
+      </mat-card>
+    }
+  </div>
+
+  @if (total() > 0) {
+    <mat-paginator
+      [length]="total()"
+      [pageIndex]="pagina()"
+      [pageSize]="tamano()"
+      [pageSizeOptions]="[25, 50, 100]"
+      (page)="paginar($event)"
+    />
+  }
+</div>

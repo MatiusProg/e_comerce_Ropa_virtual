@@ -25,6 +25,19 @@ export interface Anuncio {
   observacion: string | null;
   estado: string;
   creado_en: string;
+
+  /**
+   * Cuánto de lo anunciado YA ENTRÓ al inventario, y cuánto falta.
+   *
+   * Es la devolución que el proveedor no tenía: anunciaba y después no se
+   * enteraba de nada — el aviso quedaba «Informado» para siempre aunque la
+   * mercadería hubiera llegado hace semanas.
+   */
+  cantidad_recibida: number;
+  cantidad_pendiente: number;
+
+  /** Cuándo se completó. Nulo mientras siga en camino. */
+  recibido_en: string | null;
 }
 
 export interface AnunciarIn {

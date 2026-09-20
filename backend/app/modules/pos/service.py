@@ -42,10 +42,11 @@ rechace con un error de integridad que el cajero leeria como una falla.
 from __future__ import annotations
 
 import secrets
-from datetime import datetime, timezone
 from decimal import Decimal
 
 from sqlalchemy.orm import Session
+
+from app.core import tiempo
 
 from app.modules.caja import repository as caja_repository
 from app.modules.catalogo import promociones_service as promociones
@@ -314,7 +315,11 @@ def _generar_codigo(db: Session) -> str:
     arqueo, en el tablero, cuando alguien lee un numero por telefono--- de cual
     de los dos canales vino cada una, sin tener que ir a mirar la fila.
     """
-    hoy = datetime.now(timezone.utc).strftime("%Y%m%d")
+    # LA FECHA DEL CODIGO ES LA DE BOLIVIA. Con la del servidor, una venta
+    # de las 21:00 del martes sale numerada con la fecha del miercoles, y el
+    # numero que el cliente tiene en la mano no coincide con el dia del
+    # arqueo ni con el del reporte.
+    hoy = tiempo.hoy().strftime("%Y%m%d")
     for _ in range(10):
         codigo = f"VP-{hoy}-{secrets.token_hex(2).upper()}"
         if not repository.existe_codigo(db, codigo):

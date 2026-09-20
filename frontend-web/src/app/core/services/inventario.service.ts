@@ -9,6 +9,7 @@ import {
   AjusteRegistrado,
   Existencia,
   FiltrosExistencias,
+  AvisoDeIngreso,
   FiltrosIngresos,
   FiltrosMovimientos,
   IngresoCrear,
@@ -55,6 +56,20 @@ export class InventarioService {
   private readonly base = `${environment.apiUrl}/inventario`;
 
   // --- CU-13 · Ingreso de mercadería -------------------------------------
+
+  /**
+   * Lo anunciado que todavía no llegó (CU-39), para mostrarlo ARRIBA del
+   * formulario de ingreso.
+   *
+   * Quien recibe un camión casi siempre está recibiendo algo anunciado;
+   * hacerle buscar la variante a mano es pedirle que reconstruya un dato que
+   * el sistema ya tiene, y es como el aviso terminaba sin cerrarse nunca.
+   */
+  avisosDeIngreso(): Observable<AvisoDeIngreso[]> {
+    return this.http
+      .get<AvisoDeIngreso[]>(`${this.base}/ingresos/avisos`)
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
 
   registrarIngreso(datos: IngresoCrear): Observable<IngresoRegistrado> {
     return this.http

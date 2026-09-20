@@ -99,6 +99,14 @@ class LineaIngresoIn(BaseModel):
     variante_id: int
     cantidad: int = Field(gt=0, le=100_000)
 
+    #: El aviso de ingreso que esta linea viene a cerrar (CU-39), si lo hay.
+    #:
+    #: **Opcional a proposito.** CU-13 existe desde el Ciclo 1 y cubre la
+    #: compra que nadie anuncio; exigirlo lo romperia. Cuando viene, el
+    #: anuncio descuenta lo que llego y se cierra si ya esta completo --- que
+    #: es lo que faltaba para que el flujo de abastecimiento tenga final.
+    abastecimiento_id: int | None = None
+
 
 class IngresoIn(BaseModel):
     """Recepcion de un envio de un proveedor en una sucursal (pasos 4 a 7).
@@ -143,6 +151,14 @@ class LineaIngresoOut(VarianteResumenOut):
     """Una linea ya registrada, con el saldo que dejo."""
 
     cantidad: int
+
+    #: El aviso que cerro, y cuanto le sigue faltando (0 = completo).
+    #:
+    #: Viaja de vuelta para que la pantalla pueda decir «quedan 12 en camino»
+    #: sin volver a preguntar. Una entrega parcial que no lo dice se lee como
+    #: completa, y el encargado deja de esperar el resto.
+    abastecimiento_id: int | None = None
+    pendiente_del_aviso: int | None = None
     #: Cuanto quedo disponible de esa prenda en esa sucursal despues del
     #: ingreso. Es la confirmacion que el encargado necesita ver sin tener que
     #: ir a otra pantalla a comprobar que el saldo subio.
@@ -369,3 +385,28 @@ class AjusteOut(BaseModel):
     #: mismo numero que `movimiento.cantidad`; se repite arriba para que la
     #: interfaz pueda decir «faltaban 3» sin abrir el movimiento.
     diferencia: int
+
+
+class AvisoDeIngresoOut(BaseModel):
+    """CU-39 visto desde el lado de quien RECIBE (CU-13).
+
+    Es la mitad que faltaba del flujo de abastecimiento: el proveedor
+    anunciaba y el aviso no tenia final, porque la unica forma de meter
+    mercaderia era el ingreso directo, que no sabia nada del anuncio.
+    """
+
+    id: int
+    proveedor_id: int
+    proveedor: str
+    variante_id: int
+    sku: str
+    prenda: str
+    talla: str
+    color: str
+    cantidad_anunciada: int
+    cantidad_recibida: int
+    #: Lo que todavia falta. Es la cantidad con la que se prellena el ingreso.
+    cantidad_pendiente: int
+    dias_plazo: int
+    observacion: str | None = None
+    anunciado_en: datetime

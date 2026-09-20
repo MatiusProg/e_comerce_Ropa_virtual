@@ -154,6 +154,7 @@ casos de uso; **Media** = necesaria para completar la funcionalidad exigida pero
 | CU-39 | Informar disponibilidad y plazo de abastecimiento | Media | 3 | Inventario |
 | CU-40 | Notificar eventos a los usuarios | Media | 3 | Reservas / Ventas |
 | CU-41 | Recuperar contraseña | Media | 3 | Seguridad |
+| CU-42 | Consultar la bitácora del sistema | Alta | 3 | Seguridad |
 
 ### Distribución por ciclos
 
@@ -293,3 +294,4 @@ Transcritos **literalmente** del enunciado (§6).
 | **RNF11** | **Consistencia transaccional:** la reserva, la venta y la confirmación de pago deberán ejecutarse en una transacción con bloqueo de la fila de existencia. | Evita la sobreventa cuando dos clientes compiten por la última unidad de una variante. |
 | **RNF12** | **Restricción tecnológica:** no deberán utilizarse frameworks de tipo e-commerce (PrestaShop, Shopify, Magento, WooCommerce y similares). | Exigencia explícita del enunciado (*TOMAR EN CUENTA*). |
 | **RNF13** | **Despliegue:** el sistema deberá desplegarse en la nube; la demostración y la defensa se realizarán sobre el sistema desplegado, no sobre localhost. | Exigencia explícita del enunciado (*TOMAR EN CUENTA*). |
+| **RNF14** | **Auditoría:** toda operación que modifique el estado del sistema deberá quedar registrada en una bitácora inmutable con el usuario, el rol, la acción, el recurso, la fecha y el resultado; los intentos de acceso fallidos también. | El RNF10 exige trazabilidad **solo de existencias**: cubre la mercadería y nada más. No queda rastro de quién inició sesión, quién cambió un precio, quién desactivó un producto ni quién abrió una caja. Con cinco roles y operaciones sobre dinero, cuando algo aparece cambiado no hay forma de saber quién lo cambió. Lo realiza **CU-42**. |

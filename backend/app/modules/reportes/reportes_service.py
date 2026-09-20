@@ -15,12 +15,13 @@ el diccionario, sin tocar el router ni el exportador.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Callable
 
 from sqlalchemy.orm import Session
 
+from app.core import tiempo
 from app.modules.reportes import reportes_repository as repo
 from app.modules.reportes.exportador import Tabla
 
@@ -189,23 +190,28 @@ REPORTES: dict[str, Definicion] = {
 
 
 def _rango(desde: date | None, hasta: date | None) -> tuple[datetime, datetime]:
-    """El periodo, en instantes con zona.
+    """El periodo, en instantes de HORA BOLIVIANA.
 
     `hasta` es INCLUSIVO para quien pide el reporte: pedir del 1 al 30 tiene
     que incluir el 30 entero. Por dentro se convierte en «< 1 del mes
     siguiente», que es lo unico que funciona con marcas de tiempo --- comparar
     `<= 30` deja fuera todo lo que paso ese dia despues de medianoche, y es el
     defecto clasico de los reportes por fecha.
+
+    LOS LIMITES SON MEDIANOCHE EN BOLIVIA, NO EN UTC
+    -------------------------------------------------
+    Se construian con `tzinfo=timezone.utc`, y eso corria el dia cuatro
+    horas: «el reporte del 20» iba de las 20:00 del 19 a las 20:00 del 20.
+    Con la tienda abierta hasta las 20:00, **la ultima hora de ventas de cada
+    dia caia en el reporte del dia siguiente** --- y el reporte no lo decia
+    por ningun lado, asi que el numero se leia como bueno.
     """
-    hoy = date.today()
+    hoy = tiempo.hoy()
     inicio = desde or (hoy - timedelta(days=30))
     fin = hasta or hoy
     if inicio > fin:
         raise ErrorDeReporte("La fecha inicial es posterior a la final.", 422)
-    return (
-        datetime.combine(inicio, time.min, tzinfo=timezone.utc),
-        datetime.combine(fin + timedelta(days=1), time.min, tzinfo=timezone.utc),
-    )
+    return tiempo.inicio_del_dia(inicio), tiempo.fin_del_dia(fin)
 
 
 def _totales(definicion: Definicion, filas: list[tuple]) -> list[object] | None:
@@ -272,9 +278,10 @@ def generar(
     subtitulos = []
     if definicion.sin_periodo:
         filas = definicion.consulta(db, sucursal_id=sucursal_id, **propios)
-        subtitulos.append(
-            f"Saldos al {datetime.now().strftime('%d/%m/%Y %H:%M')}"
-        )
+        # `datetime.now()` a secas era hora local del servidor, sin zona
+        # ninguna: en Railway imprimia UTC y en la maquina de cada uno otra
+        # cosa. Un saldo fechado mal no se puede contrastar con nada.
+        subtitulos.append(f"Saldos al {tiempo.marca()}")
     else:
         inicio, fin = _rango(desde, hasta)
         filas = definicion.consulta(

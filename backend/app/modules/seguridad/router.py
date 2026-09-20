@@ -13,7 +13,7 @@ Casos de uso que realiza este paquete:
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from app.core.dependencies import DbSession, Usuario, requiere_roles
 from app.integrations.correo import ErrorDeEnvio
@@ -97,8 +97,15 @@ def registrar_cliente(datos: ClienteRegistroIn, db: DbSession) -> ClienteRegistr
         403: {"description": "La cuenta esta desactivada (excepcion E2)."},
     },
 )
-def iniciar_sesion(datos: LoginIn, db: DbSession) -> TokenOut:
+def iniciar_sesion(peticion: Request, datos: LoginIn, db: DbSession) -> TokenOut:
     """Verifica las credenciales y devuelve un token de acceso."""
+    # Para la bitacora (CU-42): el correo que se INTENTO. En un login
+    # fallido no hay usuario que resolver, y el middleware no puede leerlo
+    # del cuerpo sin consumir el flujo de la peticion --- asi que el asiento
+    # saldria sin decir quien intento entrar, que es el unico dato que
+    # importa de un intento fallido.
+    peticion.state.bitacora_actor = datos.correo
+
     try:
         return service.autenticar(db, datos)
     except service.CredencialesInvalidas:

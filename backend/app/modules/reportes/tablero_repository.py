@@ -40,11 +40,13 @@ con CU-14, que pagina en Python porque la costura le entrega el consolidado
 entero. Un tablero que contara filas en Python tendria que traerse las reservas
 de todo el mes para decir cuantas hay.
 """
-from datetime import datetime, time, timedelta, timezone
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from sqlalchemy import Row, Select, and_, func, select
 from sqlalchemy.orm import Session
+
+from app.core import tiempo
 
 from app.modules.catalogo.models import Color, Producto, Talla, VarianteProducto
 from app.modules.inventario.models import Existencia
@@ -298,7 +300,10 @@ def monto_vendido_hoy(db: Session, *, sucursal_id: int | None) -> Decimal:
     pasada diria «vendido hoy: 0» sobre un dia que no es hoy, que es una lectura
     que confunde mas de lo que informa.
     """
-    inicio = datetime.combine(datetime.now(timezone.utc).date(), time.min, tzinfo=timezone.utc)
+    # HOY EN BOLIVIA, no en el servidor. Arrancar el dia a las 00:00 UTC lo
+    # hacia empezar a las 20:00 de ayer: entre esa hora y la medianoche el
+    # «vendido hoy» sumaba las ventas de dos dias distintos.
+    inicio = tiempo.inicio_del_dia(tiempo.hoy())
     fin = inicio + timedelta(days=1)
     return db.scalar(
         select(func.coalesce(func.sum(Venta.total), 0)).where(
