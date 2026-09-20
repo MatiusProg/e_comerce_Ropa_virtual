@@ -45,11 +45,7 @@ el cobro todavía no existiera. Su propio código lo dejó anotado:
 > movimiento de VENTA lo va a escribir la venta, no este caso de uso; hasta
 > entonces lo escribe acá, con el motivo que lo explica.»
 
-P7 ya existe. Pero **CU-24 es de Mateo y sigue escribiendo ese movimiento**, y
-la respuesta correcta a un día de la entrega no es reescribirle su caso de uso
-—cambiar una regla ajena, romper sus pruebas y arriesgar el invariante de P4
-justo donde más duele—, sino **respetar lo que ya hizo y no descontar de
-nuevo**.
+P7 ya existe. **Y aun así CU-24 sigue descontando, a propósito.**
 
 Un segundo `VENTA −n` sobre las mismas unidades las contaría dos veces. El
 disponible quedaría mintiendo **sin que nada reventara**, que es la peor forma
@@ -76,8 +72,30 @@ Y lo único que impide que alguien la borre por parecerle de más es la prueba
 `test_cobrar_una_reserva_no_vuelve_a_descontar`, que compara el disponible
 antes y después de cobrar.
 
-**Queda anotado como deuda con responsable**: cuando CU-24 deje de descontar,
-el camino B tiene que empezar a hacerlo.
+### Por qué no se movió el descuento a CU-31 — decidido el 20/09
+
+Al principio esto quedó anotado como deuda: «cuando CU-24 deje de descontar, el
+camino B tiene que empezar a hacerlo». Al ir a saldarla apareció que **moverla
+empeora las cosas**, y se cerró como decisión.
+
+El docstring de `atender_reserva` tiene la clave: «CU-24 y el cobro pasan a ser
+**una sola transacción**». El plan no era mover una línea de un archivo a otro:
+era que atender y cobrar fueran **un solo acto**.
+
+Separados como están hoy —el Encargado atiende en el probador, el cajero cobra
+en el mostrador— mover el `VENTA −n` a CU-31 abre una ventana real: entre los
+dos momentos las unidades vuelven a estar **disponibles**, y otro cliente puede
+comprarlas mientras el primero camina del probador a la caja con la prenda en
+la mano.
+
+| | Se gana | Se pierde |
+|---|---|---|
+| **Como está** | el inventario dice la verdad desde que la prenda sale del probador; no hay ventana de sobreventa | que el camino B de CU-31 no mueva inventario se lee raro —y está escrito— |
+| **Moviéndolo** | «el que vende, descuenta»: más prolijo en el diagrama | la garantía de que no se venda dos veces la misma prenda |
+
+Se eligió lo primero. **Fusionar los dos actos en una sola pantalla sería la
+solución completa**, y es un rediseño de CU-24 y CU-31 juntos, no un arreglo:
+queda como trabajo futuro con su motivo, no como deuda.
 
 ## 3. Un paquete propio, `app/modules/pos/`
 
@@ -220,8 +238,10 @@ con el cliente delante.
 
 ## 8. Lo que queda pendiente
 
-- **CU-24 sigue descontando el inventario.** Cuando deje de hacerlo, el camino
-  B de CU-31 tiene que empezar a descontar. Es la deuda de la sección 2.
+- **Fusionar atender y cobrar en un solo acto.** Es lo que cerraría de verdad
+  el puente de D2 —ver la sección 2—. No es una deuda de CU-31: es un rediseño
+  de los dos casos de uso juntos, y hoy lo que hay funciona sin ventana de
+  sobreventa.
 - **No hay búsqueda de clientes.** Una venta de mostrador es anónima salvo que
   venga de una reserva. Identificar al cliente que compra sin reserva —para
   que la compra le aparezca en CU-29— necesita un buscador que no entró en el
