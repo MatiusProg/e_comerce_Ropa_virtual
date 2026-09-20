@@ -30,23 +30,21 @@ cajas ya tienen turnos y ventas colgando, y el borrado se los llevaria por
 delante o fallaria contra la clave foranea. Una migracion que crea filas de
 arranque no tiene inversa razonable, y es mas honesto decirlo que fingirla.
 
-!! ATENCION AL NUMERO: HAY UNA 0017 DE MATEO SIN MERGEAR !!
-------------------------------------------------------------
-Esta cuelga de la `0016_ciclo3_promociones`, que es el head de `main` hoy.
-**Mateo tiene una `0017_ciclo3_bitacora` que cuelga de la misma**, todavia en
-su rama, y encima una `0018_ciclo3_recepcion`. Las corrio contra la base de
-pruebas, que es compartida, y por eso aparecio el choque.
+SOBRE EL NUMERO: NACIO 0017 Y CHOCO CON LA DE MATEO
+----------------------------------------------------
+Nacio como `0017_caja_por_sucursal` colgando de la `0016`, que era el head de
+`main` en ese momento. **Mateo tenia una `0017_ciclo3_bitacora` colgando de la
+misma**, todavia sin mergear, y encima una `0018_ciclo3_recepcion`.
 
-Cuando las dos ramas esten en `main`, el arbol va a tener **dos cabezas** y
-`alembic upgrade head` va a fallar diciendo «multiple heads». **Quien mergee
-segundo tiene que re-encadenar**: cambiar el `down_revision` de su migracion
-para que cuelgue de la del otro, o crear una revision de merge.
+Al traer `main` el arbol quedo con **dos cabezas** y `alembic upgrade head`
+empezo a fallar. Se re-encadeno aca ---quien mergea segundo es quien
+re-encadena--- y pasa a ser la **0019, colgando de la 0018**. El arbol vuelve a
+tener una sola cabeza.
 
-No se colgo de la 0018 de Mateo directamente porque esa revision **no existe en
-esta rama**: `alembic upgrade head` fallaria aca y no se podria correr la
-suite. Es el precio de que las dos ramas escriban migraciones a la vez, y la
-unica salida buena es avisarse antes de numerar --- que es la leccion que ya
-costo tres veces en este ciclo.
+Es la tercera vez en el Ciclo 3 que la numeracion sale mal, y las tres se
+atraparon corriendo migraciones, nunca antes. **No hay nada en el repositorio
+que lo impida**: la unica defensa es avisarse antes de numerar, y mirar tambien
+la rama del otro, no solo `main`.
 
 LO QUE ESTO NO RESUELVE
 -----------------------
@@ -60,8 +58,8 @@ from collections.abc import Sequence
 
 from alembic import op
 
-revision: str = "0017_caja_por_sucursal"
-down_revision: str | None = "0016_ciclo3_promociones"
+revision: str = "0019_caja_por_sucursal"
+down_revision: str | None = "0018_ciclo3_recepcion"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
