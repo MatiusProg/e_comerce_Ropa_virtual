@@ -40,6 +40,7 @@ from app.modules.ventas import historial_repository as repository
 from app.modules.ventas import repository as ventas_repository
 from app.modules.ventas import service as ventas_service
 from app.modules.ventas.historial_schemas import PaginaCompras
+from app.core import tiempo
 from app.modules.ventas.models import Comprobante, Venta
 
 _log = logging.getLogger("violetboutique.ventas")
@@ -173,7 +174,9 @@ def _dibujar_pdf(comprobante: Comprobante, pedido) -> bytes:
     pdf.drawRightString(
         ancho - 20 * mm,
         alto - 31 * mm,
-        comprobante.emitido_en.strftime("Emitido el %d/%m/%Y %H:%M"),
+        # En hora boliviana: es un papel que alguien lee al lado del reloj de
+        # la tienda.
+        tiempo.formatear(comprobante.emitido_en, "Emitido el %d/%m/%Y %H:%M"),
     )
 
     y -= 10 * mm
@@ -189,7 +192,9 @@ def _dibujar_pdf(comprobante: Comprobante, pedido) -> bytes:
     etiqueta = "Venta" if presencial else "Pedido"
     pdf.drawString(20 * mm, y, f"{etiqueta}: {pedido.codigo}")
     y -= 5 * mm
-    pdf.drawString(20 * mm, y, f"Fecha de compra: {pedido.creado_en.strftime('%d/%m/%Y %H:%M')}")
+    pdf.drawString(
+        20 * mm, y, f"Fecha de compra: {tiempo.formatear(pedido.creado_en)}"
+    )
     y -= 5 * mm
     if presencial:
         entrega = f"Venta en mostrador · {pedido.sucursal_nombre}"
@@ -242,7 +247,7 @@ def _dibujar_pdf(comprobante: Comprobante, pedido) -> bytes:
     pdf.drawRightString(
         ancho - 20 * mm,
         20 * mm,
-        datetime.now(timezone.utc).strftime("Descargado el %d/%m/%Y"),
+        tiempo.formatear(tiempo.ahora(), "Descargado el %d/%m/%Y"),
     )
 
     pdf.showPage()

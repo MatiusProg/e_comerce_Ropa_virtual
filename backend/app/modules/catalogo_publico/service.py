@@ -232,7 +232,14 @@ def obtener_ficha(db: Session, producto_id: int) -> FichaProductoOut:
     )
 
     vestidor = repository.rutas_de_vestidor(db, producto_id)
-    ficha.variantes = [_variante(v, vestidor) for v in _ordenadas(ofrecibles)]
+    # CU-12, por variante: la ficha muestra el precio de la que el cliente
+    # elige, y las variantes pueden valer distinto. Una sola consulta.
+    descuentos_variantes = promociones.descuentos_por_variante(
+        db, {v.id: v.precio for v in ofrecibles}
+    )
+    ficha.variantes = [
+        _variante(v, vestidor, descuentos_variantes) for v in _ordenadas(ofrecibles)
+    ]
     ficha.tiene_vestidor = any(v.imagen_vestidor_url for v in ficha.variantes)
 
     ficha.imagenes = [
@@ -270,8 +277,14 @@ def _ordenadas(variantes: list) -> list:
     )
 
 
-def _variante(variante, vestidor: dict[int, tuple[str, bool]]) -> VarianteVitrinaOut:
+def _variante(
+    variante,
+    vestidor: dict[int, tuple[str, bool]],
+    descuentos: dict | None = None,
+) -> VarianteVitrinaOut:
     salida = VarianteVitrinaOut.model_validate(variante, from_attributes=True)
+    if descuentos:
+        salida.descuento = promociones.a_contrato(descuentos.get(variante.id))
     if variante.talla is not None:
         salida.talla_codigo = variante.talla.codigo
     if variante.color is not None:

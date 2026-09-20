@@ -152,6 +152,13 @@ class VarianteVitrinaOut(BaseModel):
     id: int
     sku: str
     precio: Decimal
+    #: La promocion vigente de ESTA variante, o nada (CU-12).
+    #:
+    #: Va por variante y no solo a nivel producto porque la ficha muestra el
+    #: precio de la que el cliente eligio, y las variantes de un mismo producto
+    #: pueden valer distinto. Con un descuento calculado sobre el «desde», la
+    #: talla cara mostraria una rebaja que no le corresponde.
+    descuento: DescuentoOut | None = None
     talla_id: int
     talla_codigo: str | None = None
     color_id: int

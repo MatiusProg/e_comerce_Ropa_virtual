@@ -47,6 +47,7 @@ from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
+from app.core import tiempo
 from app.modules.caja import repository as caja_repository
 from app.modules.catalogo import promociones_service as promociones
 from app.modules.inventario import service as inventario
@@ -314,7 +315,10 @@ def _generar_codigo(db: Session) -> str:
     arqueo, en el tablero, cuando alguien lee un numero por telefono--- de cual
     de los dos canales vino cada una, sin tener que ir a mirar la fila.
     """
-    hoy = datetime.now(timezone.utc).strftime("%Y%m%d")
+    # El dia es el de Bolivia: ver `app/core/tiempo.py`. En el mostrador esto
+    # se nota mas que en la web --- el cajero tiene el ticket impreso delante y
+    # la fecha no coincide con el reloj de la pared.
+    hoy = tiempo.hoy().strftime("%Y%m%d")
     for _ in range(10):
         codigo = f"VP-{hoy}-{secrets.token_hex(2).upper()}"
         if not repository.existe_codigo(db, codigo):

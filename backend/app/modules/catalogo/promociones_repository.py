@@ -18,6 +18,61 @@ from app.modules.catalogo.models import (
 from app.modules.catalogo.promociones_models import Promocion
 
 
+def _linaje():
+    """Cada categoria con TODOS sus ancestros, ella misma incluida.
+
+    LAS CATEGORIAS SON UN ARBOL, Y LA PROMOCION TIENE QUE BAJAR POR EL
+    ------------------------------------------------------------------
+    `categoria` tiene `categoria_padre_id`: «Ropa superior» es madre de
+    «Camisas» y de «Blusas». Una promocion sobre la madre **tiene que alcanzar
+    a las hijas**, porque es lo que el Administrador quiso decir al elegirla
+    --- y lo que el cliente entiende cuando la vitrina anuncia «toda la ropa
+    superior al 20 %» ---.
+
+    Comparar `promocion.categoria_id == producto.categoria_id` a secas dejaba
+    afuera a todos los productos que cuelgan de una subcategoria: la promocion
+    se cargaba, se veia vigente en la lista del Administrador y **no descontaba
+    nada**, sin ningun error que lo explicara. Lo encontro Karen probando la
+    entrega.
+
+    Se resuelve con un CTE recursivo que sube: cada categoria se empareja
+    consigo misma y con cada uno de sus ancestros. Despues la promocion
+    engancha por el ancestro. Sube y no baja porque el producto tiene UNA
+    categoria y hay que saber a que promociones pertenece; bajando habria que
+    expandir cada promocion a su subarbol, que es la misma cuenta al reves y
+    obliga a agrupar.
+
+    Es el mismo recurso que ya usa `maestros.repository.descendientes_de` para
+    detectar ciclos al mover una categoria de lugar.
+    """
+    base = select(
+        Categoria.id.label("categoria_id"),
+        Categoria.id.label("ancestro_id"),
+    ).cte("linaje", recursive=True)
+
+    arriba = select(
+        base.c.categoria_id,
+        Categoria.categoria_padre_id.label("ancestro_id"),
+    ).join(Categoria, Categoria.id == base.c.ancestro_id).where(
+        Categoria.categoria_padre_id.is_not(None)
+    )
+
+    return base.union_all(arriba)
+
+
+def _alcanza(linaje) -> object:
+    """La condicion de que una promocion alcance a un producto.
+
+    Los tres alcances, en una sola expresion: el producto en si, cualquier
+    ancestro de su categoria ---incluida ella misma--- y su temporada.
+    """
+    return or_(
+        Promocion.producto_id == Producto.id,
+        Promocion.categoria_id == linaje.c.ancestro_id,
+        Promocion.temporada_id == Producto.temporada_id,
+    )
+
+
 def descuentos_de_variantes(
     db: Session, *, variante_ids: list[int], hoy: date
 ) -> list[Row]:
@@ -40,6 +95,7 @@ def descuentos_de_variantes(
     if not variante_ids:
         return []
 
+    linaje = _linaje()
     return list(
         db.execute(
             select(
@@ -50,20 +106,20 @@ def descuentos_de_variantes(
                 Promocion.porcentaje,
             )
             .join(Producto, Producto.id == VarianteProducto.producto_id)
-            .join(
-                Promocion,
-                or_(
-                    Promocion.producto_id == Producto.id,
-                    Promocion.categoria_id == Producto.categoria_id,
-                    Promocion.temporada_id == Producto.temporada_id,
-                ),
-            )
+            .join(linaje, linaje.c.categoria_id == Producto.categoria_id)
+            .join(Promocion, _alcanza(linaje))
             .where(
                 VarianteProducto.id.in_(variante_ids),
                 Promocion.activa.is_(True),
                 Promocion.desde <= hoy,
                 or_(Promocion.hasta.is_(None), Promocion.hasta >= hoy),
             )
+            # El linaje multiplica filas: un producto en una subcategoria de
+            # tercer nivel se empareja con tres ancestros, y una promocion
+            # sobre el producto saldria tres veces. `distinct` lo deja en una;
+            # el servicio elige la mayor igual, pero traer tres copias de la
+            # misma haria que un `len()` mintiera al que lea esto despues.
+            .distinct()
         ).all()
     )
 
@@ -81,6 +137,7 @@ def descuentos_de_productos(
     if not producto_ids:
         return []
 
+    linaje = _linaje()
     return list(
         db.execute(
             select(
@@ -90,20 +147,15 @@ def descuentos_de_productos(
                 Promocion.alcance,
                 Promocion.porcentaje,
             )
-            .join(
-                Promocion,
-                or_(
-                    Promocion.producto_id == Producto.id,
-                    Promocion.categoria_id == Producto.categoria_id,
-                    Promocion.temporada_id == Producto.temporada_id,
-                ),
-            )
+            .join(linaje, linaje.c.categoria_id == Producto.categoria_id)
+            .join(Promocion, _alcanza(linaje))
             .where(
                 Producto.id.in_(producto_ids),
                 Promocion.activa.is_(True),
                 Promocion.desde <= hoy,
                 or_(Promocion.hasta.is_(None), Promocion.hasta >= hoy),
             )
+            .distinct()
         ).all()
     )
 
