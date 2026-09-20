@@ -494,3 +494,36 @@ class CrearPedido {
     if (direccionId != null) 'direccion_id': direccionId,
   };
 }
+
+/// CU-29 · una pagina del historial de compras.
+///
+/// Los items son `Pedido` ENTEROS, con sus lineas: es lo que devuelve
+/// `/tienda/compras` y es el mismo objeto que ya usa la pantalla del pedido.
+/// Un resumen aparte obligaria a mantener dos formas del mismo dato y a pedir
+/// la ficha de nuevo al tocar una fila.
+class PaginaDeCompras {
+  const PaginaDeCompras({
+    required this.total,
+    required this.pagina,
+    required this.tamano,
+    required this.items,
+  });
+
+  final int total;
+  final int pagina;
+  final int tamano;
+  final List<Pedido> items;
+
+  bool get hayMas => pagina * tamano < total;
+
+  factory PaginaDeCompras.desdeJson(Map<String, dynamic> json) {
+    return PaginaDeCompras(
+      total: json['total'] as int,
+      pagina: json['pagina'] as int,
+      tamano: json['tamano'] as int,
+      items: (json['items'] as List<dynamic>? ?? const [])
+          .map((p) => Pedido.desdeJson(p as Map<String, dynamic>))
+          .toList(growable: false),
+    );
+  }
+}

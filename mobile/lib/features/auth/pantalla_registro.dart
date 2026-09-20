@@ -6,6 +6,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -63,9 +64,7 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
     });
 
     try {
-      await ref
-          .read(repositorioAuthProvider)
-          .registrar(
+      await ref.read(repositorioAuthProvider).registrar(
             DatosRegistro(
               nombres: _nombres.text,
               apellidos: _apellidos.text,
@@ -75,6 +74,10 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
               contrasena: _contrasena.text,
             ),
           );
+
+      // La cuenta se creo: recien ahora tiene sentido que el gestor ofrezca
+      // guardar la credencial. Ver la nota de `pantalla_login.dart`.
+      TextInput.finishAutofillContext();
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -110,91 +113,102 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
               child: Card(
                 child: Padding(
                   padding: const EdgeInsets.all(22),
-                  child: Form(
-                    key: _formulario,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _campo(
-                          controlador: _nombres,
-                          etiqueta: 'Nombres',
-                          icono: Icons.person_outline,
-                          obligatorio: 'Ingrese sus nombres',
-                          maximo: 80,
-                        ),
-                        _campo(
-                          controlador: _apellidos,
-                          etiqueta: 'Apellidos',
-                          icono: Icons.badge_outlined,
-                          obligatorio: 'Ingrese sus apellidos',
-                          maximo: 80,
-                        ),
-                        _campo(
-                          controlador: _documento,
-                          etiqueta: 'Documento de identidad (opcional)',
-                          icono: Icons.credit_card,
-                          maximo: 20,
-                        ),
-                        _campo(
-                          controlador: _telefono,
-                          etiqueta: 'Teléfono (opcional)',
-                          icono: Icons.phone_outlined,
-                          teclado: TextInputType.phone,
-                          maximo: 20,
-                        ),
-                        _campo(
-                          controlador: _correo,
-                          etiqueta: 'Correo electrónico',
-                          icono: Icons.mail_outline,
-                          teclado: TextInputType.emailAddress,
-                          validador: validarCorreo,
-                          maximo: 120,
-                        ),
-                        _campoContrasena(
-                          controlador: _contrasena,
-                          etiqueta: 'Contraseña',
-                          validador: (valor) {
-                            final texto = valor ?? '';
-                            if (texto.isEmpty) return 'Ingrese una contraseña';
-                            if (texto.length < contrasenaLongitudMinima) {
-                              return 'Debe tener al menos '
-                                  '$contrasenaLongitudMinima caracteres';
-                            }
-                            return null;
-                          },
-                        ),
-                        _campoContrasena(
-                          controlador: _repetir,
-                          etiqueta: 'Repetir contraseña',
-                          validador: (valor) => valor != _contrasena.text
-                              ? 'Las contraseñas no coinciden'
-                              : null,
-                        ),
-                        if (_error != null) ...[
-                          const SizedBox(height: 6),
-                          AvisoError(mensaje: _error!),
+                  // Ver la nota de `pantalla_login.dart`: sin el grupo, las
+                  // pistas de cada campo no alcanzan.
+                  child: AutofillGroup(
+                    child: Form(
+                      key: _formulario,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _campo(
+                            controlador: _nombres,
+                            pistas: const [AutofillHints.givenName],
+                            etiqueta: 'Nombres',
+                            icono: Icons.person_outline,
+                            obligatorio: 'Ingrese sus nombres',
+                            maximo: 80,
+                          ),
+                          _campo(
+                            controlador: _apellidos,
+                            pistas: const [AutofillHints.familyName],
+                            etiqueta: 'Apellidos',
+                            icono: Icons.badge_outlined,
+                            obligatorio: 'Ingrese sus apellidos',
+                            maximo: 80,
+                          ),
+                          _campo(
+                            controlador: _documento,
+                            etiqueta: 'Documento de identidad (opcional)',
+                            icono: Icons.credit_card,
+                            maximo: 20,
+                          ),
+                          _campo(
+                            controlador: _telefono,
+                            pistas: const [AutofillHints.telephoneNumber],
+                            etiqueta: 'Teléfono (opcional)',
+                            icono: Icons.phone_outlined,
+                            teclado: TextInputType.phone,
+                            maximo: 20,
+                          ),
+                          _campo(
+                            controlador: _correo,
+                            pistas: const [AutofillHints.email],
+                            etiqueta: 'Correo electrónico',
+                            icono: Icons.mail_outline,
+                            teclado: TextInputType.emailAddress,
+                            validador: validarCorreo,
+                            maximo: 120,
+                          ),
+                          _campoContrasena(
+                            controlador: _contrasena,
+                            etiqueta: 'Contraseña',
+                            validador: (valor) {
+                              final texto = valor ?? '';
+                              if (texto.isEmpty) {
+                                return 'Ingrese una contraseña';
+                              }
+                              if (texto.length < contrasenaLongitudMinima) {
+                                return 'Debe tener al menos '
+                                    '$contrasenaLongitudMinima caracteres';
+                              }
+                              return null;
+                            },
+                          ),
+                          _campoContrasena(
+                            controlador: _repetir,
+                            etiqueta: 'Repetir contraseña',
+                            validador: (valor) => valor != _contrasena.text
+                                ? 'Las contraseñas no coinciden'
+                                : null,
+                          ),
+                          if (_error != null) ...[
+                            const SizedBox(height: 6),
+                            AvisoError(mensaje: _error!),
+                          ],
+                          const SizedBox(height: 20),
+                          FilledButton(
+                            onPressed: _enviando ? null : _registrar,
+                            child: _enviando
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text('Crear cuenta'),
+                          ),
+                          TextButton(
+                            onPressed: _enviando
+                                ? null
+                                : () => context.go(Rutas.login),
+                            child:
+                                const Text('Ya tengo cuenta — Iniciar sesión'),
+                          ),
                         ],
-                        const SizedBox(height: 20),
-                        FilledButton(
-                          onPressed: _enviando ? null : _registrar,
-                          child: _enviando
-                              ? const SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2.5,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text('Crear cuenta'),
-                        ),
-                        TextButton(
-                          onPressed: _enviando
-                              ? null
-                              : () => context.go(Rutas.login),
-                          child: const Text('Ya tengo cuenta — Iniciar sesión'),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -214,6 +228,7 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
     String? Function(String?)? validador,
     TextInputType? teclado,
     int? maximo,
+    List<String>? pistas,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
@@ -223,13 +238,13 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
         keyboardType: teclado,
         maxLength: maximo,
         textInputAction: TextInputAction.next,
+        autofillHints: pistas,
         decoration: InputDecoration(
           labelText: etiqueta,
           prefixIcon: Icon(icono),
           counterText: '',
         ),
-        validator:
-            validador ??
+        validator: validador ??
             (valor) {
               if (obligatorio == null) return null;
               return (valor == null || valor.trim().isEmpty)
@@ -252,6 +267,10 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
         enabled: !_enviando,
         obscureText: _ocultarContrasena,
         maxLength: 128,
+        // `newPassword` y no `password`: le dice al gestor que esta es una
+        // contrasena que se esta CREANDO, y entonces ofrece generar una
+        // fuerte en vez de intentar completar una vieja.
+        autofillHints: const [AutofillHints.newPassword],
         decoration: InputDecoration(
           labelText: etiqueta,
           prefixIcon: const Icon(Icons.lock_outline),

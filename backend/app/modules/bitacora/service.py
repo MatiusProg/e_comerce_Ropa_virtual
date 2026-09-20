@@ -153,6 +153,7 @@ def listar(
     desde: date | None = None,
     hasta: date | None = None,
     usuario_id: int | None = None,
+    rol: str | None = None,
     accion: str | None = None,
     entidad: str | None = None,
     exito: bool | None = None,
@@ -185,6 +186,7 @@ def listar(
         desde=inicio,
         hasta=fin,
         usuario_id=usuario_id,
+        rol=rol,
         accion=accion,
         entidad=entidad,
         exito=exito,
@@ -195,6 +197,7 @@ def listar(
         desde=inicio,
         hasta=fin,
         usuario_id=usuario_id,
+        rol=rol,
         accion=accion,
         entidad=entidad,
         exito=exito,
@@ -216,6 +219,7 @@ def opciones(db: Session) -> dict[str, list[str]]:
     return {
         "acciones": repository.acciones(db),
         "entidades": repository.entidades(db),
+        "roles": repository.roles(db),
     }
 
 

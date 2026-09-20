@@ -24,6 +24,10 @@ import '../../features/reservas/pantalla_mis_reservas.dart';
 import '../../features/reservas/pantalla_nueva_reserva.dart';
 import '../../features/catalogo/pantalla_favoritos.dart';
 import '../../features/catalogo/pantalla_para_vos.dart';
+import '../../features/compra/pantalla_mis_compras.dart';
+import '../../features/gestion/pantalla_bitacora.dart';
+import '../../features/gestion/pantalla_reportes.dart';
+import '../../features/gestion/pantalla_tablero.dart';
 import '../../features/reportes/pantalla_reporte_por_voz.dart';
 import '../../features/vestidor/pantalla_vestidor.dart';
 import '../../features/inicio/pantalla_inicio.dart';
@@ -94,6 +98,27 @@ class Rutas {
 
   /// CU-35 · pedir un reporte hablando (RF25).
   static const String reportePorVoz = '/reportes/voz';
+
+  /// CU-37 · elegir un reporte de la lista y bajarlo.
+  ///
+  /// La voz es un atajo, no el unico camino: si el interprete no esta, si el
+  /// lugar es ruidoso o si simplemente se quiere elegir de una lista, hasta
+  /// el 20/09 no habia forma de bajar nada desde el telefono.
+  static const String reportes = '/reportes';
+
+  /// CU-36 · el tablero de indicadores.
+  static const String tablero = '/tablero';
+
+  /// CU-42 · la bitacora del sistema.
+  static const String bitacora = '/bitacora';
+
+  /// CU-29 · mis compras.
+  ///
+  /// NO cuelga de `/carrito`, aunque el detalle del pedido si lo haga. El
+  /// carrito es lo que estoy por comprar y esto es lo que ya compre: colgarla
+  /// de ahi haria que el boton de volver del telefono llevara al carrito, que
+  /// no es de donde se vino.
+  static const String misCompras = '/compras';
 
   /// CU-26 · el carrito. Es la puerta del paquete de compra, igual que
   /// `/reservas` lo es del de reservas: se llega a pagar desde aca.
@@ -229,6 +254,28 @@ final routerProvider = Provider<GoRouter>((ref) {
             nombreInicial: datos?['nombre'],
           );
         },
+      ),
+
+      // Gestion (CU-36, CU-37, CU-42). Sueltas: son de otro rol y no cuelgan
+      // de ningun flujo del cliente.
+      GoRoute(
+        path: Rutas.reportes,
+        builder: (context, estado) => const PantallaReportes(),
+      ),
+      GoRoute(
+        path: Rutas.tablero,
+        builder: (context, estado) => const PantallaTablero(),
+      ),
+      GoRoute(
+        path: Rutas.bitacora,
+        builder: (context, estado) => const PantallaBitacora(),
+      ),
+
+      // CU-29 · el historial. Suelta y no anidada bajo el carrito: ver la
+      // nota de `Rutas.misCompras`.
+      GoRoute(
+        path: Rutas.misCompras,
+        builder: (context, estado) => const PantallaMisCompras(),
       ),
 
       // Mateo: reservas (CU-22, CU-23).

@@ -36,9 +36,29 @@ móvil, y exigir una cuenta para mirar una prenda lo contradice. Lo que se ofrec
 está acotado en el servidor —solo producto activo con variantes activas— y los
 esquemas públicos no exponen proveedor ni precio base.
 
-**La app móvil todavía no se publica como APK.** Es el anexo *DESCARGAR APP* y
-queda para el Ciclo 3, junto con la firma propia: hoy el *release* se firmaría
-con la clave de depuración, que es el `TODO` que deja la plantilla de Flutter.
+### La app móvil
+
+| | |
+|---|---|
+| **APK** | <https://github.com/MatiusProg/e_comerce_Ropa_virtual/releases/latest> |
+
+Apunta a la **API desplegada**, no a `localhost`: la URL de producción es el
+valor por omisión en el código, y el APK se compila **sin** `--dart-define`.
+Se verifica en el binario antes de publicarlo, no en el comando --- una vez
+se subió uno que apuntaba al equipo de desarrollo y el error tardó en verse.
+
+No va dentro del repositorio porque **pesa 107 MB y Git corta en 100 MB**; un
+*release* admite hasta 2 GB.
+
+**Sigue firmado con la clave de depuración**, que es el `TODO` que deja la
+plantilla de Flutter. Android lo instala igual pidiendo permiso para orígenes
+desconocidos. Una firma propia es el paso que falta para publicarlo en serio.
+
+**Sin minificar, y es a propósito.** Desde AGP 9 la minificación viene
+encendida por omisión en `release`, y eso rompía el arranque: ML Kit ---el
+detector de pose del vestidor--- arrastra WorkManager, que usa Room, que carga
+su clase generada por reflexión. R8 la renombraba y la aplicación moría antes
+del primer cuadro. Ver la nota en `mobile/android/app/build.gradle.kts`.
 
 ## Tecnologías
 

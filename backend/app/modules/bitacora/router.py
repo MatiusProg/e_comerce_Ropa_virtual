@@ -52,6 +52,10 @@ def consultar(
     desde: Annotated[date | None, Query(description="Desde este día, inclusive.")] = None,
     hasta: Annotated[date | None, Query(description="Hasta este día, inclusive.")] = None,
     usuario_id: Annotated[int | None, Query()] = None,
+    rol: Annotated[
+        str | None,
+        Query(description="Un rol, o «EMPLEADOS» para los tres internos."),
+    ] = None,
     accion: Annotated[str | None, Query()] = None,
     entidad: Annotated[str | None, Query()] = None,
     exito: Annotated[bool | None, Query(description="Solo las que salieron bien, o solo las que no.")] = None,
@@ -71,6 +75,7 @@ def consultar(
             desde=desde,
             hasta=hasta,
             usuario_id=usuario_id,
+            rol=rol,
             accion=accion,
             entidad=entidad,
             exito=exito,

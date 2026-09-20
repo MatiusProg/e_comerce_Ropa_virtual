@@ -43,6 +43,19 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline">
+          <mat-label>Quién</mat-label>
+          <mat-select formControlName="rol">
+            <mat-option [value]="null">Todos</mat-option>
+            <!-- «Empleados» primero y agrupando los tres internos: es la
+                 pregunta que se hace de verdad al abrir la bitácora. -->
+            <mat-option value="EMPLEADOS">Solo empleados</mat-option>
+            @for (r of roles(); track r) {
+              <mat-option [value]="r">{{ r }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
           <mat-label>Acción</mat-label>
           <mat-select formControlName="accion">
             <mat-option [value]="null">Todas</mat-option>
@@ -106,15 +119,15 @@
                valor es que todos vean lo mismo. -->
           <span class="asiento__hora">{{ a.ocurrido_en | date: 'dd/MM/yyyy HH:mm' : '-0400' }}</span>
 
+          <!-- La acción y el recurso JUNTOS: «Crear» a secas obliga a leer
+               la ruta, que está en letra chica y en el inglés de la API. -->
           <span class="asiento__accion" [class.asiento__accion--fallo]="!a.exito">
             <mat-icon>{{ a.exito ? 'check_circle' : 'error' }}</mat-icon>
-            {{ comoSeLee(a.accion) }}
+            {{ comoSeLee(a.accion) }}@if (a.entidad) {&nbsp;{{ a.entidad }}}
           </span>
 
-          @if (a.entidad) {
-            <span class="asiento__recurso">
-              {{ a.entidad }}@if (a.entidad_id) {<b> #{{ a.entidad_id }}</b>}
-            </span>
+          @if (a.entidad_id) {
+            <span class="asiento__recurso">#{{ a.entidad_id }}</span>
           }
         </div>
 

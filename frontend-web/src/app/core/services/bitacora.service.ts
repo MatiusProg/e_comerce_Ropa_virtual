@@ -58,12 +58,22 @@ export interface PaginaBitacora {
 export interface OpcionesBitacora {
   acciones: string[];
   entidades: string[];
+  roles: string[];
 }
 
 export interface ConsultaBitacora {
   desde?: string | null;
   hasta?: string | null;
   usuario_id?: number | null;
+
+  /**
+   * Un rol, o `EMPLEADOS` para los tres internos a la vez.
+   *
+   * «Qué hicieron los empleados» es la pregunta que se hace de verdad, y
+   * obligar a mirarlos de a un rol por vez la convierte en tres consultas.
+   */
+  rol?: string | null;
+
   accion?: string | null;
   entidad?: string | null;
   exito?: boolean | null;

@@ -17,12 +17,12 @@
 /// que no entregar nada.
 library;
 
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+
+import 'guardar_reporte.dart';
 
 import '../../core/tema.dart';
 import '../../data/repositorios/repositorio_reportes.dart';
@@ -160,21 +160,18 @@ class _EstadoReportePorVoz extends ConsumerState<PantallaReportePorVoz> {
         ref.read(clienteApiProvider),
       ).descargar(pedido!.url!);
 
-      // Se guarda en el directorio de documentos de la app y se avisa dónde.
-      // NO se abre solo: en un teléfono sin lector de Excel eso termina en un
-      // «no hay ninguna aplicación», que se lee como que la descarga falló.
-      final carpeta = await getApplicationDocumentsDirectory();
-      final destino = '${carpeta.path}/${archivo.nombre}';
-      await File(destino).writeAsBytes(archivo.contenido);
+      // Se guarda y se abre la hoja de compartir del sistema.
+      //
+      // Antes se guardaba en el directorio de documentos de la app y se
+      // avisaba con el nombre. Ese directorio es PRIVADO: no aparece en el
+      // explorador de archivos ni se puede adjuntar a nada, asi que el
+      // reporte quedaba bajado y la persona no lo encontraba. Ver
+      // `guardar_reporte.dart`.
+      if (!mounted) return;
+      await guardarYCompartir(archivo, origen: rectanguloDe(context));
 
       if (!mounted) return;
       setState(() => _bajando = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Guardado: ${archivo.nombre}'),
-          duration: const Duration(seconds: 6),
-        ),
-      );
     } catch (fallo) {
       _enPantalla(() => _bajando = false);
       if (!mounted) return;

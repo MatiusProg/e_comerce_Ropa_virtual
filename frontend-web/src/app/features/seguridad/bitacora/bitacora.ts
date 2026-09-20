@@ -75,6 +75,7 @@ export class Bitacora implements OnInit {
   protected readonly total = signal(0);
   protected readonly acciones = signal<string[]>([]);
   protected readonly entidades = signal<string[]>([]);
+  protected readonly roles = signal<string[]>([]);
 
   protected readonly pagina = signal(0);
   protected readonly tamano = signal(25);
@@ -82,6 +83,7 @@ export class Bitacora implements OnInit {
   protected readonly filtros = new FormGroup({
     desde: new FormControl<Date | null>(null),
     hasta: new FormControl<Date | null>(null),
+    rol: new FormControl<string | null>(null),
     accion: new FormControl<string | null>(null),
     entidad: new FormControl<string | null>(null),
     exito: new FormControl<string | null>(null),
@@ -100,6 +102,7 @@ export class Bitacora implements OnInit {
       next: (o) => {
         this.acciones.set(o.acciones);
         this.entidades.set(o.entidades);
+        this.roles.set(o.roles ?? []);
       },
       // Sin opciones la pantalla sigue sirviendo: se pierden dos
       // desplegables, no la consulta. Avisar de esto con un cartel rojo
@@ -116,6 +119,7 @@ export class Bitacora implements OnInit {
     const consulta: ConsultaBitacora = {
       desde: this.aIso(v.desde ?? null),
       hasta: this.aIso(v.hasta ?? null),
+      rol: v.rol || null,
       accion: v.accion || null,
       entidad: v.entidad || null,
       // El desplegable maneja tres estados y por eso es texto: `null` es
@@ -180,7 +184,15 @@ export class Bitacora implements OnInit {
 
   private contarFiltros(): number {
     const v = this.filtros.value;
-    return [v.desde, v.hasta, v.accion, v.entidad, v.exito, v.busqueda?.trim()].filter(
+    return [
+      v.desde,
+      v.hasta,
+      v.rol,
+      v.accion,
+      v.entidad,
+      v.exito,
+      v.busqueda?.trim(),
+    ].filter(
       (x) => x !== null && x !== undefined && x !== '',
     ).length;
   }
