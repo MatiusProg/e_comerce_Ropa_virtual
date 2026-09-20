@@ -1,0 +1,90 @@
+<!-- CU-37 · Generar reportes de gestión. Realiza el RF36. -->
+<section class="exportar">
+  <header>
+    <h1>Reportes de gestión</h1>
+    <p class="bajada">
+      Descargá cualquiera de estos reportes en PDF para imprimir, o en Excel
+      para seguir trabajándolo.
+    </p>
+  </header>
+
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  } @else if (error(); as mensaje) {
+    <div class="vacio">
+      <mat-icon>cloud_off</mat-icon>
+      <p>{{ mensaje }}</p>
+    </div>
+  } @else {
+    <mat-card appearance="outlined" class="periodo">
+      <div class="titulo-periodo">
+        <mat-icon>date_range</mat-icon>
+        <span>Período</span>
+      </div>
+      <form [formGroup]="rango" class="fechas">
+        <mat-form-field appearance="outline">
+          <mat-label>Desde</mat-label>
+          <input matInput [matDatepicker]="dp1" formControlName="desde" [max]="maximo" />
+          <mat-datepicker-toggle matIconSuffix [for]="dp1" />
+          <mat-datepicker #dp1 />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Hasta</mat-label>
+          <input matInput [matDatepicker]="dp2" formControlName="hasta" [max]="maximo" />
+          <mat-datepicker-toggle matIconSuffix [for]="dp2" />
+          <mat-datepicker #dp2 />
+        </mat-form-field>
+      </form>
+      <p class="nota">
+        El último día entra completo. El inventario no usa período: es la
+        situación de ahora.
+      </p>
+    </mat-card>
+
+    <div class="rejilla">
+      @for (reporte of reportes(); track reporte.tipo) {
+        <mat-card appearance="outlined" class="tarjeta">
+          <h2>{{ reporte.titulo }}</h2>
+
+          <!-- Se listan las columnas: es lo que permite saber si el reporte
+               trae lo que uno necesita ANTES de bajarlo. -->
+          <div class="columnas">
+            @for (columna of reporte.columnas; track columna) {
+              <span class="columna">{{ columna }}</span>
+            }
+          </div>
+
+          @if (!reporte.usa_periodo) {
+            <p class="sin-periodo">
+              <mat-icon inline>info_outline</mat-icon>
+              Situación actual — no usa el período de arriba
+            </p>
+          }
+
+          <div class="acciones">
+            <button
+              matButton="outlined"
+              type="button"
+              [disabled]="bajando() !== null"
+              (click)="descargar(reporte, 'pdf')"
+            >
+              <mat-icon>picture_as_pdf</mat-icon>
+              {{ estaBajando(reporte.tipo, 'pdf') ? 'Generando…' : 'PDF' }}
+            </button>
+            <button
+              matButton="filled"
+              type="button"
+              class="vb-boton-marca"
+              [disabled]="bajando() !== null"
+              (click)="descargar(reporte, 'xlsx')"
+            >
+              <mat-icon>table_view</mat-icon>
+              {{ estaBajando(reporte.tipo, 'xlsx') ? 'Generando…' : 'Excel' }}
+            </button>
+          </div>
+        </mat-card>
+      }
+    </div>
+  }
+</section>

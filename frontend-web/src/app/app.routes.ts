@@ -243,6 +243,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/reportes/tablero/tablero').then((m) => m.Tablero),
       },
+      // CU-37 · la exportacion, que el comentario de arriba ya preveia.
+      {
+        path: 'reportes',
+        title: 'Reportes de gestión · Violet Boutique',
+        loadComponent: () =>
+          import('./features/reportes/exportar/exportar').then((m) => m.Exportar),
+      },
     ],
   },
   // --- Ciclo 2 · P6 Reservas del Cliente (CU-22, CU-23) ---
@@ -390,6 +397,15 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/proveedor/mis-productos/mis-productos').then(
             (m) => m.MisProductos,
+          ),
+      },
+      // CU-39 · informar disponibilidad y plazo (RF38).
+      {
+        path: 'abastecimiento',
+        title: 'Qué puedo abastecer · Violet Boutique',
+        loadComponent: () =>
+          import('./features/proveedor/abastecimiento/abastecimiento').then(
+            (m) => m.Abastecimiento,
           ),
       },
     ],
