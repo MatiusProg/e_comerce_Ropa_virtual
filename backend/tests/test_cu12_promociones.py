@@ -360,6 +360,117 @@ def test_las_tres_clases_de_alcance_alcanzan(
 
 
 # =====================================================================
+# Las categorías son un árbol, y la promoción tiene que bajar por él
+# =====================================================================
+
+@pytest.fixture
+def con_subcategoria(api: TestClient, cabeceras_admin: dict, catalogo: dict) -> dict:
+    """«Camisas» pasa a colgar de «Ropa superior», que es la madre.
+
+    Es el montaje real de la tienda: el seed crea categorías raíz con hijas
+    colgando. Una promoción sobre la madre tiene que alcanzar a los productos
+    de las hijas.
+    """
+    madre = api.post(
+        CATEGORIAS,
+        headers=cabeceras_admin,
+        json={"nombre": "Ropa superior", "orden": 1, "activa": True},
+    )
+    assert madre.status_code == 201, madre.text
+
+    movida = api.patch(
+        f"{CATEGORIAS}/{catalogo['categoria_id']}",
+        headers=cabeceras_admin,
+        json={"categoria_padre_id": madre.json()["id"]},
+    )
+    assert movida.status_code == 200, movida.text
+
+    return {**catalogo, "madre_id": madre.json()["id"]}
+
+
+def test_una_promocion_sobre_la_madre_alcanza_a_las_hijas(
+    api: TestClient, db, cabeceras_admin: dict, con_subcategoria: dict
+) -> None:
+    """EL DEFECTO QUE ENCONTRÓ KAREN PROBANDO LA ENTREGA.
+
+    `categoria` tiene `categoria_padre_id`. Comparando
+    `promocion.categoria_id == producto.categoria_id` a secas, una promoción
+    sobre «Ropa superior» dejaba afuera a todo lo que cuelga de «Camisas»: se
+    cargaba, se veía vigente en la lista del Administrador y **no descontaba
+    nada**, sin ningún error que lo explicara.
+    """
+    r = _crear(
+        api, cabeceras_admin, nombre="Toda la ropa superior al 20",
+        alcance="CATEGORIA", objetivo_id=con_subcategoria["madre_id"],
+        porcentaje="20.00",
+    )
+    assert r.status_code == 201, r.text
+
+    d = _descuento_de(db, con_subcategoria["variante_id"], "250.00")
+    assert d is not None, "la promoción de la madre no alcanzó a la hija"
+    assert d["monto_unitario"] == "50.00"
+
+
+def test_la_promocion_de_la_hija_no_sube_a_la_madre(
+    api: TestClient, db, cabeceras_admin: dict, con_subcategoria: dict, catalogo: dict
+) -> None:
+    """Baja por el árbol, no sube.
+
+    Una promoción sobre «Camisas» no puede alcanzar a un pantalón que cuelga de
+    la misma madre: el Administrador eligió las camisas.
+    """
+    otra = api.post(
+        PRODUCTOS,
+        headers=cabeceras_admin,
+        json={
+            "codigo": "PAN-001",
+            "nombre": "Pantalón recto",
+            "categoria_id": con_subcategoria["madre_id"],
+            "precio_base": "300.00",
+            "activo": True,
+        },
+    )
+    assert otra.status_code == 201, otra.text
+    talla = api.post(
+        TALLAS, headers=cabeceras_admin,
+        json={"tipo_prenda": "Inferior", "codigo": "40", "orden": 1, "activa": True},
+    )
+    color = api.get(COLORES, headers=cabeceras_admin).json()[0]
+    generadas = api.post(
+        f"{PRODUCTOS}/{otra.json()['id']}/variantes/generar",
+        headers=cabeceras_admin,
+        json={"tallas": [talla.json()["id"]], "colores": [color["id"]]},
+    )
+    ajena = generadas.json()["variantes"][0]["id"]
+
+    _crear(
+        api, cabeceras_admin, nombre="Solo camisas", alcance="CATEGORIA",
+        objetivo_id=con_subcategoria["categoria_id"], porcentaje="30.00",
+    )
+
+    assert _descuento_de(db, con_subcategoria["variante_id"], "250.00") is not None
+    assert _descuento_de(db, ajena, "300.00") is None, "la promoción subió por el árbol"
+
+
+def test_entre_la_madre_y_la_hija_gana_la_mayor(
+    api: TestClient, db, cabeceras_admin: dict, con_subcategoria: dict
+) -> None:
+    """La misma regla del módulo, ahora con dos niveles del árbol."""
+    _crear(
+        api, cabeceras_admin, nombre="Ropa superior al 25", alcance="CATEGORIA",
+        objetivo_id=con_subcategoria["madre_id"], porcentaje="25.00",
+    )
+    _crear(
+        api, cabeceras_admin, nombre="Camisas al 10", alcance="CATEGORIA",
+        objetivo_id=con_subcategoria["categoria_id"], porcentaje="10.00",
+    )
+
+    d = _descuento_de(db, con_subcategoria["variante_id"], "200.00")
+    assert d["porcentaje"] == "25.00"
+    assert d["monto_unitario"] == "50.00", "se acumularon o ganó la menor"
+
+
+# =====================================================================
 # La vigencia
 # =====================================================================
 

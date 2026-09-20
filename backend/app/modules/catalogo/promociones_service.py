@@ -42,10 +42,12 @@ distintos de la misma prenda ---y el que se cobrara seria un tercero---.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta, timezone
+from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 
 from sqlalchemy.orm import Session
+
+from app.core import tiempo
 
 from app.modules.catalogo import promociones_repository as repository
 from app.modules.catalogo.promociones_models import Promocion
@@ -56,9 +58,6 @@ from app.modules.catalogo.promociones_schemas import (
     PromocionEditarIn,
     PromocionOut,
 )
-
-#: Bolivia no tiene horario de verano, asi que el desfase es fijo.
-BOLIVIA = timezone(timedelta(hours=-4))
 
 CIEN = Decimal("100")
 CENTAVO = Decimal("0.01")
@@ -71,12 +70,12 @@ ESPECIFICIDAD = {"PRODUCTO": 3, "CATEGORIA": 2, "TEMPORADA": 1}
 def _hoy() -> date:
     """Que dia es **en Bolivia**, no en el servidor.
 
-    Railway corre en UTC y ahi el dia cambia a las 20:00 hora boliviana. Con
-    `date.today()`, una promocion que termina «el 30» dejaria de aplicar con
-    cuatro horas de tienda todavia abierta y clientes adentro --- y una que
-    empieza «el 1» arrancaria la noche anterior---.
+    Delega en `app/core/tiempo.py`, que es donde vive el motivo completo: este
+    caso de uso fue el primero que lo necesito, y despues aparecio que el
+    codigo de una venta, el corte del tablero y la fecha de un comprobante
+    tenian el mismo defecto.
     """
-    return datetime.now(BOLIVIA).date()
+    return tiempo.hoy()
 
 
 # =====================================================================

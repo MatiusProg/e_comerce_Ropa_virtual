@@ -270,3 +270,39 @@
   border-radius: var(--vb-radio-chico);
   font-weight: 600;
 }
+
+// --- CU-12: la promoción en la ficha --------------------------------------
+
+.precio.con-promo {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+
+  .tachado {
+    text-decoration: line-through;
+    font-weight: 400;
+    font-size: 0.8em;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .rebajado {
+    color: var(--vb-malva-oscuro);
+  }
+}
+
+.promo {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.2rem 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--vb-malva);
+
+  mat-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+  }
+}
