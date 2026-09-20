@@ -24,6 +24,7 @@ import '../../features/reservas/pantalla_mis_reservas.dart';
 import '../../features/reservas/pantalla_nueva_reserva.dart';
 import '../../features/catalogo/pantalla_favoritos.dart';
 import '../../features/catalogo/pantalla_para_vos.dart';
+import '../../features/asistente/pantalla_asistente.dart';
 import '../../features/compra/pantalla_mis_compras.dart';
 import '../../features/gestion/pantalla_bitacora.dart';
 import '../../features/gestion/pantalla_reportes.dart';
@@ -95,6 +96,9 @@ class Rutas {
   /// riesgo que se construye en el Ciclo 2 para saber, antes del Ciclo 3, si
   /// la deteccion de pose sobre este telefono da un ritmo usable.
   static const String vestidor = '/vestidor';
+
+  /// CU-34 · conversar con el asistente (RF25).
+  static const String asistente = '/asistente';
 
   /// CU-35 · pedir un reporte hablando (RF25).
   static const String reportePorVoz = '/reportes/voz';
@@ -258,6 +262,10 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Gestion (CU-36, CU-37, CU-42). Sueltas: son de otro rol y no cuelgan
       // de ningun flujo del cliente.
+      GoRoute(
+        path: Rutas.asistente,
+        builder: (context, estado) => const PantallaAsistente(),
+      ),
       GoRoute(
         path: Rutas.reportes,
         builder: (context, estado) => const PantallaReportes(),

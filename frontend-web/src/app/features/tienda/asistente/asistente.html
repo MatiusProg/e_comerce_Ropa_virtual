@@ -1,0 +1,76 @@
+<div class="asistente">
+  @if (cargando()) {
+    <div class="asistente__centro"><mat-spinner diameter="40" /></div>
+  } @else if (!disponible()) {
+    <!-- Sin modelo NO se dibuja una versión degradada: ver la nota del
+         componente. -->
+    <mat-card class="asistente__vacio">
+      <mat-icon>chat_bubble_outline</mat-icon>
+      <h2>El asistente no está disponible</h2>
+      <p>Podés seguir usando el catálogo, las reservas y el carrito normalmente.</p>
+    </mat-card>
+  } @else {
+    <header class="asistente__cabecera">
+      <h1><mat-icon>auto_awesome</mat-icon> Asistente</h1>
+      <p>Sé lo que hay en el catálogo y puedo ver tus pedidos y tus reservas.</p>
+    </header>
+
+    <div class="asistente__conversacion" #conversacion>
+      @if (turnos().length === 0 && !pensando()) {
+        <div class="asistente__ejemplos">
+          <p>Probá con alguna de estas:</p>
+          @for (e of ejemplos(); track e) {
+            <button mat-stroked-button type="button" (click)="enviar(e)">
+              {{ e }}
+            </button>
+          }
+        </div>
+      }
+
+      @for (t of turnos(); track $index) {
+        <div class="burbuja burbuja--mia">{{ t.pregunta }}</div>
+        <div class="burbuja burbuja--suya">{{ sinCodigos(t.respuesta) }}</div>
+
+        <!-- Las prendas mencionadas, ya validadas contra el catálogo por el
+             servidor: tocar una nunca lleva a una ficha vacía. -->
+        @if (t.productos.length) {
+          <div class="asistente__prendas">
+            @for (id of t.productos; track id) {
+              <button mat-stroked-button type="button" (click)="verPrenda(id)">
+                <mat-icon>checkroom</mat-icon> Ver #{{ id }}
+              </button>
+            }
+          </div>
+        }
+      }
+
+      @if (pensando()) {
+        <div class="asistente__pensando">
+          <mat-spinner diameter="18" />
+          <!-- Se dice que puede tardar: el modelo se toma entre 3 y 25
+               segundos, y una espera sin explicación se lee como que se colgó. -->
+          <span>Pensando… puede tardar unos segundos</span>
+        </div>
+      }
+    </div>
+
+    @if (error()) {
+      <p class="asistente__error">{{ error() }}</p>
+    }
+
+    <form class="asistente__redaccion" (ngSubmit)="enviar()">
+      <mat-form-field appearance="outline" class="asistente__campo">
+        <mat-label>Escribí tu pregunta</mat-label>
+        <input matInput [formControl]="pregunta" maxlength="500" />
+      </mat-form-field>
+      <button
+        mat-flat-button
+        color="primary"
+        type="submit"
+        [disabled]="pensando()"
+      >
+        <mat-icon>send</mat-icon>
+      </button>
+    </form>
+  }
+</div>
