@@ -39,7 +39,12 @@ export interface Turno {
 
   /** Lo que entró al cajón en efectivo durante el turno. */
   efectivo_cobrado: string;
-  /** Lo que salió por devoluciones (CU-32). Cero mientras no exista. */
+  /**
+   * Lo que salió del cajón por devoluciones (CU-32).
+   *
+   * Solo cuenta las de ventas cobradas en efectivo: lo devuelto de un cobro
+   * con tarjeta nunca entró al cajón y no puede salir de él.
+   */
   devoluciones: string;
   /** `apertura + efectivo − devoluciones`. Lo que el sistema dice que hay. */
   monto_esperado: string;

@@ -78,6 +78,13 @@ from app.modules.vestidor_virtual.router import router as vestidor_router
 from app.modules.pagos.router import router as pagos_router
 # from app.modules.vestidor_virtual.router import router as vestidor_router
 from app.modules.caja.router import router as caja_router
+# CU-31 es de Karen. Vive en su propio paquete, al lado de `caja/` y sin
+# tocar `ventas/`, que es de CU-27: el grado mas fuerte de la convencion
+# de no pisarse --- ni siquiera archivos propios dentro del paquete ajeno.
+from app.modules.pos.router import router as pos_router
+# CU-32, en archivos propios dentro del mismo paquete, con el patron de
+# `carrito_*`: dos casos de uso distintos que conviene poder distinguir.
+from app.modules.pos.devolucion_router import router as devoluciones_router
 from app.modules.ia.router import router as ia_router
 # from app.modules.reportes.router import router as reportes_router
 
@@ -190,5 +197,7 @@ app.include_router(vestidor_router, prefix=API)
 # CU-28. El webhook de la pasarela.
 app.include_router(pagos_router, prefix=API)
 app.include_router(caja_router, prefix=API)
+app.include_router(pos_router, prefix=API)
+app.include_router(devoluciones_router, prefix=API)
 app.include_router(ia_router, prefix=API)
 # app.include_router(reportes_router, prefix=API)

@@ -347,6 +347,17 @@ export const routes: Routes = [
         title: 'Mi turno · Violet Boutique',
         loadComponent: () => import('./features/caja/turno/turno').then((m) => m.Turno),
       },
+      {
+        path: 'vender',
+        title: 'Vender · Violet Boutique',
+        loadComponent: () => import('./features/caja/venta/venta').then((m) => m.Venta),
+      },
+      {
+        path: 'devoluciones',
+        title: 'Devoluciones · Violet Boutique',
+        loadComponent: () =>
+          import('./features/caja/devolucion/devolucion').then((m) => m.Devolucion),
+      },
     ],
   },
   // --- Ciclo 3 · CU-38 · El area del Proveedor --------------------------

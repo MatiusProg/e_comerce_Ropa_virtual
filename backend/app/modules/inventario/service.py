@@ -824,6 +824,51 @@ def descontar_por_venta(
     return existencia
 
 
+def reingresar_por_devolucion(
+    db: Session,
+    *,
+    variante_id: int,
+    sucursal_id: int,
+    cantidad: int,
+    usuario_id: int | None,
+    motivo: str | None = None,
+) -> Existencia:
+    """Devuelve al disponible una prenda que volvio (CU-32). **Sin commit.**
+
+    Es la inversa exacta de `descontar_por_venta`: un `DEVOLUCION` de +n, y
+    nada mas. No hay que liberar nada antes porque la prenda devuelta no esta
+    apartada: salio de la tienda y volvio.
+
+    POR QUE NO SE CORRIGE LA `VENTA` ORIGINAL
+    ------------------------------------------
+    Porque los movimientos son INMUTABLES (D4). Una devolucion no es «la venta
+    estaba mal», es un hecho nuevo: la prenda se vendio y despues volvio. Si se
+    editara el movimiento de venta, el historial diria que nunca se vendio ---y
+    el reporte de rotacion, el ticket promedio de CU-36 y el arqueo del turno en
+    que se cobro cambiarian solos, hacia atras---.
+
+    Con dos movimientos el disponible queda donde tiene que quedar y el
+    historial se lee como lo que de verdad paso.
+
+    Se usa `_existencia_o_crearla` y no `obtener_existencia`: una prenda puede
+    devolverse en la sucursal aunque su fila de existencia se haya borrado ---o
+    aunque la venta fuera de un pedido web abastecido desde otra---, y negarse a
+    reingresarla dejaria la prenda fisicamente en el local y fuera del sistema.
+    """
+    existencia = _existencia_o_crearla(
+        db, variante_id=variante_id, sucursal_id=sucursal_id
+    )
+    _aplicar_movimiento(
+        db,
+        existencia,
+        tipo="DEVOLUCION",
+        cantidad=cantidad,
+        motivo=motivo,
+        usuario_id=usuario_id,
+    )
+    return existencia
+
+
 # =====================================================================
 # Costura C1 - lo que P5 le consume a P4
 # =====================================================================

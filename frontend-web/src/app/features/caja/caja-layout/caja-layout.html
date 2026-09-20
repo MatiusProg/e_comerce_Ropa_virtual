@@ -23,20 +23,14 @@
     <mat-icon>point_of_sale</mat-icon>
     Mi turno
   </a>
-  <!--
-    CU-31 y CU-32 todavía no existen. Se muestran apagadas y NO se esconden: el
-    Cajero tiene que saber que el sistema contempla su trabajo completo, y que
-    lo que falta es la implementación, no su rol. Es el mismo criterio que usa
-    `proveedor-layout` con sus secciones pendientes.
-  -->
-  <span class="pendiente" aria-disabled="true">
+  <a routerLink="/caja/vender" routerLinkActive="activo">
     <mat-icon>shopping_cart_checkout</mat-icon>
     Vender
-  </span>
-  <span class="pendiente" aria-disabled="true">
+  </a>
+  <a routerLink="/caja/devoluciones" routerLinkActive="activo">
     <mat-icon>assignment_return</mat-icon>
     Devoluciones
-  </span>
+  </a>
 </nav>
 
 <main class="contenido">

@@ -76,8 +76,7 @@
   border-bottom: 1px solid var(--mat-sys-outline-variant);
   overflow-x: auto;
 
-  a,
-  .pendiente {
+  a {
     display: flex;
     align-items: center;
     gap: 0.4rem;
@@ -106,11 +105,9 @@
     border-bottom-color: var(--vb-malva);
   }
 
-  // Secciones que todavía no existen: se ven, pero no engañan.
-  .pendiente {
-    opacity: 0.42;
-    cursor: not-allowed;
-  }
+  // Ya no hay secciones apagadas: con CU-31 y CU-32 el área de Caja quedó
+  // completa. El estilo se saca en vez de dejarlo por si acaso — CSS que no
+  // aplica a nada es CSS que nadie puede verificar.
 }
 
 .contenido {

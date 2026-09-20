@@ -1,0 +1,370 @@
+@if (cargando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<!-- ===================== SIN TURNO ABIERTO ===================== -->
+@if (hayTurno() === false) {
+  <mat-card class="tarjeta sin-turno vb-filete-superior" appearance="outlined">
+    <mat-card-content>
+      <mat-icon class="icono">point_of_sale</mat-icon>
+      <h2>No tiene una caja abierta</h2>
+      <p>
+        Toda venta de mostrador queda registrada en un turno: es lo que después
+        permite cuadrar el cajón al cerrar. Abra su caja para empezar a cobrar.
+      </p>
+      <a matButton="filled" class="vb-boton-marca" routerLink="/caja">
+        <mat-icon>lock_open</mat-icon>
+        Abrir mi caja
+      </a>
+    </mat-card-content>
+  </mat-card>
+}
+
+<!-- ===================== YA SE COBRÓ ===================== -->
+@if (cara() === 'cobrado' && ticket(); as t) {
+  <mat-card class="tarjeta ticket vb-filete-superior" appearance="outlined">
+    <mat-card-content>
+      <header class="cabecera-ticket">
+        <mat-icon class="icono">check_circle</mat-icon>
+        <div>
+          <h2>Venta registrada</h2>
+          <p class="sub">
+            {{ t.codigo }} · {{ t.caja_nombre }} ·
+            {{ t.creado_en | date: 'dd/MM HH:mm' }}
+          </p>
+        </div>
+      </header>
+
+      @if (t.cliente) {
+        <p class="nota">
+          <mat-icon class="chico">person</mat-icon>
+          {{ t.cliente }}
+          @if (t.reserva_id) {
+            · de la reserva #{{ t.reserva_id }}
+          }
+        </p>
+      }
+
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th scope="col">Prenda</th>
+            <th scope="col" class="numero">Cant.</th>
+            <th scope="col" class="numero">P. unit.</th>
+            <th scope="col" class="numero">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (linea of t.lineas; track linea.variante_id) {
+            <tr>
+              <td>
+                {{ linea.producto }}
+                <span class="detalle">{{ linea.talla }} · {{ linea.color }}</span>
+              </td>
+              <td class="numero">{{ linea.cantidad }}</td>
+              <td class="numero">{{ linea.precio_unitario | currency: 'BOB' : 'symbol-narrow' }}</td>
+              <td class="numero">{{ linea.subtotal | currency: 'BOB' : 'symbol-narrow' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <dl class="cuentas">
+        <dt class="fuerte">Total</dt>
+        <dd class="fuerte">{{ t.total | currency: 'BOB' : 'symbol-narrow' }}</dd>
+        <dt>Cobrado con</dt>
+        <dd>{{ t.metodo_pago }}</dd>
+        @if (t.monto_recibido) {
+          <dt>Recibido</dt>
+          <dd>{{ t.monto_recibido | currency: 'BOB' : 'symbol-narrow' }}</dd>
+        }
+        @if (t.vuelto) {
+          <dt class="fuerte">Vuelto</dt>
+          <dd class="fuerte">{{ t.vuelto | currency: 'BOB' : 'symbol-narrow' }}</dd>
+        }
+      </dl>
+
+      <p class="nota">Comprobante {{ t.comprobante_numero }}</p>
+
+      <div class="acciones">
+        <button matButton="filled" type="button" class="vb-boton-marca" (click)="nuevaVenta()">
+          <mat-icon>add_shopping_cart</mat-icon>
+          Nueva venta
+        </button>
+        <button matButton type="button" (click)="imprimir()">
+          <mat-icon>print</mat-icon>
+          Comprobante
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+}
+
+<!-- ===================== ARMANDO LA VENTA ===================== -->
+@if (cara() === 'armando' && hayTurno()) {
+  <header class="encabezado">
+    <div>
+      <h1 class="vb-titulo">Vender</h1>
+      <p class="bajada">
+        @if (turno(); as t) {
+          {{ t.caja_nombre }} · {{ t.sucursal_nombre }}
+        } @else {
+          Punto de venta
+        }
+      </p>
+    </div>
+  </header>
+
+  <div class="rejilla">
+    <!-- --- Lo que se puede vender --- -->
+    <mat-card class="tarjeta catalogo" appearance="outlined">
+      <mat-card-content>
+        <mat-button-toggle-group
+          class="origen"
+          [value]="origen()"
+          (change)="origen.set($any($event).value)"
+          aria-label="Qué se está cobrando"
+        >
+          <mat-button-toggle value="prendas">
+            <mat-icon>search</mat-icon>
+            Buscar prendas
+          </mat-button-toggle>
+          <mat-button-toggle value="reservas">
+            <mat-icon>event_available</mat-icon>
+            Reservas ({{ reservas().length }})
+          </mat-button-toggle>
+        </mat-button-toggle-group>
+
+        @if (origen() === 'prendas') {
+          <mat-form-field appearance="outline" class="campo-busqueda">
+            <mat-label>Código o nombre de la prenda</mat-label>
+            <mat-icon matIconPrefix>search</mat-icon>
+            <input matInput [formControl]="busqueda" placeholder="CAM-001-S-NEG" />
+          </mat-form-field>
+
+          @if (buscando()) {
+            <mat-progress-bar mode="indeterminate" />
+          }
+
+          @if (prendas().length === 0 && !buscando()) {
+            <p class="nota">
+              No hay prendas con saldo que coincidan. Solo se muestran las que se
+              pueden vender hoy en esta sucursal.
+            </p>
+          }
+
+          <ul class="prendas">
+            @for (prenda of prendas(); track prenda.variante_id) {
+              <li>
+                <button type="button" class="prenda" (click)="agregar(prenda)">
+                  <span class="nombre">
+                    {{ prenda.producto }}
+                    <span class="detalle">{{ prenda.talla }} · {{ prenda.color }}</span>
+                  </span>
+                  <span class="sku">{{ prenda.sku }}</span>
+                  <span class="precio">
+                    {{ prenda.precio | currency: 'BOB' : 'symbol-narrow' }}
+                  </span>
+                  <span
+                    class="saldo"
+                    [class.poco]="prenda.disponible <= 3"
+                    matTooltip="Unidades disponibles en esta sucursal"
+                  >
+                    {{ prenda.disponible }}
+                  </span>
+                </button>
+              </li>
+            }
+          </ul>
+        } @else {
+          <!--
+            El puente de la decisión D2: la reserva atendida (CU-24) y la venta
+            presencial son el mismo acto comercial visto desde dos lados. Esta
+            lista evita volver a cargar a mano lo que el cliente ya se probó.
+          -->
+          @if (reservas().length === 0) {
+            <p class="nota">
+              No hay reservas atendidas pendientes de cobro. Aparecen acá en
+              cuanto el Encargado cierra una y el cliente se lleva algo.
+            </p>
+          }
+          <ul class="prendas">
+            @for (fila of reservas(); track fila.reserva_id) {
+              <li>
+                <button type="button" class="prenda reserva" (click)="cargarReserva(fila)">
+                  <span class="nombre">
+                    {{ fila.cliente }}
+                    <span class="detalle">
+                      Reserva #{{ fila.reserva_id }} ·
+                      {{ fila.atendida_en | date: 'dd/MM HH:mm' }} ·
+                      {{ fila.lineas.length }}
+                      {{ fila.lineas.length === 1 ? 'prenda' : 'prendas' }}
+                    </span>
+                  </span>
+                  <span class="precio">
+                    {{ fila.total | currency: 'BOB' : 'symbol-narrow' }}
+                  </span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <!-- --- El ticket --- -->
+    <mat-card class="tarjeta cobro vb-filete-superior" appearance="outlined">
+      <mat-card-content>
+        <h2>El ticket</h2>
+
+        @if (reserva(); as r) {
+          <div class="desde-reserva">
+            <mat-icon>event_available</mat-icon>
+            <span>
+              Reserva #{{ r.reserva_id }} de <strong>{{ r.cliente }}</strong>
+            </span>
+            <button matIconButton type="button" (click)="soltarReserva()" aria-label="Soltar reserva">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+
+          <table class="tabla">
+            <tbody>
+              @for (linea of r.lineas; track linea.variante_id) {
+                <tr>
+                  <td>
+                    {{ linea.producto }}
+                    <span class="detalle">{{ linea.talla }} · {{ linea.color }}</span>
+                  </td>
+                  <td class="numero">×{{ linea.cantidad }}</td>
+                  <td class="numero">
+                    {{ linea.subtotal | currency: 'BOB' : 'symbol-narrow' }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else if (lineas().length === 0) {
+          <p class="nota vacio">
+            Todavía no agregó nada. Pulse una prenda de la izquierda para
+            sumarla, o cargue una reserva atendida.
+          </p>
+        } @else {
+          <table class="tabla">
+            <tbody>
+              @for (linea of lineas(); track linea.prenda.variante_id) {
+                <tr>
+                  <td>
+                    {{ linea.prenda.producto }}
+                    <span class="detalle">
+                      {{ linea.prenda.talla }} · {{ linea.prenda.color }}
+                    </span>
+                  </td>
+                  <td class="cantidad">
+                    <button
+                      matIconButton
+                      type="button"
+                      (click)="cambiarCantidad(linea, linea.cantidad - 1)"
+                      [attr.aria-label]="'Quitar una unidad de ' + linea.prenda.producto"
+                    >
+                      <mat-icon>remove</mat-icon>
+                    </button>
+                    <span class="numero">{{ linea.cantidad }}</span>
+                    <button
+                      matIconButton
+                      type="button"
+                      [disabled]="linea.cantidad >= linea.prenda.disponible"
+                      (click)="cambiarCantidad(linea, linea.cantidad + 1)"
+                      [attr.aria-label]="'Sumar una unidad de ' + linea.prenda.producto"
+                    >
+                      <mat-icon>add</mat-icon>
+                    </button>
+                  </td>
+                  <td class="numero">
+                    {{ subtotalDe(linea) | currency: 'BOB' : 'symbol-narrow' }}
+                  </td>
+                  <td>
+                    <button
+                      matIconButton
+                      type="button"
+                      (click)="quitar(linea)"
+                      [attr.aria-label]="'Quitar ' + linea.prenda.producto"
+                    >
+                      <mat-icon>delete_outline</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        <p class="total">
+          <span>Total</span>
+          <strong>{{ total() | currency: 'BOB' : 'symbol-narrow' }}</strong>
+        </p>
+
+        <h3>¿Cómo paga?</h3>
+        <div class="metodos">
+          @for (m of metodos; track m) {
+            <button
+              type="button"
+              class="metodo"
+              [class.elegido]="metodo() === m"
+              (click)="elegirMetodo(m)"
+            >
+              <mat-icon>{{ iconoDe(m) }}</mat-icon>
+              {{ nombreDe(m) }}
+            </button>
+          }
+        </div>
+
+        @if (metodo() === 'EFECTIVO') {
+          <mat-form-field appearance="outline" class="campo">
+            <mat-label>Con cuánto paga</mat-label>
+            <span matTextPrefix>Bs&nbsp;</span>
+            <input matInput inputmode="decimal" [formControl]="recibido" placeholder="0.00" />
+            <mat-hint>Opcional. Sirve para calcular el vuelto.</mat-hint>
+            @if (recibido.hasError('pattern')) {
+              <mat-error>Escriba un monto, con hasta dos decimales.</mat-error>
+            }
+          </mat-form-field>
+
+          @if (vuelto() !== null) {
+            <p class="anticipo" [class.falta]="vuelto()! < 0">
+              @if (vuelto()! < 0) {
+                <mat-icon>error_outline</mat-icon>
+                Faltan {{ enBs(-vuelto()!) | currency: 'BOB' : 'symbol-narrow' }}.
+              } @else {
+                <mat-icon>savings</mat-icon>
+                Vuelto: {{ enBs(vuelto()!) | currency: 'BOB' : 'symbol-narrow' }}
+              }
+            </p>
+          }
+        } @else {
+          <p class="nota">
+            Con {{ metodo() === 'TARJETA' ? 'tarjeta' : 'QR' }} se cobra el importe
+            exacto y <strong>no entra al cajón</strong>: el arqueo del turno no lo
+            cuenta como efectivo, pero sí lo lista aparte.
+          </p>
+        }
+
+        <div class="acciones">
+          <button
+            matButton="filled"
+            type="button"
+            class="vb-boton-marca"
+            [disabled]="!hayQueCobrar() || cobrando() || recibido.invalid || (vuelto() !== null && vuelto()! < 0)"
+            (click)="cobrar()"
+          >
+            <mat-icon>point_of_sale</mat-icon>
+            {{ cobrando() ? 'Cobrando…' : 'Cobrar' }}
+          </button>
+          @if (hayQueCobrar()) {
+            <button matButton type="button" (click)="vaciar()">Vaciar</button>
+          }
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+}

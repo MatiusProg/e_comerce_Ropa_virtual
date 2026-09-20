@@ -1,0 +1,387 @@
+:host {
+  display: block;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.encabezado {
+  margin-bottom: 1.25rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.85rem;
+    font-weight: 600;
+    color: var(--vb-malva-oscuro);
+  }
+
+  .bajada {
+    margin: 0.25rem 0 0;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+// Dos columnas en pantalla ancha y una sola cuando no entra: el mostrador
+// también se atiende desde una tablet apoyada en el vidrio.
+.rejilla {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+
+  @media (max-width: 960px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tarjeta {
+  border-radius: var(--vb-radio);
+
+  h2 {
+    margin: 0 0 1rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--vb-malva-oscuro);
+  }
+
+  h3 {
+    margin: 1.25rem 0 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+// --- Sin turno ------------------------------------------------------------
+
+.sin-turno {
+  max-width: 34rem;
+  margin: 3rem auto;
+  text-align: center;
+
+  .icono {
+    font-size: 3rem;
+    width: 3rem;
+    height: 3rem;
+    color: var(--vb-malva);
+  }
+
+  h2 {
+    margin: 0.75rem 0 0.5rem;
+  }
+
+  p {
+    margin: 0 0 1.5rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+// --- La lista de lo que se puede vender -----------------------------------
+
+.origen {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.campo-busqueda {
+  width: 100%;
+}
+
+.prendas {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  // Una sucursal con catálogo grande no puede empujar el ticket fuera de la
+  // pantalla: la lista scrollea sola y el cobro queda siempre a la vista.
+  max-height: 28rem;
+  overflow-y: auto;
+}
+
+.prenda {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--vb-radio-chico);
+  background: var(--mat-sys-surface);
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--vb-malva);
+    background: var(--vb-rosa-palido);
+  }
+
+  .nombre {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .detalle {
+    font-size: 0.78rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .sku {
+    font-size: 0.72rem;
+    font-family: ui-monospace, monospace;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .precio {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+
+  .saldo {
+    min-width: 2rem;
+    text-align: center;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.15rem 0.4rem;
+    border-radius: 999px;
+    background: #e3f3ea;
+    color: #2e7d55;
+
+    &.poco {
+      background: color-mix(in srgb, var(--vb-oro) 20%, transparent);
+      color: #6b540a;
+    }
+  }
+
+  &.reserva .precio {
+    font-size: 1rem;
+  }
+}
+
+// --- El ticket ------------------------------------------------------------
+
+.desde-reserva {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.4rem 0.5rem 0.75rem;
+  border-radius: var(--vb-radio-chico);
+  background: var(--vb-rosa-palido);
+  font-size: 0.9rem;
+
+  span {
+    flex: 1;
+  }
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.4rem 0.35rem;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+    vertical-align: middle;
+  }
+
+  th {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .numero {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .detalle {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .cantidad {
+    display: flex;
+    align-items: center;
+    gap: 0.1rem;
+    justify-content: center;
+
+    .numero {
+      min-width: 1.5rem;
+      text-align: center;
+      font-weight: 600;
+    }
+  }
+}
+
+.total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 1rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 2px solid var(--vb-malva);
+  font-size: 1.05rem;
+
+  strong {
+    font-size: 1.5rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--vb-malva-oscuro);
+  }
+}
+
+// --- El cobro -------------------------------------------------------------
+
+.metodos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.metodo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.7rem 0.4rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--vb-radio-chico);
+  background: var(--mat-sys-surface);
+  font: inherit;
+  font-size: 0.85rem;
+  color: inherit;
+  cursor: pointer;
+
+  &.elegido {
+    border-color: var(--vb-malva);
+    border-width: 2px;
+    background: var(--vb-rosa-palido);
+    font-weight: 600;
+    color: var(--vb-malva-oscuro);
+  }
+}
+
+.campo {
+  width: 100%;
+  margin-top: 0.75rem;
+}
+
+.anticipo {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--vb-radio-chico);
+  font-size: 0.95rem;
+  font-weight: 600;
+  background: #e3f3ea;
+  color: #2e7d55;
+
+  // Faltar plata sí es un error del cobro: no se puede entregar la prenda.
+  &.falta {
+    background: color-mix(in srgb, var(--mat-sys-error) 12%, transparent);
+    color: var(--mat-sys-error);
+  }
+
+  mat-icon {
+    font-size: 1.15rem;
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+}
+
+.nota {
+  margin: 0.5rem 0 1rem;
+  font-size: 0.88rem;
+  color: var(--mat-sys-on-surface-variant);
+
+  &.vacio {
+    padding: 2rem 1rem;
+    text-align: center;
+  }
+}
+
+.chico {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+  vertical-align: text-bottom;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+// --- El ticket ya cobrado -------------------------------------------------
+
+.ticket {
+  max-width: 44rem;
+  margin: 0 auto;
+}
+
+.cabecera-ticket {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 1.25rem;
+
+  h2 {
+    margin: 0;
+  }
+
+  .sub {
+    margin: 0.15rem 0 0;
+    font-size: 0.88rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .icono {
+    font-size: 2.25rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    color: #2e7d55;
+  }
+}
+
+.cuentas {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.45rem 1rem;
+  margin: 1rem 0 0;
+  font-size: 0.95rem;
+
+  dt {
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  dd {
+    margin: 0;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .fuerte {
+    font-weight: 600;
+    color: var(--vb-tinta);
+  }
+}
