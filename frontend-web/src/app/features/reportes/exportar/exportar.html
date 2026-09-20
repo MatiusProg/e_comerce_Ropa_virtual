@@ -62,6 +62,41 @@
             </p>
           }
 
+          <!-- Los filtros los declara el servidor: si un reporte acepta uno
+               más, aparece acá sin tocar este archivo. -->
+          @if (reporte.filtros.length) {
+            <div class="filtros">
+              @for (filtro of reporte.filtros; track filtro.campo) {
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <mat-label>{{ filtro.etiqueta }}</mat-label>
+                  <mat-select
+                    [value]="valorDe(reporte.tipo, filtro.campo)"
+                    (valueChange)="elegir(reporte.tipo, filtro.campo, $event)"
+                  >
+                    <!-- «Todas» tiene que existir: sin una opción vacía, un
+                         filtro elegido por error no se puede deshacer. -->
+                    <mat-option value="">Todas</mat-option>
+                    @for (o of filtro.opciones; track o.valor) {
+                      <mat-option [value]="o.valor">{{ o.etiqueta }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              }
+
+              @if (cuantosFiltros(reporte.tipo) > 0) {
+                <button
+                  matButton
+                  type="button"
+                  class="limpiar"
+                  (click)="limpiar(reporte.tipo)"
+                >
+                  <mat-icon>filter_alt_off</mat-icon>
+                  Quitar {{ cuantosFiltros(reporte.tipo) }}
+                </button>
+              }
+            </div>
+          }
+
           <div class="acciones">
             <button
               matButton="outlined"

@@ -39,6 +39,20 @@ export interface ExistenciaConsolidada {
   total_reservado: number;
   /** Lo que hay físicamente en la red: disponible + reservado. */
   total_fisico: number;
+
+  /**
+   * Lo que los proveedores anunciaron que van a traer (CU-39), y en cuántos
+   * días llega lo primero.
+   *
+   * **Se muestra siempre, no solo cuando el estado es «próxima a ingresar».**
+   * Ese estado solo aparece cuando no hay NADA disponible ni reservado —una
+   * prenda con 75 unidades y 45 en camino sigue estando DISPONIBLE—, así que
+   * si el dato solo se dibujara con ese estado, el encargado no vería nunca
+   * lo que está por llegar de lo que sí tiene. Pasó el 20/09: se informó
+   * abastecimiento de un abrigo con stock y no se veía en ningún lado.
+   */
+  cantidad_anunciada: number;
+  dias_para_ingresar: number | null;
   estado: EstadoExistencia;
   /** En cuántas sucursales hay algo. Es la lectura rápida del desbalance. */
   sucursales_con_saldo: number;

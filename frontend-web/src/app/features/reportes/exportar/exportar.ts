@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
@@ -44,6 +45,7 @@ import {
     MatIconModule,
     MatInputModule,
     MatProgressBarModule,
+    MatSelectModule,
     MatTooltipModule,
   ],
   templateUrl: './exportar.html',
@@ -56,6 +58,18 @@ export class Exportar implements OnInit {
   protected readonly cargando = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly reportes = signal<ReporteDisponible[]>([]);
+
+  /**
+   * Lo elegido en cada filtro, por reporte: `{ventas: {canal: 'DIGITAL'}}`.
+   *
+   * POR QUE POR REPORTE Y NO UNO SOLO COMPARTIDO
+   * ---------------------------------------------
+   * Los filtros no significan lo mismo en cada uno: `estado` en ventas es
+   * PAGADA y en reservas es ATENDIDA. Con un diccionario compartido, elegir
+   * un estado en ventas dejaría el de reservas en un valor que no existe, y
+   * el reporte saldría vacío sin que nada lo explique.
+   */
+  protected readonly elegido = signal<Record<string, Record<string, string>>>({});
 
   /** Cuál se está bajando, y en qué formato. `null` si ninguno. */
   protected readonly bajando = signal<string | null>(null);
@@ -98,17 +112,39 @@ export class Exportar implements OnInit {
     return `${fecha.getFullYear()}-${mes}-${dia}`;
   }
 
+  protected valorDe(tipo: string, campo: string): string {
+    return this.elegido()[tipo]?.[campo] ?? '';
+  }
+
+  protected elegir(tipo: string, campo: string, valor: string): void {
+    this.elegido.update((todo) => ({
+      ...todo,
+      [tipo]: { ...(todo[tipo] ?? {}), [campo]: valor },
+    }));
+  }
+
+  protected limpiar(tipo: string): void {
+    this.elegido.update((todo) => ({ ...todo, [tipo]: {} }));
+  }
+
+  /** Cuántos filtros tiene puestos, para avisarlo sin abrir el panel. */
+  protected cuantosFiltros(tipo: string): number {
+    return Object.values(this.elegido()[tipo] ?? {}).filter((v) => v !== '')
+      .length;
+  }
+
   protected descargar(reporte: ReporteDisponible, formato: 'pdf' | 'xlsx'): void {
     const clave = `${reporte.tipo}:${formato}`;
     if (this.bajando()) return;
     this.bajando.set(clave);
 
-    const filtros = reporte.usa_periodo
-      ? {
-          desde: this.aIso(this.rango.value.desde),
-          hasta: this.aIso(this.rango.value.hasta),
-        }
-      : {};
+    const filtros: Record<string, string | null> = {
+      ...(this.elegido()[reporte.tipo] ?? {}),
+    };
+    if (reporte.usa_periodo) {
+      filtros['desde'] = this.aIso(this.rango.value.desde);
+      filtros['hasta'] = this.aIso(this.rango.value.hasta);
+    }
 
     this.api.descargar(reporte.tipo, formato, filtros).subscribe({
       next: ({ archivo, nombre }) => {

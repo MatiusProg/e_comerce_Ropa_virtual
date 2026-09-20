@@ -119,3 +119,22 @@ header {
     color: #b57f9a;
   }
 }
+
+/* Los filtros propios de cada reporte (CU-37). */
+.tarjeta .filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+
+  mat-form-field {
+    // 150 px es el ancho al que «Forma de pago» entra sin cortarse y siguen
+    // entrando dos por fila en una tarjeta de 300 px.
+    width: 150px;
+    font-size: 0.85rem;
+  }
+
+  .limpiar {
+    font-size: 0.8rem;
+  }
+}

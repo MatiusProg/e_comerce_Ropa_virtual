@@ -4,6 +4,24 @@ import { Observable, catchError, map, throwError } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 
+export interface OpcionDeFiltro {
+  valor: string;
+  etiqueta: string;
+}
+
+/**
+ * Un filtro que ESTE reporte admite, con sus opciones ya resueltas.
+ *
+ * Vienen del servidor y no están escritas acá: las sucursales, los
+ * proveedores y las temporadas salen de la base, y si un reporte acepta un
+ * filtro más aparece en la pantalla sin tocar el front.
+ */
+export interface FiltroDeReporte {
+  campo: string;
+  etiqueta: string;
+  opciones: OpcionDeFiltro[];
+}
+
 /** Un reporte que el servidor sabe generar. Sale de `/reportes/catalogo`. */
 export interface ReporteDisponible {
   tipo: string;
@@ -12,13 +30,12 @@ export interface ReporteDisponible {
 
   /** `false` para el inventario: es una foto de ahora, no un acumulado. */
   usa_periodo: boolean;
+
+  filtros: FiltroDeReporte[];
 }
 
-export interface FiltrosDeReporte {
-  desde?: string | null;
-  hasta?: string | null;
-  sucursal_id?: number | null;
-}
+/** Lo que viaja en la URL. Las claves extra son los filtros propios. */
+export type FiltrosDeReporte = Record<string, string | number | null | undefined>;
 
 export interface ErrorReportes {
   mensaje: string;
@@ -66,9 +83,14 @@ export class ReportesService {
     filtros: FiltrosDeReporte = {},
   ): Observable<{ archivo: Blob; nombre: string }> {
     let params = new HttpParams();
-    if (filtros.desde) params = params.set('desde', filtros.desde);
-    if (filtros.hasta) params = params.set('hasta', filtros.hasta);
-    if (filtros.sucursal_id) params = params.set('sucursal_id', filtros.sucursal_id);
+    for (const [clave, valor] of Object.entries(filtros)) {
+      // Se omiten los vacíos: un parámetro sin valor significaría «filtrar
+      // por nada» y el servidor lo descartaría igual, pero deja la URL sucia
+      // y difícil de leer cuando hay que depurar una descarga.
+      if (valor !== null && valor !== undefined && valor !== '') {
+        params = params.set(clave, valor);
+      }
+    }
 
     return this.http
       .get(`${this.base}/${tipo}.${formato}`, {

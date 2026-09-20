@@ -245,3 +245,21 @@ mat-panel-description {
     }
   }
 }
+
+/* CU-39 · lo que el proveedor anunció que va a traer.
+   Se distingue del saldo con color e icono: es una PROMESA, no existencia.
+   Confundirlo con lo que hay sería peor que no mostrarlo. */
+.en-camino {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 10px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #e8f0fe;
+  color: #1a4b8c;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: help;
+}
