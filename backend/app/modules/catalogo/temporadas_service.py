@@ -11,6 +11,8 @@ from datetime import date
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core import tiempo
+
 from app.modules.catalogo import temporadas_repository as repository
 from app.modules.catalogo.temporadas_schemas import (
     ColeccionCrearIn,
@@ -98,7 +100,7 @@ def listar_temporadas(
     db: Session, *, busqueda: str | None = None, activa: bool | None = None
 ) -> list[TemporadaOut]:
     """Listado del paso 2, indicando cual es la vigente."""
-    hoy = date.today()
+    hoy = tiempo.hoy()
     return [
         _fila_a_temporada(f, hoy)
         for f in repository.listar_temporadas(db, busqueda=busqueda, activa=activa)
@@ -109,7 +111,7 @@ def obtener_temporada(db: Session, temporada_id: int) -> TemporadaOut:
     fila = repository.obtener_temporada_detalle(db, temporada_id)
     if fila is None:
         raise TemporadaInexistente(str(temporada_id))
-    return _fila_a_temporada(fila, date.today())
+    return _fila_a_temporada(fila, tiempo.hoy())
 
 
 def _comprobar_solapamiento(

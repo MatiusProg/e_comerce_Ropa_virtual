@@ -28,6 +28,18 @@ class AnuncioOut(BaseModel):
     estado: str
     creado_en: datetime
 
+    #: Cuanto de lo anunciado ya entro al inventario, y cuanto falta.
+    #:
+    #: ES LA DEVOLUCION QUE EL PROVEEDOR NO TENIA. Anunciaba y despues no se
+    #: enteraba de nada: el aviso quedaba «ANUNCIADO» para siempre aunque la
+    #: mercaderia hubiera llegado hacia semanas. Ahora ve «ingresaron 30 de
+    #: 45» sin tener que llamar por telefono.
+    cantidad_recibida: int = 0
+    cantidad_pendiente: int = 0
+
+    #: Cuando se completo. Nulo mientras siga en camino.
+    recibido_en: datetime | None = None
+
 
 class VarianteAnunciableOut(BaseModel):
     variante_id: int

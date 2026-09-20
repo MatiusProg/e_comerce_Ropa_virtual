@@ -137,3 +137,128 @@ code {
     flex: none;
   }
 }
+
+/* CU-39 · Los avisos de abastecimiento, arriba del buscador.
+ *
+ * Van primero y se ven como botones grandes a propósito: lo más probable es
+ * que el camión que se está recibiendo sea uno de estos, y el buscador de
+ * abajo es el camino largo. Antes era el único.
+ */
+.avisos {
+  margin-bottom: 1.25rem;
+  padding: 0.9rem 1rem;
+  border-radius: 8px;
+  background: rgb(103 58 183 / 6%);
+  border: 1px solid rgb(103 58 183 / 18%);
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+    font-size: 1rem;
+    color: #4527a0;
+  }
+
+  &__ayuda {
+    margin: 0.3rem 0 0.75rem;
+    font-size: 0.8rem;
+    color: rgb(0 0 0 / 60%);
+  }
+
+  &__lista {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    /* Con muchos avisos la lista no puede empujar el formulario fuera de la
+     * pantalla: el remito se arma abajo y tiene que seguir alcanzable. */
+    max-height: 13rem;
+    overflow-y: auto;
+  }
+}
+
+.aviso {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgb(0 0 0 / 10%);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+
+  &:hover {
+    border-color: #7e57c2;
+    background: rgb(103 58 183 / 4%);
+  }
+
+  &__cantidad {
+    min-width: 2.5rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    background: #ede7f6;
+    color: #4527a0;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
+
+  &__prenda,
+  &__proveedor {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+  }
+
+  &__proveedor {
+    font-size: 0.8rem;
+    color: rgb(0 0 0 / 65%);
+    text-align: right;
+  }
+
+  /* Que ya haya entrado parte se dice con texto, no solo con el número: el
+   * «12» de pendiente es indistinguible de un anuncio de 12 unidades. */
+  &__parcial {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    background: rgb(255 152 0 / 15%);
+    color: #e65100;
+    white-space: nowrap;
+  }
+}
+
+/* La línea del remito que cierra un aviso, y lo que le quedaría faltando. */
+.marca-aviso {
+  font-size: 0.95rem;
+  width: 0.95rem;
+  height: 0.95rem;
+  vertical-align: middle;
+  color: #7e57c2;
+}
+
+.restante {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: #e65100;
+}
+
+@media (max-width: 600px) {
+  .aviso {
+    grid-template-columns: auto 1fr auto;
+
+    &__proveedor {
+      grid-column: 2 / -1;
+      text-align: left;
+    }
+
+    &__parcial {
+      grid-column: 1 / -1;
+    }
+  }
+}

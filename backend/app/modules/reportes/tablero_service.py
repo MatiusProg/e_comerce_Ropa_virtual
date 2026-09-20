@@ -19,10 +19,12 @@ Lo que la nota vieja prometia se cumplio: **hubo que tocar UNA sola funcion**,
 `_ventas`. El contrato, el router y la pantalla no cambiaron --- la web ya traia
 escrita la rama de `disponible: true` desde el primer dia.
 """
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
 from sqlalchemy.orm import Session
+
+from app.core import tiempo
 
 from app.modules.inventario import service as inventario_service
 from app.modules.reportes import tablero_repository as repository
@@ -72,8 +74,14 @@ def _ahora() -> datetime:
     Mismo criterio que `reservas/service.py::_ahora`: `creado_en` es
     `timestamptz` y comparar un `datetime` con zona contra uno sin zona es un
     TypeError en tiempo de ejecucion, no un numero equivocado.
+
+    Devuelve el instante en UTC, que es lo que `tiempo.ahora()` garantiza.
+    **De aca NO sale el «hoy» del tablero**: para eso esta `tiempo.hoy()`,
+    que pregunta que dia es en Bolivia. Sacarlo de este instante con
+    `.date()` daria el dia UTC, y entre las 20:00 y la medianoche el periodo
+    por omision empezaria y terminaria un dia corrido.
     """
-    return datetime.now(timezone.utc)
+    return tiempo.ahora()
 
 
 def _resolver_periodo(desde: date | None, hasta: date | None) -> tuple[date, date]:
@@ -89,7 +97,7 @@ def _resolver_periodo(desde: date | None, hasta: date | None) -> tuple[date, dat
     y devolver un 422 por eso obliga a la pantalla a ordenar dos fechas que el
     usuario acaba de elegir en un calendario.
     """
-    hoy = _ahora().date()
+    hoy = tiempo.hoy()
 
     if desde is None and hasta is None:
         hasta = hoy
@@ -119,8 +127,8 @@ def _limites(desde: date, hasta: date) -> tuple[datetime, datetime]:
     elegir una zona del negocio, y eso no esta decidido en ningun documento
     todavia. Se deja anotado aca en vez de inventar una.
     """
-    inicio = datetime.combine(desde, time.min, tzinfo=timezone.utc)
-    fin = datetime.combine(hasta + timedelta(days=1), time.min, tzinfo=timezone.utc)
+    inicio = tiempo.inicio_del_dia(desde)
+    fin = tiempo.fin_del_dia(hasta)
     return inicio, fin
 
 

@@ -64,6 +64,7 @@ from app.modules.inventario.schemas import (
     AjusteOut,
     ExistenciaOut,
     IngresoIn,
+    AvisoDeIngresoOut,
     IngresoOut,
     MovimientoOut,
     PaginaIngresos,
@@ -143,6 +144,10 @@ def _traducir(error: service.ErrorDeInventario) -> HTTPException:
                 "variantes": error.ids,
             },
         )
+    if isinstance(error, service.AvisoDeIngresoInvalido):
+        # CU-39: el ingreso dice cerrar un aviso que no corresponde. El codigo
+        # lo trae la excepcion porque los casos son distintos entre si.
+        return HTTPException(error.codigo, error.mensaje)
     if isinstance(error, service.StockInsuficiente):
         # Excepcion E6.
         return HTTPException(
@@ -188,6 +193,37 @@ def _sucursal_del_usuario(usuario, sucursal_id: int | None) -> int | None:
 # =====================================================================
 # CU-13 - Registrar ingreso de mercaderia
 # =====================================================================
+
+@operacion_router.get(
+    "/ingresos/avisos",
+    response_model=list[AvisoDeIngresoOut],
+    summary="CU-13 + CU-39 Lo anunciado que todavía no llegó",
+)
+def avisos_de_ingreso(db: DbSession, usuario: Usuario) -> list[AvisoDeIngresoOut]:
+    """Los avisos de abastecimiento pendientes, del que llega antes al último.
+
+    LA MITAD QUE FALTABA DEL FLUJO
+    -------------------------------
+    CU-39 dejaba una prenda como «próxima a ingresar» y no había forma de
+    **recibirla**: lo único que existía era el ingreso directo de CU-13, que
+    no sabe nada del anuncio. Resultado: la mercadería llegaba, entraba al
+    saldo, y el consolidado seguía prometiéndola como en camino — contándola
+    dos veces.
+
+    Esta lista es lo que la pantalla de ingreso muestra **arriba**, antes del
+    buscador de prendas. Quien recibe un camión casi siempre está recibiendo
+    algo anunciado, y hacerle buscar la variante a mano es pedirle que
+    reconstruya un dato que el sistema ya tiene.
+
+    Ordenados por plazo y no por fecha de anuncio: lo que le sirve a quien
+    recibe es «esto tendría que estar llegando».
+    """
+    from app.modules.abastecimiento import service as abastecimiento
+
+    return [
+        AvisoDeIngresoOut(**vars(a)) for a in abastecimiento.avisos_de_ingreso(db)
+    ]
+
 
 @operacion_router.post(
     "/ingresos",

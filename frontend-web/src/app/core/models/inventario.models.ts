@@ -65,6 +65,41 @@ export interface StockMinimoCrear {
 export interface LineaIngreso {
   variante_id: number;
   cantidad: number;
+
+  /**
+   * El aviso de abastecimiento que esta línea viene a cerrar (CU-39).
+   *
+   * **Opcional a propósito.** CU-13 existe desde el Ciclo 1 y cubre la
+   * compra que nadie anunció; exigirlo lo rompería y obligaría a inventar un
+   * anuncio por cada caja que entra por la puerta.
+   */
+  abastecimiento_id?: number | null;
+}
+
+/**
+ * CU-39 visto desde el lado de quien RECIBE.
+ *
+ * Es la mitad que faltaba del flujo de abastecimiento: el proveedor anunciaba
+ * y el aviso no tenía final, porque la única forma de meter mercadería era el
+ * ingreso directo, que no sabía nada del anuncio — así que lo que ya había
+ * llegado se seguía prometiendo como en camino.
+ */
+export interface AvisoDeIngreso {
+  id: number;
+  proveedor_id: number;
+  proveedor: string;
+  variante_id: number;
+  sku: string;
+  prenda: string;
+  talla: string;
+  color: string;
+  cantidad_anunciada: number;
+  cantidad_recibida: number;
+  /** Lo que todavía falta. Es con lo que se prellena el ingreso. */
+  cantidad_pendiente: number;
+  dias_plazo: number;
+  observacion: string | null;
+  anunciado_en: string;
 }
 
 export interface IngresoCrear {
@@ -79,6 +114,10 @@ export interface LineaIngresoRegistrada extends VarianteResumen {
   cantidad: number;
   /** Cuánto quedó disponible después del ingreso. */
   disponible_resultante: number;
+
+  /** El aviso que cerró, y cuánto le sigue faltando (0 = completo). */
+  abastecimiento_id?: number | null;
+  pendiente_del_aviso?: number | null;
 }
 
 /** Comprobante del ingreso recién registrado. */

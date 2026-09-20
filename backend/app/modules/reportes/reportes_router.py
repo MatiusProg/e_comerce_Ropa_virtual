@@ -20,6 +20,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response
 from pydantic import BaseModel, Field
 
+from app.core import tiempo
 from app.core.dependencies import DbSession, Usuario, requiere_roles
 from app.modules.reportes import reportes_service as service
 from app.modules.reportes.exportador import FORMATOS
@@ -90,15 +91,16 @@ def pedir_por_voz(datos: PedidoPorVozIn, db: DbSession, usuario: Usuario):
     directamente ahorraria un paso y quitaria la unica oportunidad de notar
     que el modelo entendio otra cosa.
     """
-    from datetime import date as _date
-
     from app.integrations import interprete
 
     es_admin = usuario.rol == "ADMINISTRADOR"
-    conocidos = service.catalogo_para_el_interprete(es_admin)
+    conocidos = service.catalogo_para_el_interprete(db, es_admin)
 
     try:
-        pedido = interprete.interpretar(datos.texto, conocidos, _date.today())
+        # El «hoy» va en HORA BOLIVIANA. Con el del servidor, a las 21:00 de
+        # un martes el modelo resuelve «hoy» como el miercoles y el reporte
+        # sale de un dia que todavia no empezo.
+        pedido = interprete.interpretar(datos.texto, conocidos, tiempo.hoy())
     except interprete.InterpreteNoConfigurado:
         return PedidoEntendidoOut(
             entendido=False,
@@ -248,7 +250,7 @@ def descargar(
 
     tipo_mime, extension, convertir = FORMATOS[formato]
     contenido = convertir(tabla)
-    nombre = f"{tipo}-{date.today().isoformat()}.{extension}"
+    nombre = f"{tipo}-{tiempo.hoy().isoformat()}.{extension}"
 
     return Response(
         content=contenido,

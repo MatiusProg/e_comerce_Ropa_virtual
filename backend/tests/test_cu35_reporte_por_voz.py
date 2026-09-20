@@ -148,11 +148,10 @@ def test_al_modelo_se_le_pasan_los_reportes_QUE_EXISTEN(
     inventario = next(r for r in falso.ultimos_reportes if r.tipo == "inventario")
     assert inventario.usa_periodo is False
 
-    # La sucursal NO se le ofrece: sus valores son ids y nadie dice
-    # «sucursal 3» hablando.
+    # Los valores de cada filtro van con su etiqueta: es lo que le permite
+    # al modelo traducir «en efectivo» al valor que la consulta espera.
     ventas = next(r for r in falso.ultimos_reportes if r.tipo == "ventas")
-    assert "sucursal_id" not in ventas.filtros
-    assert "metodo_pago" in ventas.filtros
+    assert ventas.filtros["metodo_pago"]["EFECTIVO"] == "Efectivo"
 
 
 # --- Lo que NO se entiende --------------------------------------------------
@@ -245,3 +244,174 @@ def test_un_cliente_no_pide_reportes_por_voz(
 
 def test_sin_token(api: TestClient) -> None:
     assert api.post(VOZ, json={"texto": "ventas"}).status_code == 401
+
+
+# --- Los filtros que salen de la base ---------------------------------------
+#
+# Hasta el 20/09 el catalogo que se le pasaba al modelo salteaba la sucursal
+# ---a proposito--- y, de arrastre, el proveedor y la temporada, porque los
+# tres traen la tupla de opciones vacia y se resuelven contra la base. El
+# resultado era que «las compras del proveedor Shein» bajaba las compras de
+# TODOS los proveedores sin decir nada. Un filtro dicho y no aplicado es peor
+# que uno no ofrecido: el numero se lee como si estuviera filtrado.
+
+
+def _crear_sucursal(
+    api: TestClient, admin: dict[str, str], nombre: str, *, activa: bool = True
+) -> int:
+    r = api.post(
+        "/api/v1/organizacion/sucursales",
+        headers=admin,
+        json={
+            "ciudad_id": 1,
+            "nombre": nombre,
+            "direccion": f"Avenida {nombre} 100",
+            "telefono": None,
+            "horario_apertura": "09:00",
+            "horario_cierre": "20:00",
+            "capacidad_vestidores": 2,
+            "activa": activa,
+        },
+    )
+    assert r.status_code == 201, r.text
+    return r.json()["id"]
+
+
+def _crear_proveedor(
+    api: TestClient, admin: dict[str, str], razon: str, nit: str
+) -> int:
+    r = api.post(
+        "/api/v1/organizacion/proveedores",
+        headers=admin,
+        json={
+            "razon_social": razon,
+            "identificacion_tributaria": nit,
+            "activo": True,
+        },
+    )
+    assert r.status_code == 201, r.text
+    return r.json()["id"]
+
+
+def test_AL_MODELO_SE_LE_DAN_LOS_NOMBRES_no_solo_los_identificadores(
+    api: TestClient, cabeceras_admin: dict[str, str], monkeypatch
+) -> None:
+    """Sin el par `id -> nombre`, un filtro hablado es inalcanzable.
+
+    Nadie dice «sucursal 3» ni «proveedor 7»: dice «la sucursal Centro» y «de
+    Shein». Lo que la consulta necesita, en cambio, es el identificador. El
+    puente entre las dos cosas es esta correspondencia, y va en el catalogo
+    porque el modelo no puede consultarla por su cuenta.
+    """
+    centro = _crear_sucursal(api, cabeceras_admin, "Centro")
+    shein = _crear_proveedor(api, cabeceras_admin, "Shein", "9001234567")
+
+    falso = _sustituir(monkeypatch, _InterpreteFalso(None))
+    api.post(VOZ, headers=cabeceras_admin, json={"texto": "algo"})
+
+    ventas = next(r for r in falso.ultimos_reportes if r.tipo == "ventas")
+    assert ventas.filtros["sucursal_id"][str(centro)] == "Centro"
+
+    compras = next(r for r in falso.ultimos_reportes if r.tipo == "compras")
+    assert compras.filtros["proveedor_id"][str(shein)] == "Shein"
+
+
+def test_una_sucursal_dada_de_baja_NO_se_le_ofrece_al_modelo(
+    api: TestClient, cabeceras_admin: dict[str, str], monkeypatch
+) -> None:
+    """El catalogo se arma en cada pedido, no una vez al arrancar.
+
+    Es lo que hace que el intérprete siga al negocio: una sucursal que abrio
+    ayer se puede pedir hoy hablando, y una que cerro deja de ofrecerse sin
+    que nadie toque el codigo.
+    """
+    viva = _crear_sucursal(api, cabeceras_admin, "Centro")
+    cerrada = _crear_sucursal(
+        api, cabeceras_admin, "Sucursal Que Cierra", activa=False
+    )
+
+    falso = _sustituir(monkeypatch, _InterpreteFalso(None))
+    api.post(VOZ, headers=cabeceras_admin, json={"texto": "algo"})
+
+    ventas = next(r for r in falso.ultimos_reportes if r.tipo == "ventas")
+    assert str(viva) in ventas.filtros["sucursal_id"]
+    assert str(cerrada) not in ventas.filtros["sucursal_id"]
+
+
+def test_al_encargado_no_se_le_ofrece_ELEGIR_sucursal_hablando(
+    api: TestClient, cabeceras_admin: dict[str, str], monkeypatch
+) -> None:
+    """Se le fuerza la suya, asi que aceptarsela seria prometerle una
+    eleccion que despues se ignora en silencio."""
+    from datetime import timedelta
+
+    sucursal = _crear_sucursal(api, cabeceras_admin, "Centro")
+    correo = "encargado.voz@violetboutique.bo"
+    clave = "Encargado12"
+    alta = api.post(
+        "/api/v1/organizacion/empleados",
+        headers=cabeceras_admin,
+        json={
+            "nombres": "Encargada",
+            "apellidos": "De Turno",
+            "correo": correo,
+            "contrasena": clave,
+            "documento": "5544338",
+            "telefono": "70000001",
+            "cargo": "ENCARGADO",
+            "sucursal_id": sucursal,
+            "fecha_ingreso": (date.today() - timedelta(days=30)).isoformat(),
+        },
+    )
+    assert alta.status_code == 201, alta.text
+    entrada = api.post(
+        "/api/v1/auth/login", json={"correo": correo, "contrasena": clave}
+    )
+    assert entrada.status_code == 200, entrada.text
+    cabeceras = {"Authorization": f"Bearer {entrada.json()['access_token']}"}
+
+    falso = _sustituir(monkeypatch, _InterpreteFalso(None))
+    api.post(VOZ, headers=cabeceras, json={"texto": "algo"})
+
+    for reporte in falso.ultimos_reportes:
+        assert "sucursal_id" not in reporte.filtros
+
+
+def test_EL_FILTRO_HABLADO_LLEGA_A_LA_URL(
+    api: TestClient, cabeceras_admin: dict[str, str], monkeypatch
+) -> None:
+    """La prueba de punta a punta de lo que fallaba.
+
+    Se dijo «las compras de la sucursal Centro, proveedor Shein»; los dos
+    filtros tienen que viajar en la URL. Antes viajaba ninguno y el archivo
+    salia con todo.
+    """
+    centro = _crear_sucursal(api, cabeceras_admin, "Centro")
+    shein = _crear_proveedor(api, cabeceras_admin, "Shein", "9001234567")
+
+    _sustituir(
+        monkeypatch,
+        _InterpreteFalso(
+            Pedido(
+                tipo="compras",
+                formato="pdf",
+                filtros={
+                    "sucursal_id": str(centro),
+                    "proveedor_id": str(shein),
+                },
+                resumen="Compras a Shein en la sucursal Centro, en PDF",
+            )
+        ),
+    )
+    cuerpo = api.post(
+        VOZ,
+        headers=cabeceras_admin,
+        json={"texto": "compras de la sucursal centro, proveedor shein en pdf"},
+    ).json()
+
+    assert f"sucursal_id={centro}" in cuerpo["url"]
+    assert f"proveedor_id={shein}" in cuerpo["url"]
+
+    descarga = api.get(f"/api/v1{cuerpo['url']}", headers=cabeceras_admin)
+    assert descarga.status_code == 200, descarga.text
+    assert descarga.content.startswith(b"%PDF")

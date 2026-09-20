@@ -91,6 +91,8 @@ from app.modules.pos.router import router as pos_router
 # `carrito_*`: dos casos de uso distintos que conviene poder distinguir.
 from app.modules.pos.devolucion_router import router as devoluciones_router
 from app.modules.ia.router import router as ia_router
+from app.modules.bitacora.middleware import BitacoraMiddleware
+from app.modules.bitacora.router import router as bitacora_router
 from app.modules.reportes.reportes_router import router as reportes_router
 
 
@@ -112,6 +114,11 @@ app = FastAPI(
     redoc_url="/redoc",
     openapi_url="/openapi.json",
 )
+
+# CU-42 - la bitacora. Se agrega ANTES que CORS y por eso corre DESPUES:
+# Starlette envuelve en orden inverso al de registro, y asi el asiento se
+# escribe con la respuesta ya armada, incluidos los rechazos por permiso.
+app.add_middleware(BitacoraMiddleware)
 
 # Angular y Flutter consumen exactamente el mismo contrato (RNF07, RNF08).
 app.add_middleware(
@@ -211,3 +218,4 @@ app.include_router(devoluciones_router, prefix=API)
 app.include_router(abastecimiento_router, prefix=API)
 app.include_router(ia_router, prefix=API)
 app.include_router(reportes_router, prefix=API)
+app.include_router(bitacora_router, prefix=API)
