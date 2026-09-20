@@ -101,7 +101,19 @@
 
         <ng-container matColumnDef="cantidad">
           <th mat-header-cell *matHeaderCellDef>Cantidad</th>
-          <td mat-cell *matCellDef="let a">{{ a.cantidad }}</td>
+          <td mat-cell *matCellDef="let a">
+            {{ a.cantidad }}
+            <!-- Lo que ya entró se dice acá, que es donde se mira la
+                 cantidad. Antes no se decía en ningún lado. -->
+            @if (a.cantidad_recibida > 0) {
+              <span class="entregado">
+                entraron {{ a.cantidad_recibida }}
+                @if (a.cantidad_pendiente > 0) {
+                  · faltan {{ a.cantidad_pendiente }}
+                }
+              </span>
+            }
+          </td>
         </ng-container>
 
         <ng-container matColumnDef="plazo">
@@ -112,8 +124,16 @@
         <ng-container matColumnDef="estado">
           <th mat-header-cell *matHeaderCellDef>Estado</th>
           <td mat-cell *matCellDef="let a">
-            <span class="pastilla" [class.retirado]="a.estado !== 'ANUNCIADO'">
-              {{ a.estado === 'ANUNCIADO' ? 'Informado' : 'Retirado' }}
+            <!-- Tres estados, no dos. «Entregado» es el que faltaba: sin
+                 él, un lote que ya llegó se ve igual que uno que todavía
+                 está en camino. -->
+            <span
+              class="pastilla"
+              [class.retirado]="a.estado === 'CANCELADO'"
+              [class.entregado]="a.estado === 'RECIBIDO'"
+              [matTooltip]="a.recibido_en ? ('Entró el ' + (a.recibido_en | date: 'dd/MM/yyyy' : '-0400')) : ''"
+            >
+              {{ textoDeEstado(a.estado) }}
             </span>
           </td>
         </ng-container>

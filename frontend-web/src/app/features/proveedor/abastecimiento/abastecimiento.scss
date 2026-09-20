@@ -148,3 +148,24 @@ td.mat-mdc-cell {
     margin: 0;
   }
 }
+
+/* CU-39 · Lo que ya entró.
+ *
+ * Es la devolución que el proveedor no tenía: anunciaba y no se enteraba de
+ * nada. Se distingue del «Retirado» con color e icono propios, porque son
+ * cosas opuestas —uno entregó, el otro se arrepintió— y hasta ahora los dos
+ * caían en la misma pastilla gris.
+ */
+.entregado {
+  display: block;
+  font-size: 0.72rem;
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.pastilla.entregado {
+  display: inline-block;
+  background: rgb(46 125 50 / 14%);
+  color: #1b5e20;
+  font-weight: 600;
+}

@@ -91,16 +91,15 @@ def pedir_por_voz(datos: PedidoPorVozIn, db: DbSession, usuario: Usuario):
     directamente ahorraria un paso y quitaria la unica oportunidad de notar
     que el modelo entendio otra cosa.
     """
-    from datetime import date as _date
-
     from app.integrations import interprete
 
     es_admin = usuario.rol == "ADMINISTRADOR"
-    conocidos = service.catalogo_para_el_interprete(es_admin)
+    conocidos = service.catalogo_para_el_interprete(db, es_admin)
 
     try:
-        # «ayer» y «este mes» se resuelven contra el dia boliviano, que es el
-        # que tiene en la cabeza quien dicta el pedido.
+        # El «hoy» va en HORA BOLIVIANA. Con el del servidor, a las 21:00 de
+        # un martes el modelo resuelve «hoy» como el miercoles y el reporte
+        # sale de un dia que todavia no empezo.
         pedido = interprete.interpretar(datos.texto, conocidos, tiempo.hoy())
     except interprete.InterpreteNoConfigurado:
         return PedidoEntendidoOut(
@@ -251,8 +250,6 @@ def descargar(
 
     tipo_mime, extension, convertir = FORMATOS[formato]
     contenido = convertir(tabla)
-    # El nombre del archivo lleva la fecha de Bolivia: un reporte bajado a
-    # las 21:00 se guardaba con el nombre del dia siguiente.
     nombre = f"{tipo}-{tiempo.hoy().isoformat()}.{extension}"
 
     return Response(

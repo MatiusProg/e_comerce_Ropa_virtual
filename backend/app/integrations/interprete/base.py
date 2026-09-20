@@ -41,8 +41,16 @@ class ReporteConocido:
 
     tipo: str
     titulo: str
-    #: Los filtros que admite: `{campo: [valores validos]}`.
-    filtros: dict[str, list[str]] = field(default_factory=dict)
+
+    #: Los filtros que admite: `{campo: {valor: etiqueta}}`.
+    #:
+    #: LA ETIQUETA ES LO QUE PERMITE QUE FUNCIONE HABLANDO.
+    #: Para `canal` el valor y la etiqueta casi coinciden ---DIGITAL, «En
+    #: linea»---, pero para sucursal y proveedor el valor es un IDENTIFICADOR
+    #: y la etiqueta es el nombre. Nadie dice «sucursal 3»; dice «sucursal
+    #: Centro». Sin el par, esos filtros no se pueden pedir por voz --- que es
+    #: justo lo que pasaba hasta el 20/09.
+    filtros: dict[str, dict[str, str]] = field(default_factory=dict)
     usa_periodo: bool = True
 
 

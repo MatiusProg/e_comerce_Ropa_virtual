@@ -8,7 +8,7 @@ y ese ambito viaja en el token, no en el cuerpo de la peticion.
 import uuid
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -35,10 +35,14 @@ class UsuarioActual:
         rol: str,
         sucursal_id: int | None,
         jti: uuid.UUID,
+        correo: str | None = None,
     ):
         self.id = usuario_id
         self.rol = rol
         self.sucursal_id = sucursal_id
+        # Para la bitacora (CU-42). Se guarda copiado en el asiento porque
+        # una cuenta borrada no puede llevarse el rastro de lo que hizo.
+        self.correo = correo
         # El jti se conserva para que el cierre de sesion sepa que fila de
         # sesion_token revocar.
         self.jti = jti
@@ -56,6 +60,7 @@ def _rechazar(detalle: str) -> HTTPException:
 
 
 def get_usuario_actual(
+    peticion: Request,
     token: Annotated[str, Depends(oauth2_scheme)],
     db: DbSession,
 ) -> UsuarioActual:
@@ -87,21 +92,29 @@ def get_usuario_actual(
     if sesion is None or sesion.revocado_en is not None:
         raise _rechazar("Su sesión fue cerrada. Inicie sesión nuevamente.")
 
-    usuario_activo = db.scalar(
-        select(UsuarioDB.activo).where(UsuarioDB.id == int(datos["sub"]))
-    )
-    if not usuario_activo:
+    fila = db.execute(
+        select(UsuarioDB.activo, UsuarioDB.correo).where(
+            UsuarioDB.id == int(datos["sub"])
+        )
+    ).first()
+    if fila is None or not fila[0]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Su cuenta fue desactivada. Contacte al administrador.",
         )
 
-    return UsuarioActual(
+    usuario = UsuarioActual(
         usuario_id=int(datos["sub"]),
         rol=datos["rol"],
         sucursal_id=datos.get("sucursal_id"),
         jti=jti,
+        correo=fila[1],
     )
+    # Se deja a mano para la bitacora (CU-42). El middleware corre fuera del
+    # grafo de dependencias y no puede volver a resolver el token: sin esto,
+    # todo asiento saldria sin autor.
+    peticion.state.usuario = usuario
+    return usuario
 
 
 Usuario = Annotated[UsuarioActual, Depends(get_usuario_actual)]

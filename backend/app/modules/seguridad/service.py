@@ -13,11 +13,13 @@ Casos de uso que realiza este paquete:
 import hashlib
 import secrets
 import uuid
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from math import ceil
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+
+from app.core import tiempo
 
 from app.core.config import settings
 from app.core.security import crear_access_token, hash_password, verify_password
@@ -406,7 +408,7 @@ def crear_usuario(db: Session, datos: UsuarioCrearIn) -> UsuarioResumenOut:
                 sucursal_id=datos.sucursal_id,  # type: ignore[arg-type]
                 documento=datos.documento,  # type: ignore[arg-type]
                 cargo=rol.nombre,
-                fecha_ingreso=datos.fecha_ingreso or date.today(),
+                fecha_ingreso=datos.fecha_ingreso or tiempo.hoy(),
             )
         db.commit()
     except IntegrityError as exc:

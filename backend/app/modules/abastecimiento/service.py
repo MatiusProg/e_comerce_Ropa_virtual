@@ -39,6 +39,9 @@ class Anuncio:
     observacion: str | None
     estado: str
     creado_en: object
+    cantidad_recibida: int = 0
+    cantidad_pendiente: int = 0
+    recibido_en: object | None = None
 
 
 def _proveedor(db: Session, usuario_id: int) -> int:
@@ -67,6 +70,9 @@ def _a_anuncio(fila: tuple) -> Anuncio:
         observacion=fila[8],
         estado=fila[9],
         creado_en=fila[10],
+        cantidad_recibida=fila[11],
+        cantidad_pendiente=max(fila[6] - fila[11], 0),
+        recibido_en=fila[12],
     )
 
 
@@ -165,3 +171,129 @@ def cancelar(db: Session, usuario_id: int, anuncio_id: int) -> None:
 
     fila.estado = "CANCELADO"
     db.commit()
+
+
+# =====================================================================
+# La recepcion: donde CU-13 cierra lo que CU-39 anuncio
+# =====================================================================
+
+
+@dataclass(frozen=True)
+class AvisoDeIngreso:
+    """Un anuncio que todavia espera mercaderia, listo para recibirse."""
+
+    id: int
+    proveedor_id: int
+    proveedor: str
+    variante_id: int
+    sku: str
+    prenda: str
+    talla: str
+    color: str
+    cantidad_anunciada: int
+    cantidad_recibida: int
+    cantidad_pendiente: int
+    dias_plazo: int
+    observacion: str | None
+    anunciado_en: object
+
+
+def _a_aviso(fila: tuple) -> AvisoDeIngreso:
+    anuncio, proveedor, sku, prenda, talla, color = fila
+    return AvisoDeIngreso(
+        id=anuncio.id,
+        proveedor_id=anuncio.proveedor_id,
+        proveedor=proveedor,
+        variante_id=anuncio.variante_id,
+        sku=sku,
+        prenda=prenda,
+        talla=talla,
+        color=color,
+        cantidad_anunciada=anuncio.cantidad,
+        cantidad_recibida=anuncio.cantidad_recibida,
+        cantidad_pendiente=anuncio.cantidad - anuncio.cantidad_recibida,
+        dias_plazo=anuncio.dias_plazo,
+        observacion=anuncio.observacion,
+        anunciado_en=anuncio.creado_en,
+    )
+
+
+def avisos_de_ingreso(
+    db: Session, *, proveedor_id: int | None = None
+) -> list[AvisoDeIngreso]:
+    """Lo que esta anunciado y todavia no llego.
+
+    Es lo que la pantalla de ingreso muestra ARRIBA, antes del buscador de
+    prendas: quien recibe un camion casi siempre esta recibiendo algo que ya
+    estaba anunciado, y obligarlo a buscar la variante a mano es hacerle
+    reconstruir un dato que el sistema ya tiene --- y es como el anuncio
+    terminaba sin cerrarse nunca.
+    """
+    return [_a_aviso(f) for f in repository.pendientes_de_recibir(db, proveedor_id=proveedor_id)]
+
+
+def recibir(
+    db: Session, recepciones: dict[int, int], *, proveedor_id: int, ahora
+) -> dict[int, int]:
+    """Descuenta de los anuncios lo que acaba de llegar. **Sin commit.**
+
+    `recepciones` es `{abastecimiento_id: cantidad_que_llego}`. Devuelve
+    `{abastecimiento_id: cantidad_que_todavia_falta}`.
+
+    La llama `inventario.service.registrar_ingreso` DENTRO de su transaccion:
+    si el ingreso se cae, el anuncio no puede quedar cerrado sobre mercaderia
+    que no entro.
+
+    LAS TRES REGLAS
+    ----------------
+    - Llega **todo** -> `RECIBIDO`, y deja de sumar al «proximo a ingresar».
+    - Llega **menos** -> sigue `ANUNCIADO` por el resto. Cerrarlo haria
+      desaparecer de la pantalla mercaderia que el proveedor todavia debe.
+    - Llega **mas** -> entra todo al inventario y el anuncio se cierra. El
+      sobrante es un dato del remito, no un error: la mercaderia ya esta
+      fisicamente en la tienda, y rechazar el ingreso por eso dejaria el
+      deposito con cajas que el sistema dice que no existen.
+    """
+    if not recepciones:
+        return {}
+
+    anuncios = repository.para_recibir(db, list(recepciones))
+    faltantes: dict[int, int] = {}
+
+    for anuncio_id, llegaron in recepciones.items():
+        anuncio = anuncios.get(anuncio_id)
+        if anuncio is None:
+            raise ErrorDeAbastecimiento(
+                f"El aviso de ingreso {anuncio_id} no existe.", 404
+            )
+        # El aviso tiene que ser DE ESTE proveedor. Sin esta comprobacion, un
+        # ingreso podria cerrar el anuncio de otro: la mercaderia llegaria de
+        # uno y el sistema descontaria la deuda del otro.
+        if anuncio.proveedor_id != proveedor_id:
+            raise ErrorDeAbastecimiento(
+                f"El aviso de ingreso {anuncio_id} es de otro proveedor.", 422
+            )
+        if anuncio.estado != "ANUNCIADO":
+            raise ErrorDeAbastecimiento(
+                f"El aviso de ingreso {anuncio_id} ya está {anuncio.estado.lower()}.",
+                409,
+            )
+
+        anuncio.cantidad_recibida += llegaron
+        if anuncio.cantidad_recibida >= anuncio.cantidad:
+            anuncio.estado = "RECIBIDO"
+            anuncio.recibido_en = ahora
+            faltantes[anuncio_id] = 0
+        else:
+            faltantes[anuncio_id] = anuncio.cantidad - anuncio.cantidad_recibida
+
+    db.flush()
+    return faltantes
+
+
+def variante_del_aviso(db: Session, anuncio_id: int) -> int | None:
+    """De que variante es ese aviso. Lo usa el ingreso para comprobar que la
+    linea y el aviso hablen de la misma prenda."""
+    anuncios = repository.para_recibir(db, [anuncio_id])
+    anuncio = anuncios.get(anuncio_id)
+    return anuncio.variante_id if anuncio else None

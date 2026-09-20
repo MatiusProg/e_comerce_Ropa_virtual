@@ -29,6 +29,8 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core import tiempo
+from app.modules.abastecimiento import service as abastecimiento
 from app.modules.inventario import repository
 from app.modules.catalogo.models import VarianteProducto
 from app.modules.inventario.models import Existencia
@@ -127,6 +129,21 @@ class ConteoSinDiferencia(ErrorDeInventario):
     `ck_movimiento_inventario_cantidad_no_nula` rechaza una cantidad cero, y
     guardar una fila de cero unidades llenaria el historial de ruido.
     """
+
+
+class AvisoDeIngresoInvalido(ErrorDeInventario):
+    """El ingreso dice cerrar un aviso de CU-39 que no corresponde.
+
+    Lleva el codigo porque son varios casos distintos y cada uno merece el
+    suyo: el aviso no existe (404), es de otra prenda o de otro proveedor
+    (422), o ya estaba recibido (409). Colapsarlos en uno solo dejaria al
+    encargado sin saber si tiene que buscar otro aviso o llamar al proveedor.
+    """
+
+    def __init__(self, mensaje: str, codigo: int = 422):
+        super().__init__(mensaje)
+        self.mensaje = mensaje
+        self.codigo = codigo
 
 
 class ConteoMenorQueLoReservado(ErrorDeInventario):
@@ -335,6 +352,43 @@ def registrar_ingreso(
         motivo = f"{motivo}. {datos.observacion}"
     motivo = motivo[:200]
 
+    # CU-39: los avisos que este ingreso viene a cerrar. Se resuelven ANTES
+    # de tocar ningun saldo para que un aviso ajeno o ya cerrado corte el
+    # ingreso entero ---excepcion E9--- en vez de dejar medio remito cargado
+    # y la deuda del proveedor descontada a medias.
+    recepciones = {
+        linea.abastecimiento_id: linea.cantidad
+        for linea in datos.lineas
+        if linea.abastecimiento_id is not None
+    }
+    for linea in datos.lineas:
+        if linea.abastecimiento_id is None:
+            continue
+        variante_del_aviso = abastecimiento.variante_del_aviso(
+            db, linea.abastecimiento_id
+        )
+        if variante_del_aviso is None:
+            raise AvisoDeIngresoInvalido(
+                f"El aviso de ingreso {linea.abastecimiento_id} no existe o ya "
+                "se recibió.",
+                404,
+            )
+        # La linea y el aviso tienen que hablar de la MISMA prenda. Sin esto,
+        # recibir una blusa cerraria el aviso de un pantalon y las dos cuentas
+        # quedarian mal a la vez.
+        if variante_del_aviso != linea.variante_id:
+            raise AvisoDeIngresoInvalido(
+                f"El aviso de ingreso {linea.abastecimiento_id} es de otra prenda.",
+                422,
+            )
+
+    try:
+        faltantes = abastecimiento.recibir(
+            db, recepciones, proveedor_id=proveedor.id, ahora=tiempo.ahora()
+        )
+    except abastecimiento.ErrorDeAbastecimiento as e:
+        raise AvisoDeIngresoInvalido(e.mensaje, e.codigo) from e
+
     lineas: list[LineaIngresoOut] = []
     primer_movimiento = None
 
@@ -364,6 +418,10 @@ def registrar_ingreso(
                 color=variante.color,
                 cantidad=linea.cantidad,
                 disponible_resultante=existencia.cantidad_disponible,
+                abastecimiento_id=linea.abastecimiento_id,
+                pendiente_del_aviso=faltantes.get(linea.abastecimiento_id)
+                if linea.abastecimiento_id is not None
+                else None,
             )
         )
 

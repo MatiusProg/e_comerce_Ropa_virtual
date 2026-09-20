@@ -54,6 +54,45 @@
     </div>
   </form>
 
+  <!-- CU-39: lo que el proveedor ya anunció, ANTES del buscador.
+       Quien recibe un camión casi siempre está recibiendo algo anunciado, y
+       hacerle buscar la variante a mano es pedirle que reconstruya un dato
+       que el sistema ya tiene. Peor: así el aviso no se cerraba nunca. -->
+  @if (avisosDisponibles().length) {
+    <section class="avisos">
+      <h3>
+        <mat-icon>local_shipping</mat-icon>
+        Anunciado y todavía sin llegar
+      </h3>
+      <p class="avisos__ayuda">
+        Tocá el que estés recibiendo: se agrega al remito con la cantidad
+        pendiente puesta, y podés cambiarla si llegó menos.
+      </p>
+
+      <div class="avisos__lista">
+        @for (a of avisosDisponibles(); track a.id) {
+          <button type="button" class="aviso" (click)="recibirAviso(a)">
+            <span class="aviso__cantidad">{{ a.cantidad_pendiente }}</span>
+            <span class="aviso__prenda">
+              <strong>{{ a.prenda }}</strong>
+              <span class="detalle">{{ a.talla }} · {{ a.color }} · {{ a.sku }}</span>
+            </span>
+            <span class="aviso__proveedor">
+              {{ a.proveedor }}
+              <span class="detalle">en {{ a.dias_plazo }} día(s)</span>
+            </span>
+            @if (a.cantidad_recibida > 0) {
+              <span class="aviso__parcial" matTooltip="Ya entró parte de este aviso">
+                {{ a.cantidad_recibida }} de {{ a.cantidad_anunciada }} ya entraron
+              </span>
+            }
+            <mat-icon>add_circle_outline</mat-icon>
+          </button>
+        }
+      </div>
+    </section>
+  }
+
   <!-- Elección de la prenda: producto primero, después la combinación. -->
   <section class="selector">
     <h3>Agregar prendas</h3>
@@ -124,13 +163,28 @@
             <th mat-header-cell *matHeaderCellDef>Prenda</th>
             <td mat-cell *matCellDef="let l">
               {{ l.producto }}
+              @if (l.abastecimiento_id) {
+                <mat-icon class="marca-aviso" matTooltip="Cierra un aviso de abastecimiento">
+                  local_shipping
+                </mat-icon>
+              }
               <span class="detalle">{{ l.talla }} · {{ l.color }}</span>
             </td>
           </ng-container>
 
           <ng-container matColumnDef="cantidad">
             <th mat-header-cell *matHeaderCellDef class="numerica">Cantidad</th>
-            <td mat-cell *matCellDef="let l" class="numerica destacado">{{ l.cantidad }}</td>
+            <td mat-cell *matCellDef="let l" class="numerica destacado">
+              {{ l.cantidad }}
+              <!-- Si la línea cierra un aviso y llega de menos, se dice acá:
+                   una entrega parcial que no lo dice se lee como completa y
+                   el encargado deja de esperar el resto. -->
+              @if (restanteDe(l)) {
+                <span class="restante" matTooltip="Queda anunciado y sin llegar">
+                  quedan {{ restanteDe(l) }}
+                </span>
+              }
+            </td>
           </ng-container>
 
           <ng-container matColumnDef="quitar">

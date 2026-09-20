@@ -78,6 +78,11 @@ from app.modules.ventas import carrito_models as modelos_carrito  # noqa: E402,F
 #: al final --- producto referencia a proveedor, categoria, temporada y
 #: coleccion, y variante_producto a talla y color.
 TABLAS_VOLATILES = (
+    # CU-42: la bitacora va PRIMERA. Apunta a `usuario` con ON DELETE SET
+    # NULL, asi que truncar usuario sin vaciarla antes dejaria asientos
+    # huerfanos de una prueba en la siguiente --- y varias cuentan cuantos
+    # asientos hay.
+    "bitacora",
     # CU-39: cuelga de proveedor y de variante, que estan mas abajo.
     "abastecimiento",
     # P4 va primero: el movimiento apunta a la existencia, al usuario y al

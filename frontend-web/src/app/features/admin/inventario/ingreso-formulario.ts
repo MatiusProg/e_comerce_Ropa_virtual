@@ -17,7 +17,10 @@ import {
   type ErrorInventario,
 } from '../../../core/services/inventario.service';
 import { ProductosService } from '../../../core/services/productos.service';
-import type { LineaIngreso } from '../../../core/models/inventario.models';
+import type {
+  AvisoDeIngreso,
+  LineaIngreso,
+} from '../../../core/models/inventario.models';
 import type { ProductoResumen, Variante } from '../../../core/models/productos.models';
 import type { SucursalBreve } from '../../../core/models/organizacion.models';
 import type { Proveedor } from '../../../core/models/proveedores.models';
@@ -30,6 +33,8 @@ interface LineaEnPantalla extends LineaIngreso {
   color: string;
   /** E1: el servidor rechazó esta línea. Se marca en vez de invalidar todo. */
   rechazada?: boolean;
+  /** Cuánto había anunciado el proveedor, si la línea vino de un aviso. */
+  anunciado?: number;
 }
 
 export interface DatosIngresoFormulario {
@@ -57,6 +62,16 @@ export interface DatosIngresoFormulario {
  * variantes, y un desplegable con mil doscientas entradas no se puede usar. Se
  * busca el producto —que es lo que dice el remito— y ahí aparecen sus
  * combinaciones.
+ *
+ * **Lo anunciado aparece arriba, antes del buscador (CU-39).** Quien recibe
+ * un camión casi siempre está recibiendo algo que el proveedor ya anunció, y
+ * hacerle buscar la variante a mano es pedirle que reconstruya un dato que el
+ * sistema ya tiene. Peor: así el aviso no se cerraba nunca, y el consolidado
+ * seguía prometiendo mercadería que ya estaba en el saldo.
+ *
+ * Tocar un aviso agrega la línea con la cantidad pendiente **ya puesta y
+ * editable**: lo más común es que llegue todo, y lo segundo más común es que
+ * llegue parte.
  *
  * **La misma prenda no puede ir en dos líneas** (excepción E4). Se comprueba
  * acá al agregar, para no dejar que el remito se arme mal y falle al confirmar;
@@ -93,6 +108,15 @@ export class IngresoFormulario {
   protected readonly error = signal<string | null>(null);
 
   protected readonly lineas = signal<LineaEnPantalla[]>([]);
+
+  /** CU-39: lo anunciado que todavía no llegó. */
+  protected readonly avisos = signal<AvisoDeIngreso[]>([]);
+
+  /** Los que todavía no se pasaron al remito, para no ofrecerlos dos veces. */
+  protected readonly avisosDisponibles = computed(() => {
+    const yaEstan = new Set(this.lineas().map((l) => l.variante_id));
+    return this.avisos().filter((a) => !yaEstan.has(a.variante_id));
+  });
   protected readonly unidades = computed(() =>
     this.lineas().reduce((suma, l) => suma + l.cantidad, 0),
   );
@@ -126,6 +150,13 @@ export class IngresoFormulario {
   ]);
 
   constructor() {
+    // Sin avisos la pantalla sigue sirviendo igual: se pierde el atajo, no
+    // el ingreso. Por eso el error se traga en vez de mostrar un cartel.
+    this.api.avisosDeIngreso().subscribe({
+      next: (a) => this.avisos.set(a),
+      error: () => undefined,
+    });
+
     this.busqueda.valueChanges
       .pipe(debounceTime(300), distinctUntilChanged())
       .subscribe((texto) => this.buscarProductos(texto));
@@ -203,6 +234,49 @@ export class IngresoFormulario {
     this.cantidad.reset();
   }
 
+  /** Pasa un aviso al remito, con lo que falta ya puesto. */
+  protected recibirAviso(aviso: AvisoDeIngreso): void {
+    if (this.lineas().some((l) => l.variante_id === aviso.variante_id)) {
+      this.error.set('Esa prenda ya está en el remito.');
+      return;
+    }
+
+    // El proveedor del remito lo fija el PRIMER aviso que se toma: el
+    // ingreso es de un solo proveedor, y mezclar avisos de dos haría que el
+    // servidor rechace el segundo — después de que la persona lo agregó.
+    const cabeceraProveedor = this.cabecera.controls.proveedor_id;
+    if (!cabeceraProveedor.value) {
+      cabeceraProveedor.setValue(aviso.proveedor_id);
+    } else if (cabeceraProveedor.value !== aviso.proveedor_id) {
+      this.error.set(
+        `Ese aviso es de ${aviso.proveedor}. Un remito es de un solo proveedor: ` +
+          'registre este ingreso y arme otro para el resto.',
+      );
+      return;
+    }
+
+    this.lineas.update((actuales) => [
+      ...actuales,
+      {
+        variante_id: aviso.variante_id,
+        cantidad: aviso.cantidad_pendiente,
+        abastecimiento_id: aviso.id,
+        anunciado: aviso.cantidad_pendiente,
+        sku: aviso.sku,
+        producto: aviso.prenda,
+        talla: aviso.talla,
+        color: aviso.color,
+      },
+    ]);
+    this.error.set(null);
+  }
+
+  /** Cuánto le quedaría al aviso con la cantidad que se puso. */
+  protected restanteDe(linea: LineaEnPantalla): number | null {
+    if (linea.anunciado === undefined) return null;
+    return Math.max(linea.anunciado - linea.cantidad, 0);
+  }
+
   protected quitarLinea(variante_id: number): void {
     this.lineas.update((actuales) => actuales.filter((l) => l.variante_id !== variante_id));
   }
@@ -226,7 +300,11 @@ export class IngresoFormulario {
         proveedor_id: valores.proveedor_id!,
         referencia: valores.referencia.trim() || null,
         observacion: valores.observacion.trim() || null,
-        lineas: this.lineas().map(({ variante_id, cantidad }) => ({ variante_id, cantidad })),
+        lineas: this.lineas().map(({ variante_id, cantidad, abastecimiento_id }) => ({
+          variante_id,
+          cantidad,
+          abastecimiento_id: abastecimiento_id ?? null,
+        })),
       })
       .subscribe({
         next: (registrado) => this.dialogo.close(registrado),

@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -36,6 +37,7 @@ import {
 @Component({
   selector: 'app-abastecimiento',
   imports: [
+    DatePipe,
     ReactiveFormsModule,
     MatButtonModule,
     MatCardModule,
@@ -56,6 +58,13 @@ export class Abastecimiento implements OnInit {
   private readonly aviso = inject(MatSnackBar);
 
   protected readonly columnas = ['prenda', 'cantidad', 'plazo', 'estado', 'quitar'];
+
+  /** Tres estados. «Entregado» es el que faltaba hasta el 20/09. */
+  protected textoDeEstado(estado: string): string {
+    if (estado === 'RECIBIDO') return 'Entregado';
+    if (estado === 'CANCELADO') return 'Retirado';
+    return 'Informado';
+  }
 
   protected readonly cargando = signal(true);
   protected readonly guardando = signal(false);

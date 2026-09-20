@@ -61,6 +61,12 @@ corriente hasta hoy; «el mes pasado» es el anterior completo; «hoy», «ayer�
 «esta semana», «este año» igual. Si no menciona período, dejá desde y hasta en null.
 - Los filtros SOLO pueden ser los que el reporte declara, con los valores \
 listados. Si no menciona ninguno, dejá el objeto vacío.
+- Cada filtro se lista como `campo=[valor es Nombre, ...]`. En el JSON va \
+SIEMPRE el **valor**, nunca el nombre: si se dice «proveedor Shein» y la \
+lista dice `proveedor_id=[7 es Shein]`, va `"proveedor_id": "7"`. El nombre \
+puede venir dicho con otras mayúsculas, acentos o palabras de más («la \
+sucursal centro» es «Centro»); si aun así ninguno corresponde, omití ese \
+filtro en vez de elegir el más parecido.
 - `resumen` es una frase corta en castellano que se le va a mostrar para que \
 confirme que entendiste bien. Ejemplo: "Ventas de septiembre, en Excel".
 
@@ -166,8 +172,12 @@ def _describir(reportes: list[ReporteConocido]) -> str:
         if not r.usa_periodo:
             detalle += " (NO usa período: es la situación actual)"
         if r.filtros:
+            # Se le muestra `valor=etiqueta` para que pueda mapear lo que se
+            # dijo ---«Shein»--- al identificador que el sistema espera. Con
+            # solo los valores, un filtro por nombre es inalcanzable.
             filtros = "; ".join(
-                f"{campo}={'|'.join(valores)}" for campo, valores in r.filtros.items()
+                f"{campo}=[" + ", ".join(f"{v} es {e}" for v, e in valores.items()) + "]"
+                for campo, valores in r.filtros.items()
             )
             detalle += f" | filtros: {filtros}"
         lineas.append(detalle)

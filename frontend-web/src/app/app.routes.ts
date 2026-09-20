@@ -256,6 +256,15 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/reportes/exportar/exportar').then((m) => m.Exportar),
       },
+      // CU-42 · la bitacora. Va dentro de 'admin' porque la guarda del padre
+      // ya resuelve el rol, y porque es donde la va a buscar quien la
+      // necesite: al lado de los reportes, no en una seccion propia.
+      {
+        path: 'bitacora',
+        title: 'Bitácora del sistema · Violet Boutique',
+        loadComponent: () =>
+          import('./features/seguridad/bitacora/bitacora').then((m) => m.Bitacora),
+      },
     ],
   },
   // --- Ciclo 2 · P6 Reservas del Cliente (CU-22, CU-23) ---

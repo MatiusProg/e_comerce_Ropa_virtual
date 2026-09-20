@@ -64,6 +64,8 @@ def mios(db: Session, proveedor_id: int, *, incluir_cancelados: bool) -> list[tu
             Abastecimiento.observacion,
             Abastecimiento.estado,
             Abastecimiento.creado_en,
+            Abastecimiento.cantidad_recibida,
+            Abastecimiento.recibido_en,
         )
         .join(VarianteProducto, VarianteProducto.id == Abastecimiento.variante_id)
         .join(Producto, Producto.id == VarianteProducto.producto_id)
@@ -73,7 +75,11 @@ def mios(db: Session, proveedor_id: int, *, incluir_cancelados: bool) -> list[tu
         .order_by(Abastecimiento.creado_en.desc())
     )
     if not incluir_cancelados:
-        consulta = consulta.where(Abastecimiento.estado == "ANUNCIADO")
+        # Los RECIBIDO se muestran SIEMPRE, aunque no se pidan los cancelados.
+        # Son la devolucion que el proveedor no tenia: ocultarlos dejaria su
+        # pantalla igual que antes ---solo lo que todavia no llego--- y el
+        # lote entregado desapareceria sin decir que se entrego.
+        consulta = consulta.where(Abastecimiento.estado != "CANCELADO")
     return [tuple(f) for f in db.execute(consulta).all()]
 
 
@@ -146,19 +152,94 @@ def anunciado_por_variante(db: Session, variante_ids: list[int]) -> dict[int, tu
     **Se suma entre proveedores y se toma el plazo MENOR.** Si dos proveedores
     anuncian la misma variante, van a llegar las dos cantidades; y lo que le
     importa a quien mira el inventario es cuando llega la primera.
+
+    SE SUMA LO QUE FALTA, NO LO ANUNCIADO (ver la 0018)
+    -----------------------------------------------------
+    `cantidad - cantidad_recibida`. Sumando `cantidad` a secas, una entrega
+    parcial se cuenta dos veces: las unidades que ya llegaron estan en el
+    saldo disponible Y siguen apareciendo como «en camino». El encargado ve
+    mas mercaderia de la que hay.
+
+    Las filas ya completas se descartan con el `WHERE`, no restando cero:
+    asi no entran al grupo y una variante enteramente recibida desaparece
+    del resultado en vez de devolver `(0, n)` --- que la pantalla tendria
+    que aprender a distinguir de «no hay nada anunciado».
     """
     if not variante_ids:
         return {}
+    pendiente = Abastecimiento.cantidad - Abastecimiento.cantidad_recibida
     filas = db.execute(
         select(
             Abastecimiento.variante_id,
-            func.sum(Abastecimiento.cantidad),
+            func.sum(pendiente),
             func.min(Abastecimiento.dias_plazo),
         )
         .where(
             Abastecimiento.variante_id.in_(variante_ids),
             Abastecimiento.estado == "ANUNCIADO",
+            pendiente > 0,
         )
         .group_by(Abastecimiento.variante_id)
     ).all()
     return {f[0]: (int(f[1] or 0), int(f[2] or 0)) for f in filas}
+
+
+# --- La recepcion: CU-13 cierra lo que CU-39 anuncio ------------------------
+
+
+def pendientes_de_recibir(
+    db: Session, *, proveedor_id: int | None = None, variante_ids: list[int] | None = None
+) -> list[tuple]:
+    """Los anuncios que todavia esperan mercaderia.
+
+    Devuelve `(Abastecimiento, razon_social, sku, prenda, talla, color)`,
+    del que llega antes al que llega despues.
+
+    ORDENADOS POR PLAZO Y NO POR FECHA DE ANUNCIO. La pantalla de ingreso los
+    muestra arriba como avisos, y lo que le sirve a quien recibe es «esto
+    tendria que estar llegando», no «esto se anuncio primero».
+    """
+    from app.modules.catalogo.models import Color, Producto, Talla, VarianteProducto
+    from app.modules.organizacion.models import Proveedor
+
+    pendiente = Abastecimiento.cantidad - Abastecimiento.cantidad_recibida
+    consulta = (
+        select(
+            Abastecimiento,
+            Proveedor.razon_social,
+            VarianteProducto.sku,
+            Producto.nombre,
+            Talla.codigo,
+            Color.nombre,
+        )
+        .join(Proveedor, Proveedor.id == Abastecimiento.proveedor_id)
+        .join(VarianteProducto, VarianteProducto.id == Abastecimiento.variante_id)
+        .join(Producto, Producto.id == VarianteProducto.producto_id)
+        .join(Talla, Talla.id == VarianteProducto.talla_id)
+        .join(Color, Color.id == VarianteProducto.color_id)
+        .where(Abastecimiento.estado == "ANUNCIADO", pendiente > 0)
+        .order_by(Abastecimiento.dias_plazo.asc(), Abastecimiento.id.asc())
+    )
+    if proveedor_id is not None:
+        consulta = consulta.where(Abastecimiento.proveedor_id == proveedor_id)
+    if variante_ids is not None:
+        consulta = consulta.where(Abastecimiento.variante_id.in_(variante_ids))
+    return [tuple(f) for f in db.execute(consulta).all()]
+
+
+def para_recibir(db: Session, anuncio_ids: list[int]) -> dict[int, Abastecimiento]:
+    """Los anuncios que un ingreso dice estar cerrando, BLOQUEADOS.
+
+    `with_for_update` porque dos recepciones simultaneas del mismo anuncio
+    ---dos depositos descargando el mismo lote--- leerian las dos el mismo
+    `cantidad_recibida` y la segunda pisaria a la primera. Es el mismo
+    bloqueo que ya usa la existencia (RNF11).
+    """
+    if not anuncio_ids:
+        return {}
+    filas = db.scalars(
+        select(Abastecimiento)
+        .where(Abastecimiento.id.in_(anuncio_ids))
+        .with_for_update()
+    ).all()
+    return {a.id: a for a in filas}

@@ -10,11 +10,12 @@ cumple el catalogo publico.
 
 from __future__ import annotations
 
-from datetime import date
 from decimal import Decimal
 
 from sqlalchemy import Select, and_, exists, func, or_, select
 from sqlalchemy.orm import Session
+
+from app.core import tiempo
 
 from app.modules.catalogo.models import (
     Categoria,
@@ -39,7 +40,7 @@ def temporada_vigente(db: Session) -> Temporada | None:
     Si hay mas de una solapada gana la que empezo mas tarde: es la que la
     tienda acaba de abrir, y es lo que se quiere empujar.
     """
-    hoy = date.today()
+    hoy = tiempo.hoy()
     return db.scalar(
         select(Temporada)
         .where(Temporada.fecha_inicio <= hoy, Temporada.fecha_fin >= hoy)

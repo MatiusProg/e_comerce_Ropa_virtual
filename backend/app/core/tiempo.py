@@ -98,6 +98,20 @@ def inicio_del_dia(dia: date | None = None) -> datetime:
     )
 
 
+def fin_del_dia(dia: date | None = None) -> datetime:
+    """El instante en que TERMINA ese dia: la medianoche boliviana del
+    siguiente.
+
+    AGREGADO EL 20/09 PARA EL PERIODO DE LOS REPORTES (CU-37 y CU-36).
+
+    Se devuelve el limite **abierto** a proposito, para compararlo con `<`.
+    Con `<=` queda fuera todo lo que paso ese dia despues de medianoche ---el
+    defecto clasico de los reportes por fecha--- y ahi el corte por zona ya
+    no importa porque igual falta media jornada.
+    """
+    return inicio_del_dia((dia or hoy()) + timedelta(days=1))
+
+
 def formatear(momento: datetime, patron: str = "%d/%m/%Y %H:%M") -> str:
     """Un instante escrito para que lo lea una persona, en hora boliviana."""
     return en_bolivia(momento).strftime(patron)
@@ -107,6 +121,7 @@ __all__ = [
     "BOLIVIA",
     "ahora",
     "en_bolivia",
+    "fin_del_dia",
     "formatear",
     "hoy",
     "inicio_del_dia",

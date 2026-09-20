@@ -15,7 +15,7 @@ el diccionario, sin tocar el router ni el exportador.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Callable
 
@@ -190,25 +190,28 @@ REPORTES: dict[str, Definicion] = {
 
 
 def _rango(desde: date | None, hasta: date | None) -> tuple[datetime, datetime]:
-    """El periodo, en instantes con zona.
+    """El periodo, en instantes de HORA BOLIVIANA.
 
     `hasta` es INCLUSIVO para quien pide el reporte: pedir del 1 al 30 tiene
     que incluir el 30 entero. Por dentro se convierte en «< 1 del mes
     siguiente», que es lo unico que funciona con marcas de tiempo --- comparar
     `<= 30` deja fuera todo lo que paso ese dia despues de medianoche, y es el
     defecto clasico de los reportes por fecha.
+
+    LOS LIMITES SON MEDIANOCHE EN BOLIVIA, NO EN UTC
+    -------------------------------------------------
+    Se construian con `tzinfo=timezone.utc`, y eso corria el dia cuatro
+    horas: «el reporte del 20» iba de las 20:00 del 19 a las 20:00 del 20.
+    Con la tienda abierta hasta las 20:00, **la ultima hora de ventas de cada
+    dia caia en el reporte del dia siguiente** --- y el reporte no lo decia
+    por ningun lado, asi que el numero se leia como bueno.
     """
-    # Que dia es en Bolivia: con `date.today()` en Railway, entre las 20:00
-    # y la medianoche el periodo por omision se corria un dia entero.
     hoy = tiempo.hoy()
     inicio = desde or (hoy - timedelta(days=30))
     fin = hasta or hoy
     if inicio > fin:
         raise ErrorDeReporte("La fecha inicial es posterior a la final.", 422)
-    return (
-        datetime.combine(inicio, time.min, tzinfo=timezone.utc),
-        datetime.combine(fin + timedelta(days=1), time.min, tzinfo=timezone.utc),
-    )
+    return tiempo.inicio_del_dia(inicio), tiempo.fin_del_dia(fin)
 
 
 def _totales(definicion: Definicion, filas: list[tuple]) -> list[object] | None:
@@ -275,12 +278,10 @@ def generar(
     subtitulos = []
     if definicion.sin_periodo:
         filas = definicion.consulta(db, sucursal_id=sucursal_id, **propios)
-        subtitulos.append(
-            # `datetime.now()` a secas es el reloj del servidor SIN zona: en
-            # Railway eso es UTC, y en la maquina de desarrollo es Bolivia ---
-            # asi que andaba bien al probar y fallaba desplegado.
-            f"Saldos al {tiempo.formatear(tiempo.ahora())}"
-        )
+        # `datetime.now()` a secas era hora local del servidor, sin zona
+        # ninguna: en Railway imprimia UTC y en la maquina de cada uno otra
+        # cosa. Un saldo fechado mal no se puede contrastar con nada.
+        subtitulos.append(f"Saldos al {tiempo.formatear(tiempo.ahora())}")
     else:
         inicio, fin = _rango(desde, hasta)
         filas = definicion.consulta(
@@ -323,26 +324,55 @@ def generar(
 # --- CU-35 · el pedido por voz ---------------------------------------------
 
 
-def catalogo_para_el_interprete(es_admin: bool) -> list:
+def catalogo_para_el_interprete(db: Session, es_admin: bool) -> list:
     """Los reportes, descritos como el interprete los necesita.
 
     Se arma del MISMO diccionario `REPORTES` que usa la descarga. No hay una
     lista aparte para el modelo: si la hubiera, el dia que se agregue un
     reporte el interprete seguiria sin conocerlo y diria «no entendi» a un
     pedido perfectamente valido.
+
+    RECIBE `db` PORQUE LAS OPCIONES SE RESUELVEN CONTRA LA BASE
+    -----------------------------------------------------------
+    Sucursal, proveedor y temporada no tienen valores fijos en el codigo: son
+    filas. Al modelo hay que darle el par `id -> nombre`, porque lo que se
+    dice es «proveedor Shein» y lo que la consulta necesita es `proveedor_id=7`.
+
+    Hasta el 20/09 esta funcion los salteaba a los tres ---la sucursal a
+    proposito, los otros dos de arrastre por venir con la tupla de opciones
+    vacia--- y el resultado era que «el reporte de compras del proveedor
+    Shein» bajaba las compras de TODOS los proveedores sin avisar. Un filtro
+    dicho y no aplicado es peor que uno no ofrecido: el numero se lee como si
+    estuviera filtrado.
     """
     from app.integrations.interprete import ReporteConocido
 
+    # Una sola vez para los seis reportes, no una por filtro: las mismas tres
+    # consultas repetidas seis veces son dieciocho viajes para armar un prompt.
+    cache: dict[str, dict[str, str]] = {}
+
+    def _valores(filtro: Filtro) -> dict[str, str]:
+        if filtro.origen == "opciones":
+            return {v: e for v, e in filtro.opciones}
+        if filtro.origen not in cache:
+            cache[filtro.origen] = {
+                str(o["valor"]): o["etiqueta"] for o in opciones_de(db, filtro)
+            }
+        return cache[filtro.origen]
+
     salida = []
     for tipo, definicion in sorted(REPORTES.items()):
-        filtros: dict[str, list[str]] = {}
+        filtros: dict[str, dict[str, str]] = {}
         for filtro in definicion.filtros:
-            # La sucursal NO se le ofrece al modelo: sus valores son ids de
-            # base de datos y nadie dice «sucursal 3» hablando. Ademas al
-            # encargado se le fuerza la suya, asi que ni siquiera aplica.
-            if filtro.campo == "sucursal_id" or not filtro.opciones:
+            # Al encargado no se le ofrece la sucursal: se le fuerza la suya,
+            # y aceptarsela por voz seria prometerle una eleccion que despues
+            # se ignora en silencio.
+            if filtro.campo == "sucursal_id" and not es_admin:
                 continue
-            filtros[filtro.campo] = [v for v, _ in filtro.opciones]
+            valores = _valores(filtro)
+            if not valores:
+                continue
+            filtros[filtro.campo] = valores
         salida.append(
             ReporteConocido(
                 tipo=tipo,

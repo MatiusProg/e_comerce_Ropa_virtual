@@ -187,6 +187,7 @@ def tienda(api: TestClient, cabeceras_admin: dict[str, str]) -> dict:
         "con_stock": [con_stock_a, con_stock_b],
         "agotada": agotada,
         "categoria": categoria,
+        "variantes": {con_stock_a: v_a, con_stock_b: v_b},
     }
 
 
@@ -347,3 +348,54 @@ def test_un_administrador_no_recibe_recomendaciones(
 
 def test_sin_token_no_hay_recomendaciones(api: TestClient) -> None:
     assert api.get(RECOMENDACIONES).status_code == 401
+
+
+# --- La guardada sigue al catalogo -----------------------------------------
+#
+# La recomendacion vive doce horas y el catalogo se mueve mientras tanto. Los
+# datos del producto ya se leian de nuevo en cada lectura ---por eso un cambio
+# de precio se ve enseguida---, pero solo se comprobaba `activo`. Una prenda
+# cuya ultima variante se dio de baja, o cuya ultima unidad se vendio, seguia
+# apareciendo recomendada y sin precio hasta que venciera.
+
+
+def test_una_prenda_QUE_DEJO_DE_SER_OFRECIBLE_desaparece_de_la_guardada(
+    api: TestClient,
+    cabeceras_cliente: dict[str, str],
+    cabeceras_admin: dict[str, str],
+    tienda: dict,
+    proveedor,
+) -> None:
+    """Recomendar lo que ya no se puede comprar es prometer de mas.
+
+    Da igual por que dejo de estar: borrada, desactivada, sin variante activa
+    o agotada. Para quien mira la pantalla las cuatro son la misma cosa.
+    """
+    primera = _pedir(api, cabeceras_cliente)
+    recomendados = {p["producto_id"] for p in primera["prendas"]}
+    assert set(tienda["con_stock"]) <= recomendados
+
+    caida = tienda["con_stock"][0]
+    baja = api.patch(
+        f"/api/v1/catalogo/variantes/{tienda['variantes'][caida]}",
+        headers=cabeceras_admin,
+        json={"activa": False},
+    )
+    assert baja.status_code == 200, baja.text
+
+    segunda = _pedir(api, cabeceras_cliente)
+    quedan = {p["producto_id"] for p in segunda["prendas"]}
+    assert caida not in quedan
+    assert tienda["con_stock"][1] in quedan
+
+
+def test_ninguna_prenda_recomendada_se_muestra_SIN_PRECIO(
+    api: TestClient, cabeceras_cliente: dict[str, str], tienda: dict, proveedor
+) -> None:
+    """Es la señal de que se colo una prenda sin variante ofrecible.
+
+    Una tarjeta con nombre y foto pero sin precio se lee como un error de la
+    aplicacion, y es exactamente lo que salia cuando la guardada envejecia.
+    """
+    for prenda in _pedir(api, cabeceras_cliente)["prendas"]:
+        assert prenda["precio_desde"], prenda

@@ -228,8 +228,9 @@ class Abastecimiento(Auditoria, Base):
         CheckConstraint("cantidad > 0", name="cantidad_positiva"),
         CheckConstraint("dias_plazo BETWEEN 0 AND 365", name="plazo_razonable"),
         CheckConstraint(
-            "estado IN ('ANUNCIADO', 'CANCELADO')", name="estado"
+            "estado IN ('ANUNCIADO', 'CANCELADO', 'RECIBIDO')", name="estado"
         ),
+        CheckConstraint("cantidad_recibida >= 0", name="recibida_no_negativa"),
         # Un anuncio VIGENTE por proveedor y variante. Parcial, por lo mismo
         # que el turno de caja: los cancelados son muchos y legitimos.
         Index(
@@ -257,3 +258,15 @@ class Abastecimiento(Auditoria, Base):
 
     observacion: Mapped[str | None] = mapped_column(String(200))
     estado: Mapped[str] = mapped_column(String(20), server_default="ANUNCIADO")
+
+    #: Cuanto de lo anunciado ya llego. Ver la 0018.
+    #:
+    #: ES UN ACUMULADO, no un reemplazo: una entrega puede venir en tres
+    #: camiones. Lo que sigue en camino es `cantidad - cantidad_recibida`, y
+    #: es eso ---no `cantidad`--- lo que suma al «proxima a ingresar»: sin
+    #: esta resta, el consolidado cuenta dos veces la mercaderia que ya esta
+    #: en el saldo.
+    cantidad_recibida: Mapped[int] = mapped_column(Integer, server_default="0")
+
+    #: Cuando se completo. Nulo mientras siga en camino.
+    recibido_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

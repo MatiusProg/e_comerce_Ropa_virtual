@@ -71,6 +71,20 @@ VIGENCIA_HORAS = 12
 #: El motor que se anota cuando no hubo modelo.
 MOTOR_DEGRADADO = "popularidad"
 
+#: Cuantas prendas de la recomendacion guardada tienen que seguir siendo
+#: ofrecibles para que valga la pena mostrarla.
+#:
+#: POR QUE HACE FALTA UN MINIMO Y NO ALCANZA CON SALTAR LAS CAIDAS
+#: ----------------------------------------------------------------
+#: La recomendacion vive doce horas y el catalogo se mueve mientras tanto: se
+#: desactivan productos, se agota la ultima unidad, se cierra la temporada.
+#: Saltar las caidas una por una esta bien con una o dos ---quedan cinco
+#: prendas y nadie nota nada---, pero con cinco de seis la pantalla queda con
+#: una sola tarjeta y se lee como que la tienda se vacio.
+#:
+#: Por debajo de este numero se regenera, aunque la guardada no haya vencido.
+MINIMO_UTIL = 3
+
 
 @dataclass(frozen=True)
 class PrendaSugerida:
@@ -215,7 +229,21 @@ def recomendaciones(
 
     guardada = repository.guardada(db, cliente.id)
     if not forzar and guardada is not None and not _vencida(guardada.generada_en):
-        return _armar(db, guardada.motor, guardada.generada_en, guardada.sugerencias)
+        vigente = _armar(
+            db, guardada.motor, guardada.generada_en, guardada.sugerencias
+        )
+        # SE MIRA CUANTAS SOBREVIVIERON, no cuantas se guardaron. Si el
+        # catalogo se movio tanto que la guardada quedo en menos de tres
+        # prendas, ya no representa lo que la tienda ofrece hoy y se rehace
+        # aunque falten horas para que venza.
+        if len(vigente.prendas) >= min(MINIMO_UTIL, len(guardada.sugerencias)):
+            return vigente
+        _log.info(
+            "La recomendación guardada del cliente %s quedó en %s prendas "
+            "ofrecibles; se regenera.",
+            cliente.id,
+            len(vigente.prendas),
+        )
 
     motor, sugerencias = _generar(db, cliente)
     fila = repository.guardar(db, cliente.id, motor, sugerencias)
@@ -238,6 +266,10 @@ def _armar(
 
     ids = [s.get("producto_id") for s in sugerencias if s.get("producto_id")]
     desde = repository.precio_desde_de(db, ids) if ids else {}
+    # La existencia se vuelve a preguntar AHORA, por la costura C1 y en bloque.
+    # El paso 1 la filtro cuando se genero; entre aquello y esta lectura pasan
+    # hasta doce horas, y la ultima unidad se vende en cualquiera de ellas.
+    con_stock = inventario.productos_con_stock(db, ids) if ids else set()
     productos = repository.productos_por_id(db, ids)
     # `Producto` no declara relacion con `Categoria`, asi que el nombre se
     # resuelve con una consulta aparte en vez de por navegacion.
@@ -249,11 +281,16 @@ def _armar(
     prendas: list[PrendaSugerida] = []
     for sugerencia in sugerencias:
         producto = productos.get(sugerencia.get("producto_id"))
-        # Una prenda descatalogada entre la generación y ahora se SALTA. No se
-        # regenera todo: la recomendación sigue valiendo con cinco en vez de
-        # seis, y regenerar aquí metería una llamada al modelo dentro de una
-        # lectura.
+        # Una prenda que dejo de ser ofrecible entre la generación y ahora se
+        # SALTA: borrada, desactivada, sin variante activa o agotada. Las
+        # cuatro son la misma cosa para quien mira la pantalla —no la puede
+        # comprar— y recomendarla es prometer algo que la tienda ya no tiene.
+        #
+        # Acá solo se saltan. Si quedan demasiado pocas, quien llamó regenera:
+        # hacerlo aquí metería una llamada al modelo dentro de una lectura.
         if producto is None or not producto.activo:
+            continue
+        if producto.id not in con_stock or producto.id not in desde:
             continue
         ruta = principales.get(producto.id)
         prendas.append(

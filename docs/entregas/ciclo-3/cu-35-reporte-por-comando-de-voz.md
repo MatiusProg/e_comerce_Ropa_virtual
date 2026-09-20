@@ -96,13 +96,48 @@ se les va a preguntar: sin eso `speech_to_text` **informa que no está
 disponible aunque el motor esté instalado**, y el síntoma no señala la causa
 por ningún lado.
 
-## 5. Límites conocidos
+## 5. Los filtros que salen de la base
+
+Sucursal, proveedor y temporada no tienen valores fijos en el código: son
+filas. Al modelo se le pasa el par **`id` → nombre**, porque lo que se dice es
+«proveedor Shein» y lo que la consulta necesita es `proveedor_id=7`.
+
+Se resuelven **en cada pedido**, así que el intérprete sigue al negocio solo:
+una sucursal que abrió ayer se puede pedir hoy hablando, y una que cerró deja
+de ofrecerse sin que nadie toque el código. Solo van las **activas** — ofrecer
+un proveedor dado de baja sería aceptar un filtro que después no devuelve
+nada.
+
+### El error que esto corrige
+
+Al probarlo el 20/09 se pidió *«reporte por proveedor de sucursal centro,
+proveedor shein en pdf»* y **bajó las compras de todos los proveedores, sin
+avisar**.
+
+La causa era una condición de más al armar el catálogo: se salteaban los
+filtros sin opciones escritas en el código. A la sucursal se la salteaba a
+propósito —razonando que nadie dice «sucursal 3»—, y proveedor y temporada
+caían de arrastre por venir con la tupla vacía.
+
+El razonamiento estaba mal planteado: nadie dice «sucursal 3», pero todos
+dicen «la sucursal Centro». Lo que faltaba no era ocultar el filtro, era dar
+la correspondencia.
+
+**Un filtro dicho y no aplicado es peor que uno no ofrecido**: el archivo sale
+sin decir que no filtró y el número se lee como si lo estuviera.
+
+Al encargado la sucursal se le sigue sin ofrecer, pero por otro motivo: se le
+fuerza la suya, y aceptársela hablando sería prometerle una elección que
+después se ignora en silencio.
+
+## 6. Límites conocidos
 
 - **Chrome manda el audio a Google** para transcribirlo. Es la implementación
   del navegador, no una decisión de esta aplicación, pero conviene saberlo.
   Acá solo se dictan nombres de reportes.
-- **La sucursal no se le ofrece al modelo**: sus valores son identificadores y
-  nadie dice «sucursal 3» hablando. Se elige en la lista.
+- **Las temporadas se ofrecen todas, incluidas las cerradas.** A diferencia
+  de sucursal y proveedor, una temporada pasada es justo lo que se quiere
+  pedir: «el rendimiento de la temporada de invierno» se dice en marzo.
 - **En el móvil el archivo se guarda, no se abre.** En un teléfono sin lector
   de Excel, abrirlo solo termina en «no hay ninguna aplicación», que se lee
   como que la descarga falló.
