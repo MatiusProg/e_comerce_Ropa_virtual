@@ -30,6 +30,13 @@
 # notas a que modulo corresponde.
 # =========================================================================
 
+param(
+    # Borra los veinte diagramas 2.2 del Ciclo 3 y los vuelve a generar.
+    # Los mensajes y los enlaces se deduplican por nombre y por par, asi
+    # que rehacer no deja duplicados en el modelo.
+    [switch]$Rehacer
+)
+
 $ErrorActionPreference = 'Stop'
 $modelo = 'D:\UNI\Si2\PRIMER_PARCIAL\docs\diagramas\VioletBoutique.eapx'
 
@@ -251,6 +258,8 @@ $casos = @(
      msj=@(
        @{g=1;d='A:Cliente';a='PantallaVestidor';m='probarPrenda(variante_id)'},
        @{g=1;d='PantallaVestidor';a='GestorVitrina';m='ficha_de_producto(producto_id)'},
+       @{g=1;d='GestorVitrina';a='GestorAutenticacion';m='autorizar("CLIENTE")'},
+       @{g=1;d='GestorVitrina';a='VarianteProducto';m='variante_ofrecible(variante_id)'},
        @{g=1;d='GestorVitrina';a='ImagenProducto';m='rutas_de_vestidor(producto_id)'},
        @{g=1;d='PantallaVestidor';a='PantallaVestidor';m='abrirCamara()'},
        @{g=1;d='PantallaVestidor';a='PantallaVestidor';m='detectarPose()'},
@@ -278,6 +287,7 @@ $casos = @(
        @{g=1;d='A:Cliente';a='PantallaCarrito';m='verCarrito()'},
        @{g=1;d='PantallaCarrito';a='GestorCarrito';m='ver_carrito(usuario_id)'},
        @{g=1;d='GestorCarrito';a='CarritoDetalle';m='lineas_resueltas(carrito_id)'},
+       @{g=1;d='GestorCarrito';a='VarianteProducto';m='precio_vigente(variante_id)'},
        @{g=1;d='GestorCarrito';a='GestorPromociones';m='descuentos_por_variante(precios)'},
        @{g=1;d='GestorCarrito';a='Existencia';m='stock_de_variantes(variante_ids)'},
        @{g=1;d='GestorCarrito';a='PantallaCarrito';m='_armar_carrito(carrito_id)'},
@@ -440,7 +450,8 @@ $casos = @(
        @{g=1;d='PantallaParaVos';a='GestorRecomendaciones';m='recomendaciones(usuario_id)'},
        @{g=1;d='GestorRecomendaciones';a='GestorAutenticacion';m='autorizar("CLIENTE")'},
        @{g=1;d='GestorRecomendaciones';a='GestorRecomendaciones';m='_perfil(cliente)'},
-       @{g=1;d='GestorRecomendaciones';a='Existencia';m='_candidatas(cliente, categoria_ids)'},
+       @{g=1;d='GestorRecomendaciones';a='VarianteProducto';m='_candidatas(cliente, categoria_ids)'},
+       @{g=1;d='GestorRecomendaciones';a='Existencia';m='solo_con_stock(variante_ids)'},
        @{g=1;d='GestorRecomendaciones';a='A:Servicio de IA';m='ordenar(candidatas, perfil)'},
        @{g=1;d='GestorRecomendaciones';a='Recomendacion';m='guardar(cliente_id, prendas, generada_en)'},
        @{g=1;d='GestorRecomendaciones';a='GestorVitrina';m='_tarjetas(productos)'},
@@ -470,7 +481,7 @@ $casos = @(
   @{ n='2.2 CU-35 Generar reporte por comando de voz'
      actores=@('Administrador','Servicio de IA'); boundary='PantallaReportePorVoz'
      controles=@('GestorReportePorVoz','GestorReportes','GestorAutenticacion')
-     entidades=@('Venta','Existencia')
+     entidades=@('Venta')
      grupos='Grupo 1: dictar y generar (pasos 1 a 6). Se MUESTRA lo que el sistema entendio ANTES de generar, no despues.   Grupo 2: la generacion se DELEGA en CU-37 --- no hay dos generadores de reportes.   Grupo 3: flujos alternativos 2a y 5a, escribir en vez de dictar y corregir los filtros a mano.   Grupo 4: excepciones E1 a E3.'
      msj=@(
        @{g=1;d='A:Administrador';a='PantallaReportePorVoz';m='dictar()'},
@@ -521,6 +532,8 @@ $casos = @(
        @{g=1;d='GestorReportes';a='GestorAutenticacion';m='autorizar("ADMINISTRADOR","ENCARGADO")'},
        @{g=1;d='GestorReportes';a='Venta';m='consultar(periodo, sucursal_id)'},
        @{g=1;d='GestorReportes';a='MovimientoInventario';m='consultar(periodo, tipo)'},
+       @{g=1;d='GestorReportes';a='Existencia';m='consultar(sucursal_id, categoria_id)'},
+       @{g=1;d='GestorReportes';a='Reserva';m='consultar(periodo, estado)'},
        @{g=1;d='GestorReportes';a='GestorReportes';m='_totales(definicion, filas)'},
        @{g=2;d='A:Administrador';a='PantallaReportes';m='descargar(formato)'},
        @{g=2;d='PantallaReportes';a='GestorReportes';m='exportar(reporte, formato)'},
@@ -566,7 +579,7 @@ $casos = @(
   @{ n='2.2 CU-40 Notificar eventos a los usuarios'
      actores=@('Sistema (procesos automáticos)'); boundary='CanalDeAviso'
      controles=@('GestorNotificaciones','GestorReservas','GestorPagos','GestorInventario')
-     entidades=@('Notificacion','Reserva','Venta','Existencia')
+     entidades=@('Notificacion')
      grupos='SIN CONSTRUIR: este diagrama describe lo acordado, no lo que existe.   Grupo 1: los cuatro disparadores. NO hay autorizacion porque no hay usuario: es el sistema el que avisa.   Grupo 2: registrar y entregar.   Grupo 3: flujo alternativo 3a, varios destinatarios --- una notificacion por cada uno.   Grupo 4: excepcion E1 --- si el correo falla la notificacion QUEDA REGISTRADA igual: perder el correo no puede significar perder el aviso.'
      msj=@(
        @{g=1;d='GestorReservas';a='GestorNotificaciones';m='avisar("reserva creada", reserva)'},
@@ -584,7 +597,7 @@ $casos = @(
 
   @{ n='2.2 CU-41 Recuperar contraseña'
      actores=@('Cliente'); boundary='PantallaRecuperacion'
-     controles=@('GestorRecuperacion','GestorAutenticacion')
+     controles=@('GestorRecuperacion')
      entidades=@('Usuario','TokenRecuperacion','SesionToken')
      grupos='Grupo 1: pedir el enlace (pasos 1 a 3). NO hay autorizacion: se usa SIN sesion, y esa es su razon de ser.   Grupo 2: fijar la contrasena nueva. El enlace es de UN SOLO USO y revoca las sesiones abiertas.   Grupo 3: flujo alternativo, correo inexistente --- se responde IGUAL que si existiera, para no revelar quien tiene cuenta.   Grupo 4: excepciones --- enlace vencido o ya usado.'
      msj=@(
@@ -624,6 +637,18 @@ $casos = @(
 )
 
 # ---------------- generacion ----------------
+
+if ($Rehacer) {
+    $borrados = 0
+    for ($i = $p22.Diagrams.Count - 1; $i -ge 0; $i--) {
+        $d = $p22.Diagrams.GetAt($i)
+        foreach ($c in $casos) {
+            if ($d.Name -eq $c.n) { $p22.Diagrams.DeleteAt($i, $false); $borrados++; break }
+        }
+    }
+    $p22.Diagrams.Refresh()
+    Write-Output "Borrados $borrados diagramas del Ciclo 3 (-Rehacer)."
+}
 
 foreach ($caso in $casos) {
     if (Get-Diagrama $p22 $caso.n) { Write-Output "  $($caso.n) ya existe, no se toca"; continue }
