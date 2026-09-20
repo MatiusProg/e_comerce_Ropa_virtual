@@ -192,6 +192,15 @@ class _PendientesDelCiclo extends StatelessWidget {
         Icons.auto_awesome,
         Rutas.paraVos,
       ),
+      // CU-34. Va junto a «Para vos»: las dos son la misma idea desde dos
+      // lados --- una sugiere sin que se le pida y la otra contesta lo que
+      // se le pregunta.
+      (
+        'Asistente',
+        'CU-34 · preguntá lo que quieras',
+        Icons.chat_bubble_outline,
+        Rutas.asistente,
+      ),
       (
         'Mis favoritos',
         'CU-20',
