@@ -18,13 +18,18 @@ por cada cliente que abandona la compra --- que son casi todos. Aqui la
 disponibilidad se INFORMA; validarla en serio es de CU-27, contra el bloqueo de
 la existencia, que es donde importa y donde ya esta resuelto el riesgo R5.
 
-SOBRE LAS PROMOCIONES
----------------------
+SOBRE LAS PROMOCIONES --- CERRADO EL 20/09
+-------------------------------------------
 La descripcion del caso de uso dice «ver el total con las promociones
-aplicadas». Las promociones son **CU-12**, que estrena
-`0007_ciclo3_promociones` y es de Mateo; al 15/09 no existen. El total que
-devuelve esto es la suma de los subtotales, sin descuentos. Cuando CU-12 exista,
-el punto donde se aplican es `_armar_carrito`, y ese es el unico lugar.
+aplicadas». Eso quedo pendiente hasta que existiera **CU-12**, y ya existe: la
+tabla la estrena la `0016_ciclo3_promociones`.
+
+El punto donde se aplican es `_armar_carrito`, tal como estaba anunciado, y es
+**el unico lugar**: el total del carrito sale de ahi y de ningun otro lado.
+
+El precio de lista y el descuento viajan por separado en cada linea, no un solo
+numero ya rebajado: el cliente tiene que ver de cuanto era y cuanto paga, que
+es lo que vuelve creible la oferta.
 """
 from decimal import Decimal
 
@@ -32,6 +37,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.modules.catalogo import imagenes_almacen as almacen
+from app.modules.catalogo import promociones_service as promociones
 from app.modules.catalogo_publico import service as catalogo_publico
 from app.modules.ventas import carrito_repository as repository
 from app.modules.ventas.carrito_schemas import (
@@ -100,10 +106,18 @@ def _carrito_de(db: Session, cliente_id: int, *, crear: bool):
 # --- Armado de la respuesta ----------------------------------------------
 
 def _armar_carrito(db: Session, carrito_id: int | None) -> CarritoOut:
-    """El carrito completo, con precios y disponibilidad al dia.
+    """El carrito completo, con precios, promociones y disponibilidad al dia.
 
-    Es el unico lugar donde se calcula el total. Cuando existan las promociones
-    de CU-12, se aplican aqui.
+    Es el unico lugar donde se calcula el total, y desde CU-12 tambien donde se
+    aplican las promociones --- que es lo que este docstring venia anunciando
+    desde el Ciclo 3 temprano ---.
+
+    EL DESCUENTO SE LEE EN VIVO, COMO EL PRECIO
+    --------------------------------------------
+    `carrito_detalle` no guarda ni precio ni descuento. Si guardara el descuento,
+    una promocion vencida se honraria indefinidamente y una que arranca hoy no
+    alcanzaria lo que el cliente agrego ayer. El carrito es una intencion; lo
+    que se congela es la venta (CU-27, CU-31).
     """
     if carrito_id is None:
         # Un carrito vacio no es un error ni un 404: es el estado normal de
@@ -114,13 +128,20 @@ def _armar_carrito(db: Session, carrito_id: int | None) -> CarritoOut:
     stock = repository.stock_de_variantes(db, [f.variante_id for f in filas])
     imagenes = repository.imagen_principal(db, [f.producto_id for f in filas])
 
+    # CU-12. Una sola consulta para todo el carrito, no una por linea.
+    descuentos = promociones.descuentos_por_variante(
+        db, {f.variante_id: f.precio for f in filas}
+    )
+
     lineas: list[LineaCarritoOut] = []
     total = Decimal("0.00")
     no_disponibles = 0
 
     for fila in filas:
         disponible = bool(fila.ofrecible)
-        subtotal = (fila.precio * fila.cantidad) if disponible else Decimal("0.00")
+        descuento = descuentos.get(fila.variante_id)
+        unitario = descuento.precio_final if descuento else fila.precio
+        subtotal = (unitario * fila.cantidad) if disponible else Decimal("0.00")
 
         if disponible:
             total += subtotal
@@ -139,7 +160,10 @@ def _armar_carrito(db: Session, carrito_id: int | None) -> CarritoOut:
                 color_hexadecimal=fila.color_hexadecimal,
                 imagen_url=almacen.url_de(ruta) if ruta else None,
                 cantidad=fila.cantidad,
+                # El precio de lista y el descuento van por separado: el
+                # cliente tiene que ver de cuanto era y cuanto paga.
                 precio_unitario=fila.precio,
+                descuento=promociones.a_contrato(descuento),
                 subtotal=subtotal,
                 disponible=disponible,
                 stock_total=stock.get(fila.variante_id, 0),

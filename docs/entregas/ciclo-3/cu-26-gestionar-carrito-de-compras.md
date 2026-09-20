@@ -116,16 +116,29 @@ visita sería escribir por mirar. El carrito se crea en el primer `agregar`, y
 deja un carrito vacío de rastro. Hay una prueba que mira la tabla, no la
 respuesta — un carrito vacío y uno inexistente se ven igual desde afuera.
 
-## Las promociones, que la ficha menciona y todavía no existen
+## Las promociones — CERRADO el 20/09
 
-La descripción dice «ver el total con las promociones aplicadas». Las
-promociones son **CU-12**, que estrena `0007_ciclo3_promociones` y es de Mateo;
-al 15/09 no existen.
+> **Al 15/09 esta sección decía que las promociones no existían**, que eran de
+> Mateo y que estrenaban la `0007_ciclo3_promociones`. Las tres cosas cambiaron
+> y se corrigen acá en vez de dejarlas como estaban: una ficha que describe un
+> comportamiento que ya no es el que el código tiene es peor que no tenerla.
 
-El total que devuelve esto es la suma de los subtotales, **sin descuentos**, y
-la pantalla lo dice con todas las letras en vez de mostrar un «descuentos: 0,00»
-que parecería un total final. Cuando CU-12 exista, el único punto donde se
-aplican es `_armar_carrito`.
+La descripción dice «ver el total con las promociones aplicadas», y ya se
+aplican. **CU-12** existe desde el 20/09; la tabla la estrena la
+`0016_ciclo3_promociones` —no la `0007`, que se reservó temprano y la cadena le
+pasó por encima— y se tomó de este lado, no del de Mateo.
+
+El punto donde se aplican es `_armar_carrito`, tal como esta ficha anunciaba, y
+es **el único**: el total del carrito sale de ahí y de ningún otro lado.
+
+Cada línea lleva el precio de lista y el descuento **por separado**, no un solo
+número ya rebajado: el cliente tiene que ver de cuánto era y cuánto paga, que es
+lo que vuelve creíble la oferta.
+
+El carrito sigue sin guardar el descuento, por el mismo motivo por el que no
+guarda el precio: si lo guardara, una promoción vencida se honraría
+indefinidamente y una que arranca hoy no alcanzaría lo que el cliente agregó
+ayer.
 
 ## Endpoints
 

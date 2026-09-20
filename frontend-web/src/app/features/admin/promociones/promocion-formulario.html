@@ -1,0 +1,119 @@
+<h2 mat-dialog-title>{{ editando ? 'Editar promoción' : 'Nueva promoción' }}</h2>
+
+<mat-dialog-content class="cuerpo">
+  <mat-form-field appearance="outline" class="campo">
+    <mat-label>Nombre</mat-label>
+    <input matInput [formControl]="nombre" placeholder="Camisas al 20" maxlength="80" />
+    <mat-hint>Es lo que el cliente ve al lado del precio tachado.</mat-hint>
+    @if (nombre.touched && nombre.invalid) {
+      <mat-error>Escriba un nombre de al menos dos letras.</mat-error>
+    }
+  </mat-form-field>
+
+  <!--
+    Dos preguntas y no tres campos: primero SOBRE QUÉ y después CUÁL. Es el
+    orden en que se piensa una promoción.
+  -->
+  <fieldset class="alcance" [disabled]="editando">
+    <legend>¿Sobre qué?</legend>
+    <mat-button-toggle-group [formControl]="alcance" aria-label="Alcance de la promoción">
+      <mat-button-toggle value="PRODUCTO">
+        <mat-icon>checkroom</mat-icon>
+        Un producto
+      </mat-button-toggle>
+      <mat-button-toggle value="CATEGORIA">
+        <mat-icon>category</mat-icon>
+        Una categoría
+      </mat-button-toggle>
+      <mat-button-toggle value="TEMPORADA">
+        <mat-icon>wb_sunny</mat-icon>
+        Una temporada
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+  </fieldset>
+
+  @if (cargandoObjetivos()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <mat-form-field appearance="outline" class="campo">
+    <mat-label>{{ etiquetaObjetivo() }}</mat-label>
+    <mat-select [formControl]="objetivoId">
+      @for (o of objetivos(); track o.id) {
+        <mat-option [value]="o.id">{{ o.nombre }}</mat-option>
+      }
+    </mat-select>
+    @if (editando) {
+      <mat-hint>El alcance no se edita: para cambiarlo, apague ésta y cree otra.</mat-hint>
+    } @else if (objetivos().length === 0 && !cargandoObjetivos()) {
+      <mat-hint>No hay ninguno cargado todavía.</mat-hint>
+    }
+    @if (objetivoId.touched && objetivoId.invalid) {
+      <mat-error>Elija sobre cuál se aplica.</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="campo corto">
+    <mat-label>Descuento</mat-label>
+    <input matInput inputmode="decimal" [formControl]="porcentaje" placeholder="20" />
+    <span matTextSuffix>&nbsp;%</span>
+    <mat-hint>Entre 0 y 100. Se admite un decimal, como 12.5.</mat-hint>
+    @if (porcentaje.touched && porcentaje.invalid) {
+      <mat-error>Escriba un porcentaje mayor que cero y hasta cien.</mat-error>
+    }
+  </mat-form-field>
+
+  <div class="fechas">
+    <mat-form-field appearance="outline">
+      <mat-label>Desde</mat-label>
+      <input matInput [matDatepicker]="calDesde" [formControl]="desde" />
+      <mat-datepicker-toggle matIconSuffix [for]="calDesde" />
+      <mat-datepicker #calDesde />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Hasta</mat-label>
+      <input matInput [matDatepicker]="calHasta" [formControl]="hasta" />
+      <mat-datepicker-toggle matIconSuffix [for]="calHasta" />
+      <mat-datepicker #calHasta />
+      <mat-hint>Déjelo vacío para que no termine.</mat-hint>
+    </mat-form-field>
+
+    @if (hasta.value) {
+      <button matIconButton type="button" (click)="quitarHasta()" aria-label="Quitar la fecha de fin">
+        <mat-icon>close</mat-icon>
+      </button>
+    }
+  </div>
+
+  @if (!vigenciaCoherente) {
+    <p class="aviso">
+      <mat-icon>error_outline</mat-icon>
+      La fecha de fin no puede ser anterior a la de inicio.
+    </p>
+  }
+
+  <!--
+    Se dice acá y no en una ayuda escondida: es la regla que más sorprende, y
+    quien carga la segunda promoción sobre la misma prenda tiene que saberla
+    antes de guardar, no después de que un cliente reclame.
+  -->
+  <p class="nota">
+    <mat-icon>info_outline</mat-icon>
+    Si una prenda queda alcanzada por más de una promoción,
+    <strong>se aplica la de mayor descuento</strong>. Nunca se suman.
+  </p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()">Cancelar</button>
+  <button
+    matButton="filled"
+    type="button"
+    class="vb-boton-marca"
+    [disabled]="!valido"
+    (click)="guardar()"
+  >
+    {{ editando ? 'Guardar' : 'Crear promoción' }}
+  </button>
+</mat-dialog-actions>

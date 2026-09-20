@@ -48,6 +48,7 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from app.modules.caja import repository as caja_repository
+from app.modules.catalogo import promociones_service as promociones
 from app.modules.inventario import service as inventario
 from app.modules.pos import repository
 from app.modules.pos.schemas import (
@@ -218,8 +219,21 @@ def buscar_prendas(
         pagina=pagina,
         tamano=tamano,
     )
+    # CU-12. Una consulta para toda la pagina, no una por prenda.
+    descuentos = promociones.descuentos_por_variante(
+        db, {f.variante_id: f.precio for f in filas}
+    )
     return total, [
-        PrendaEnMostradorOut.model_validate(fila, from_attributes=True)
+        PrendaEnMostradorOut(
+            variante_id=fila.variante_id,
+            sku=fila.sku,
+            producto=fila.producto,
+            talla=fila.talla,
+            color=fila.color,
+            precio=fila.precio,
+            descuento=promociones.a_contrato(descuentos.get(fila.variante_id)),
+            disponible=fila.disponible,
+        )
         for fila in filas
     ]
 
@@ -230,19 +244,26 @@ def buscar_prendas(
 
 def _lineas_de_reserva(db: Session, reserva_id: int):
     filas = repository.lineas_llevadas(db, reserva_id=reserva_id)
-    lineas = [
-        LineaDeReservaOut(
-            variante_id=fila.variante_id,
-            sku=fila.sku,
-            producto=fila.producto,
-            talla=fila.talla,
-            color=fila.color,
-            cantidad=fila.cantidad,
-            precio=fila.precio,
-            subtotal=fila.precio * fila.cantidad,
+    descuentos = promociones.descuentos_por_variante(
+        db, {f.variante_id: f.precio for f in filas}
+    )
+    lineas = []
+    for fila in filas:
+        d = descuentos.get(fila.variante_id)
+        unitario = d.precio_final if d else fila.precio
+        lineas.append(
+            LineaDeReservaOut(
+                variante_id=fila.variante_id,
+                sku=fila.sku,
+                producto=fila.producto,
+                talla=fila.talla,
+                color=fila.color,
+                cantidad=fila.cantidad,
+                precio=fila.precio,
+                descuento=promociones.a_contrato(d),
+                subtotal=unitario * fila.cantidad,
+            )
         )
-        for fila in filas
-    ]
     return lineas, sum((l.subtotal for l in lineas), CERO)
 
 
@@ -403,12 +424,25 @@ def registrar_venta(
     mostrador = mostrador_de(db, usuario_id)
     lineas, cliente_id = _lineas_del_ticket(db, datos, mostrador)
 
+    # CU-12. Las promociones vigentes se leen al cobrar, no antes: una que
+    # vencio anoche no se honra hoy, y una que empieza hoy alcanza a la reserva
+    # que se atendio ayer. Una sola consulta para todo el ticket.
+    descuentos = promociones.descuentos_por_variante(
+        db, {variante_id: precio for variante_id, _, precio, _ in lineas}
+    )
+
     subtotal = sum((precio * cantidad for _, cantidad, precio, _ in lineas), CERO)
-    # CU-12 (promociones) no existe todavia. El descuento viaja igual, en cero,
-    # porque las tres columnas tienen un CHECK que las ata
-    # (`total = subtotal - descuento`) y porque cuando exista no hay que volver
-    # a tocar esto.
-    descuento = CERO
+    # El subtotal va a precio de LISTA y el descuento aparte: lo exige el CHECK
+    # `total = subtotal - descuento`, y ademas es lo que deja que el ticket
+    # muestre de cuanto era y cuanto se pago.
+    descuento = sum(
+        (
+            descuentos[variante_id].monto_unitario * cantidad
+            for variante_id, cantidad, _precio, _ in lineas
+            if variante_id in descuentos
+        ),
+        CERO,
+    )
     total = subtotal - descuento
 
     if datos.total_esperado is not None and datos.total_esperado != total:
@@ -447,7 +481,13 @@ def registrar_venta(
             # CONGELADO. Desde aca el precio de esta linea ya no cambia nunca,
             # aunque la tienda toque el precio de la variante manana.
             precio_unitario=precio,
-            descuento_unitario=CERO,
+            # CONGELADO junto con el precio: si manana la promocion se apaga,
+            # este ticket sigue explicando por que se cobro lo que se cobro.
+            descuento_unitario=(
+                descuentos[variante_id].monto_unitario
+                if variante_id in descuentos
+                else CERO
+            ),
             cantidad=cantidad,
         )
 

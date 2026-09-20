@@ -103,6 +103,11 @@ TABLAS_VOLATILES = (
     "cliente",
     "empleado",
     "imagen_producto",
+    # CU-12: apunta a producto, categoria y temporada, las tres mas abajo. El
+    # CASCADE la limpiaria igual por rebote, pero listarla es lo que hace que
+    # `RESTART IDENTITY` tambien la alcance --- y que no dependa de que alguien
+    # recuerde por que funciona.
+    "promocion",
     "variante_producto",
     "producto",
     "proveedor",

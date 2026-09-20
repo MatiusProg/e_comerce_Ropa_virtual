@@ -134,7 +134,15 @@
 
               <div class="importe">
                 <span class="subtotal">Bs {{ linea.subtotal }}</span>
-                <span class="unitario">Bs {{ linea.precio_unitario }} c/u</span>
+                @if (linea.descuento; as d) {
+                  <span class="unitario">
+                    <span class="tachado">Bs {{ linea.precio_unitario }}</span>
+                    <strong>Bs {{ d.precio_final }}</strong> c/u
+                  </span>
+                  <span class="promo">{{ d.nombre }} · −{{ d.porcentaje }} %</span>
+                } @else {
+                  <span class="unitario">Bs {{ linea.precio_unitario }} c/u</span>
+                }
               </div>
 
               <button

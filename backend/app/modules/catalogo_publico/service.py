@@ -19,6 +19,7 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from app.modules.catalogo import imagenes_almacen as almacen
+from app.modules.catalogo import promociones_service as promociones
 # Costura C1: la unica lectura de `existencia` que hace P5 pasa por aqui.
 # Es una importacion de funcion, no un SELECT sobre una tabla ajena ni una
 # llamada HTTP interna --- el contrato esta en la seccion 6 del documento de
@@ -142,8 +143,9 @@ def _tarjetas(db: Session, productos: list) -> list[ProductoVitrinaOut]:
     agregar dos veces cada dato nuevo, y el dia que difieran la pantalla de
     favoritos mostraria una prenda distinta de como la muestra el catalogo.
 
-    Todo lo que la tarjeta necesita se resuelve en **cinco consultas agregadas
-    para la pagina entera**, no en cinco por producto.
+    Todo lo que la tarjeta necesita se resuelve en **seis consultas agregadas
+    para la pagina entera**, no en seis por producto. La sexta es CU-12: el
+    descuento vigente de cada producto.
     """
     if not productos:
         return []
@@ -155,11 +157,23 @@ def _tarjetas(db: Session, productos: list) -> list[ProductoVitrinaOut]:
     con_vestidor = repository.variantes_con_vestidor(db, ids)
     categorias = repository.nombres_de_categorias(db, [p.categoria_id for p in productos])
 
+    # CU-12. Se pide sobre `precio_desde` ---el numero que la tarjeta muestra
+    # en grande--- porque es el que el cliente compara con el precio tachado.
+    descuentos = promociones.descuentos_por_producto(
+        db,
+        {
+            p.id: precios[p.id][0]
+            for p in productos
+            if precios.get(p.id) and precios[p.id][0] is not None
+        },
+    )
+
     items = []
     for producto in productos:
         fila = ProductoVitrinaOut.model_validate(producto, from_attributes=True)
         fila.categoria_nombre = categorias.get(producto.categoria_id)
         fila.precio_desde, fila.precio_hasta = precios.get(producto.id, (None, None))
+        fila.descuento = promociones.a_contrato(descuentos.get(producto.id))
         ruta = imagenes.get(producto.id)
         fila.imagen_url = almacen.url_de(ruta) if ruta else None
         fila.colores = [
@@ -209,6 +223,13 @@ def obtener_ficha(db: Session, producto_id: int) -> FichaProductoOut:
     precios = [v.precio for v in ofrecibles]
     ficha.precio_desde = min(precios)
     ficha.precio_hasta = max(precios)
+
+    # CU-12, sobre el precio mas bajo: es el que la ficha muestra en grande.
+    ficha.descuento = promociones.a_contrato(
+        promociones.descuentos_por_producto(db, {producto_id: ficha.precio_desde}).get(
+            producto_id
+        )
+    )
 
     vestidor = repository.rutas_de_vestidor(db, producto_id)
     ficha.variantes = [_variante(v, vestidor) for v in _ordenadas(ofrecibles)]

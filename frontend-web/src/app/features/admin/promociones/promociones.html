@@ -1,0 +1,165 @@
+<header class="encabezado">
+  <div>
+    <h1 class="vb-titulo">Promociones</h1>
+    <p class="bajada">
+      Descuentos con vigencia sobre un producto, una categoría o una temporada.
+      @if (vigentes() > 0) {
+        <strong>{{ vigentes() }}</strong>
+        {{ vigentes() === 1 ? 'está descontando' : 'están descontando' }} ahora.
+      }
+    </p>
+  </div>
+  <button matButton="filled" type="button" class="vb-boton-marca" (click)="nueva()">
+    <mat-icon>add</mat-icon>
+    Nueva promoción
+  </button>
+</header>
+
+<div class="filtros">
+  <mat-button-toggle-group
+    [value]="filtroAlcance()"
+    (change)="filtrarPorAlcance($any($event).value)"
+    aria-label="Filtrar por alcance"
+  >
+    <mat-button-toggle [value]="null">Todas</mat-button-toggle>
+    <mat-button-toggle value="PRODUCTO">Producto</mat-button-toggle>
+    <mat-button-toggle value="CATEGORIA">Categoría</mat-button-toggle>
+    <mat-button-toggle value="TEMPORADA">Temporada</mat-button-toggle>
+  </mat-button-toggle-group>
+
+  <button
+    matButton
+    type="button"
+    [class.puesto]="soloVigentes()"
+    (click)="alternarVigentes()"
+  >
+    <mat-icon>{{ soloVigentes() ? 'check_box' : 'check_box_outline_blank' }}</mat-icon>
+    Solo las que descuentan hoy
+  </button>
+</div>
+
+@if (cargando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+@if (error(); as e) {
+  <div class="aviso" role="alert">
+    <mat-icon>error_outline</mat-icon>
+    <span>{{ e }}</span>
+  </div>
+}
+
+@if (!cargando() && promociones().length === 0) {
+  <mat-card class="tarjeta vacio" appearance="outlined">
+    <mat-card-content>
+      <mat-icon class="icono">sell</mat-icon>
+      <h2>No hay promociones cargadas</h2>
+      <p>
+        Una promoción rebaja el precio de todo lo que alcanza, mientras está
+        vigente. Se ve en la vitrina, en el carrito y en el mostrador.
+      </p>
+      <button matButton="filled" type="button" class="vb-boton-marca" (click)="nueva()">
+        <mat-icon>add</mat-icon>
+        Crear la primera
+      </button>
+    </mat-card-content>
+  </mat-card>
+}
+
+@if (promociones().length) {
+  <mat-card class="tarjeta" appearance="outlined">
+    <mat-card-content class="sin-relleno">
+      <div class="desplazable">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th scope="col">Promoción</th>
+              <th scope="col">Alcance</th>
+              <th scope="col" class="numero">Descuento</th>
+              <th scope="col">Vigencia</th>
+              <th scope="col">Hoy</th>
+              <th scope="col" class="centro">Activa</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of promociones(); track p.id) {
+              <tr [class.apagada]="!p.activa">
+                <td class="nombre">{{ p.nombre }}</td>
+                <td>
+                  <span class="alcance">
+                    <mat-icon>{{ iconoDe(p.alcance) }}</mat-icon>
+                    <span>
+                      {{ nombreDe(p.alcance) }}
+                      <span class="objetivo">{{ p.objetivo_nombre }}</span>
+                    </span>
+                  </span>
+                </td>
+                <td class="numero porcentaje">−{{ p.porcentaje }} %</td>
+                <td class="vigencia">
+                  {{ p.desde | date: 'dd/MM/yy' }}
+                  @if (p.hasta) {
+                    → {{ p.hasta | date: 'dd/MM/yy' }}
+                  } @else {
+                    <span class="sin-fin">sin fin</span>
+                  }
+                </td>
+                <td>
+                  <!--
+                    «Activa» y «vigente» no son lo mismo, y confundirlas es la
+                    forma más fácil de creer que el sistema está roto.
+                  -->
+                  @if (p.vigente) {
+                    <span class="marca descontando">Descontando</span>
+                  } @else {
+                    <span class="marca quieta" [matTooltip]="porQueNoDescuenta(p)">
+                      No descuenta
+                    </span>
+                  }
+                </td>
+                <td class="centro">
+                  <mat-slide-toggle
+                    [checked]="p.activa"
+                    (change)="cambiarEstado(p, $any($event).checked)"
+                    [attr.aria-label]="'Activar o desactivar ' + p.nombre"
+                  />
+                </td>
+                <td class="centro">
+                  <button
+                    matIconButton
+                    type="button"
+                    (click)="editar(p)"
+                    [attr.aria-label]="'Editar ' + p.nombre"
+                    matTooltip="Editar"
+                  >
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <mat-paginator
+        [length]="total()"
+        [pageSize]="tamano()"
+        [pageIndex]="pagina() - 1"
+        [pageSizeOptions]="[10, 20, 50]"
+        (page)="paginar($event)"
+      />
+    </mat-card-content>
+  </mat-card>
+
+  <!--
+    Se dice en la pantalla y no solo en el formulario: quien mira la lista con
+    dos promociones sobre la misma categoría tiene que poder entender qué va a
+    pagar el cliente sin abrir nada.
+  -->
+  <p class="nota">
+    <mat-icon>info_outline</mat-icon>
+    Si una prenda queda alcanzada por más de una promoción,
+    <strong>se aplica la de mayor descuento</strong>. Nunca se suman. A igual
+    descuento gana la más específica.
+  </p>
+}
