@@ -215,7 +215,6 @@ app.include_router(abastecimiento_router, prefix=API)
 # CU-31 y CU-32: la venta presencial y la devolucion.
 app.include_router(pos_router, prefix=API)
 app.include_router(devoluciones_router, prefix=API)
-app.include_router(abastecimiento_router, prefix=API)
 app.include_router(ia_router, prefix=API)
 app.include_router(reportes_router, prefix=API)
 app.include_router(bitacora_router, prefix=API)

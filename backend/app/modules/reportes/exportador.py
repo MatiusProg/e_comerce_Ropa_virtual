@@ -25,6 +25,8 @@ de uso pide.
 
 from __future__ import annotations
 
+from app.core import tiempo
+
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal
@@ -67,7 +69,11 @@ def _texto(valor: object) -> str:
     if isinstance(valor, Decimal):
         return f"{valor:,.2f}"
     if isinstance(valor, datetime):
-        return valor.strftime("%d/%m/%Y %H:%M")
+        # En hora BOLIVIANA. La base guarda instantes en UTC ---que es lo
+        # correcto--- pero un reporte lo lee una persona al lado del reloj de
+        # la tienda: sin convertir, una venta de las 21:00 figuraba a la 01:00
+        # del dia siguiente. Ver `app/core/tiempo.py`.
+        return tiempo.formatear(valor)
     if isinstance(valor, date):
         return valor.strftime("%d/%m/%Y")
     if isinstance(valor, float):

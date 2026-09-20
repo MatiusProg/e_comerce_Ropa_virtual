@@ -18,18 +18,38 @@ el cobro todavia no existiera. Su propio docstring lo deja escrito:
     movimiento de VENTA lo va a escribir la venta, no este caso de uso; hasta
     entonces lo escribe aca, con el motivo que lo explica.»
 
-P7 ya existe, pero **CU-24 es de Mateo y sigue escribiendo ese movimiento**. La
-respuesta correcta hoy no es reescribirle su caso de uso a un dia de la entrega
----seria cambiar una regla ajena, romper sus pruebas y arriesgar el invariante
-de P4 justo donde mas duele---, sino **respetar lo que ya hizo y no descontar
-de nuevo**. Un segundo `VENTA -n` sobre las mismas unidades dejaria el
-disponible en negativo o, peor, lo dejaria mintiendo sin que nada reventara.
+P7 ya existe. **Y aun asi CU-24 sigue descontando, a proposito**: no es una
+deuda pendiente, es una decision que se tomo el 20/09/2026 despues de mirar que
+pasaba si se movia.
 
-Queda anotado como deuda con nombre y responsable: cuando CU-24 deje de
-descontar, el camino B tiene que empezar a hacerlo. Hasta entonces, la linea
-`if venta.reserva_id is None` de `_descontar` es lo unico que separa las dos
-historias, y la prueba `test_cobrar_una_reserva_no_vuelve_a_descontar` es lo
-que impide que alguien la borre por parecer de mas.
+POR QUE NO SE MUEVE EL DESCUENTO A CU-31
+-----------------------------------------
+El docstring de `atender_reserva` dice que «CU-24 y el cobro pasan a ser **una
+sola transaccion**». Esa es la clave: el plan no era mover una linea de un
+archivo a otro, era que atender y cobrar fueran **un solo acto**.
+
+Separados como estan hoy ---el Encargado atiende en el probador, el cajero
+cobra en el mostrador--- mover el `VENTA -n` a CU-31 abriria una ventana real:
+entre los dos momentos las unidades volverian a estar DISPONIBLES, y otro
+cliente podria comprarlas mientras el primero camina del probador a la caja con
+la prenda en la mano.
+
+Se comparo lo que cuesta cada cosa:
+
+  **Como esta**   el inventario dice la verdad desde que la prenda sale del
+                  probador; no hay ventana de sobreventa; lo unico raro es que
+                  el camino B de CU-31 no mueve inventario ---y esta escrito.
+
+  **Moviendolo**  se gana que «el que vende descuenta», que es mas prolijo en
+                  el diagrama, y se pierde la garantia de que no se venda dos
+                  veces la misma prenda.
+
+Se eligio lo primero. Fusionar los dos actos en una sola pantalla seria la
+solucion completa, y es un rediseno de CU-24 y CU-31 juntos, no un arreglo.
+
+La linea `if desde_reserva: return` de `_descontar` es lo que sostiene esto, y
+la prueba `test_cobrar_una_reserva_no_vuelve_a_descontar` es lo que impide que
+alguien la borre creyendo que sobra.
 
 SIN TURNO ABIERTO NO SE COBRA
 ------------------------------
@@ -385,9 +405,12 @@ def _descontar(
 ) -> None:
     """Saca del inventario lo que se vendio. **Sin commit.**
 
-    NO HACE NADA SI LA VENTA VIENE DE UNA RESERVA. Ver el encabezado del
-    modulo: CU-24 ya escribio `LIBERACION +n` y `VENTA -n` al cerrar la reserva,
-    y un segundo descuento contaria las mismas unidades dos veces.
+    NO HACE NADA SI LA VENTA VIENE DE UNA RESERVA, y no es provisorio.
+
+    CU-24 ya escribio `LIBERACION +n` y `VENTA -n` al cerrar la reserva; un
+    segundo descuento contaria las mismas unidades dos veces. Mover ese
+    movimiento aca abriria una ventana de sobreventa entre atender y cobrar ---
+    el encabezado del modulo tiene la comparacion completa---.
     """
     if desde_reserva:
         return
