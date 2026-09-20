@@ -1,0 +1,150 @@
+.abastecimiento {
+  padding: 8px 4px 32px;
+}
+
+header {
+  margin-bottom: 18px;
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+
+  .bajada {
+    margin: 4px 0 0;
+    color: rgb(0 0 0 / 65%);
+    font-size: 0.92rem;
+    max-width: 62ch;
+  }
+}
+
+.aviso-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  background: #fdecea;
+  color: #8c1d18;
+}
+
+.formulario {
+  padding: 16px;
+  margin-bottom: 24px;
+
+  h2 {
+    margin: 0 0 12px;
+    font-size: 1.05rem;
+  }
+
+  form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .prenda {
+    flex: 1 1 280px;
+    min-width: 240px;
+  }
+
+  .corto {
+    width: 130px;
+  }
+
+  .observacion {
+    flex: 1 1 220px;
+  }
+
+  button {
+    // Se alinea con los campos y no con su etiqueta: sin esto queda flotando
+    // arriba, a la altura del texto «Prenda».
+    margin-top: 6px;
+  }
+
+  .sin-variantes {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    color: rgb(0 0 0 / 60%);
+  }
+}
+
+.titulo-lista {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+
+  h2 {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+}
+
+// A 400 px la tabla no entra: se desplaza en vez de apretar las columnas
+// hasta que dejen de leerse.
+.envoltorio-tabla {
+  overflow-x: auto;
+
+  table {
+    width: 100%;
+    min-width: 560px;
+  }
+}
+
+td.mat-mdc-cell {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.detalle {
+  display: block;
+  font-size: 0.8rem;
+  color: rgb(0 0 0 / 55%);
+}
+
+.observacion-fila {
+  display: block;
+  font-size: 0.78rem;
+  color: rgb(0 0 0 / 45%);
+  font-style: italic;
+}
+
+.pastilla {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  background: #e6f4ea;
+  color: #1b5e20;
+  white-space: nowrap;
+
+  &.retirado {
+    background: #eee;
+    color: rgb(0 0 0 / 55%);
+  }
+}
+
+.vacio {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  padding: 48px 16px;
+  color: rgb(0 0 0 / 60%);
+
+  mat-icon {
+    font-size: 44px;
+    width: 44px;
+    height: 44px;
+    color: #b57f9a;
+  }
+
+  p {
+    margin: 0;
+  }
+}

@@ -79,6 +79,15 @@ class ExistenciaConsolidadaOut(BaseModel):
     #: situaciones distintas y la lista larga no lo dice de un vistazo.
     sucursales_con_saldo: int
 
+    #: Cuanto anunciaron los proveedores que van a traer (CU-39), y en
+    #: cuantos dias llega lo primero. Cero y `None` cuando nadie anuncio nada.
+    #:
+    #: Es lo que vuelve alcanzable el estado `PROXIMA_A_INGRESAR`: hasta el
+    #: 20/09/2026 estaba declarado y ninguna fila lo devolvia, porque nada en
+    #: el sistema anunciaba lo que estaba por llegar.
+    cantidad_anunciada: int = 0
+    dias_para_ingresar: int | None = None
+
     sucursales: list[SaldoEnSucursalOut] = []
 
 
