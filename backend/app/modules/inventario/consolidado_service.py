@@ -14,6 +14,7 @@ tabla del otro: la costura C1 expone esa funcion justamente para esto. El precio
 es que el filtrado fino, el orden y la paginacion se resuelven en memoria en vez
 de en SQL --- ver la nota al pie de este archivo.
 """
+from app.modules.abastecimiento import repository as abastecimiento
 from app.modules.inventario import service
 from app.modules.inventario.consolidado_schemas import (
     EstadoExistencia,
@@ -27,22 +28,36 @@ from app.modules.inventario.consolidado_schemas import (
 ORDENES = ("prenda", "disponible_asc", "disponible_desc", "sucursales")
 
 
-def _estado(disponible: int, reservado: int) -> EstadoExistencia:
-    """El estado de una variante a partir de sus dos saldos.
+def _estado(
+    disponible: int, reservado: int, anunciado: int = 0
+) -> EstadoExistencia:
+    """El estado de una variante a partir de sus saldos y de lo anunciado.
 
     El orden de las comprobaciones es la regla: **agotada gana sobre
     reservada**. Una variante con 0 disponibles y 3 reservadas esta agotada para
     quien quiera comprarla hoy, aunque tenga unidades apartadas; decir
     «reservada» haria creer que hay algo que ofrecer.
+
+    PROXIMA A INGRESAR VA AL FINAL, Y SOLO SI NO HAY NADA (CU-39)
+    --------------------------------------------------------------
+    Es el estado que el enunciado pedia y que hasta el 20/09/2026 ninguna fila
+    devolvia. Va **despues** de agotada a proposito: una variante con 5
+    disponibles y 20 anunciadas esta DISPONIBLE --- se puede vender hoy ---, y
+    decir «proxima a ingresar» haria creer lo contrario.
+
+    Solo cuando no hay nada ni disponible ni apartado, lo anunciado es la
+    informacion util: no hay, pero viene.
     """
     if disponible > 0:
         return EstadoExistencia.DISPONIBLE
     if reservado > 0:
         return EstadoExistencia.RESERVADA
+    if anunciado > 0:
+        return EstadoExistencia.PROXIMA_A_INGRESAR
     return EstadoExistencia.AGOTADA
 
 
-def _agrupar(filas) -> list[ExistenciaConsolidadaOut]:
+def _agrupar(db, filas) -> list[ExistenciaConsolidadaOut]:
     """De (variante, sucursal) a una fila por variante con su reparto.
 
     Es lo que convierte el listado operativo en una vista de red: la misma
@@ -81,9 +96,17 @@ def _agrupar(filas) -> list[ExistenciaConsolidadaOut]:
             )
         )
 
+    # Lo anunciado por los proveedores (CU-39), EN BLOQUE para toda la
+    # pagina: preguntarlo variante por variante serian decenas de viajes para
+    # pintar una columna.
+    anunciado = abastecimiento.anunciado_por_variante(db, list(por_variante))
+
     for consolidada in por_variante.values():
+        cantidad, dias = anunciado.get(consolidada.variante_id, (0, None))
+        consolidada.cantidad_anunciada = cantidad
+        consolidada.dias_para_ingresar = dias
         consolidada.estado = _estado(
-            consolidada.total_disponible, consolidada.total_reservado
+            consolidada.total_disponible, consolidada.total_reservado, cantidad
         )
         # Cuenta las sucursales donde hay ALGO, disponible o apartado. Una
         # tienda con la prenda entera reservada sigue teniendo la prenda.
@@ -136,7 +159,7 @@ def consultar(
     filas = service.inventario_consolidado(
         db, sucursal_id=sucursal_id, producto_id=producto_id
     )
-    items = _agrupar(filas)
+    items = _agrupar(db, filas)
 
     if busqueda:
         patron = busqueda.strip().lower()

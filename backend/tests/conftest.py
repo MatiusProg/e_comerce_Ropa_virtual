@@ -78,6 +78,8 @@ from app.modules.ventas import carrito_models as modelos_carrito  # noqa: E402,F
 #: al final --- producto referencia a proveedor, categoria, temporada y
 #: coleccion, y variante_producto a talla y color.
 TABLAS_VOLATILES = (
+    # CU-39: cuelga de proveedor y de variante, que estan mas abajo.
+    "abastecimiento",
     # P4 va primero: el movimiento apunta a la existencia, al usuario y al
     # proveedor, y la existencia a la variante y a la sucursal. Todas ellas
     # estan mas abajo en esta misma tupla.

@@ -1,0 +1,121 @@
+.exportar {
+  padding: 8px 4px 32px;
+}
+
+header {
+  margin-bottom: 18px;
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+
+  .bajada {
+    margin: 4px 0 0;
+    color: rgb(0 0 0 / 60%);
+    font-size: 0.92rem;
+  }
+}
+
+.periodo {
+  padding: 14px 16px;
+  margin-bottom: 20px;
+
+  .titulo-periodo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  .fechas {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+
+    mat-form-field {
+      width: 190px;
+    }
+  }
+
+  .nota {
+    margin: 0;
+    font-size: 0.82rem;
+    color: rgb(0 0 0 / 55%);
+  }
+}
+
+.rejilla {
+  display: grid;
+  // 300 px es el ancho al que la lista de columnas del reporte de movimientos
+  // ---ocho--- deja de quebrarse en cuatro líneas.
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+
+  h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: #6d3550;
+  }
+
+  .columnas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    // Se le deja crecer y empuja las acciones abajo, para que todas las
+    // tarjetas de una fila terminen con los botones alineados.
+    flex: 1;
+    align-content: flex-start;
+  }
+
+  .columna {
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #f6e6ec;
+    color: #6d3550;
+    white-space: nowrap;
+  }
+
+  .sin-periodo {
+    margin: 0;
+    font-size: 0.8rem;
+    color: rgb(0 0 0 / 55%);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .acciones {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+
+    button {
+      flex: 1;
+    }
+  }
+}
+
+.vacio {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  padding: 56px 16px;
+  color: rgb(0 0 0 / 60%);
+
+  mat-icon {
+    font-size: 44px;
+    width: 44px;
+    height: 44px;
+    color: #b57f9a;
+  }
+}

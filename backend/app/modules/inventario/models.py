@@ -30,6 +30,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     UniqueConstraint,
@@ -212,3 +213,47 @@ class MovimientoInventario(Base):
     )
 
     existencia: Mapped["Existencia"] = relationship(back_populates="movimientos")
+
+
+class Abastecimiento(Auditoria, Base):
+    """Lo que un proveedor anuncia que puede traer (CU-39). Ver la 0015.
+
+    Es lo unico que produce el estado `PROXIMA_A_INGRESAR` del inventario
+    consolidado: sin esta tabla ese estado esta declarado y ninguna fila lo
+    devuelve. Cierra el agujero H1 y con el el RF38.
+    """
+
+    __tablename__ = "abastecimiento"
+    __table_args__ = (
+        CheckConstraint("cantidad > 0", name="cantidad_positiva"),
+        CheckConstraint("dias_plazo BETWEEN 0 AND 365", name="plazo_razonable"),
+        CheckConstraint(
+            "estado IN ('ANUNCIADO', 'CANCELADO')", name="estado"
+        ),
+        # Un anuncio VIGENTE por proveedor y variante. Parcial, por lo mismo
+        # que el turno de caja: los cancelados son muchos y legitimos.
+        Index(
+            "ix_abastecimiento_vigente",
+            "proveedor_id",
+            "variante_id",
+            unique=True,
+            postgresql_where=text("estado = 'ANUNCIADO'"),
+        ),
+        Index("ix_abastecimiento_variante_estado", "variante_id", "estado"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    proveedor_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("proveedor.id", ondelete="CASCADE"), index=True
+    )
+    variante_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("variante_producto.id", ondelete="CASCADE")
+    )
+    cantidad: Mapped[int] = mapped_column(Integer)
+
+    #: En DIAS y no una fecha: el proveedor piensa en «te lo tengo en una
+    #: semana». Ver el porque completo en la migracion.
+    dias_plazo: Mapped[int] = mapped_column(Integer)
+
+    observacion: Mapped[str | None] = mapped_column(String(200))
+    estado: Mapped[str] = mapped_column(String(20), server_default="ANUNCIADO")
