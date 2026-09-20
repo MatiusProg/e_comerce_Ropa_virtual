@@ -1,3 +1,5 @@
+import type { Descuento } from './promociones.models';
+
 /**
  * CU-31 · Registrar venta presencial — modelos del contrato.
  *
@@ -16,8 +18,17 @@ export interface PrendaEnMostrador {
   producto: string;
   talla: string;
   color: string;
-  /** El precio vigente. Se congela recién al vender. */
+  /** El precio vigente, SIN descuento. Se congela recién al vender. */
   precio: string;
+  /**
+   * La promoción vigente, o nada (CU-12).
+   *
+   * **Tiene que llegar hasta acá.** La pantalla arma su total con estos
+   * precios y lo manda como `total_esperado`; sin el descuento su total sería
+   * mayor que el del servidor y CU-31 rechazaría con 409 *toda* venta de una
+   * prenda en promoción.
+   */
+  descuento: Descuento | null;
   disponible: number;
 }
 
@@ -36,7 +47,10 @@ export interface LineaDeReserva {
   talla: string;
   color: string;
   cantidad: number;
+  /** Precio de lista. El descuento va aparte, como en la búsqueda. */
   precio: string;
+  descuento: Descuento | null;
+  /** Ya con el descuento aplicado. */
   subtotal: string;
 }
 

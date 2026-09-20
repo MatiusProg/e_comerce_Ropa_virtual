@@ -10,6 +10,8 @@ from decimal import Decimal
 
 from pydantic import BaseModel, Field
 
+from app.modules.catalogo.promociones_schemas import DescuentoOut
+
 #: Tope de unidades por linea. No sale de una regla de negocio escrita: existe
 #: para que un dedo apoyado en el boton de sumar no deje un carrito con miles de
 #: unidades que despues hay que validar contra el inventario. Si alguna vez hace
@@ -37,7 +39,15 @@ class LineaCarritoOut(BaseModel):
     cantidad: int
     #: Precio VIGENTE de la variante, no el que tenia al agregarla. El carrito
     #: no guarda precios: ver el modelo.
+    #:
+    #: Es el precio SIN descuento. La promocion viaja aparte, en `descuento`,
+    #: en vez de venir ya restada: el cliente tiene que ver de cuanto era y
+    #: cuanto paga, que es lo que vuelve creible la oferta. Un solo numero ya
+    #: rebajado se lee como «este es el precio» y la promocion no existe.
     precio_unitario: Decimal
+    #: La promocion vigente que gano para esta prenda, o nada (CU-12).
+    descuento: DescuentoOut | None = None
+    #: Ya con el descuento aplicado: `(precio - descuento) * cantidad`.
     subtotal: Decimal
 
     #: `false` si la prenda dejo de ofrecerse despues de agregarla --- producto

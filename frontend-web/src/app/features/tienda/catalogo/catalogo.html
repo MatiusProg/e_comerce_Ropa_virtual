@@ -161,7 +161,22 @@
             <div class="cuerpo">
               <p class="categoria">{{ producto.categoria_nombre }}</p>
               <h2 class="nombre">{{ producto.nombre }}</h2>
-              <p class="precio">{{ precio(producto) }}</p>
+              <!--
+                Con promoción, el precio de lista va tachado al lado: una
+                tarjeta que solo muestra «Bs 200» es un precio, no una oferta.
+              -->
+              @if (producto.descuento; as d) {
+                <p class="precio con-promo">
+                  <span class="tachado">{{ precio(producto) }}</span>
+                  <span class="rebajado">Bs {{ d.precio_final }}</span>
+                </p>
+                <p class="promo">
+                  <mat-icon>sell</mat-icon>
+                  {{ d.nombre }} · −{{ d.porcentaje }} %
+                </p>
+              } @else {
+                <p class="precio">{{ precio(producto) }}</p>
+              }
 
               @if (producto.colores.length) {
                 <div class="colores">

@@ -28,6 +28,10 @@ from app.modules.organizacion.proveedores_router import (
 from app.modules.catalogo.router import router as catalogo_router
 from app.modules.catalogo.maestros.router import router as catalogo_maestros_router
 from app.modules.catalogo.temporadas_router import router as catalogo_temporadas_router
+# CU-12 es de Karen y vive en archivos propios dentro de P3, con el mismo
+# patron que `temporadas_*` e `imagenes_*`. Se monta aca y no cuelga del
+# router de catalogo porque ese archivo lo tocan CU-10 y CU-11.
+from app.modules.catalogo.promociones_router import router as promociones_router
 
 # --- Ciclo 2 -------------------------------------------------------------
 from app.modules.inventario.router import router as inventario_router
@@ -172,6 +176,7 @@ app.include_router(proveedores_mi_ficha_router, prefix=API)
 app.include_router(catalogo_router, prefix=API)
 app.include_router(catalogo_maestros_router, prefix=API)
 app.include_router(catalogo_temporadas_router, prefix=API)
+app.include_router(promociones_router, prefix=API)
 
 # --- Ciclo 2 -------------------------------------------------------------
 app.include_router(inventario_router, prefix=API)
@@ -203,5 +208,6 @@ app.include_router(abastecimiento_router, prefix=API)
 # CU-31 y CU-32: la venta presencial y la devolucion.
 app.include_router(pos_router, prefix=API)
 app.include_router(devoluciones_router, prefix=API)
+app.include_router(abastecimiento_router, prefix=API)
 app.include_router(ia_router, prefix=API)
 app.include_router(reportes_router, prefix=API)

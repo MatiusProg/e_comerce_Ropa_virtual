@@ -1,0 +1,206 @@
+:host {
+  display: block;
+}
+
+.encabezado {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.85rem;
+    font-weight: 600;
+    color: var(--vb-malva-oscuro);
+  }
+
+  .bajada {
+    margin: 0.25rem 0 0;
+    max-width: 44rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.filtros {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+
+  .puesto {
+    color: var(--vb-malva);
+    font-weight: 600;
+  }
+}
+
+.tarjeta {
+  border-radius: var(--vb-radio);
+
+  .sin-relleno {
+    padding: 0;
+  }
+}
+
+// Siete columnas no entran en una tablet: la tabla scrollea sola en vez de
+// romper la pantalla.
+.desplazable {
+  overflow-x: auto;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.7rem 0.9rem;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  th {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  // La apagada se atenúa pero se lee: sigue existiendo y se puede volver a
+  // encender. No hay borrado.
+  tr.apagada {
+    opacity: 0.55;
+  }
+
+  .numero {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .centro {
+    text-align: center;
+  }
+
+  .nombre {
+    font-weight: 600;
+    color: var(--vb-tinta);
+    white-space: normal;
+  }
+
+  .porcentaje {
+    font-weight: 600;
+    color: var(--vb-malva-oscuro);
+  }
+
+  .vigencia {
+    font-variant-numeric: tabular-nums;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .sin-fin {
+    font-style: italic;
+  }
+}
+
+.alcance {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+
+  mat-icon {
+    font-size: 1.15rem;
+    width: 1.15rem;
+    height: 1.15rem;
+    color: var(--vb-malva);
+  }
+
+  .objetivo {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.marca {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+
+  &.descontando {
+    background: #e3f3ea;
+    color: #2e7d55;
+  }
+
+  // No es un error: es un estado legítimo —todavía no empezó, o ya terminó—.
+  // Por eso va en gris y no en rojo, y el tooltip dice cuál de los dos es.
+  &.quieta {
+    background: var(--mat-sys-surface-variant);
+    color: var(--mat-sys-on-surface-variant);
+    cursor: help;
+  }
+}
+
+.vacio {
+  max-width: 34rem;
+  margin: 3rem auto;
+  text-align: center;
+
+  .icono {
+    font-size: 3rem;
+    width: 3rem;
+    height: 3rem;
+    color: var(--vb-malva);
+  }
+
+  h2 {
+    margin: 0.75rem 0 0.5rem;
+    font-size: 1.15rem;
+    color: var(--vb-malva-oscuro);
+  }
+
+  p {
+    margin: 0 0 1.5rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.aviso {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  color: var(--mat-sys-error);
+}
+
+.nota {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 1rem 0 0;
+  padding: 0.8rem 1rem;
+  border-radius: var(--vb-radio-chico);
+  background: var(--vb-rosa-palido);
+  font-size: 0.88rem;
+  color: var(--vb-malva-oscuro);
+
+  mat-icon {
+    flex: none;
+    font-size: 1.1rem;
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+}

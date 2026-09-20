@@ -1,3 +1,5 @@
+import type { Descuento } from './promociones.models';
+
 /**
  * P7 · Ventas — CU-26 Gestionar carrito de compras.
  *
@@ -23,6 +25,9 @@ export interface LineaCarrito {
    * fija al generar el pedido (CU-27).
    */
   precio_unitario: string;
+  /** La promoción vigente que ganó para esta prenda, o nada (CU-12). */
+  descuento: Descuento | null;
+  /** Ya con el descuento aplicado. */
   subtotal: string;
 
   /**

@@ -22,6 +22,9 @@ from app.db.session import _normalizar_url
 from app.modules.seguridad import models as _seguridad_models  # noqa: F401
 from app.modules.organizacion import models as _organizacion_models  # noqa: F401
 from app.modules.catalogo import models as _catalogo_models  # noqa: F401
+# CU-12 vive en un archivo propio dentro de P3, con el patron de
+# `carrito_models`: `models.py` de catalogo lo tocan otros cuatro casos de uso.
+from app.modules.catalogo import promociones_models as _promociones_models  # noqa: F401
 
 # Ciclo 2 - descomentar al implementarlos
 from app.modules.inventario import models as _inventario_models  # noqa: F401

@@ -304,3 +304,17 @@
     width: 100%;
   }
 }
+
+// --- CU-12: la promoción en la línea del carrito --------------------------
+
+.unitario .tachado {
+  text-decoration: line-through;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.promo {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--vb-malva);
+}

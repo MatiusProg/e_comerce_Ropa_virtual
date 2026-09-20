@@ -1,0 +1,90 @@
+.cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: min(30rem, 78vw);
+  padding-top: 0.5rem;
+}
+
+.campo {
+  width: 100%;
+
+  &.corto {
+    max-width: 12rem;
+  }
+}
+
+.alcance {
+  border: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+
+  legend {
+    padding: 0 0 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  mat-button-toggle-group {
+    width: 100%;
+  }
+
+  // En edición se muestra apagado y NO se esconde: quien abre a editar tiene
+  // que ver sobre qué estaba definida la promoción.
+  &[disabled] {
+    opacity: 0.6;
+  }
+}
+
+.fechas {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+
+  mat-form-field {
+    flex: 1;
+    min-width: 11rem;
+  }
+
+  button {
+    margin-top: 0.5rem;
+  }
+}
+
+.aviso {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  color: var(--mat-sys-error);
+
+  mat-icon {
+    font-size: 1.15rem;
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+}
+
+.nota {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--vb-radio-chico);
+  background: var(--vb-rosa-palido);
+  font-size: 0.88rem;
+  color: var(--vb-malva-oscuro);
+
+  mat-icon {
+    flex: none;
+    font-size: 1.1rem;
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+}

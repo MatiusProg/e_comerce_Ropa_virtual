@@ -16,6 +16,8 @@ que precio entro.
 """
 from decimal import Decimal
 
+from app.modules.catalogo.promociones_schemas import DescuentoOut
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -83,10 +85,20 @@ class ProductoVitrinaOut(BaseModel):
     temporada_id: int | None = None
     coleccion_id: int | None = None
 
-    #: Extremos del precio de las variantes activas. Cuando coinciden, la
-    #: interfaz muestra un precio solo; cuando no, muestra «desde».
+    #: Extremos del precio de las variantes activas, SIN descuento. Cuando
+    #: coinciden, la interfaz muestra un precio solo; cuando no, muestra «desde».
     precio_desde: Decimal | None = None
     precio_hasta: Decimal | None = None
+
+    #: La promocion vigente del producto, o nada (CU-12).
+    #:
+    #: Va con el precio de lista al lado y no restado: una tarjeta que solo
+    #: muestra «Bs 200» no es una oferta, es un precio. Lo que vende es ver
+    #: «Bs 250» tachado.
+    #:
+    #: `precio_final` es el descuento aplicado sobre `precio_desde`, que es el
+    #: numero que la tarjeta muestra en grande.
+    descuento: DescuentoOut | None = None
 
     #: URL de la imagen principal, ya prefijada por el servidor. Nula si el
     #: producto todavia no tiene fotos: la interfaz dibuja su marcador.
@@ -176,6 +188,10 @@ class FichaProductoOut(BaseModel):
 
     precio_desde: Decimal | None = None
     precio_hasta: Decimal | None = None
+
+    #: La promocion vigente del producto, o nada (CU-12). Igual que en la
+    #: tarjeta: el precio de lista se muestra al lado, no restado.
+    descuento: DescuentoOut | None = None
 
     imagenes: list[ImagenVitrinaOut] = []
     variantes: list[VarianteVitrinaOut] = []

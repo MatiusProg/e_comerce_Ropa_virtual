@@ -253,3 +253,39 @@
     gap: 1rem;
   }
 }
+
+// --- CU-12: la promoción en la tarjeta ------------------------------------
+
+.precio.con-promo {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+
+  .tachado {
+    text-decoration: line-through;
+    font-weight: 400;
+    font-size: 0.85rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .rebajado {
+    color: var(--vb-malva-oscuro);
+  }
+}
+
+.promo {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--vb-malva);
+
+  mat-icon {
+    font-size: 0.9rem;
+    width: 0.9rem;
+    height: 0.9rem;
+  }
+}

@@ -112,12 +112,19 @@ export class Venta implements OnInit {
     validators: [Validators.pattern(/^\d+([.,]\d{1,2})?$/)],
   });
 
-  /** El total en centavos enteros. Todo lo demás se deriva de acá. */
+  /**
+   * El total en centavos enteros, CON los descuentos de CU-12 aplicados.
+   *
+   * Tiene que coincidir con el del servidor: este número se manda como
+   * `total_esperado` y CU-31 rechaza con 409 si no da. Sumando el precio de
+   * lista, ninguna prenda en promoción se podría cobrar.
+   */
   protected readonly totalCentavos = computed(() => {
     const r = this.reserva();
+    // El total de la reserva ya viene con el descuento aplicado del servidor.
     if (r) return this.aCentavos(r.total);
     return this.lineas().reduce(
-      (suma, l) => suma + this.aCentavos(l.prenda.precio) * l.cantidad,
+      (suma, l) => suma + this.unitarioCentavos(l.prenda) * l.cantidad,
       0,
     );
   });
@@ -402,8 +409,14 @@ export class Venta implements OnInit {
 
   /** El subtotal de una línea del ticket, en Bs, sumado en centavos enteros. */
   protected subtotalDe(linea: LineaEnCurso): number {
-    return this.enBs(this.aCentavos(linea.prenda.precio) * linea.cantidad);
+    return this.enBs(this.unitarioCentavos(linea.prenda) * linea.cantidad);
   }
+
+  /** Lo que se cobra por unidad: con el descuento de CU-12 si lo tiene. */
+  private unitarioCentavos(prenda: PrendaEnMostrador): number {
+    return this.aCentavos(prenda.descuento?.precio_final ?? prenda.precio);
+  }
+
 
   protected iconoDe(metodo: MetodoDePago): string {
     if (metodo === 'EFECTIVO') return 'payments';
