@@ -317,26 +317,55 @@ def generar(
 # --- CU-35 · el pedido por voz ---------------------------------------------
 
 
-def catalogo_para_el_interprete(es_admin: bool) -> list:
+def catalogo_para_el_interprete(db: Session, es_admin: bool) -> list:
     """Los reportes, descritos como el interprete los necesita.
 
     Se arma del MISMO diccionario `REPORTES` que usa la descarga. No hay una
     lista aparte para el modelo: si la hubiera, el dia que se agregue un
     reporte el interprete seguiria sin conocerlo y diria «no entendi» a un
     pedido perfectamente valido.
+
+    RECIBE `db` PORQUE LAS OPCIONES SE RESUELVEN CONTRA LA BASE
+    -----------------------------------------------------------
+    Sucursal, proveedor y temporada no tienen valores fijos en el codigo: son
+    filas. Al modelo hay que darle el par `id -> nombre`, porque lo que se
+    dice es «proveedor Shein» y lo que la consulta necesita es `proveedor_id=7`.
+
+    Hasta el 20/09 esta funcion los salteaba a los tres ---la sucursal a
+    proposito, los otros dos de arrastre por venir con la tupla de opciones
+    vacia--- y el resultado era que «el reporte de compras del proveedor
+    Shein» bajaba las compras de TODOS los proveedores sin avisar. Un filtro
+    dicho y no aplicado es peor que uno no ofrecido: el numero se lee como si
+    estuviera filtrado.
     """
     from app.integrations.interprete import ReporteConocido
 
+    # Una sola vez para los seis reportes, no una por filtro: las mismas tres
+    # consultas repetidas seis veces son dieciocho viajes para armar un prompt.
+    cache: dict[str, dict[str, str]] = {}
+
+    def _valores(filtro: Filtro) -> dict[str, str]:
+        if filtro.origen == "opciones":
+            return {v: e for v, e in filtro.opciones}
+        if filtro.origen not in cache:
+            cache[filtro.origen] = {
+                str(o["valor"]): o["etiqueta"] for o in opciones_de(db, filtro)
+            }
+        return cache[filtro.origen]
+
     salida = []
     for tipo, definicion in sorted(REPORTES.items()):
-        filtros: dict[str, list[str]] = {}
+        filtros: dict[str, dict[str, str]] = {}
         for filtro in definicion.filtros:
-            # La sucursal NO se le ofrece al modelo: sus valores son ids de
-            # base de datos y nadie dice «sucursal 3» hablando. Ademas al
-            # encargado se le fuerza la suya, asi que ni siquiera aplica.
-            if filtro.campo == "sucursal_id" or not filtro.opciones:
+            # Al encargado no se le ofrece la sucursal: se le fuerza la suya,
+            # y aceptarsela por voz seria prometerle una eleccion que despues
+            # se ignora en silencio.
+            if filtro.campo == "sucursal_id" and not es_admin:
                 continue
-            filtros[filtro.campo] = [v for v, _ in filtro.opciones]
+            valores = _valores(filtro)
+            if not valores:
+                continue
+            filtros[filtro.campo] = valores
         salida.append(
             ReporteConocido(
                 tipo=tipo,

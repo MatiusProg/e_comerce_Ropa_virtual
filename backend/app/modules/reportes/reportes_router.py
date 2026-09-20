@@ -95,7 +95,7 @@ def pedir_por_voz(datos: PedidoPorVozIn, db: DbSession, usuario: Usuario):
     from app.integrations import interprete
 
     es_admin = usuario.rol == "ADMINISTRADOR"
-    conocidos = service.catalogo_para_el_interprete(es_admin)
+    conocidos = service.catalogo_para_el_interprete(db, es_admin)
 
     try:
         pedido = interprete.interpretar(datos.texto, conocidos, _date.today())
