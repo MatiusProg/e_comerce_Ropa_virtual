@@ -139,8 +139,32 @@
   }
 
   .precio {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
     font-variant-numeric: tabular-nums;
     font-weight: 600;
+  }
+
+  .tachado {
+    text-decoration: line-through;
+    font-weight: 400;
+    font-size: 0.82rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .rebajado {
+    color: var(--vb-malva-oscuro);
+  }
+
+  .promo {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.1rem 0.35rem;
+    border-radius: 999px;
+    background: var(--vb-malva);
+    color: #fff;
+    cursor: help;
   }
 
   .saldo {
@@ -384,4 +408,9 @@
     font-weight: 600;
     color: var(--vb-tinta);
   }
+}
+
+.promo-chica {
+  font-weight: 700;
+  color: var(--vb-malva);
 }

@@ -1,3 +1,5 @@
+import type { Descuento } from './promociones.models';
+
 /**
  * CU-17 · Consultar catálogo · y CU-18 · Consultar ficha de producto — modelos
  * del contrato.
@@ -56,6 +58,15 @@ export interface ProductoVitrina {
   coleccion_id: number | null;
   precio_desde: string | null;
   precio_hasta: string | null;
+
+  /**
+   * La promoción vigente, o nada (CU-12).
+   *
+   * Va con el precio de lista al lado y no restado: una tarjeta que solo
+   * muestra «Bs 200» no es una oferta, es un precio. Lo que vende es ver
+   * «Bs 250» tachado.
+   */
+  descuento: Descuento | null;
   /** Ruta servida por la API (`/media/...`), no URL absoluta. Ver `urlDeImagen`. */
   imagen_url: string | null;
   colores: ColorTienda[];
@@ -109,6 +120,15 @@ export interface FichaProducto {
   coleccion_id: number | null;
   precio_desde: string | null;
   precio_hasta: string | null;
+
+  /**
+   * La promoción vigente, o nada (CU-12).
+   *
+   * Va con el precio de lista al lado y no restado: una tarjeta que solo
+   * muestra «Bs 200» no es una oferta, es un precio. Lo que vende es ver
+   * «Bs 250» tachado.
+   */
+  descuento: Descuento | null;
   imagenes: ImagenVitrina[];
   /** Ya vienen ordenadas por el orden del maestro de tallas, no alfabético. */
   variantes: VarianteVitrina[];

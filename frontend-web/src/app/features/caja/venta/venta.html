@@ -163,7 +163,20 @@
                   </span>
                   <span class="sku">{{ prenda.sku }}</span>
                   <span class="precio">
-                    {{ prenda.precio | currency: 'BOB' : 'symbol-narrow' }}
+                    @if (prenda.descuento; as d) {
+                      <!-- El de lista tachado al lado: sin él «Bs 200» es un
+                           precio, no una oferta, y el cajero no puede explicar
+                           la rebaja si el cliente pregunta. -->
+                      <span class="tachado">
+                        {{ prenda.precio | currency: 'BOB' : 'symbol-narrow' }}
+                      </span>
+                      <span class="rebajado">
+                        {{ d.precio_final | currency: 'BOB' : 'symbol-narrow' }}
+                      </span>
+                      <span class="promo" [matTooltip]="d.nombre">−{{ d.porcentaje }} %</span>
+                    } @else {
+                      {{ prenda.precio | currency: 'BOB' : 'symbol-narrow' }}
+                    }
                   </span>
                   <span
                     class="saldo"
@@ -258,6 +271,9 @@
                     {{ linea.prenda.producto }}
                     <span class="detalle">
                       {{ linea.prenda.talla }} · {{ linea.prenda.color }}
+                      @if (linea.prenda.descuento; as d) {
+                        · <span class="promo-chica">−{{ d.porcentaje }} %</span>
+                      }
                     </span>
                   </td>
                   <td class="cantidad">
