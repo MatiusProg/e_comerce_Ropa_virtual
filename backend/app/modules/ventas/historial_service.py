@@ -181,15 +181,22 @@ def _dibujar_pdf(comprobante: Comprobante, pedido) -> bytes:
 
     y -= 8 * mm
     pdf.setFont("Helvetica", 10)
-    pdf.drawString(20 * mm, y, f"Pedido: {pedido.codigo}")
+    # CU-31 emite su comprobante con este mismo dibujo, y una venta de mostrador
+    # no es un «pedido» ni se «retira»: el cliente ya se fue con la prenda.
+    # Decirle «Retiro en Centro» a quien acaba de pagar en Centro es raro, y el
+    # recibo es lo unico que se lleva del sistema.
+    presencial = pedido.canal == "PRESENCIAL"
+    etiqueta = "Venta" if presencial else "Pedido"
+    pdf.drawString(20 * mm, y, f"{etiqueta}: {pedido.codigo}")
     y -= 5 * mm
     pdf.drawString(20 * mm, y, f"Fecha de compra: {pedido.creado_en.strftime('%d/%m/%Y %H:%M')}")
     y -= 5 * mm
-    entrega = (
-        f"Envío a {pedido.direccion_envio}"
-        if pedido.direccion_envio
-        else f"Retiro en {pedido.sucursal_nombre}"
-    )
+    if presencial:
+        entrega = f"Venta en mostrador · {pedido.sucursal_nombre}"
+    elif pedido.direccion_envio:
+        entrega = f"Envío a {pedido.direccion_envio}"
+    else:
+        entrega = f"Retiro en {pedido.sucursal_nombre}"
     pdf.drawString(20 * mm, y, entrega)
 
     # --- Las lineas ---

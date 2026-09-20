@@ -1,6 +1,7 @@
 import { CurrencyPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -108,10 +109,23 @@ export class Checkout implements OnInit {
    * que no haya una confirmación ya en vuelo —sin lo último, un doble clic
    * crearía dos pedidos y apartaría el stock dos veces—.
    */
+  /**
+   * La modalidad elegida, COMO SEÑAL.
+   *
+   * El valor de un `FormControl` no es una señal, así que `puedeConfirmar`
+   * leyéndolo directo no se enteraba de que el cliente cambió entre Retiro y
+   * Envío: el botón se quedaba con el estado anterior hasta que tocara otra
+   * cosa, y dejaba confirmar un envío sin dirección —que el servidor rechaza
+   * con un 422 que el cliente no tiene por qué ver—.
+   */
+  private readonly laModalidad = toSignal(this.modalidad.valueChanges, {
+    initialValue: this.modalidad.value,
+  });
+
   protected readonly puedeConfirmar = computed(() => {
     const o = this.opciones();
     if (!o?.se_puede_pedir || this.confirmando()) return false;
-    return this.modalidad.value === 'RETIRO'
+    return this.laModalidad() === 'RETIRO'
       ? this.sucursalElegida() !== null
       : this.direccionElegida() !== null;
   });
