@@ -57,6 +57,13 @@ CANALES_VENTA = ("DIGITAL", "PRESENCIAL")
 # La venta PRESENCIAL nace directamente en PAGADA: no pasa por la pasarela.
 ESTADOS_VENTA = ("PENDIENTE_PAGO", "PAGADA", "ENTREGADA", "CANCELADA")
 
+#: Como se puede cobrar en el mostrador (CU-30, CU-31).
+#:
+#: `QR` esta porque en Bolivia el pago con codigo QR bancario es corriente y
+#: **no es efectivo**: no entra al cajon y no puede sumar al arqueo. Meterlo
+#: dentro de EFECTIVO descuadraria el turno por cada uno.
+METODOS_PAGO = ("EFECTIVO", "TARJETA", "QR")
+
 # Solo aplica al canal DIGITAL. En PRESENCIAL el cliente ya se lleva la prenda.
 MODALIDADES_ENTREGA = ("RETIRO", "ENVIO")
 
@@ -169,6 +176,20 @@ class Venta(Base):
             name="modalidad",
         ),
         CheckConstraint("total = subtotal - descuento", name="total_coherente"),
+        CheckConstraint(
+            "metodo_pago IS NULL OR metodo_pago IN ('"
+            + "', '".join(METODOS_PAGO)
+            + "')",
+            name="metodo_pago",
+        ),
+        # Una presencial se cobra en el mostrador y ahi el metodo es nuestro;
+        # una digital la cobra la pasarela y el metodo lo sabe Stripe. Sin
+        # esto, el arqueo de CU-30 no puede distinguir el efectivo.
+        CheckConstraint(
+            "(canal = 'PRESENCIAL' AND metodo_pago IS NOT NULL)"
+            " OR (canal = 'DIGITAL' AND metodo_pago IS NULL)",
+            name="metodo_segun_canal",
+        ),
         CheckConstraint("subtotal >= 0 AND descuento >= 0", name="montos_no_negativos"),
         # Una venta presencial se cobra en una caja abierta; una digital no
         # pasa por ninguna. Sin esto, un pedido web podria quedar colgado de un
@@ -231,6 +252,10 @@ class Venta(Base):
     direccion_id: Mapped[int | None] = mapped_column(
         BigInteger, ForeignKey("direccion_cliente.id")
     )
+
+    #: EFECTIVO, TARJETA o QR. Solo en las presenciales. Es lo que permite que
+    #: el arqueo de CU-30 sume al esperado unicamente lo que entro al cajon.
+    metodo_pago: Mapped[str | None] = mapped_column(String(20))
 
     subtotal: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     #: Lo que aportan las promociones de CU-12. Cero mientras la 0007 no exista.

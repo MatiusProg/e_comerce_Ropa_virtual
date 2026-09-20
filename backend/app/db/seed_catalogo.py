@@ -422,6 +422,36 @@ def _sucursales(db: Session) -> None:
         )
         print(f"  + sucursal {nombre}")
     db.flush()
+    _cajas(db)
+
+
+def _cajas(db: Session) -> None:
+    """Una caja por sucursal (CU-30).
+
+    POR QUE ESTO VA EN EL SEMBRADO Y NO SE CREA POR LA API
+    -------------------------------------------------------
+    Porque **no hay API para crear cajas**. CU-30 es abrir y cerrar turnos; el
+    alta del catalogo de cajas seria del administrador y no esta en el alcance
+    del ciclo.
+
+    Sin esta funcion, un despliegue limpio deja a todos los cajeros sin ninguna
+    caja donde abrir turno --- o sea, con CU-30 y CU-31 construidos y
+    **imposibles de usar**, y sin ningun error que lo explique: la lista de
+    cajas sale vacia y parece que la pantalla no carga.
+
+    Una sola por sucursal, y no tres: es lo minimo para que el caso de uso
+    funcione, y las que hagan falta se agregan cuando exista quien las
+    administre.
+    """
+    from app.modules.ventas.models import Caja
+
+    ya_tienen = {c.sucursal_id for c in db.scalars(select(Caja))}
+    for sucursal in db.scalars(select(Sucursal)):
+        if sucursal.id in ya_tienen:
+            continue
+        db.add(Caja(sucursal_id=sucursal.id, nombre="Caja 1", activa=True))
+        print(f"  + caja en {sucursal.nombre}")
+    db.flush()
 
 
 def _proveedores(db: Session) -> list[int]:
