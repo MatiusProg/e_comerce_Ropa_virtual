@@ -1,0 +1,278 @@
+@if (cargando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<!-- ===================== SIN TURNO ABIERTO ===================== -->
+@if (hayTurno() === false) {
+  <mat-card class="tarjeta sin-turno vb-filete-superior" appearance="outlined">
+    <mat-card-content>
+      <mat-icon class="icono">assignment_return</mat-icon>
+      <h2>No tiene una caja abierta</h2>
+      <p>
+        Una devolución cuelga de un turno igual que una venta: es lo que después
+        permite cuadrar el cajón al cerrar. Abra su caja para registrarla.
+      </p>
+      <a matButton="filled" class="vb-boton-marca" routerLink="/caja">
+        <mat-icon>lock_open</mat-icon>
+        Abrir mi caja
+      </a>
+    </mat-card-content>
+  </mat-card>
+}
+
+@if (hayTurno()) {
+  <header class="encabezado">
+    <div>
+      <h1 class="vb-titulo">Devoluciones</h1>
+      <p class="bajada">
+        Busque la venta por su código y marque qué prendas vuelven.
+      </p>
+    </div>
+  </header>
+
+  <!-- ===================== YA SE REGISTRÓ ===================== -->
+  @if (comprobante(); as c) {
+    <mat-card class="tarjeta comprobante vb-filete-superior" appearance="outlined">
+      <mat-card-content>
+        <header class="cabecera">
+          <mat-icon class="icono">check_circle</mat-icon>
+          <div>
+            <h2>Devolución registrada</h2>
+            <p class="sub">
+              De la venta {{ c.venta_codigo }} · {{ c.caja_nombre }} ·
+              {{ c.creado_en | date: 'dd/MM HH:mm' }}
+            </p>
+          </div>
+        </header>
+
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th scope="col">Prenda</th>
+              <th scope="col" class="numero">Cant.</th>
+              <th scope="col" class="numero">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (linea of c.lineas; track linea.variante_id) {
+              <tr>
+                <td>
+                  {{ linea.producto }}
+                  <span class="detalle">{{ linea.talla }} · {{ linea.color }}</span>
+                </td>
+                <td class="numero">{{ linea.cantidad }}</td>
+                <td class="numero">
+                  {{ linea.subtotal | currency: 'BOB' : 'symbol-narrow' }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        <p class="motivo-dicho"><strong>Motivo:</strong> {{ c.motivo }}</p>
+
+        <!--
+          Los dos números, separados a propósito. Decir sólo «Bs 250» en una
+          venta cobrada con tarjeta llevaría al cajero a abrir el cajón, y esa
+          noche el arqueo cerraría con un faltante que se le anotaría a él.
+        -->
+        <p class="plata" [class.no-sale]="!c.sale_del_cajon">
+          <mat-icon>{{ c.sale_del_cajon ? 'payments' : 'credit_card' }}</mat-icon>
+          @if (c.sale_del_cajon) {
+            <span>
+              Entregue <strong>{{ c.monto | currency: 'BOB' : 'symbol-narrow' }}</strong>
+              en efectivo.
+            </span>
+          } @else {
+            <span>
+              Son
+              <strong>{{ c.valor_devuelto | currency: 'BOB' : 'symbol-narrow' }}</strong>,
+              pero <strong>no salen del cajón</strong>: esa venta no se cobró en
+              efectivo y el reintegro vuelve por donde vino.
+            </span>
+          }
+        </p>
+
+        <button matButton="filled" type="button" class="vb-boton-marca" (click)="otra()">
+          <mat-icon>search</mat-icon>
+          Otra devolución
+        </button>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- ===================== BUSCAR LA VENTA ===================== -->
+  @if (!comprobante()) {
+    <mat-card class="tarjeta vb-filete-superior" appearance="outlined">
+      <mat-card-content>
+        <div class="buscador">
+          <mat-form-field appearance="outline" class="campo-codigo">
+            <mat-label>Código de la venta</mat-label>
+            <mat-icon matIconPrefix>receipt_long</mat-icon>
+            <!-- Enter busca: el cajero llega con el ticket en la mano y teclea
+                 el código; obligarlo a soltar el teclado para pulsar un botón
+                 es fricción en el único momento en que hay alguien esperando. -->
+            <input
+              matInput
+              [formControl]="codigo"
+              placeholder="VP-20260920-A3F2"
+              (keyup.enter)="buscar()"
+            />
+            <mat-hint>Está en el ticket. Empieza con VP- o VB-.</mat-hint>
+          </mat-form-field>
+          <button
+            matButton="filled"
+            type="button"
+            class="vb-boton-marca"
+            [disabled]="codigo.invalid || buscando()"
+            (click)="buscar()"
+          >
+            <mat-icon>search</mat-icon>
+            {{ buscando() ? 'Buscando…' : 'Buscar' }}
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    @if (buscando()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+
+    @if (venta(); as v) {
+      <mat-card class="tarjeta" appearance="outlined">
+        <mat-card-content>
+          <header class="cabecera-venta">
+            <div>
+              <h2>{{ v.codigo }}</h2>
+              <p class="sub">
+                {{ v.creado_en | date: 'dd/MM/yyyy HH:mm' }} ·
+                {{ v.metodo_pago }} ·
+                {{ v.total | currency: 'BOB' : 'symbol-narrow' }}
+                @if (v.cliente) {
+                  · {{ v.cliente }}
+                }
+              </p>
+            </div>
+            @if (!v.sale_del_cajon) {
+              <span class="marca-tarjeta">
+                <mat-icon>credit_card</mat-icon>
+                No sale del cajón
+              </span>
+            }
+          </header>
+
+          @if (!algoDevolvible()) {
+            <p class="nota vacio">
+              Esta venta ya se devolvió entera. No queda nada por devolver.
+            </p>
+          } @else {
+            <table class="tabla">
+              <thead>
+                <tr>
+                  <th scope="col">Prenda</th>
+                  <th scope="col" class="numero">Vendidas</th>
+                  <th scope="col" class="numero">Ya devueltas</th>
+                  <th scope="col" class="centro">Devolver</th>
+                  <th scope="col" class="numero">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (fila of lineas(); track fila.linea.variante_id) {
+                  <tr [class.agotada]="fila.linea.devolvibles === 0">
+                    <td>
+                      {{ fila.linea.producto }}
+                      <span class="detalle">
+                        {{ fila.linea.talla }} · {{ fila.linea.color }} ·
+                        {{ fila.linea.precio_unitario | currency: 'BOB' : 'symbol-narrow' }}
+                      </span>
+                    </td>
+                    <td class="numero">{{ fila.linea.vendidas }}</td>
+                    <td class="numero">{{ fila.linea.devueltas }}</td>
+                    <td class="centro">
+                      @if (fila.linea.devolvibles === 0) {
+                        <span class="etiqueta">ya volvió</span>
+                      } @else {
+                        <span class="cantidad">
+                          <button
+                            matIconButton
+                            type="button"
+                            [disabled]="fila.cantidad === 0"
+                            (click)="cambiar(fila, fila.cantidad - 1)"
+                            [attr.aria-label]="'Quitar una de ' + fila.linea.producto"
+                          >
+                            <mat-icon>remove</mat-icon>
+                          </button>
+                          <span class="numero">{{ fila.cantidad }}</span>
+                          <button
+                            matIconButton
+                            type="button"
+                            [disabled]="fila.cantidad >= fila.linea.devolvibles"
+                            (click)="cambiar(fila, fila.cantidad + 1)"
+                            [attr.aria-label]="'Sumar una de ' + fila.linea.producto"
+                          >
+                            <mat-icon>add</mat-icon>
+                          </button>
+                        </span>
+                      }
+                    </td>
+                    <td class="numero">
+                      {{ subtotalDe(fila) | currency: 'BOB' : 'symbol-narrow' }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+
+            <button matButton type="button" class="todo" (click)="todo()">
+              <mat-icon>done_all</mat-icon>
+              Devolver todo lo que queda
+            </button>
+
+            <p class="total">
+              <span>Valor de lo devuelto</span>
+              <strong>{{ enBs(valorCentavos()) | currency: 'BOB' : 'symbol-narrow' }}</strong>
+            </p>
+
+            @if (hayQueDevolver() && !v.sale_del_cajon) {
+              <p class="plata no-sale">
+                <mat-icon>credit_card</mat-icon>
+                <span>
+                  <strong>No entregue efectivo.</strong> Esta venta se cobró con
+                  {{ v.metodo_pago }}: el reintegro vuelve por donde vino y el
+                  arqueo del turno no lo cuenta.
+                </span>
+              </p>
+            }
+
+            <mat-form-field appearance="outline" class="campo">
+              <mat-label>Motivo de la devolución</mat-label>
+              <input
+                matInput
+                [formControl]="motivo"
+                placeholder="No le quedó bien, falla en la costura…"
+                maxlength="200"
+              />
+              <mat-hint>Queda registrado. Es lo que permite auditarla después.</mat-hint>
+              @if (motivo.hasError('required') || motivo.hasError('minlength')) {
+                <mat-error>Escriba el motivo, aunque sea corto.</mat-error>
+              }
+            </mat-form-field>
+
+            <div class="acciones">
+              <button
+                matButton="filled"
+                type="button"
+                class="vb-boton-marca"
+                [disabled]="!hayQueDevolver() || guardando()"
+                (click)="registrar()"
+              >
+                <mat-icon>assignment_return</mat-icon>
+                {{ guardando() ? 'Registrando…' : 'Registrar devolución' }}
+              </button>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
+  }
+}
