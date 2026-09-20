@@ -143,6 +143,20 @@ export class Ficha implements OnInit {
     return `Bs ${ficha.precio_desde}`;
   });
 
+  /**
+   * El descuento que corresponde a lo que se está mostrando (CU-12).
+   *
+   * **Sigue a la variante elegida**, no al producto: la ficha muestra el precio
+   * de esa variante, y si se usara el descuento a nivel producto —calculado
+   * sobre el precio «desde»— la talla más cara mostraría una rebaja que no le
+   * corresponde y el carrito cobraría otra cosa.
+   */
+  protected readonly descuento = computed(() => {
+    const variante = this.variante();
+    if (variante) return variante.descuento;
+    return this.ficha()?.descuento ?? null;
+  });
+
   ngOnInit(): void {
     // `paramMap` y no una lectura suelta: navegar de una prenda a otra sin
     // salir de la ficha reutiliza el componente, y con una lectura única se

@@ -50,6 +50,7 @@ from app.modules.catalogo.models import Color, Producto, Talla, VarianteProducto
 from app.modules.inventario.models import Existencia
 from app.modules.organizacion.models import Sucursal
 from app.modules.reservas.models import DetalleReserva, Reserva
+from app.core import tiempo
 from app.modules.ventas.models import DetalleVenta, Venta
 
 
@@ -298,7 +299,11 @@ def monto_vendido_hoy(db: Session, *, sucursal_id: int | None) -> Decimal:
     pasada diria «vendido hoy: 0» sobre un dia que no es hoy, que es una lectura
     que confunde mas de lo que informa.
     """
-    inicio = datetime.combine(datetime.now(timezone.utc).date(), time.min, tzinfo=timezone.utc)
+    # El corte es la medianoche BOLIVIANA, no la de UTC. Con el corte en UTC,
+    # todo lo vendido despues de las 20:00 --- con la tienda abierta --- se
+    # contaba como del dia siguiente, y el tablero decia «vendido hoy: 0»
+    # justo en las horas de mas venta.
+    inicio = tiempo.inicio_del_dia()
     fin = inicio + timedelta(days=1)
     return db.scalar(
         select(func.coalesce(func.sum(Venta.total), 0)).where(

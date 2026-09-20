@@ -101,6 +101,14 @@ export interface VarianteVitrina {
   id: number;
   sku: string;
   precio: string;
+  /**
+   * La promoción vigente de ESTA variante, o nada (CU-12).
+   *
+   * Va por variante y no solo a nivel producto porque la ficha muestra el
+   * precio de la que el cliente eligió, y las variantes de un mismo producto
+   * pueden valer distinto.
+   */
+  descuento: Descuento | null;
   talla_id: number;
   talla_codigo: string | null;
   color_id: number;

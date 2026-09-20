@@ -53,7 +53,18 @@
       <section class="datos">
         <p class="categoria">{{ producto.categoria_nombre }}</p>
         <h1 class="nombre">{{ producto.nombre }}</h1>
-        <p class="precio">{{ precio() }}</p>
+        @if (descuento(); as d) {
+          <p class="precio con-promo">
+            <span class="tachado">{{ precio() }}</span>
+            <span class="rebajado">Bs {{ d.precio_final }}</span>
+          </p>
+          <p class="promo">
+            <mat-icon>sell</mat-icon>
+            {{ d.nombre }} · −{{ d.porcentaje }} %
+          </p>
+        } @else {
+          <p class="precio">{{ precio() }}</p>
+        }
 
         @if (producto.descripcion) {
           <p class="descripcion">{{ producto.descripcion }}</p>
