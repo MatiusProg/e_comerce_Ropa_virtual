@@ -794,7 +794,16 @@ La primera corrida de este script dejó al actor `Sistema (procesos automáticos
 
 ### 7.3 Comunicación 2.2
 
-**Tipo:** `Communication` · **Script:** `ea-comunicacion-2-2.ps1`
+**Tipo:** `Collaboration` · **Script:** `ea-comunicacion-2-2.ps1`
+
+> **Corrección del 17/09/2026: el tipo es `Collaboration`, no `Communication`.** Son dos tipos
+> distintos en EA y la diferencia no es cosmética: en un diagrama `Communication` los conectores
+> `Collaboration` se dibujan como etiquetas sueltas —sin numeración por grupo, sin color y sin
+> ubicación—, y en uno `Collaboration` EA numera, colorea cada grupo y ubica cada mensaje sobre su
+> enlace. Se comprobó comparando contra un diagrama hecho a mano en EA.
+>
+> Y los participantes son **instancias**: elementos de tipo `Object` con el estereotipo de robustez,
+> no `Class`.
 
 Esto costó averiguarlo y no está documentado con claridad en ningún lado:
 
@@ -835,6 +844,52 @@ al pie explicando qué es cada grupo.
 
 Como las clases de análisis se comparten entre casos de uso, hay que ocultar todo lo que no se creó
 para este diagrama (regla 3), tanto los `Collaboration` ajenos como los `Association` ajenos.
+
+#### La punta de flecha del mensaje NO se puede generar por script
+
+Esto costó media tarde de medición y conviene que quede escrito para no repetirla.
+
+**El hecho:** EA **no dibuja la punta de flecha de un mensaje creado desde afuera**. La prueba es
+concluyente: se inyectó un mensaje *por script* dentro de un modelo hecho a mano, en el mismo
+diagrama y entre los mismos dos objetos que otros dieciocho mensajes que sí tenían punta. Salió sin
+punta. Después se le copiaron, campo por campo, todos los valores de uno que funcionaba —y entonces
+sí apareció—; pero los mismos valores aplicados en otro modelo no la producen.
+
+**Lo que se comparó**, fila por fila, entre un mensaje que se dibuja bien y uno que no:
+`t_connector`, `t_diagramlinks`, `t_object`, `t_diagramobjects`, `t_diagram` y `t_xref`. Quedan
+idénticos salvo identificadores y coordenadas.
+
+**Lo que se probó y no alcanza:**
+
+| Se probó | Resultado |
+|---|---|
+| `Direction = 'Source -> Destination'` | necesario, pero no dibuja la punta |
+| `PtStartX/Y` y `PtEndX/Y` absolutos, como los de un mensaje hecho a mano | no |
+| `HeadStyle = 1`, `RouteStyle = 1`, `StateFlags = 'IsReturn=false;'` | no |
+| `PDATA5 = 'SX=..;SY=..;EX=..;EY=..;'` | **mueve la etiqueta** —es lo que EA guarda cuando uno la arrastra—, pero no dibuja la punta |
+| `t_diagramlinks.Geometry` con el mismo `SX/SY/EX/EY` delante del `EDGE`, y `Style` en `Mode=1` | no, y además EA la borra al guardar el diagrama |
+| `SuppressFOC=1` en el `StyleEx` del diagrama | no |
+| objetos de 50×60 y sin color de fondo, como los del modelo de referencia | no |
+| renumerar al esquema `1`, `1.1`, `1.2`, `2`… | no |
+| crear el mensaje con **EA abierto y el diagrama abierto** | no: EA hasta le renumera los mensajes al diagrama —o sea que los reconoce— pero tampoco dibuja la punta |
+
+**La forma correcta, cuando el diagrama tiene que salir impecable:**
+
+1. Correr el generador con un modificador tipo `-SinMensajes`, que deja **los objetos, los enlaces
+   `L1..Ln`, los colores y las notas**, e imprime la lista de los mensajes con su enlace, su sentido
+   y su texto.
+2. En EA, sobre **cada enlace**: clic derecho → crear el mensaje. EA pregunta **de dónde a dónde**, y
+   esa elección es la que dibuja la punta. Si sale al revés: clic derecho sobre el mensaje →
+   invertir dirección.
+3. Al cambiar de flujo, marcar **Start New Group**: EA reinicia la numeración y colorea el grupo
+   nuevo.
+4. **No volver a correr el generador con `-Rehacer` sobre ese diagrama**, porque borra los mensajes
+   cargados a mano. Conviene que el propio generador lo deje anotado en las `Notes` del diagrama.
+
+**Lo que sí conviene generar igual**, aunque los mensajes se carguen después: el tipo `Collaboration`,
+los objetos como `Object` con su estereotipo, los enlaces numerados `L1..Ln`, el color por rol con
+`BCol` (§6.1) y las notas. Y si por tiempo se generan también los mensajes, quedan con su número, su
+color de grupo y su etiqueta en su lugar: lo único que falta es la punta.
 
 ---
 
@@ -879,6 +934,52 @@ foreach ($e in $p22Clases.Elements) {
 
 **Alto de la caja:** ~`60 + nAtributos*18 + nOperaciones*18`. Si queda corta, EA recorta la lista sin
 avisar.
+
+#### El actor va en el diagrama — corrección del 17/09/2026
+
+La versión anterior de esta receta no ponía actores. **Ahora sí van**, y por una razón de lectura:
+la frontera existe porque alguien la usa, y sin el actor el diagrama no dice quién empieza el caso.
+Van con `Association`, con rol en mayúsculas y cardinalidad en los dos extremos, igual que el resto:
+
+```powershell
+Unir $actor $frontera 'CONSULTA_DESDE' 'Association'   # 1 -- 1
+```
+
+Si el caso tiene dos disparadores distintos —en US-31 del proyecto médico, el paciente que pregunta
+y el administrador que dispara la indexación— **van los dos**, cada uno contra la frontera que le
+corresponde. Es la mitad del diagrama que explica por qué existe la otra mitad.
+
+> **Al 20/09/2026 Violet Boutique NO cumple esta regla en el 2.3, y es a sabiendas.**
+> `ea-clases-2-3.ps1` y `ea-clases-2-3-ciclo2.ps1` no crean ni un actor —comprobado— mientras que
+> los dos generadores del **2.2 sí los ponen**, incluidos los casos con dos disparadores: CU-07
+> (Administrador **y** Proveedor) y CU-13 (Administrador **y** Encargado de Sucursal).
+>
+> No se aplicó al 2.3 porque obligaría a regenerar los 23 diagramas de clases a días de la defensa,
+> y lo que se gana es de lectura, no de correctitud: el actor ya está en el 2.2 del mismo caso de
+> uso, que es el diagrama donde se lee quién empieza. **Queda anotado para el segundo parcial**, que
+> retoma este mismo proyecto.
+
+#### Las operaciones se escriben con `Parameters`, no con la firma en el nombre
+
+Si la operación se crea con la firma entera en el nombre —`AddNew('check(question)', 'TriageResult')`—
+**EA le agrega `()` igual** y sale `check(question)(): TriageResult`. Y si se crean parámetros con el
+texto en el NOMBRE y el tipo vacío, EA los dibuja vacíos: `retrieve(, , )`.
+
+**EA imprime el TIPO de cada parámetro, no su nombre.** La forma que funciona es partir la firma y
+poner el mismo texto en los dos lados:
+
+```powershell
+$met = $clase.Methods.AddNew('retrieve', 'list[RetrievedFragment]')
+[void]$met.Update()
+foreach ($par in @('organization', 'question', 'limit=5')) {
+    $nuevoPar = $met.Parameters.AddNew($par, $par)   # nombre Y tipo
+    [void]$nuevoPar.Update()
+}
+```
+
+Lo mismo vale para lo que no es una función y se quiere mostrar igual —un endpoint, por ejemplo—:
+como no lleva paréntesis, EA le agregaría `()`. **Va como atributo**, no como operación:
+`POST /api/assistant/suggest/ : 200 | 403 | 503`.
 
 ---
 
@@ -1067,12 +1168,28 @@ $TOP_LV    = -50    # borde superior de las líneas de vida
 $Y_PRIMERO = -135   # altura del primer mensaje  (la que usa EA)
 $PASO      = 35     # separación vertical         (la que usa EA)
 $ALTO_NOTA = 55     # lo que consume una nota separadora de flujo
-$ALTO_ALT  = 22     # lo que consume la cabecera de un fragmento
-$ALTO_OP   = 20     # lo que consume la etiqueta de un operando
 ```
 
-Con esa escala la remaquetación es prácticamente la identidad. Aun así: **verificar la cobertura de
-cada operando después de abrir el modelo.**
+> **Corrección del 17/09/2026: la cabecera del fragmento y las etiquetas de los operandos NO
+> consumen alto.** Esta guía decía `$ALTO_ALT = 22` y `$ALTO_OP = 20`; se midió leyendo
+> `t_connector.PtStartY` después de que EA remaquetara, y los treinta mensajes de un diagrama con un
+> `alt` de cuatro operandos quedaron en `-135, -170, -205, …`, es decir **35 px parejos, sin un solo
+> hueco**. Contando ese alto, las bandas quedan corridas y **cada guarda termina rotulando los
+> mensajes del flujo siguiente**, que es el error más difícil de ver porque el diagrama parece bien
+> hasta que se lee.
+>
+> Lo que funciona es no inventar la escala: **calcular la caja y los cortes con las Y reales de los
+> mensajes**, que el propio generador ya conoce.
+>
+> ```powershell
+> $fragTop = $mensajes[$altDesde].y + 25      # aire sobre el primer mensaje
+> $fragBot = $mensajes[$altHasta].y - 18      # aire bajo el último
+> for ($i = 1; $i -lt $opsInicio.Count; $i++) {
+>     $cortes += [int](($mensajes[$opsInicio[$i] - 1].y + $mensajes[$opsInicio[$i]].y) / 2)
+> }
+> ```
+
+Aun así: **verificar la cobertura de cada operando después de abrir el modelo.**
 
 #### c) Ni el tipo de mensaje ni los operandos se pueden escribir por COM
 
@@ -1114,6 +1231,12 @@ UPDATE t_object SET NType = 0, PDATA1 = '6' WHERE ea_guid = '<guid>'   -- NType 
 ```
 
 **La suma de los `Size` tiene que ser exactamente el alto de la caja**, o EA reparte mal las bandas.
+
+> **Y se escriben AL REVÉS.** EA apila las particiones **de abajo hacia arriba**: la primera entrada
+> `@PAR` es la banda de más abajo. Con la lista en el orden natural, la guarda del flujo principal
+> termina rotulando la última banda y el diagrama dice exactamente lo contrario de lo que pasa.
+> Medido el 17/09/2026 exportando el PNG. El bucle va `for ($i = $guardas.Count - 1; $i -ge 0; $i--)`.
+
 Se calcula a partir de los cortes entre operandos:
 
 ```powershell
@@ -1134,6 +1257,49 @@ lleva la guarda en el nombre —`2.1a: [si queda predeterminada] UPDATE …`— 
 operador correspondería. **Cambiarlo a mano es trivial:** doble clic sobre el fragmento →
 desplegable **Interaction Operator**. Los operandos se agregan con clic derecho → **Combined
 Fragment → Add Operand**.
+
+#### d-ter) El mensaje a sí mismo
+
+El lacito que un objeto se manda a sí mismo —`registrarBitacora(...)` sobre el controlador, o
+`_grounded_fallback()` sobre el módulo que redacta— es un conector `Sequence` normal **con el mismo
+elemento en los dos extremos**. Lo que lo hace visible es la geometría: **el final va 5 px a la
+derecha y 15 px más abajo que el principio**.
+
+```powershell
+# mensaje normal:      PtEnd = (centro del destino, misma altura)
+# mensaje a sí mismo:  PtEnd = (centro + 5, altura - 15)
+UPDATE t_connector SET PtStartX=<cx>, PtStartY=<y>, PtEndX=<cx+5>, PtEndY=<y-15> ...
+```
+
+Con `PtEnd` igual a `PtStart` **no se dibuja nada** y el mensaje desaparece del lienzo sin error.
+Vale la pena buscarlos en el código: toda llamada interna de un módulo a una función propia es uno
+de estos, y son los que muestran que el trabajo ocurre adentro y no en un ida y vuelta inventado.
+
+#### d-bis) El orden de las líneas de vida es por ROL, no por aparición
+
+Ordenarlas por orden de aparición deja la pantalla, un módulo, una tabla y un servicio externo
+mezclados, y con diez u once líneas de vida **no se distingue qué es cada una**. El orden que se
+lee solo es el mismo de los capítulos 2.2 y 2.3:
+
+    actor · frontera · controladores · entidades · sistemas externos
+
+El costo es que algunos mensajes van hacia atrás; se acepta a propósito, porque lo que se gana es
+que el diagrama se lea por capas de izquierda a derecha.
+
+Y como la línea de vida no muestra el estereotipo de su clasificador, hay que dárselo **también a
+la línea de vida**, y pintarla:
+
+```powershell
+$el = $pkg.Elements.AddNew('', 'Sequence')
+$el.Name = ''
+$el.ClassifierID = $clase['assistant/views.py'].ElementID
+$el.Stereotype   = 'controlador'      # EA rotula «controlador» sobre el nombre
+$el.StereotypeEx = 'controlador'
+[void]$el.Update()
+```
+
+Más `BCol` por rol (§6.1) con **los mismos tres colores del 2.2 y del 2.3**, y una nota al pie que
+diga qué es cada color. Con eso, once líneas de vida se leen de un vistazo.
 
 #### e) El guion
 
@@ -1545,6 +1711,26 @@ $ok  = $prj.PutDiagramImageToFile($dia.DiagramGUID, 'D:\...\salida.png', 1)
 
 El tercer parámetro es el formato (`1` = PNG). Se pasa el **`DiagramGUID`**, no el `DiagramID`.
 
+> **No alcanza con el repositorio headless — medido el 17/09/2026.** `EA.Repository` abre el modelo
+> sin aplicación, y en ese estado **EA no calcula la maqueta**: el PNG de un diagrama de secuencia
+> sale con el fragmento combinado **sin sus operandos**, como una caja vacía. La maqueta se calcula
+> al **abrir el diagrama**. La secuencia que funciona es:
+>
+> ```powershell
+> $app = New-Object -ComObject EA.App
+> $app.Visible = $true
+> $rep = $app.Repository
+> [void]$rep.OpenFile($modelo)
+> $idDia = $rep.GetDiagramByGuid($guid).DiagramID
+> $rep.OpenDiagram($idDia); Start-Sleep -Milliseconds 2000; $rep.SaveDiagram($idDia)
+> [void]$rep.GetProjectInterface().PutDiagramImageToFile($guid, $salida, 1)
+> $rep.CloseDiagram($idDia); $rep.CloseFile(); $rep.Exit()
+> ```
+>
+> Dos detalles que cuestan una vuelta: **los `Diagram_ID` cambian con cada `-Rehacer`**, así que se
+> resuelven por nombre o por GUID y nunca se cablean; y `EA.App` **no tiene método `Exit()`** —el
+> que cierra es `$rep.Exit()`—.
+
 > **Marca de agua.** Con EA 15 **Trial**, algunas exportaciones salen con
 > *"EA 15.0 Unregistered Trial Version"* y otras no, **sin patrón claro**. **Revisar cada PNG antes
 > de pegarlo en el documento.** Si sale con marca, exportar de nuevo desde la interfaz
@@ -1592,6 +1778,18 @@ $visibles = ($d.DiagramLinks | Where-Object { -not $_.IsHidden }).Count
 | Las franjas del diagrama de tiempo **salen duplicadas** —los cuatro estados, y abajo los cuatro otra vez— | `Partitions.AddNew` persiste solo y `Partitions.Count` **vuelve a leerse en 0**, así que la deduplicación por conteo no ve nada | crear la línea de vida nueva en cada corrida y rehacer el paquete entero; para mirar lo escrito, `t_xref` con `Name='Partitions'` |
 | `Update()` sobre una `Partition` o una `Transition` tira **«no contiene ningún método llamado 'Update'»** | no lo tienen: se guardan con el `Update()` del elemento que las contiene | asignar las propiedades y llamar a `$el.Update()` |
 | La línea de vida del diagrama de tiempo se rotula **«Reserva: Reserva»** | se le puso `Name` **y** `ClassifierID`, y EA concatena los dos | dejar `Name = ''` cuando hay clasificador |
+| Los **operandos del `alt` salen en orden inverso**: la guarda del flujo principal rotula la última banda | EA apila las particiones de abajo hacia arriba | escribir los `@PAR` en orden inverso (§7.8 c) |
+| Las **bandas del `alt` quedan corridas** y cada guarda envuelve los mensajes del flujo siguiente | se contó el alto de la cabecera y de las etiquetas de operando, que EA **no** consume | calcular la caja y los cortes con las `PtStartY` reales de los mensajes (§7.8 b) |
+| El PNG del diagrama de secuencia sale con **el fragmento sin operandos** | se exportó con `EA.Repository` headless, que no calcula la maqueta | exportar con `EA.App` + `OpenDiagram` + `SaveDiagram` (§8) |
+| Una operación sale como **`check(question)(): TriageResult`** | la firma entera se puso en el nombre y EA agrega `()` | `Methods.AddNew('check', ...)` y los parámetros con `Parameters.AddNew` (§7.4) |
+| Los parámetros de una operación salen **vacíos**: `retrieve(, , )` | EA imprime el **tipo** del parámetro, y se dejó vacío | `Parameters.AddNew($texto, $texto)`: el mismo texto en nombre y tipo (§7.4) |
+| En el diagrama de comunicación **no se ve hacia dónde va cada mensaje** | el `Collaboration` se creó sin `Direction` | `$con.Direction = 'Source -> Destination'` (§7.3) |
+| Los mensajes del diagrama de comunicación **no tienen punta de flecha** | fueron creados por script; EA sólo la dibuja para los que se crean desde su interfaz | generar objetos y enlaces, y cargar los mensajes a mano sobre cada enlace (§7.3) |
+| El diagrama de comunicación **no numera ni colorea los grupos** | el diagrama se creó con el tipo `Communication` | el tipo correcto es **`Collaboration`** (§7.3) |
+| Un mensaje **a sí mismo** no se dibuja y no hay error | `PtEnd` quedó igual que `PtStart` | `PtEnd = (PtStartX + 5, PtStartY - 15)` (§7.8 d-ter) |
+| El `Path` de un mensaje **no se escribe**: el `UPDATE` afecta 0 filas | `t_diagramlinks` no tiene fila hasta que EA dibuja el diagrama, y `DiagramLinks.AddNew` por COM no persiste | abrir y guardar el diagrama con `EA.App` **antes** de escribir el `Path` (§7.3) |
+| `EA.App` tira **«no contiene ningún método llamado 'Exit'»** | `Exit()` es de `Repository`, no de `App` | `$rep.Exit()` |
+| Un `GetDiagramByID` que funcionaba **tira «Internal application error»** tras regenerar | los `Diagram_ID` cambian con cada `-Rehacer` | resolver el diagrama por nombre o por GUID, nunca cablear el id |
 
 ---
 
@@ -1599,9 +1797,11 @@ $visibles = ($d.DiagramLinks | Where-Object { -not $_.IsHidden }).Count
 
 Ninguna de estas se resuelve por script. Hay que hacerlas en EA, a mano:
 
-- **Separar las etiquetas de mensajes que comparten enlace.** Con dos, EA las apila bien; con tres
-  o cuatro se superponen. Un arrastre por etiqueta y quedan fijas. Se probó fijar la posición con
-  `DiagramLink.Geometry` y EA la recalcula; `LayoutDiagramEx` **empeora** el diagrama.
+- **Separar las etiquetas de mensajes `Collaboration` que comparten enlace.** Con dos, EA las apila
+  bien; con tres o cuatro se superponen. `DiagramLink.Geometry` se recalcula sola y `LayoutDiagramEx`
+  **empeora** el diagrama; lo más parecido a hacerlo por script es `PDATA5`, que mueve la etiqueta
+  pero no la flecha (§7.3). **La salida real no es separar etiquetas: es dibujar cada mensaje como
+  un `ControlFlow` dirigido con su propio quiebre** (§7.3), y entonces esto deja de ser un problema.
 - **El orden de los atributos**, si está activa la opción de ordenar alfabéticamente.
 - **El rótulo `(from …)`** bajo los elementos, cuando el diagrama y el elemento están en paquetes
   distintos.
