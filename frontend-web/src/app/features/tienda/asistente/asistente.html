@@ -1,3 +1,11 @@
+<!-- CU-34 · Conversar con el asistente virtual — «boundary» PantallaAsistente. -->
+<app-navegacion-cliente />
+
+<a matButton routerLink="/tienda" class="volver">
+  <mat-icon>arrow_back</mat-icon>
+  Seguir mirando
+</a>
+
 <div class="asistente">
   @if (cargando()) {
     <div class="asistente__centro"><mat-spinner diameter="40" /></div>
@@ -58,19 +66,32 @@
       <p class="asistente__error">{{ error() }}</p>
     }
 
-    <form class="asistente__redaccion" (ngSubmit)="enviar()">
+    <!-- SIN `<form>` Y SIN `ngSubmit`, A PROPÓSITO.
+         `ngSubmit` es una salida de `NgForm` —de FormsModule— o de
+         `FormGroupDirective` —que necesita `[formGroup]`—. Este formulario
+         no tenía ninguno de los dos, así que ninguna directiva lo reclamaba
+         y **el evento nunca se disparaba**: escribir una pregunta y apretar
+         Enter no hacía nada, que es como se descubrió. Con los dos eventos
+         explícitos no depende de que una directiva coincida. -->
+    <div class="asistente__redaccion">
       <mat-form-field appearance="outline" class="asistente__campo">
         <mat-label>Escribí tu pregunta</mat-label>
-        <input matInput [formControl]="pregunta" maxlength="500" />
+        <input
+          matInput
+          [formControl]="pregunta"
+          maxlength="500"
+          (keyup.enter)="enviar()"
+        />
       </mat-form-field>
       <button
         mat-flat-button
         color="primary"
-        type="submit"
+        type="button"
         [disabled]="pensando()"
+        (click)="enviar()"
       >
         <mat-icon>send</mat-icon>
       </button>
-    </form>
+    </div>
   }
 </div>

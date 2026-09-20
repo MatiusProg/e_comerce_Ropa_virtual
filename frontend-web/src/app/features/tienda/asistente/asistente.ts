@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild, ElementRef, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
+import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion-cliente';
 import {
   AsistenteService,
   type Turno,
@@ -36,6 +37,8 @@ import {
 @Component({
   selector: 'app-asistente',
   imports: [
+    NavegacionCliente,
+    RouterLink,
     ReactiveFormsModule,
     MatButtonModule,
     MatCardModule,
@@ -78,6 +81,10 @@ export class Asistente implements OnInit {
     this.pensando.set(true);
     this.error.set(null);
     this.pregunta.setValue('');
+    // Se bloquea por el control y no con `[disabled]` en la plantilla: en
+    // formularios reactivos ese atributo es un antipatrón y Angular avisa
+    // en ejecución.
+    this.pregunta.disable();
     this.alFinal();
 
     this.api.preguntar(consulta, this.turnos()).subscribe({
@@ -87,10 +94,12 @@ export class Asistente implements OnInit {
           { pregunta: consulta, respuesta: r.texto, productos: r.productos },
         ]);
         this.pensando.set(false);
+        this.pregunta.enable();
         this.alFinal();
       },
       error: (e) => {
         this.pensando.set(false);
+        this.pregunta.enable();
         this.error.set(
           e?.error?.detail ?? 'No pude responder ahora. Probá de nuevo.',
         );
