@@ -219,6 +219,6 @@ def opciones(db: Session) -> dict[str, list[str]]:
     }
 
 
-def en_boliviana(momento: datetime) -> datetime:
+def en_bolivia(momento: datetime) -> datetime:
     """Atajo para la capa de salida. Ver `app.core.tiempo`."""
-    return tiempo.en_boliviana(momento)
+    return tiempo.en_bolivia(momento)

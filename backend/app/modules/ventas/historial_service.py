@@ -30,12 +30,11 @@ segunda llamada su boton de descarga fallaria para siempre. El UNIQUE hace que
 llamarla dos veces sea inofensivo.
 """
 import logging
+from datetime import datetime, timezone
 from io import BytesIO
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-
-from app.core import tiempo
 
 from app.modules.ventas import historial_repository as repository
 from app.modules.ventas import repository as ventas_repository
@@ -243,7 +242,7 @@ def _dibujar_pdf(comprobante: Comprobante, pedido) -> bytes:
     pdf.drawRightString(
         ancho - 20 * mm,
         20 * mm,
-        tiempo.ahora().strftime("Descargado el %d/%m/%Y"),
+        datetime.now(timezone.utc).strftime("Descargado el %d/%m/%Y"),
     )
 
     pdf.showPage()

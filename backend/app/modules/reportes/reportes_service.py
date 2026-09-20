@@ -281,7 +281,7 @@ def generar(
         # `datetime.now()` a secas era hora local del servidor, sin zona
         # ninguna: en Railway imprimia UTC y en la maquina de cada uno otra
         # cosa. Un saldo fechado mal no se puede contrastar con nada.
-        subtitulos.append(f"Saldos al {tiempo.marca()}")
+        subtitulos.append(f"Saldos al {tiempo.formatear(tiempo.ahora())}")
     else:
         inicio, fin = _rango(desde, hasta)
         filas = definicion.consulta(

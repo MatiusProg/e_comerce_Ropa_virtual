@@ -1,5 +1,12 @@
 """La hora del negocio es la de Bolivia, no la del servidor.
 
+DE QUIEN ES `app/core/tiempo.py`
+---------------------------------
+**El modulo lo escribio Karen** (PR #58), que reporto el defecto. Este
+archivo prueba lo que ella cubrio mas los sitios que quedaron afuera ---el
+periodo de los reportes, que es el peor de todos--- y `fin_del_dia()`, que
+se agrego para eso.
+
 QUE SE ESTA PROBANDO, Y POR QUE NO ES UN DETALLE
 -------------------------------------------------
 Todas las columnas de fecha son `TIMESTAMPTZ`, asi que **lo guardado siempre
@@ -49,15 +56,16 @@ def test_EL_DIA_EMPIEZA_A_MEDIANOCHE_EN_BOLIVIA_no_en_utc() -> None:
     """
     inicio = tiempo.inicio_del_dia(date(2026, 9, 20))
 
-    assert inicio.isoformat() == "2026-09-20T00:00:00-04:00"
-    assert inicio.astimezone(timezone.utc).isoformat() == "2026-09-20T04:00:00+00:00"
+    assert inicio.isoformat() == "2026-09-20T04:00:00+00:00"
+    assert tiempo.en_bolivia(inicio).isoformat() == "2026-09-20T00:00:00-04:00"
 
 
 def test_el_fin_del_dia_es_abierto_y_cubre_la_noche_entera() -> None:
-    """`<= 30` deja fuera todo lo que paso ese dia despues de medianoche.
+    """`fin_del_dia` se agrego el 20/09 para el periodo de los reportes.
 
-    Es el defecto clasico de los reportes por fecha, y por eso el limite
-    derecho es el comienzo del dia siguiente.
+    `<= 30` deja fuera todo lo que paso ese dia despues de medianoche: es el
+    defecto clasico de los reportes por fecha, y por eso el limite derecho
+    es el comienzo del dia siguiente.
     """
     fin = tiempo.fin_del_dia(date(2026, 9, 20))
     assert fin == tiempo.inicio_del_dia(date(2026, 9, 21))
@@ -75,18 +83,29 @@ def test_LAS_NUEVE_DE_LA_NOCHE_TODAVIA_ES_HOY() -> None:
     de_noche = datetime(2026, 9, 21, 1, 0, tzinfo=timezone.utc)
 
     assert de_noche.date() == date(2026, 9, 21)
-    assert tiempo.en_boliviana(de_noche).date() == date(2026, 9, 20)
+    assert tiempo.en_bolivia(de_noche).date() == date(2026, 9, 20)
+
+
+def test_ahora_devuelve_un_INSTANTE_en_utc_no_el_dia_boliviano() -> None:
+    """La distincion que define el modulo de Karen.
+
+    `ahora()` responde «en que instante paso esto» y va a una columna
+    `timestamptz`. El dia del calendario se pregunta con `hoy()`; sacarlo de
+    aca con `.date()` daria el dia UTC --- que entre las 20:00 y la
+    medianoche es el de manana.
+    """
+    assert tiempo.ahora().tzinfo == timezone.utc
 
 
 def test_un_instante_sin_zona_se_lee_como_utc_no_como_hora_local() -> None:
     """Suponer hora local seria suponer que el servidor esta en Bolivia ---
     que es justo lo que no pasa."""
     sin_zona = datetime(2026, 9, 21, 1, 0)
-    assert tiempo.en_boliviana(sin_zona).isoformat() == "2026-09-20T21:00:00-04:00"
+    assert tiempo.en_bolivia(sin_zona).isoformat() == "2026-09-20T21:00:00-04:00"
 
 
-def test_la_marca_que_se_imprime_sale_en_hora_boliviana() -> None:
-    assert tiempo.marca(datetime(2026, 9, 21, 1, 30, tzinfo=timezone.utc)) == (
+def test_lo_que_se_imprime_sale_en_hora_boliviana() -> None:
+    assert tiempo.formatear(datetime(2026, 9, 21, 1, 30, tzinfo=timezone.utc)) == (
         "20/09/2026 21:30"
     )
 

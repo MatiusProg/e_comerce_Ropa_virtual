@@ -66,8 +66,6 @@ from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
-from app.core import tiempo
-
 from app.core.config import settings
 from app.integrations.pasarela_pago import LineaDePago
 from app.modules.catalogo import imagenes_almacen as almacen
@@ -182,11 +180,7 @@ def _generar_codigo(db: Session) -> str:
     comprueba y se reintenta. Con `UNIQUE` en la columna, una colision que se
     escapara seria un error, no un cobro cruzado.
     """
-    # LA FECHA DEL CODIGO ES LA DE BOLIVIA. Con la del servidor, una venta
-    # de las 21:00 del martes sale numerada con la fecha del miercoles, y el
-    # numero que el cliente tiene en la mano no coincide con el dia del
-    # arqueo ni con el del reporte.
-    hoy = tiempo.hoy().strftime("%Y%m%d")
+    hoy = datetime.now(timezone.utc).strftime("%Y%m%d")
     for _ in range(10):
         codigo = f"VB-{hoy}-{secrets.token_hex(2).upper()}"
         if not repository.existe_codigo(db, codigo):

@@ -75,9 +75,11 @@ def _ahora() -> datetime:
     `timestamptz` y comparar un `datetime` con zona contra uno sin zona es un
     TypeError en tiempo de ejecucion, no un numero equivocado.
 
-    Va en HORA BOLIVIANA porque de aca sale el «hoy» del tablero. Con la del
-    servidor, entre las 20:00 y la medianoche `hoy` ya era manana y el
-    periodo por omision empezaba y terminaba un dia corrido.
+    Devuelve el instante en UTC, que es lo que `tiempo.ahora()` garantiza.
+    **De aca NO sale el «hoy» del tablero**: para eso esta `tiempo.hoy()`,
+    que pregunta que dia es en Bolivia. Sacarlo de este instante con
+    `.date()` daria el dia UTC, y entre las 20:00 y la medianoche el periodo
+    por omision empezaria y terminaria un dia corrido.
     """
     return tiempo.ahora()
 
@@ -95,7 +97,7 @@ def _resolver_periodo(desde: date | None, hasta: date | None) -> tuple[date, dat
     y devolver un 422 por eso obliga a la pantalla a ordenar dos fechas que el
     usuario acaba de elegir en un calendario.
     """
-    hoy = _ahora().date()
+    hoy = tiempo.hoy()
 
     if desde is None and hasta is None:
         hasta = hoy

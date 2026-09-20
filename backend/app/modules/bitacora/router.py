@@ -88,7 +88,7 @@ def consultar(
         items=[
             AsientoOut(
                 id=a.id,
-                ocurrido_en=service.en_boliviana(a.ocurrido_en),
+                ocurrido_en=service.en_bolivia(a.ocurrido_en),
                 usuario_id=a.usuario_id,
                 actor=a.actor,
                 nombre=nombre,

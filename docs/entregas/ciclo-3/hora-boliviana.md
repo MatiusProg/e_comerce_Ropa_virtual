@@ -2,6 +2,13 @@
 
 > **Escrita el 20/09/2026.** No es un caso de uso: es un defecto que cruzaba
 > reportes, tablero, ventas, promociones y temporadas.
+>
+> **El módulo `app/core/tiempo.py` lo escribió Karen** (PR #58), que reportó
+> el defecto. Los dos lo encontramos el mismo día por separado y escribimos el
+> mismo archivo; se conservó el suyo, que además distingue mejor las dos
+> preguntas. Este documento cubre **los sitios que quedaron afuera de su PR**
+> —el período de los reportes, que es el peor— y `fin_del_dia()`, que se
+> agregó para eso.
 
 ---
 
@@ -29,8 +36,8 @@ horas de cada día caen del lado equivocado**.
 
 ### Ya estaba descubierto, y el arreglo se había quedado en un solo lugar
 
-`promociones_service.py` tenía desde CU-12 la constante `BOLIVIA` y este
-comentario:
+Antes del PR #58, `promociones_service.py` tenía desde CU-12 la constante
+`BOLIVIA` y este comentario:
 
 > *Railway corre en UTC y ahí el día cambia a las 20:00 hora boliviana. Con
 > `date.today()`, una promoción que termina «el 30» dejaría de aplicar con
@@ -44,7 +51,7 @@ El razonamiento era correcto y **no se había llevado a ningún otro lado**.
 |---|---|---|
 | 🔴 | `reportes_service._rango()` | Construía el período con `tzinfo=timezone.utc`. «El reporte del 20» corría de las **20:00 del 19** a las **20:00 del 20**: la última hora de ventas de cada día aparecía en el reporte del día siguiente. |
 | 🔴 | `tablero_repository.ventas_de_hoy()` | «Hoy» arrancaba a las 00:00 UTC = **20:00 de ayer**. Entre esa hora y la medianoche, el «vendido hoy» sumaba dos días distintos. |
-| 🟠 | `ventas/service.py`, `pos/service.py` | El correlativo lleva `%Y%m%d`: una venta de las 21:00 del 20 salía numerada `VB-<21>-XXXX`. El número que el cliente tiene en la mano no coincidía con el día del arqueo. |
+| 🟠 | `ventas/service.py`, `pos/service.py` | El correlativo lleva `%Y%m%d`: una venta de las 21:00 del 20 salía numerada `VB-<21>-XXXX`. El número que el cliente tiene en la mano no coincidía con el día del arqueo. **(Lo arregla el PR #58.)** |
 | 🟠 | `reportes_service.generar()` | `datetime.now()` **sin zona ninguna** —hora local del servidor— impresa como «Saldos al …» en la cabecera del reporte de inventario. |
 | 🟡 | `reportes_router.pedir_por_voz()` | El `hoy` que recibe el intérprete de CU-35: «este mes» y «hoy» se resolvían en UTC. |
 
@@ -74,14 +81,26 @@ o *una fecha que se imprime*. Lo demás sigue en `datetime.now(timezone.utc)`.
 ```python
 from app.core import tiempo
 
-tiempo.BOLIVIA            # UTC-4
-tiempo.hoy()              # qué día es hoy EN BOLIVIA
-tiempo.ahora()            # el instante, en hora boliviana
-tiempo.inicio_del_dia(d)  # la medianoche boliviana de ese día, como instante
-tiempo.fin_del_dia(d)     # la medianoche del siguiente (límite abierto)
-tiempo.en_boliviana(dt)   # traduce un instante que viene de la base
-tiempo.marca(dt)          # «20/09/2026 14:30», para imprimir
+tiempo.BOLIVIA             # UTC-4
+tiempo.ahora()             # el INSTANTE actual, en UTC — para guardar
+tiempo.hoy()               # qué DÍA es hoy en Bolivia — para decidir
+tiempo.en_bolivia(dt)      # el mismo instante, visto desde Bolivia
+tiempo.formatear(dt, pat)  # «20/09/2026 14:30», para imprimir
+tiempo.inicio_del_dia(d)   # la medianoche boliviana de ese día, como instante
+tiempo.fin_del_dia(d)      # la del día siguiente (límite abierto)
 ```
+
+**La distinción que hace el módulo son dos preguntas, no una:**
+
+- **«¿En qué instante pasó esto?»** → `ahora()`, que devuelve **UTC**. Va a una
+  columna `timestamptz`. Un instante no tiene nacionalidad.
+- **«¿Qué día es hoy?»** → `hoy()`, en Bolivia.
+
+Sacar el día de `ahora().date()` da el día **UTC**, que entre las 20:00 y la
+medianoche es el de mañana. Es el mismo error, escrito de otra forma.
+
+`fin_del_dia()` se agregó el 20/09 para el período de los reportes; el resto
+es de Karen.
 
 ### Por qué un desfase fijo y no `ZoneInfo`
 
@@ -108,7 +127,7 @@ en la del navegador.
 
 ## 7. Lo que se prueba
 
-`tests/test_hora_boliviana.py`, ocho pruebas. La que importa:
+`tests/test_hora_boliviana.py`, nueve pruebas. La que importa:
 
 ```python
 inicio, fin = _rango(date(2026, 9, 20), date(2026, 9, 20))
