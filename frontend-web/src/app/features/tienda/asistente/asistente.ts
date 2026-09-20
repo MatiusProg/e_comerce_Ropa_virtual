@@ -57,10 +57,12 @@ export class Asistente implements OnInit {
 
   @ViewChild('conversacion') private conversacion?: ElementRef<HTMLElement>;
 
+  /** La conversación vive en el servicio para sobrevivir a la navegación. */
+  protected readonly turnos = this.api.turnos;
+
   protected readonly cargando = signal(true);
   protected readonly disponible = signal(false);
   protected readonly ejemplos = signal<string[]>([]);
-  protected readonly turnos = signal<Turno[]>([]);
   protected readonly pensando = signal(false);
   protected readonly error = signal<string | null>(null);
 
@@ -89,10 +91,11 @@ export class Asistente implements OnInit {
 
     this.api.preguntar(consulta, this.turnos()).subscribe({
       next: (r) => {
-        this.turnos.update((t) => [
-          ...t,
-          { pregunta: consulta, respuesta: r.texto, productos: r.productos },
-        ]);
+        this.api.agregar({
+          pregunta: consulta,
+          respuesta: r.texto,
+          productos: r.productos,
+        });
         this.pensando.set(false);
         this.pregunta.enable();
         this.alFinal();
@@ -105,6 +108,11 @@ export class Asistente implements OnInit {
         );
       },
     });
+  }
+
+  /** Empezar de nuevo: sin esto la conversación no se puede soltar. */
+  protected limpiar(): void {
+    this.api.limpiar();
   }
 
   protected verPrenda(id: number): void {

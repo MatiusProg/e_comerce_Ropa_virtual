@@ -19,7 +19,14 @@
     </mat-card>
   } @else {
     <header class="asistente__cabecera">
-      <h1><mat-icon>auto_awesome</mat-icon> Asistente</h1>
+      <h1>
+        <mat-icon>auto_awesome</mat-icon> Asistente
+        @if (turnos().length) {
+          <button mat-button type="button" (click)="limpiar()">
+            <mat-icon>refresh</mat-icon> Empezar de nuevo
+          </button>
+        }
+      </h1>
       <p>Sé lo que hay en el catálogo y puedo ver tus pedidos y tus reservas.</p>
     </header>
 

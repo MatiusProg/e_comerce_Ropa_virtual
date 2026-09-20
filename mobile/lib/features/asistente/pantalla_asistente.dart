@@ -2,12 +2,17 @@
 ///
 /// Realiza el **RF25** junto con CU-33 y CU-35.
 ///
-/// LA CONVERSACIÓN VIVE EN LA PANTALLA
-/// -------------------------------------
+/// LA CONVERSACIÓN VIVE EN MEMORIA, NO EN LA PANTALLA
+/// ----------------------------------------------------
 /// No hay tabla de conversaciones en el servidor —ver `asistente_service.py`—
-/// así que los turnos se guardan acá y se reenvían con cada pregunta. Al
-/// cerrar la pantalla se pierden, que es lo que espera cualquiera de un chat
-/// de atención.
+/// así que los turnos se guardan del lado del cliente y se reenvían con cada
+/// pregunta.
+///
+/// Estaban en el estado de este widget, y eso los borraba al navegar: ir al
+/// catálogo a mirar una prenda que el asistente acababa de nombrar y volver
+/// dejaba la conversación en blanco. Ahora viven en `conversacionProvider`
+/// —memoria, nunca base— y sobreviven a la navegación. Ver
+/// `estado_asistente.dart`.
 ///
 /// SI NO HAY MODELO, NO SE OFRECE
 /// --------------------------------
@@ -25,16 +30,7 @@ import '../../core/enrutado/router.dart';
 import '../../core/red/excepciones.dart';
 import '../../core/tema.dart';
 import '../../data/repositorios/repositorio_asistente.dart';
-import '../auth/estado_sesion.dart';
-
-final _repositorioProvider = Provider<RepositorioAsistente>((ref) {
-  return RepositorioAsistente(ref.watch(clienteApiProvider));
-});
-
-final _disponibleProvider =
-    FutureProvider<({bool disponible, List<String> ejemplos})>((ref) async {
-      return ref.watch(_repositorioProvider).disponible();
-    });
+import 'estado_asistente.dart';
 
 class PantallaAsistente extends ConsumerStatefulWidget {
   const PantallaAsistente({super.key});
@@ -44,7 +40,6 @@ class PantallaAsistente extends ConsumerStatefulWidget {
 }
 
 class _EstadoAsistente extends ConsumerState<PantallaAsistente> {
-  final _turnos = <Turno>[];
   final _campo = TextEditingController();
   final _scroll = ScrollController();
   bool _pensando = false;
@@ -70,13 +65,11 @@ class _EstadoAsistente extends ConsumerState<PantallaAsistente> {
 
     try {
       final turno = await ref
-          .read(_repositorioProvider)
-          .preguntar(texto, _turnos);
+          .read(repositorioAsistenteProvider)
+          .preguntar(texto, ref.read(conversacionProvider));
       if (!mounted) return;
-      setState(() {
-        _turnos.add(turno);
-        _pensando = false;
-      });
+      ref.read(conversacionProvider.notifier).agregar(turno);
+      setState(() => _pensando = false);
       _alFinal();
     } catch (fallo) {
       if (!mounted) return;
@@ -104,10 +97,24 @@ class _EstadoAsistente extends ConsumerState<PantallaAsistente> {
 
   @override
   Widget build(BuildContext context) {
-    final estado = ref.watch(_disponibleProvider);
+    final estado = ref.watch(asistenteDisponibleProvider);
+    final turnos = ref.watch(conversacionProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Asistente')),
+      appBar: AppBar(
+        title: const Text('Asistente'),
+        actions: [
+          // Empezar de nuevo. Sin esto, la conversación que ahora sobrevive
+          // a la navegación no se puede soltar nunca.
+          if (turnos.isNotEmpty)
+            IconButton(
+              tooltip: 'Empezar de nuevo',
+              icon: const Icon(Icons.refresh),
+              onPressed: () =>
+                  ref.read(conversacionProvider.notifier).limpiar(),
+            ),
+        ],
+      ),
       body: estado.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, traza) => const _NoDisponible(),
@@ -116,7 +123,7 @@ class _EstadoAsistente extends ConsumerState<PantallaAsistente> {
             : Column(
                 children: [
                   Expanded(
-                    child: _turnos.isEmpty && !_pensando
+                    child: turnos.isEmpty && !_pensando
                         ? _Bienvenida(
                             ejemplos: info.ejemplos,
                             alElegir: _enviar,
@@ -124,10 +131,10 @@ class _EstadoAsistente extends ConsumerState<PantallaAsistente> {
                         : ListView.builder(
                             controller: _scroll,
                             padding: const EdgeInsets.all(12),
-                            itemCount: _turnos.length + (_pensando ? 1 : 0),
+                            itemCount: turnos.length + (_pensando ? 1 : 0),
                             itemBuilder: (_, i) {
-                              if (i == _turnos.length) return const _Pensando();
-                              return _Intercambio(turno: _turnos[i]);
+                              if (i == turnos.length) return const _Pensando();
+                              return _Intercambio(turno: turnos[i]);
                             },
                           ),
                   ),
@@ -147,13 +154,29 @@ class _EstadoAsistente extends ConsumerState<PantallaAsistente> {
                         ),
                       ),
                     ),
-                  _Redaccion(
-                    campo: _campo,
-                    pensando: _pensando,
-                    alEnviar: _enviar,
-                  ),
                 ],
               ),
+      ),
+      // LA CAJA DE ESCRIBIR VA EN `bottomNavigationBar`, NO EN EL `Column`.
+      //
+      // Estaba como ultimo hijo del `Column` y **no se veia**: en la captura
+      // del telefono aparecia solo una linea vertical a 12 px del borde
+      // ---el `padding` izquierdo--- con el campo extendiendose fuera de la
+      // pantalla y el boton de enviar ya afuera. En depuracion eso se marca
+      // con las franjas amarillas; **en release Flutter lo recorta en
+      // silencio**, asi que no habia ningun aviso.
+      //
+      // Esta ranura esta hecha justo para esto: tiene ancho acotado, queda
+      // siempre pegada abajo y sube sola con el teclado.
+      bottomNavigationBar: estado.maybeWhen(
+        data: (info) => info.disponible
+            ? _Redaccion(
+                campo: _campo,
+                pensando: _pensando,
+                alEnviar: _enviar,
+              )
+            : const SizedBox.shrink(),
+        orElse: () => const SizedBox.shrink(),
       ),
     );
   }
@@ -298,8 +321,7 @@ class _Intercambio extends StatelessWidget {
                   ActionChip(
                     avatar: const Icon(Icons.checkroom, size: 16),
                     label: Text('Ver #$id'),
-                    onPressed: () =>
-                        context.push('${Rutas.catalogo}/$id'),
+                    onPressed: () => context.push('${Rutas.catalogo}/$id'),
                   ),
               ],
             ),
@@ -315,9 +337,9 @@ class _Intercambio extends StatelessWidget {
   /// dejaría «el camisero» sin referencia.
   String _sinCodigos(String texto) =>
       texto.replaceAll(RegExp(r'\[[^\]]*?#\d+[^\]]*?\]'), '').replaceAll(
-        RegExp(r' {2,}'),
-        ' ',
-      );
+            RegExp(r' {2,}'),
+            ' ',
+          );
 }
 
 class _Pensando extends StatelessWidget {
@@ -363,39 +385,46 @@ class _Redaccion extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: campo,
-                enabled: !pensando,
-                maxLength: 500,
-                minLines: 1,
-                maxLines: 4,
-                textInputAction: TextInputAction.send,
-                onSubmitted: alEnviar,
-                decoration: const InputDecoration(
-                  hintText: 'Escribí tu pregunta…',
-                  counterText: '',
-                  border: OutlineInputBorder(),
-                  isDense: true,
+    return Material(
+      // Fondo y linea arriba: sin esto se confunde con el ultimo mensaje,
+      // que en esta pantalla es del mismo color crema.
+      color: Colors.white,
+      elevation: 8,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: campo,
+                  enabled: !pensando,
+                  maxLength: 500,
+                  minLines: 1,
+                  maxLines: 4,
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: alEnviar,
+                  decoration: const InputDecoration(
+                    hintText: 'Escribí tu pregunta…',
+                    counterText: '',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 8),
-            FilledButton(
-              onPressed: pensando ? null : () => alEnviar(campo.text),
-              style: FilledButton.styleFrom(
-                backgroundColor: ColoresVB.malva,
-                padding: const EdgeInsets.all(14),
+              const SizedBox(width: 8),
+              FilledButton(
+                onPressed: pensando ? null : () => alEnviar(campo.text),
+                style: FilledButton.styleFrom(
+                  backgroundColor: ColoresVB.malva,
+                  padding: const EdgeInsets.all(14),
+                  minimumSize: const Size(52, 52),
+                ),
+                child: const Icon(Icons.send, size: 20),
               ),
-              child: const Icon(Icons.send, size: 20),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
