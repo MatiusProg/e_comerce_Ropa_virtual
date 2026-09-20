@@ -1,5 +1,10 @@
 /* CU-34 · El asistente. Una conversación, no un formulario. */
 
+.volver {
+  margin: 1rem 0 0 1.5rem;
+}
+
+
 .asistente {
   max-width: 760px;
   margin: 0 auto;
@@ -8,7 +13,7 @@
   flex-direction: column;
   /* La caja de redacción tiene que quedar abajo y a la vista sin que la
    * conversación empuje la página entera. */
-  height: calc(100vh - 140px);
+  height: calc(100vh - 220px);
 
   &__centro {
     display: flex;
@@ -136,7 +141,7 @@
 @media (max-width: 600px) {
   .asistente {
     padding: 1rem 0.75rem;
-    height: calc(100vh - 110px);
+    height: calc(100vh - 190px);
   }
 
   .burbuja {
