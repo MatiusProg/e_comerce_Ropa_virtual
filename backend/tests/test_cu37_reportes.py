@@ -275,3 +275,75 @@ def test_un_cliente_no_descarga_reportes(
 
 def test_sin_token_no_hay_reportes(api: TestClient) -> None:
     assert api.get(f"{REPORTES}/ventas.pdf").status_code == 401
+
+
+# --- Los filtros propios de cada reporte -----------------------------------
+
+
+def test_el_catalogo_declara_los_filtros_con_sus_opciones(
+    api: TestClient, cabeceras_admin: dict[str, str], sucursal: int
+) -> None:
+    """La pantalla los dibuja sola: no los tiene escritos a mano.
+
+    Las opciones vienen resueltas ---las sucursales salen de la base---, así
+    que la interfaz no puede quedar ofreciendo un filtro que el reporte ya no
+    acepta.
+    """
+    catalogo = api.get(CATALOGO, headers=cabeceras_admin).json()
+    ventas = next(r for r in catalogo if r["tipo"] == "ventas")
+    campos = {f["campo"] for f in ventas["filtros"]}
+    assert {"sucursal_id", "canal", "estado", "metodo_pago"} <= campos
+
+    sucursales = next(f for f in ventas["filtros"] if f["campo"] == "sucursal_id")
+    assert any(o["etiqueta"] == "Centro" for o in sucursales["opciones"])
+
+
+def test_un_filtro_que_el_reporte_NO_admite_se_IGNORA(
+    api: TestClient, cabeceras_admin: dict[str, str]
+) -> None:
+    """No revienta: la URL la puede escribir cualquiera.
+
+    Un 500 por un parámetro de más sería culpar a la petición de algo que el
+    servidor sabe descartar.
+    """
+    r = api.get(
+        f"{REPORTES}/inventario.xlsx",
+        headers=cabeceras_admin,
+        params={"tipo": "INGRESO", "canal": "DIGITAL"},
+    )
+    assert r.status_code == 200
+    assert r.content.startswith(b"PK")
+
+
+def test_LOS_FILTROS_APLICADOS_SE_IMPRIMEN_EN_EL_ARCHIVO(
+    api: TestClient, cabeceras_admin: dict[str, str]
+) -> None:
+    """Un reporte filtrado que no lo dice es un papel engañoso.
+
+    En una semana nadie sabe por qué suma menos que el del tablero.
+    """
+    from io import BytesIO
+
+    from openpyxl import load_workbook
+
+    r = api.get(
+        f"{REPORTES}/movimientos.xlsx",
+        headers=cabeceras_admin,
+        params={"tipo": "INGRESO"},
+    )
+    hoja = load_workbook(BytesIO(r.content)).active
+    textos = " ".join(
+        str(c.value) for fila in hoja.iter_rows(max_row=6) for c in fila if c.value
+    )
+    assert "Tipo: Ingreso" in textos
+
+
+def test_el_encargado_NO_recibe_el_filtro_de_sucursal(
+    api: TestClient, encargado: dict
+) -> None:
+    """Se le fuerza la suya al descargar, así que ofrecérselo sería un
+    control que no hace nada —y que además sugiere que podría elegir otra."""
+    catalogo = api.get(CATALOGO, headers=encargado).json()
+    for reporte in catalogo:
+        campos = {f["campo"] for f in reporte["filtros"]}
+        assert "sucursal_id" not in campos

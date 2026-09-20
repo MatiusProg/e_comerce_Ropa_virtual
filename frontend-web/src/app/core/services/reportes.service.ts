@@ -4,6 +4,24 @@ import { Observable, catchError, map, throwError } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 
+export interface OpcionDeFiltro {
+  valor: string;
+  etiqueta: string;
+}
+
+/**
+ * Un filtro que ESTE reporte admite, con sus opciones ya resueltas.
+ *
+ * Vienen del servidor y no están escritas acá: las sucursales, los
+ * proveedores y las temporadas salen de la base, y si un reporte acepta un
+ * filtro más aparece en la pantalla sin tocar el front.
+ */
+export interface FiltroDeReporte {
+  campo: string;
+  etiqueta: string;
+  opciones: OpcionDeFiltro[];
+}
+
 /** Un reporte que el servidor sabe generar. Sale de `/reportes/catalogo`. */
 export interface ReporteDisponible {
   tipo: string;
@@ -12,12 +30,27 @@ export interface ReporteDisponible {
 
   /** `false` para el inventario: es una foto de ahora, no un acumulado. */
   usa_periodo: boolean;
+
+  filtros: FiltroDeReporte[];
 }
 
-export interface FiltrosDeReporte {
-  desde?: string | null;
-  hasta?: string | null;
-  sucursal_id?: number | null;
+/** Lo que viaja en la URL. Las claves extra son los filtros propios. */
+export type FiltrosDeReporte = Record<string, string | number | null | undefined>;
+
+/** Lo que el servidor entendió de la frase (CU-35). */
+export interface PedidoEntendido {
+  entendido: boolean;
+
+  /** Qué se entendió, en una frase. Se muestra ANTES de descargar. */
+  resumen?: string | null;
+
+  tipo?: string | null;
+  formato?: string | null;
+  url?: string | null;
+
+  /** Por qué no se entendió, y frases que sí funcionan. */
+  motivo?: string | null;
+  ejemplos?: string[];
 }
 
 export interface ErrorReportes {
@@ -66,9 +99,14 @@ export class ReportesService {
     filtros: FiltrosDeReporte = {},
   ): Observable<{ archivo: Blob; nombre: string }> {
     let params = new HttpParams();
-    if (filtros.desde) params = params.set('desde', filtros.desde);
-    if (filtros.hasta) params = params.set('hasta', filtros.hasta);
-    if (filtros.sucursal_id) params = params.set('sucursal_id', filtros.sucursal_id);
+    for (const [clave, valor] of Object.entries(filtros)) {
+      // Se omiten los vacíos: un parámetro sin valor significaría «filtrar
+      // por nada» y el servidor lo descartaría igual, pero deja la URL sucia
+      // y difícil de leer cuando hay que depurar una descarga.
+      if (valor !== null && valor !== undefined && valor !== '') {
+        params = params.set(clave, valor);
+      }
+    }
 
     return this.http
       .get(`${this.base}/${tipo}.${formato}`, {
@@ -86,6 +124,33 @@ export class ReportesService {
         })),
         catchError((e) => throwError(() => this.traducir(e))),
       );
+  }
+
+  // --- CU-35 · pedido por voz -----------------------------------------------
+
+  /** Si el servidor puede interpretar pedidos hablados. */
+  hayVoz(): Observable<boolean> {
+    return this.http
+      .get<{ disponible: boolean }>(`${this.base}/voz/disponible`)
+      .pipe(
+        map((r) => r.disponible),
+        // Que la consulta falle NO puede impedir usar la pantalla: lo peor
+        // que pasa es que no se ofrezca el micrófono.
+        catchError(() => [false]),
+      );
+  }
+
+  /**
+   * Traduce lo que se dijo a uno de los reportes que existen.
+   *
+   * **Manda texto, no audio.** El reconocimiento corre en el navegador con
+   * Web Speech API: es gratis, no consume cuota del modelo y no sube
+   * megabytes por cada pedido.
+   */
+  interpretarVoz(texto: string): Observable<PedidoEntendido> {
+    return this.http
+      .post<PedidoEntendido>(`${this.base}/voz`, { texto })
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
   }
 
   private nombreDe(disposicion: string | null, tipo: string, formato: string): string {

@@ -147,6 +147,26 @@ export class Consolidado implements OnInit {
   }
 
   /** El rótulo del estado, para no repetir el `switch` en la plantilla. */
+  /**
+   * Qué se explica al pasar el mouse por «+45» (CU-39).
+   *
+   * El número solo dice cuánto; el plazo es la mitad útil del dato ---«45 en
+   * camino» y «45 en tres meses» son situaciones distintas--- y no entra en
+   * la fila sin apretarla.
+   */
+  protected tooltipDeCamino(fila: ExistenciaConsolidada): string {
+    const dias = fila.dias_para_ingresar;
+    const cuando =
+      dias === null
+        ? 'sin plazo informado'
+        : dias === 0
+          ? 'disponibles ahora en el proveedor'
+          : dias === 1
+            ? 'en 1 día'
+            : `en ${dias} días`;
+    return `${fila.cantidad_anunciada} unidades anunciadas por el proveedor, ${cuando}`;
+  }
+
   protected rotuloEstado(estado: EstadoExistencia): string {
     switch (estado) {
       case 'disponible':

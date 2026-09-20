@@ -24,6 +24,7 @@ import '../../features/reservas/pantalla_mis_reservas.dart';
 import '../../features/reservas/pantalla_nueva_reserva.dart';
 import '../../features/catalogo/pantalla_favoritos.dart';
 import '../../features/catalogo/pantalla_para_vos.dart';
+import '../../features/reportes/pantalla_reporte_por_voz.dart';
 import '../../features/vestidor/pantalla_vestidor.dart';
 import '../../features/inicio/pantalla_inicio.dart';
 import '../../features/perfil/pantalla_perfil.dart';
@@ -90,6 +91,9 @@ class Rutas {
   /// riesgo que se construye en el Ciclo 2 para saber, antes del Ciclo 3, si
   /// la deteccion de pose sobre este telefono da un ritmo usable.
   static const String vestidor = '/vestidor';
+
+  /// CU-35 · pedir un reporte hablando (RF25).
+  static const String reportePorVoz = '/reportes/voz';
 
   /// CU-26 · el carrito. Es la puerta del paquete de compra, igual que
   /// `/reservas` lo es del de reservas: se llega a pagar desde aca.
@@ -208,6 +212,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // Mateo: el prototipo del vestidor (I3).
+      GoRoute(
+        path: Rutas.reportePorVoz,
+        builder: (context, estado) => const PantallaReportePorVoz(),
+      ),
+
       GoRoute(
         path: Rutas.vestidor,
         builder: (context, estado) {

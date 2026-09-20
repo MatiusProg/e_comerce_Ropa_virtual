@@ -145,6 +145,21 @@
                     · {{ fila.total_reservado }} res.
                   }
                 </span>
+
+                <!-- CU-39. Se muestra SIEMPRE que haya algo anunciado, no
+                     solo cuando el estado es «próxima a ingresar»: ese estado
+                     únicamente aparece cuando no hay nada, y entonces lo que
+                     viene en camino de una prenda que SÍ tiene stock no se
+                     vería nunca. -->
+                @if (fila.cantidad_anunciada > 0) {
+                  <span
+                    class="en-camino"
+                    [matTooltip]="tooltipDeCamino(fila)"
+                  >
+                    <mat-icon inline>local_shipping</mat-icon>
+                    +{{ fila.cantidad_anunciada }}
+                  </span>
+                }
               </mat-panel-description>
             </mat-expansion-panel-header>
 

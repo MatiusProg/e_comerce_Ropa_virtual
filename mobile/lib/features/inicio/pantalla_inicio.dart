@@ -203,6 +203,15 @@ class _PendientesDelCiclo extends StatelessWidget {
         Icons.shopping_bag_outlined,
         Rutas.carrito,
       ),
+      // CU-35. Va en la lista aunque sea del administrador: el servidor
+      // rechaza a quien no corresponda, y esconderlo aca obligaria a la
+      // pantalla de inicio a conocer los roles, que hoy no conoce.
+      (
+        'Pedir un reporte',
+        'CU-35 · voz',
+        Icons.mic_none,
+        Rutas.reportePorVoz,
+      ),
     ];
 
     return Card(
