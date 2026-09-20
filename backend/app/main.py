@@ -79,7 +79,7 @@ from app.modules.pagos.router import router as pagos_router
 # from app.modules.vestidor_virtual.router import router as vestidor_router
 from app.modules.caja.router import router as caja_router
 from app.modules.ia.router import router as ia_router
-# from app.modules.reportes.router import router as reportes_router
+from app.modules.reportes.reportes_router import router as reportes_router
 
 
 # Antes de construir la aplicacion: uvicorn deja el logger raiz sin manejador
@@ -191,4 +191,4 @@ app.include_router(vestidor_router, prefix=API)
 app.include_router(pagos_router, prefix=API)
 app.include_router(caja_router, prefix=API)
 app.include_router(ia_router, prefix=API)
-# app.include_router(reportes_router, prefix=API)
+app.include_router(reportes_router, prefix=API)
