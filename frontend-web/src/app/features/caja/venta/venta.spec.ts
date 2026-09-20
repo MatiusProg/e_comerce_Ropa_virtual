@@ -1,7 +1,9 @@
+// Sin `provideNoopAnimations`: `@angular/animations` no está instalado en el
+// proyecto —la aplicación tampoco lo usa— y pedirlo acá haría que la prueba
+// dependiera de algo que la aplicación de verdad no tiene.
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
 
 import { Venta } from './venta';
@@ -66,7 +68,6 @@ describe('Venta presencial (CU-31)', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideHttpClient(),
-        provideNoopAnimations(),
         { provide: PosService, useValue: pos },
         { provide: CajaService, useValue: caja },
       ],
