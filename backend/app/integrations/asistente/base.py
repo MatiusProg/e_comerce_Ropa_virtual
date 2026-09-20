@@ -75,6 +75,13 @@ class Contexto:
     #: Sus medidas, si las cargo (CU-21). Sirve para «que talla me queda».
     medidas: str | None = None
 
+    #: La equivalencia centimetros <-> talla, general.
+    #:
+    #: Sin esto, «¿que talla me queda si mi busto es 100?» no se puede
+    #: contestar aunque el sistema tenga el dato --- y un modelo sin la
+    #: tabla contesta igual, inventando el numero.
+    tallas: tuple[str, ...] = ()
+
     #: Datos sueltos que no entran en las listas: cuantas sucursales hay, el
     #: horario, lo que haga falta contestar sin buscar.
     datos: tuple[str, ...] = field(default_factory=tuple)

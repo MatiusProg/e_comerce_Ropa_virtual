@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { Observable, catchError, of } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
@@ -43,6 +43,31 @@ export interface EstadoAsistente {
 export class AsistenteService {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiUrl}/asistente`;
+
+  /**
+   * La conversación en curso.
+   *
+   * VIVE EN EL SERVICIO, NO EN EL COMPONENTE
+   * ------------------------------------------
+   * Estaba en una señal del componente, y eso la borraba al navegar: ir a
+   * la ficha de una prenda que el asistente acababa de nombrar y volver
+   * dejaba la conversación en blanco. Justo el recorrido más natural
+   * —preguntar, mirar, repreguntar— era el que la perdía.
+   *
+   * El servicio es `providedIn: 'root'`, así que sobrevive a la navegación.
+   *
+   * **Y sigue sin tocar la base.** Vive en memoria: al recargar la página
+   * se pierde, a propósito. Ver `asistente_service.py`.
+   */
+  readonly turnos = signal<Turno[]>([]);
+
+  agregar(turno: Turno): void {
+    this.turnos.update((t) => [...t, turno]);
+  }
+
+  limpiar(): void {
+    this.turnos.set([]);
+  }
 
   /**
    * Si se puede conversar, y con qué empezar.

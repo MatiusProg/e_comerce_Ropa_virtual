@@ -97,6 +97,7 @@ def armar_contexto(db: Session, cliente, nombre: str) -> Contexto:
     # La existencia por la costura C1 y en bloque, igual que CU-33.
     con_stock = inventario.productos_con_stock(db, ids)
     tallas = repo.tallas_de(db, ids)
+    colores = repo.colores_de(db, ids)
 
     catalogo = []
     for producto_id, nombre_prenda, categoria, desde, hasta in filas:
@@ -106,10 +107,11 @@ def armar_contexto(db: Session, cliente, nombre: str) -> Contexto:
             else f"Bs {_importe(desde)} a {_importe(hasta)}"
         )
         cuales = ", ".join(tallas.get(producto_id, [])) or "sin tallas cargadas"
+        tonos = ", ".join(colores.get(producto_id, [])) or "sin color cargado"
         hay = "hay stock" if producto_id in con_stock else "AGOTADA"
         catalogo.append(
             f"#{producto_id} {nombre_prenda} | {categoria} | {precio} "
-            f"| tallas: {cuales} | {hay}"
+            f"| tallas: {cuales} | colores: {tonos} | {hay}"
         )
 
     pedidos = []
@@ -130,9 +132,19 @@ def armar_contexto(db: Session, cliente, nombre: str) -> Contexto:
     ]
     datos.append(f"Hoy es {tiempo.hoy().strftime('%d/%m/%Y')}.")
 
+    # La equivalencia cm <-> talla. Ver `repo.tabla_de_tallas`.
+    tabla = [
+        f"{codigo}: busto {bmin}-{bmax} cm, cintura {cmin}-{cmax} cm, "
+        f"cadera {dmin}-{dmax} cm"
+        for codigo, _orden, bmin, bmax, cmin, cmax, dmin, dmax in (
+            repo.tabla_de_tallas(db)
+        )
+    ]
+
     return Contexto(
         nombre=nombre,
         catalogo=tuple(catalogo),
+        tallas=tuple(tabla),
         pedidos=tuple(pedidos),
         reservas=tuple(reservas),
         medidas=_medidas_de(db, cliente),

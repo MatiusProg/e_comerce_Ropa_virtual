@@ -82,6 +82,76 @@ def catalogo(db: Session, limite: int = 60) -> list[tuple]:
     return [tuple(f) for f in db.execute(consulta).all()]
 
 
+def colores_de(db: Session, producto_ids: list[int]) -> dict[int, list[str]]:
+    """Que colores ofrecibles tiene cada producto.
+
+    Sin esto el asistente no puede contestar «¿la tienen en negro?» ni «¿que
+    color combina con esta?», que en una tienda de ropa son dos de las
+    preguntas mas frecuentes. Y lo peor: sin la lista, un modelo al que se
+    le pregunta por un color **inventa uno plausible**.
+    """
+    if not producto_ids:
+        return {}
+
+    from app.modules.catalogo.models import Color
+
+    filas = db.execute(
+        select(VarianteProducto.producto_id, Color.nombre)
+        .join(Color, Color.id == VarianteProducto.color_id)
+        .where(
+            VarianteProducto.producto_id.in_(producto_ids),
+            VarianteProducto.activa.is_(True),
+        )
+        .distinct()
+        .order_by(VarianteProducto.producto_id, Color.nombre)
+    ).all()
+
+    por_producto: dict[int, list[str]] = {}
+    for producto_id, nombre in filas:
+        por_producto.setdefault(producto_id, []).append(nombre)
+    return por_producto
+
+
+def tabla_de_tallas(db: Session) -> list[tuple]:
+    """La equivalencia centimetros <-> talla, GENERAL.
+
+    POR QUE GENERAL Y NO POR PRODUCTO
+    -----------------------------------
+    `medida_talla` guarda la tabla **por producto**, y con razon: una blusa y
+    un pantalon no miden igual en la misma talla. Pero son 185 filas, y
+    meterlas todas en el prompt cuesta mas tokens que el catalogo entero.
+
+    Se promedia por codigo de talla y se manda el rango. Con eso el
+    asistente contesta «con 100 de busto te va la M» ---que es la pregunta
+    real--- y puede aclarar que es orientativo. Para el numero exacto de una
+    prenda concreta esta el ajuste de CU-21, que no adivina nada.
+
+    Devuelve `(codigo, orden, busto_min, busto_max, cintura_min,
+    cintura_max, cadera_min, cadera_max)`.
+    """
+    from app.modules.catalogo.models import Talla
+    from app.modules.medidas.models import MedidaTalla
+
+    return [
+        tuple(f)
+        for f in db.execute(
+            select(
+                Talla.codigo,
+                Talla.orden,
+                func.min(MedidaTalla.busto_cm),
+                func.max(MedidaTalla.busto_cm),
+                func.min(MedidaTalla.cintura_cm),
+                func.max(MedidaTalla.cintura_cm),
+                func.min(MedidaTalla.cadera_cm),
+                func.max(MedidaTalla.cadera_cm),
+            )
+            .join(Talla, Talla.id == MedidaTalla.talla_id)
+            .group_by(Talla.codigo, Talla.orden)
+            .order_by(Talla.orden)
+        ).all()
+    ]
+
+
 def tallas_de(db: Session, producto_ids: list[int]) -> dict[int, list[str]]:
     """Que tallas ofrecibles tiene cada producto.
 
