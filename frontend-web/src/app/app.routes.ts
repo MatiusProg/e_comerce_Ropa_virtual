@@ -326,11 +326,28 @@ export const routes: Routes = [
       },
     ],
   },
+  // --- Ciclo 3 · CU-30 · El area de Caja --------------------------------
+  //
+  // Cuelga de su propia cascara, igual que las del Administrador, el Encargado
+  // y el Proveedor. ERA UNA RUTA SUELTA que caia en la pantalla generica de
+  // bienvenida desde el Ciclo 1: el Cajero entraba y no habia nada.
+  //
+  // Es la CUARTA vez que aparece el mismo hueco ---y la ultima que faltaba---.
+  // La leccion ya costo tres: una pantalla montada no esta entregada si no hay
+  // como llegar a ella.
   {
     path: 'caja',
-    title: 'Caja · Violet Boutique',
     canActivate: [sesionGuard, rolGuard('CAJERO')],
-    loadComponent: inicio,
+    loadComponent: () =>
+      import('./features/caja/caja-layout/caja-layout').then((m) => m.CajaLayout),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        title: 'Mi turno · Violet Boutique',
+        loadComponent: () => import('./features/caja/turno/turno').then((m) => m.Turno),
+      },
+    ],
   },
   // --- Ciclo 3 · CU-38 · El area del Proveedor --------------------------
   //

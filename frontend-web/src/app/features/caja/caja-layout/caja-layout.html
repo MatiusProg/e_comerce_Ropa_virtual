@@ -1,0 +1,44 @@
+<mat-toolbar class="barra">
+  <span class="logotipo vb-titulo">Violet Boutique</span>
+  <span class="etiqueta-area">Caja</span>
+
+  <span class="separador"></span>
+
+  @if (usuario(); as u) {
+    <span class="identidad">
+      <span class="avatar">{{ iniciales() }}</span>
+      <span class="datos">
+        <span class="nombre">{{ u.nombres }} {{ u.apellidos }}</span>
+        <span class="rol">Cajero</span>
+      </span>
+    </span>
+    <button matIconButton type="button" (click)="salir()" aria-label="Cerrar sesión">
+      <mat-icon>logout</mat-icon>
+    </button>
+  }
+</mat-toolbar>
+
+<nav class="navegacion" aria-label="Secciones de caja">
+  <a routerLink="/caja" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }">
+    <mat-icon>point_of_sale</mat-icon>
+    Mi turno
+  </a>
+  <!--
+    CU-31 y CU-32 todavía no existen. Se muestran apagadas y NO se esconden: el
+    Cajero tiene que saber que el sistema contempla su trabajo completo, y que
+    lo que falta es la implementación, no su rol. Es el mismo criterio que usa
+    `proveedor-layout` con sus secciones pendientes.
+  -->
+  <span class="pendiente" aria-disabled="true">
+    <mat-icon>shopping_cart_checkout</mat-icon>
+    Vender
+  </span>
+  <span class="pendiente" aria-disabled="true">
+    <mat-icon>assignment_return</mat-icon>
+    Devoluciones
+  </span>
+</nav>
+
+<main class="contenido">
+  <router-outlet />
+</main>

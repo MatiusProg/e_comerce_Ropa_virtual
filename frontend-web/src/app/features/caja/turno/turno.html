@@ -1,0 +1,264 @@
+@if (cargando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+@if (error(); as e) {
+  <div class="aviso" role="alert">
+    <mat-icon>error_outline</mat-icon>
+    <span>{{ e }}</span>
+  </div>
+}
+
+<!-- El arqueo del turno que se acaba de cerrar. Se muestra ANTES de ofrecer
+     abrir otro: el cajero tiene que poder anotar la diferencia. -->
+@if (cerrado(); as c) {
+  <mat-card class="tarjeta arqueo vb-filete-superior" appearance="outlined">
+    <mat-card-content>
+      <header class="cabecera-arqueo">
+        <mat-icon class="icono" [class.cuadra]="c.diferencia === '0.00'">
+          {{ c.diferencia === '0.00' ? 'check_circle' : 'report_problem' }}
+        </mat-icon>
+        <div>
+          <h2>Turno cerrado</h2>
+          <p class="sub">
+            {{ c.caja_nombre }} · {{ c.abierto_en | date: 'dd/MM HH:mm' }} a
+            {{ c.cerrado_en | date: 'HH:mm' }}
+          </p>
+        </div>
+      </header>
+
+      <dl class="cuentas">
+        <dt>Monto de apertura</dt>
+        <dd>{{ c.monto_apertura | currency: 'BOB' : 'symbol-narrow' }}</dd>
+        <dt>Cobrado en efectivo</dt>
+        <dd>{{ c.efectivo_cobrado | currency: 'BOB' : 'symbol-narrow' }}</dd>
+        <dt>Devoluciones</dt>
+        <dd>− {{ c.devoluciones | currency: 'BOB' : 'symbol-narrow' }}</dd>
+        <dt class="fuerte">El sistema esperaba</dt>
+        <dd class="fuerte">{{ c.monto_esperado | currency: 'BOB' : 'symbol-narrow' }}</dd>
+        <dt class="fuerte">Usted contó</dt>
+        <dd class="fuerte">{{ c.monto_cierre | currency: 'BOB' : 'symbol-narrow' }}</dd>
+      </dl>
+
+      <p class="diferencia" [class.cuadra]="c.diferencia === '0.00'">
+        @if (c.diferencia === '0.00') {
+          La caja cuadra.
+        } @else {
+          Diferencia: {{ c.diferencia | currency: 'BOB' : 'symbol-narrow' }}
+        }
+      </p>
+
+      <button matButton type="button" (click)="volverAEmpezar()">
+        <mat-icon>arrow_forward</mat-icon>
+        Abrir otro turno
+      </button>
+    </mat-card-content>
+  </mat-card>
+}
+
+@if (turno(); as t) {
+  <!-- ===================== CON TURNO ABIERTO ===================== -->
+  <header class="encabezado">
+    <div>
+      <h1 class="vb-titulo">{{ t.caja_nombre }}</h1>
+      <p class="bajada">
+        {{ t.sucursal_nombre }} · abierta desde las
+        {{ t.abierto_en | date: 'HH:mm' }}
+      </p>
+    </div>
+    <span class="abierta">Abierta</span>
+  </header>
+
+  <div class="rejilla">
+    <mat-card class="tarjeta" appearance="outlined">
+      <mat-card-content>
+        <h2>Lo que hay en el cajón</h2>
+
+        <dl class="cuentas">
+          <dt>Monto de apertura</dt>
+          <dd>{{ t.monto_apertura | currency: 'BOB' : 'symbol-narrow' }}</dd>
+          <dt>Cobrado en efectivo</dt>
+          <dd>{{ t.efectivo_cobrado | currency: 'BOB' : 'symbol-narrow' }}</dd>
+          <dt>
+            Devoluciones
+            <mat-icon
+              class="ayuda"
+              matTooltip="Las devoluciones llegan con CU-32. Hasta entonces esto es cero."
+              >help_outline</mat-icon
+            >
+          </dt>
+          <dd>− {{ t.devoluciones | currency: 'BOB' : 'symbol-narrow' }}</dd>
+          <dt class="fuerte">Debería haber</dt>
+          <dd class="fuerte">{{ t.monto_esperado | currency: 'BOB' : 'symbol-narrow' }}</dd>
+        </dl>
+
+        @if (t.por_metodo.length) {
+          <h3>Cobrado por método</h3>
+          <table class="tabla">
+            <thead>
+              <tr>
+                <th scope="col">Método</th>
+                <th scope="col" class="numero">Ventas</th>
+                <th scope="col" class="numero">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (linea of t.por_metodo; track linea.metodo) {
+                <tr>
+                  <td>{{ linea.metodo }}</td>
+                  <td class="numero">{{ linea.ventas }}</td>
+                  <td class="numero">
+                    {{ linea.total | currency: 'BOB' : 'symbol-narrow' }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <p class="nota">Todavía no se cobró nada en este turno.</p>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="tarjeta" appearance="outlined">
+      <mat-card-content>
+        <h2>Cerrar el turno</h2>
+        <p class="nota">
+          Cuente lo que hay en el cajón y escríbalo. <strong>Anote lo que contó,
+          no lo que debería haber</strong>: la diferencia es justamente lo que el
+          arqueo registra.
+        </p>
+
+        <mat-form-field appearance="outline" class="campo">
+          <mat-label>Monto contado</mat-label>
+          <span matTextPrefix>Bs&nbsp;</span>
+          <input
+            matInput
+            inputmode="decimal"
+            [formControl]="montoCierre"
+            placeholder="0.00"
+          />
+          @if (montoCierre.hasError('pattern')) {
+            <mat-error>Escriba un monto, con hasta dos decimales.</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- La diferencia se muestra ANTES de confirmar: quien cierra tiene que
+             ver lo que está por declarar, no enterarse después. -->
+        @if (diferencia() !== null) {
+          <p class="anticipo" [class.cuadra]="diferencia() === 0">
+            @if (diferencia() === 0) {
+              <mat-icon>check_circle</mat-icon>
+              La caja cuadra.
+            } @else if (diferencia()! > 0) {
+              <mat-icon>trending_up</mat-icon>
+              Va a quedar registrado un sobrante de
+              {{ diferencia() | currency: 'BOB' : 'symbol-narrow' }}.
+            } @else {
+              <mat-icon>trending_down</mat-icon>
+              Va a quedar registrado un faltante de
+              {{ -diferencia()! | currency: 'BOB' : 'symbol-narrow' }}.
+            }
+          </p>
+        }
+
+        <button
+          matButton="filled"
+          type="button"
+          class="vb-boton-marca"
+          [disabled]="montoCierre.invalid || ocupado()"
+          (click)="cerrar()"
+        >
+          <mat-icon>lock</mat-icon>
+          {{ ocupado() ? 'Cerrando…' : 'Cerrar turno' }}
+        </button>
+      </mat-card-content>
+    </mat-card>
+  </div>
+} @else if (!cargando() && !cerrado()) {
+  <!-- ===================== SIN TURNO ===================== -->
+  <header class="encabezado">
+    <div>
+      <h1 class="vb-titulo">Abrir caja</h1>
+      <p class="bajada">
+        Elija una caja y anote con cuánto empieza. Sin turno abierto no se puede
+        cobrar.
+      </p>
+    </div>
+  </header>
+
+  <mat-card class="tarjeta vb-filete-superior" appearance="outlined">
+    <mat-card-content>
+      @if (cajas().length === 0) {
+        <p class="nota">
+          Su sucursal no tiene ninguna caja registrada. Pídale al Administrador
+          que cree una.
+        </p>
+      } @else {
+        <h2>¿Qué caja?</h2>
+        <ul class="cajas">
+          @for (caja of libres(); track caja.id) {
+            <li>
+              <button
+                type="button"
+                class="caja"
+                [class.elegida]="cajaElegida() === caja.id"
+                (click)="elegir(caja)"
+              >
+                <mat-icon>{{
+                  cajaElegida() === caja.id ? 'radio_button_checked' : 'radio_button_unchecked'
+                }}</mat-icon>
+                {{ caja.nombre }}
+              </button>
+            </li>
+          }
+          <!-- Las ocupadas se muestran, apagadas, en vez de esconderse: el
+               cajero necesita saber que existen y están tomadas, no que
+               desaparecieron. -->
+          @for (caja of ocupadas(); track caja.id) {
+            <li>
+              <div class="caja tomada">
+                <mat-icon>lock</mat-icon>
+                {{ caja.nombre }}
+                <span class="etiqueta">abierta por otra persona</span>
+              </div>
+            </li>
+          }
+        </ul>
+
+        @if (libres().length === 0) {
+          <p class="nota">
+            Todas las cajas de su sucursal están abiertas. Hay que cerrar una
+            antes de abrir otra.
+          </p>
+        }
+
+        <mat-form-field appearance="outline" class="campo">
+          <mat-label>Monto de apertura</mat-label>
+          <span matTextPrefix>Bs&nbsp;</span>
+          <input
+            matInput
+            inputmode="decimal"
+            [formControl]="montoApertura"
+            placeholder="0.00"
+          />
+          <mat-hint>Lo que hay en el cajón al empezar. Puede ser cero.</mat-hint>
+          @if (montoApertura.hasError('pattern')) {
+            <mat-error>Escriba un monto, con hasta dos decimales.</mat-error>
+          }
+        </mat-form-field>
+
+        <button
+          matButton="filled"
+          type="button"
+          class="vb-boton-marca"
+          [disabled]="cajaElegida() === null || montoApertura.invalid || ocupado()"
+          (click)="abrir()"
+        >
+          <mat-icon>lock_open</mat-icon>
+          {{ ocupado() ? 'Abriendo…' : 'Abrir turno' }}
+        </button>
+      }
+    </mat-card-content>
+  </mat-card>
+}

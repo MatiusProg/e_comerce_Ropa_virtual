@@ -1,0 +1,271 @@
+:host {
+  display: block;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.encabezado {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.85rem;
+    font-weight: 600;
+    color: var(--vb-malva-oscuro);
+  }
+
+  .bajada {
+    margin: 0.25rem 0 0;
+    max-width: 42rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.abierta {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: #e3f3ea;
+  color: #2e7d55;
+}
+
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(21rem, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.tarjeta {
+  border-radius: var(--vb-radio);
+
+  h2 {
+    margin: 0 0 1rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--vb-malva-oscuro);
+  }
+
+  h3 {
+    margin: 1.25rem 0 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+// --- Las cuentas ----------------------------------------------------------
+
+.cuentas {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.45rem 1rem;
+  margin: 0;
+  font-size: 0.95rem;
+
+  dt {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  dd {
+    margin: 0;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .fuerte {
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--mat-sys-outline-variant);
+    font-weight: 600;
+    color: var(--vb-tinta);
+  }
+}
+
+.ayuda {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+  opacity: 0.6;
+  cursor: help;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.45rem 0.5rem;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  th {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .numero {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// --- Elegir caja ----------------------------------------------------------
+
+.cajas {
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.caja {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--vb-radio-chico);
+  background: var(--mat-sys-surface);
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+
+  &.elegida {
+    border-color: var(--vb-malva);
+    background: var(--vb-rosa-palido);
+  }
+
+  // La caja tomada es un `div`, no un botón: no se puede enfocar ni pulsar.
+  // Apagarla sólo con CSS dejaría que el teclado la seleccionara igual.
+  &.tomada {
+    cursor: default;
+    opacity: 0.55;
+  }
+}
+
+.etiqueta {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.campo {
+  width: 100%;
+  max-width: 18rem;
+  margin-top: 0.5rem;
+}
+
+.nota {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// --- La diferencia --------------------------------------------------------
+
+.anticipo {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--vb-radio-chico);
+  font-size: 0.92rem;
+  // Un descuadre NO va en rojo de error: no es un fallo del sistema, es un
+  // hecho que hay que registrar. En rojo el cajero creería que hizo algo mal.
+  background: color-mix(in srgb, var(--vb-oro) 14%, transparent);
+  color: #6b540a;
+
+  &.cuadra {
+    background: #e3f3ea;
+    color: #2e7d55;
+  }
+
+  mat-icon {
+    font-size: 1.15rem;
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+}
+
+// --- El arqueo del turno cerrado -----------------------------------------
+
+.arqueo {
+  margin-bottom: 1.5rem;
+}
+
+.cabecera-arqueo {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 1.25rem;
+
+  h2 {
+    margin: 0;
+  }
+
+  .sub {
+    margin: 0.15rem 0 0;
+    font-size: 0.88rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .icono {
+    font-size: 2.25rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    color: var(--vb-oro);
+
+    &.cuadra {
+      color: #2e7d55;
+    }
+  }
+}
+
+.diferencia {
+  margin: 1rem 0;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--vb-radio-chico);
+  font-weight: 600;
+  background: color-mix(in srgb, var(--vb-oro) 14%, transparent);
+  color: #6b540a;
+
+  &.cuadra {
+    background: #e3f3ea;
+    color: #2e7d55;
+  }
+}
+
+.aviso {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 1.5rem 1rem;
+  margin-bottom: 1rem;
+  color: var(--mat-sys-error);
+}
