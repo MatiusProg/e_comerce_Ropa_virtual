@@ -137,7 +137,13 @@ function Set-Operaciones($el, $lista) {
             [void]$o.Update()
             foreach ($p in $d.p) {
                 if (-not $p.n) { continue }
-                $par = $o.Parameters.AddNew($p.n, $p.t)
+                # EA IMPRIME EL TIPO DEL PARAMETRO, NO SU NOMBRE (guia 7.4).
+                # Si se pasa nombre y tipo por separado, en el PNG sale
+                # `registrar_venta(Session, VentaPresencialIn, int)` y los
+                # nombres no aparecen en ningun lado. La forma que funciona es
+                # armar el texto una vez y ponerlo en los DOS lados.
+                $texto = if ($p.t) { "$($p.n): $($p.t)" } else { $p.n }
+                $par = $o.Parameters.AddNew($texto, $texto)
                 [void]$par.Update()
             }
             $o.Parameters.Refresh()
@@ -145,6 +151,37 @@ function Set-Operaciones($el, $lista) {
         $i++
     }
     $el.Methods.Refresh()
+}
+
+# Repara los parametros que una corrida anterior dejo en la forma vieja
+# ---nombre y tipo por separado, que EA dibuja mostrando SOLO el tipo---.
+# `Set-Operaciones` no alcanza para esto porque saltea las operaciones que ya
+# existen, y estas ya existen: lo que cambia es lo de adentro.
+#
+# Solo toca las clases de ESTE script. Las heredadas de los Ciclos 1 y 2
+# tienen el mismo defecto, pero son de otros generadores y sus diagramas ya
+# estan exportados: se avisa y se decide aparte.
+function Repair-Parametros($el) {
+    $el.Methods.Refresh()
+    $arreglados = 0
+    foreach ($o in $el.Methods) {
+        $o.Parameters.Refresh()
+        if ($o.Parameters.Count -eq 0) { continue }
+        # Ya esta en la forma nueva si el primero lleva el tipo en el nombre.
+        if ($o.Parameters.GetAt(0).Name -match ':\s') { continue }
+        $viejos = @()
+        foreach ($p in $o.Parameters) { $viejos += ,@($p.Name, $p.Type) }
+        for ($i = $o.Parameters.Count - 1; $i -ge 0; $i--) { $o.Parameters.DeleteAt($i, $false) }
+        $o.Parameters.Refresh()
+        foreach ($v in $viejos) {
+            $texto = if ($v[1]) { "$($v[0]): $($v[1])" } else { $v[0] }
+            $par = $o.Parameters.AddNew($texto, $texto)
+            [void]$par.Update()
+        }
+        $o.Parameters.Refresh()
+        $arreglados++
+    }
+    return $arreglados
 }
 
 # Regla 5: borrar un diagrama no borra sus conectores. Se deduplica por par +
@@ -276,13 +313,76 @@ foreach ($n in @('Promocion','Favorito','MedidaCliente','Carrito','CarritoDetall
     $estereotipoDe[$n] = 'entidad'
 }
 
+$reparados = 0
 foreach ($nombre in $estereotipoDe.Keys) {
     $el = Get-OCrearClase23 $nombre $estereotipoDe[$nombre] $desc[$nombre]
     if ($ATTRS.ContainsKey($nombre))  { Set-Atributos   $el $ATTRS[$nombre] }
     if ($OPS.ContainsKey($nombre))    { Set-Operaciones $el $OPS[$nombre] }
     if ($CTRL.ContainsKey($nombre))   { Set-Operaciones $el $CTRL[$nombre] }
     if ($FRONT.ContainsKey($nombre))  { Set-Operaciones $el $FRONT[$nombre] }
+    $reparados += Repair-Parametros $el
 }
+if ($reparados) { Write-Output "Operaciones con parametros reescritos a la forma de la guia: $reparados" }
+
+# ---------------- actores ----------------
+# LA GUIA 7.4 LOS PIDE (correccion del 17/09/2026): la frontera existe porque
+# alguien la usa, y sin el actor el diagrama no dice quien empieza el caso.
+#
+# La guia anota que Violet Boutique no cumplia esta regla, y da el motivo:
+# aplicarla obligaba a regenerar los 23 diagramas de clases que ya estaban
+# hechos. Para los veinte del Ciclo 3 ese motivo no corre ---se dibujan por
+# primera vez---, asi que van con actor desde el principio.
+# OJO: LA BUSQUEDA ES POR NOMBRE **Y TIPO**.
+#
+# El paquete 2.3 ya tiene clases `entidad` llamadas `Cliente` y `Proveedor`
+# --- son las tablas `cliente` y `proveedor` del Ciclo 1 ---. Buscando solo
+# por nombre, el actor Cliente resolvia a ESA CLASE: cinco diagramas quedaron
+# con una entidad de base de datos puesta en la columna de actores y una
+# asociacion OPERA_DESDE saliendo de ella. Se veia como un actor porque
+# estaba donde va el actor.
+#
+# Los actores tampoco entran en `$indice23`, que esta indexado por nombre a
+# secas: meterlos ahi pisaria la clase `Cliente` y `$C['Cliente']` dejaria de
+# ser la entidad.
+$actor23 = @{}
+function Get-OCrearActor($nombre, $notas) {
+    if ($actor23.ContainsKey($nombre)) { return $actor23[$nombre] }
+    $p23.Elements.Refresh()
+    foreach ($e in $p23.Elements) {
+        if ($e.Name -eq $nombre -and $e.Type -eq 'Actor') { $actor23[$nombre] = $e; return $e }
+    }
+    $e = $p23.Elements.AddNew($nombre, 'Actor')
+    if ($notas) { $e.Notes = $notas }
+    [void]$e.Update(); $p23.Elements.Refresh()
+    $actor23[$nombre] = $e
+    return $e
+}
+
+# Limpieza de la corrida que ligo las entidades `Cliente` y `Proveedor` a las
+# fronteras. `OPERA_DESDE` es exclusivo de la union actor--frontera, asi que
+# una saliendo de una Class es siempre de aquella pasada.
+$limpiados = 0
+foreach ($e in $p23.Elements) {
+    if ($e.Type -ne 'Class') { continue }
+    $e.Connectors.Refresh()
+    for ($i = $e.Connectors.Count - 1; $i -ge 0; $i--) {
+        $c = $e.Connectors.GetAt($i)
+        if ($c.ClientID -eq $e.ElementID -and $c.Type -eq 'Association' -and $c.Name -eq 'OPERA_DESDE') {
+            $e.Connectors.DeleteAt($i, $false); $limpiados++
+        }
+    }
+    $e.Connectors.Refresh()
+}
+if ($limpiados) { Write-Output "Asociaciones OPERA_DESDE que salian de una clase, borradas: $limpiados" }
+foreach ($a in @(
+    @{n='Cliente';                       d='Quien compra. Es el disparador de la vitrina, el carrito, el pedido, el vestidor y los favoritos.'},
+    @{n='Administrador';                 d='Configura el sistema y lee los indicadores. Disparador de promociones, tablero, reportes y bitacora.'},
+    @{n='Cajero';                        d='Opera el mostrador de una sucursal: turno de caja, venta presencial y devolucion.'},
+    @{n='Proveedor';                     d='Empresa que abastece prendas. Solo ve y toca lo propio.'},
+    @{n='Pasarela de Pago';              d='Actor externo. En CU-28 es el DISPARADOR: llama al webhook por su cuenta, sin que nadie del sistema se lo pida. En CU-27 es secundario, lo invoca GestorPagos.'},
+    @{n='Servicio de IA';                d='Actor externo secundario: NUNCA dispara un caso de uso, siempre lo invoca un controlador. Por eso se une al controlador y no a la frontera.'},
+    @{n='Sistema (procesos automaticos)'; d='El planificador. Dispara los casos que no los inicia una persona.'}
+)) { $actor23[$a.n] = Get-OCrearActor $a.n $a.d }
 
 # Las clases de los Ciclos 1 y 2 se REUSAN tal cual. Si alguna falta es que no
 # se corrieron los generadores anteriores, y hay que parar: crearlas aca las
@@ -439,35 +539,79 @@ Write-Output 'Asociaciones listas.'
 
 # ---------------- los veinte diagramas ----------------
 
+#   act = los actores del caso. `d` es contra QUE clase se une cada uno:
+#         el disparador va contra la FRONTERA, que es lo que pide la guia;
+#         un actor externo secundario ---el Servicio de IA, o la pasarela
+#         cuando es el sistema el que la llama--- va contra el CONTROLADOR que
+#         lo invoca, porque unirlo a la frontera diria que empieza el caso de
+#         uso, y no lo empieza.
 $casos = @(
-  @{ n='2.3 CU-12 Gestionar promociones';              f='PantallaPromociones';   c=@('GestorPromociones','GestorAutenticacion');                                                  e=@('Promocion','Producto','VarianteProducto') },
-  @{ n='2.3 CU-20 Gestionar favoritos';                f='PantallaFavoritos';     c=@('GestorFavoritos','GestorVitrina','GestorAutenticacion');                                    e=@('Favorito','Producto') },
-  @{ n='2.3 CU-21 Utilizar vestidor virtual (RA)';     f='PantallaVestidor';      c=@('GestorVestidor','GestorVitrina','GestorAutenticacion');                                     e=@('MedidaCliente','ImagenProducto','VarianteProducto') },
-  @{ n='2.3 CU-26 Gestionar carrito de compras';       f='PantallaCarrito';       c=@('GestorCarrito','GestorPromociones','GestorInventario','GestorAutenticacion');               e=@('Carrito','CarritoDetalle','VarianteProducto') },
-  @{ n='2.3 CU-27 Realizar pedido y pagar en línea';   f='PantallaCheckout';      c=@('GestorPedidos','GestorPagos','GestorInventario','GestorPromociones','GestorAutenticacion'); e=@('Venta','DetalleVenta','Pago','Existencia') },
-  @{ n='2.3 CU-28 Confirmar pago del pedido';          f='WebhookPasarela';       c=@('GestorPagos','GestorInventario','GestorCarrito');                                           e=@('Pago','TransaccionPasarela','Venta','Existencia') },
-  @{ n='2.3 CU-29 Consultar historial de compras';     f='PantallaCompras';       c=@('GestorHistorial','GestorAutenticacion');                                                    e=@('Venta','DetalleVenta','Comprobante') },
-  @{ n='2.3 CU-30 Abrir y cerrar caja';                f='PantallaTurno';         c=@('GestorCaja','GestorAutenticacion');                                                         e=@('Caja','TurnoCaja','Venta','Devolucion') },
-  @{ n='2.3 CU-31 Registrar venta presencial';         f='PantallaVenta';         c=@('GestorMostrador','GestorCaja','GestorInventario','GestorPromociones','GestorHistorial');    e=@('Venta','DetalleVenta','Comprobante','Existencia') },
-  @{ n='2.3 CU-32 Registrar devolución';               f='PantallaDevolucion';    c=@('GestorDevoluciones','GestorCaja','GestorInventario');                                       e=@('Devolucion','DetalleDevolucion','Venta','DetalleVenta') },
-  @{ n='2.3 CU-33 Recibir recomendaciones de prendas'; f='PantallaParaVos';       c=@('GestorRecomendaciones','GestorVitrina','GestorFavoritos','GestorAutenticacion');            e=@('Recomendacion','VarianteProducto','Favorito') },
-  @{ n='2.3 CU-34 Conversar con el asistente virtual'; f='PantallaAsistente';     c=@('GestorAsistente','GestorVitrina','GestorAutenticacion');                                    e=@('Venta','Reserva') },
-  @{ n='2.3 CU-35 Generar reporte por comando de voz'; f='PantallaReportePorVoz'; c=@('GestorReportePorVoz','GestorReportes','GestorAutenticacion');                               e=@('Venta') },
-  @{ n='2.3 CU-36 Consultar tablero de indicadores';   f='PantallaTablero';       c=@('GestorTablero','GestorAutenticacion');                                                      e=@('Venta','Reserva','Existencia') },
-  @{ n='2.3 CU-37 Generar reportes de gestión';        f='PantallaReportes';      c=@('GestorReportes','GestorAutenticacion');                                                     e=@('Venta','Existencia','MovimientoInventario','Reserva') },
-  @{ n='2.3 CU-38 Registrar productos del proveedor';  f='PantallaMisProductos';  c=@('GestorCatalogoProveedor','GestorProductos','GestorAutenticacion');                          e=@('Producto','VarianteProducto') },
-  @{ n='2.3 CU-39 Informar disponibilidad y plazo de abastecimiento'; f='PantallaAbastecimiento'; c=@('GestorAbastecimiento','GestorConsolidado','GestorInventario','GestorAutenticacion'); e=@('Abastecimiento','VarianteProducto','Existencia') },
-  @{ n='2.3 CU-40 Notificar eventos a los usuarios';   f='CanalDeAviso';          c=@('GestorNotificaciones','GestorReservas','GestorPagos','GestorInventario');                    e=@('Notificacion') },
-  @{ n='2.3 CU-41 Recuperar contraseña';               f='PantallaRecuperacion';  c=@('GestorRecuperacion');                                                                       e=@('Usuario','TokenRecuperacion','SesionToken') },
-  @{ n='2.3 CU-42 Consultar la bitácora del sistema';  f='PantallaBitacora';      c=@('GestorBitacora','GestorAutenticacion');                                                     e=@('Bitacora','Usuario') }
+  @{ n='2.3 CU-12 Gestionar promociones';              f='PantallaPromociones';   c=@('GestorPromociones','GestorAutenticacion');                                                  e=@('Promocion','Producto','VarianteProducto');
+     act=@(@{a='Administrador'; d='PantallaPromociones'; r='OPERA_DESDE'}) },
+  @{ n='2.3 CU-20 Gestionar favoritos';                f='PantallaFavoritos';     c=@('GestorFavoritos','GestorVitrina','GestorAutenticacion');                                    e=@('Favorito','Producto');
+     act=@(@{a='Cliente'; d='PantallaFavoritos'; r='OPERA_DESDE'}) },
+  @{ n='2.3 CU-21 Utilizar vestidor virtual (RA)';     f='PantallaVestidor';      c=@('GestorVestidor','GestorVitrina','GestorAutenticacion');                                     e=@('MedidaCliente','ImagenProducto','VarianteProducto');
+     act=@(@{a='Cliente'; d='PantallaVestidor'; r='OPERA_DESDE'}, @{a='Servicio de IA'; d='GestorVestidor'; r='RESUELVE_PARA'}) },
+  @{ n='2.3 CU-26 Gestionar carrito de compras';       f='PantallaCarrito';       c=@('GestorCarrito','GestorPromociones','GestorInventario','GestorAutenticacion');               e=@('Carrito','CarritoDetalle','VarianteProducto');
+     act=@(@{a='Cliente'; d='PantallaCarrito'; r='OPERA_DESDE'}) },
+  @{ n='2.3 CU-27 Realizar pedido y pagar en línea';   f='PantallaCheckout';      c=@('GestorPedidos','GestorPagos','GestorInventario','GestorPromociones','GestorAutenticacion'); e=@('Venta','DetalleVenta','Pago','Existencia');
+     act=@(@{a='Cliente'; d='PantallaCheckout'; r='OPERA_DESDE'}, @{a='Pasarela de Pago'; d='GestorPagos'; r='COBRA_PARA'}) },
+  @{ n='2.3 CU-28 Confirmar pago del pedido';          f='WebhookPasarela';       c=@('GestorPagos','GestorInventario','GestorCarrito');                                           e=@('Pago','TransaccionPasarela','Venta','Existencia');
+     act=@(@{a='Pasarela de Pago'; d='WebhookPasarela'; r='NOTIFICA_A'}) },
+  @{ n='2.3 CU-29 Consultar historial de compras';     f='PantallaCompras';       c=@('GestorHistorial','GestorAutenticacion');                                                    e=@('Venta','DetalleVenta','Comprobante');
+     act=@(@{a='Cliente'; d='PantallaCompras'; r='OPERA_DESDE'}) },
+  @{ n='2.3 CU-30 Abrir y cerrar caja';                f='PantallaTurno';         c=@('GestorCaja','GestorAutenticacion');                                                         e=@('Caja','TurnoCaja','Venta','Devolucion');
+     act=@(@{a='Cajero'; d='PantallaTurno'; r='OPERA_DESDE'}) },
+  @{ n='2.3 CU-31 Registrar venta presencial';         f='PantallaVenta';         c=@('GestorMostrador','GestorCaja','GestorInventario','GestorPromociones','GestorHistorial');    e=@('Venta','DetalleVenta','Comprobante','Existencia');
+     act=@(@{a='Cajero'; d='PantallaVenta'; r='OPERA_DESDE'}) },
+  @{ n='2.3 CU-32 Registrar devolución';               f='PantallaDevolucion';    c=@('GestorDevoluciones','GestorCaja','GestorInventario');                                       e=@('Devolucion','DetalleDevolucion','Venta','DetalleVenta');
+     act=@(@{a='Cajero'; d='PantallaDevolucion'; r='OPERA_DESDE'}) },
+  @{ n='2.3 CU-33 Recibir recomendaciones de prendas'; f='PantallaParaVos';       c=@('GestorRecomendaciones','GestorVitrina','GestorFavoritos','GestorAutenticacion');            e=@('Recomendacion','VarianteProducto','Favorito');
+     act=@(@{a='Cliente'; d='PantallaParaVos'; r='OPERA_DESDE'}, @{a='Servicio de IA'; d='GestorRecomendaciones'; r='RESUELVE_PARA'}) },
+  @{ n='2.3 CU-34 Conversar con el asistente virtual'; f='PantallaAsistente';     c=@('GestorAsistente','GestorVitrina','GestorAutenticacion');                                    e=@('Venta','Reserva');
+     act=@(@{a='Cliente'; d='PantallaAsistente'; r='OPERA_DESDE'}, @{a='Servicio de IA'; d='GestorAsistente'; r='RESUELVE_PARA'}) },
+  @{ n='2.3 CU-35 Generar reporte por comando de voz'; f='PantallaReportePorVoz'; c=@('GestorReportePorVoz','GestorReportes','GestorAutenticacion');                               e=@('Venta');
+     act=@(@{a='Administrador'; d='PantallaReportePorVoz'; r='OPERA_DESDE'}, @{a='Servicio de IA'; d='GestorReportePorVoz'; r='RESUELVE_PARA'}) },
+  @{ n='2.3 CU-36 Consultar tablero de indicadores';   f='PantallaTablero';       c=@('GestorTablero','GestorAutenticacion');                                                      e=@('Venta','Reserva','Existencia');
+     act=@(@{a='Administrador'; d='PantallaTablero'; r='OPERA_DESDE'}) },
+  @{ n='2.3 CU-37 Generar reportes de gestión';        f='PantallaReportes';      c=@('GestorReportes','GestorAutenticacion');                                                     e=@('Venta','Existencia','MovimientoInventario','Reserva');
+     act=@(@{a='Administrador'; d='PantallaReportes'; r='OPERA_DESDE'}) },
+  @{ n='2.3 CU-38 Registrar productos del proveedor';  f='PantallaMisProductos';  c=@('GestorCatalogoProveedor','GestorProductos','GestorAutenticacion');                          e=@('Producto','VarianteProducto');
+     act=@(@{a='Proveedor'; d='PantallaMisProductos'; r='OPERA_DESDE'}) },
+  @{ n='2.3 CU-39 Informar disponibilidad y plazo de abastecimiento'; f='PantallaAbastecimiento'; c=@('GestorAbastecimiento','GestorConsolidado','GestorInventario','GestorAutenticacion'); e=@('Abastecimiento','VarianteProducto','Existencia');
+     act=@(@{a='Proveedor'; d='PantallaAbastecimiento'; r='OPERA_DESDE'}, @{a='Encargado de Sucursal'; d='PantallaAbastecimiento'; r='RECIBE_DESDE'}) },
+  @{ n='2.3 CU-40 Notificar eventos a los usuarios';   f='CanalDeAviso';          c=@('GestorNotificaciones','GestorReservas','GestorPagos','GestorInventario');                    e=@('Notificacion');
+     act=@(@{a='Sistema (procesos automaticos)'; d='CanalDeAviso'; r='DISPARA'}) },
+  @{ n='2.3 CU-41 Recuperar contraseña';               f='PantallaRecuperacion';  c=@('GestorRecuperacion');                                                                       e=@('Usuario','TokenRecuperacion','SesionToken');
+     act=@(@{a='Cliente'; d='PantallaRecuperacion'; r='OPERA_DESDE'}) },
+  @{ n='2.3 CU-42 Consultar la bitácora del sistema';  f='PantallaBitacora';      c=@('GestorBitacora','GestorAutenticacion');                                                     e=@('Bitacora','Usuario');
+     act=@(@{a='Administrador'; d='PantallaBitacora'; r='OPERA_DESDE'}, @{a='Sistema (procesos automaticos)'; d='GestorBitacora'; r='ALIMENTA_A'}) }
 )
 
-# Tres columnas: frontera, controladores, entidades. Mas anchas que las del
-# Ciclo 2 porque las firmas del Ciclo 3 llevan mas parametros.
+# CU-39 tiene dos disparadores, como CU-07 y CU-13 en el 2.2: el Proveedor
+# que anuncia y el Encargado que recibe. La guia pide que vayan LOS DOS.
+$actor23['Encargado de Sucursal'] = Get-OCrearActor 'Encargado de Sucursal' 'Recibe en su sucursal lo que el Proveedor anuncio. Es el segundo disparador de CU-39.'
+
+# Las uniones actor -- clase, con rol en mayusculas y cardinalidad en los dos
+# extremos, igual que el resto del capitulo.
+foreach ($caso in $casos) {
+    foreach ($u in $caso.act) {
+        if (-not $actor23.ContainsKey($u.a)) { throw "Actor no declarado: $($u.a)" }
+        if (-not $C.ContainsKey($u.d))       { throw "Destino inexistente para $($u.a): $($u.d)" }
+        New-Asociacion $actor23[$u.a] $C[$u.d] $u.r '1' '1'
+    }
+}
+Write-Output 'Actores unidos.'
+
+# Cuatro columnas: actores, frontera, controladores, entidades. Las tres de
+# clases son mas anchas que las del Ciclo 2 porque las firmas del Ciclo 3
+# llevan mas parametros, y ahora ademas cada parametro se imprime con su
+# nombre y su tipo.
+$COL_ACT = @{ x=40; ancho=170 }
 $COLS = @(
-    @{ x=40;   ancho=460 },
-    @{ x=580;  ancho=470 },
-    @{ x=1130; ancho=470 }
+    @{ x=280;  ancho=460 },
+    @{ x=820;  ancho=470 },
+    @{ x=1370; ancho=470 }
 )
 
 $hechos = 0
@@ -478,12 +622,27 @@ foreach ($caso in $casos) {
         # Borrar el diagrama NO borra los conectores (regla 5): las
         # asociaciones sobreviven y se vuelven a mostrar solas al reponer las
         # clases en el lienzo.
-        $p23.Diagrams.DeleteAt($p23.Diagrams.IndexOf($ya), $false)
+        #
+        # El indice se busca recorriendo: las colecciones COM de EA NO tienen
+        # `IndexOf` ---devuelven `System.__ComObject` y el metodo no existe---
+        # y hay que ir de atras para adelante para que borrar no corra los
+        # indices que faltan visitar.
+        $p23.Diagrams.Refresh()
+        for ($i = $p23.Diagrams.Count - 1; $i -ge 0; $i--) {
+            if ($p23.Diagrams.GetAt($i).Name -eq $caso.n) { $p23.Diagrams.DeleteAt($i, $false) }
+        }
         $p23.Diagrams.Refresh()
     }
 
     $d = $p23.Diagrams.AddNew($caso.n, 'Logical')
     [void]$d.Update(); $p23.Diagrams.Refresh()
+
+    # Los actores primero, en su propia columna a la izquierda de la frontera.
+    $t = -40
+    foreach ($u in $caso.act) {
+        Poner $d $actor23[$u.a] $COL_ACT.x $t $COL_ACT.ancho 90
+        $t = $t - 150
+    }
 
     $grupos = @(@($caso.f), $caso.c, $caso.e)
     for ($k = 0; $k -lt 3; $k++) {
@@ -498,7 +657,7 @@ foreach ($caso in $casos) {
 
     $d.DiagramObjects.Refresh(); $d.DiagramLinks.Refresh()
     $hechos++
-    Write-Output ("  {0,-58} {1} clases, {2,2} asociaciones" -f $caso.n, $d.DiagramObjects.Count, $d.DiagramLinks.Count)
+    Write-Output ("  {0,-58} {1} elementos, {2,2} asociaciones" -f $caso.n, $d.DiagramObjects.Count, $d.DiagramLinks.Count)
 }
 
 Write-Output "Diagramas dibujados: $hechos de $($casos.Count)"
