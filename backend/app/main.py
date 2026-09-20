@@ -77,6 +77,7 @@ from app.modules.vestidor_virtual.router import router as vestidor_router
 # dos: Mateo escribio `iniciar_cobro` con CU-27 y CU-28 se sumo encima.
 from app.modules.pagos.router import router as pagos_router
 # from app.modules.vestidor_virtual.router import router as vestidor_router
+from app.modules.abastecimiento.router import router as abastecimiento_router
 from app.modules.caja.router import router as caja_router
 from app.modules.ia.router import router as ia_router
 from app.modules.reportes.reportes_router import router as reportes_router
@@ -190,5 +191,6 @@ app.include_router(vestidor_router, prefix=API)
 # CU-28. El webhook de la pasarela.
 app.include_router(pagos_router, prefix=API)
 app.include_router(caja_router, prefix=API)
+app.include_router(abastecimiento_router, prefix=API)
 app.include_router(ia_router, prefix=API)
 app.include_router(reportes_router, prefix=API)
