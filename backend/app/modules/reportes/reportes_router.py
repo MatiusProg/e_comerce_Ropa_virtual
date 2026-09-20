@@ -20,6 +20,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response
 from pydantic import BaseModel, Field
 
+from app.core import tiempo
 from app.core.dependencies import DbSession, Usuario, requiere_roles
 from app.modules.reportes import reportes_service as service
 from app.modules.reportes.exportador import FORMATOS
@@ -98,7 +99,9 @@ def pedir_por_voz(datos: PedidoPorVozIn, db: DbSession, usuario: Usuario):
     conocidos = service.catalogo_para_el_interprete(es_admin)
 
     try:
-        pedido = interprete.interpretar(datos.texto, conocidos, _date.today())
+        # «ayer» y «este mes» se resuelven contra el dia boliviano, que es el
+        # que tiene en la cabeza quien dicta el pedido.
+        pedido = interprete.interpretar(datos.texto, conocidos, tiempo.hoy())
     except interprete.InterpreteNoConfigurado:
         return PedidoEntendidoOut(
             entendido=False,
@@ -248,7 +251,9 @@ def descargar(
 
     tipo_mime, extension, convertir = FORMATOS[formato]
     contenido = convertir(tabla)
-    nombre = f"{tipo}-{date.today().isoformat()}.{extension}"
+    # El nombre del archivo lleva la fecha de Bolivia: un reporte bajado a
+    # las 21:00 se guardaba con el nombre del dia siguiente.
+    nombre = f"{tipo}-{tiempo.hoy().isoformat()}.{extension}"
 
     return Response(
         content=contenido,

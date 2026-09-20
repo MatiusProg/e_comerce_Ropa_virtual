@@ -21,6 +21,7 @@ from typing import Callable
 
 from sqlalchemy.orm import Session
 
+from app.core import tiempo
 from app.modules.reportes import reportes_repository as repo
 from app.modules.reportes.exportador import Tabla
 
@@ -197,7 +198,9 @@ def _rango(desde: date | None, hasta: date | None) -> tuple[datetime, datetime]:
     `<= 30` deja fuera todo lo que paso ese dia despues de medianoche, y es el
     defecto clasico de los reportes por fecha.
     """
-    hoy = date.today()
+    # Que dia es en Bolivia: con `date.today()` en Railway, entre las 20:00
+    # y la medianoche el periodo por omision se corria un dia entero.
+    hoy = tiempo.hoy()
     inicio = desde or (hoy - timedelta(days=30))
     fin = hasta or hoy
     if inicio > fin:
@@ -273,7 +276,10 @@ def generar(
     if definicion.sin_periodo:
         filas = definicion.consulta(db, sucursal_id=sucursal_id, **propios)
         subtitulos.append(
-            f"Saldos al {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+            # `datetime.now()` a secas es el reloj del servidor SIN zona: en
+            # Railway eso es UTC, y en la maquina de desarrollo es Bolivia ---
+            # asi que andaba bien al probar y fallaba desplegado.
+            f"Saldos al {tiempo.formatear(tiempo.ahora())}"
         )
     else:
         inicio, fin = _rango(desde, hasta)
