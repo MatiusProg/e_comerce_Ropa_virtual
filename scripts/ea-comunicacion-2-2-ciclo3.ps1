@@ -19,6 +19,26 @@
 #    la numeracion y colorea el grupo distinto. PDATA4 es de solo lectura por
 #    la API, asi que se escribe con SQL.
 #
+# ---- POR QUE LOS ENLACES NO SE LLAMAN L1..Ln -----------------------------
+# La seccion 7.3 de la guia pide que los enlaces `Association` de un diagrama
+# de comunicacion se numeren `L1..Ln`. Aca no se hace, y es deliberado:
+#
+# Esos nombres son POR DIAGRAMA, y los enlaces se COMPARTEN entre diagramas ---
+# `GestorInventario <-> Existencia` es el mismo conector en CU-27, CU-28, CU-31
+# y CU-32, porque `New-Enlace` deduplica por par. Un conector tiene UN solo
+# nombre: seria `L4` en un diagrama y `L2` en otro, y no puede ser los dos.
+#
+# Leida entera, la §7.3 describe el flujo MANUAL --- correr con `-SinMensajes`
+# y despues crear cada mensaje a mano en EA para que dibuje la punta de flecha
+# ---, donde cada diagrama se arma solo y el conflicto no existe.
+#
+# Los generadores del Ciclo 1 y del Ciclo 2 tampoco los nombran. Se deja igual
+# por consistencia: lo que de verdad le falta al dibujo segun la propia guia es
+# la punta de la flecha, que ningun generador puede poner. Los MENSAJES si
+# estan numerados (1.1, 1.2, 2.1...), que es lo que se lee.
+#
+# Decidido con Karen el 20/09/2026.
+#
 # ---- LOS NOMBRES DE LOS MENSAJES SON LOS DEL CODIGO ----------------------
 # No se inventan. `crear_pedido(datos)`, `confirmar_pago(cuerpo, firma)`,
 # `descontar_por_venta(...)` son las funciones que existen. Un diagrama de
