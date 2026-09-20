@@ -53,7 +53,41 @@ METODOS = ("POST", "PUT", "PATCH", "DELETE")
 #:   no lo hace una persona; su rastro propio esta en `pago`.
 #: - La bitacora misma no se anota a si misma: no cambia nada y solo se
 #:   leeria.
-SIN_ANOTAR = ("/webhooks/", "/bitacora")
+SIN_ANOTAR = ("/pagos/webhook", "/bitacora")
+
+#: Lecturas que SI se anotan, porque sacan datos del sistema.
+#:
+#: POR QUE ESTAS Y NO TODAS LAS LECTURAS
+#: --------------------------------------
+#: La regla general sigue siendo que un `GET` no deja asiento: anotar cada
+#: lectura serian miles de filas por dia ---cada pantalla del catalogo son
+#: varias--- y volveria inutilizable justo la pantalla que existe para
+#: buscar entre ellas.
+#:
+#: Pero «leer» y «llevarse» no son lo mismo. Bajar el reporte de ventas de
+#: un mes es **sacar informacion del sistema a un archivo** que despues vive
+#: fuera, se manda por correo y ya no se controla. Eso es exactamente lo que
+#: una auditoria quiere saber, y hasta el 20/09 no dejaba ningun rastro:
+#: sobre 28 asientos de produccion, 24 eran entrar y salir.
+#:
+#: El tablero NO entra: se mira en pantalla, no genera archivo, y la
+#: pantalla del telefono se refresca tirando hacia abajo --- anotarlo
+#: llenaria la bitacora de ruido que nadie pidio.
+EXPORTACIONES = (
+    re.compile(r"/reportes/[a-z]+\.(pdf|xlsx)$"),
+    re.compile(r"/comprobante$"),
+)
+
+#: Nombres de negocio para rutas donde el verbo HTTP miente.
+#:
+#: `POST /reportes/voz` no crea nada: le pide a un modelo que interprete una
+#: frase. Anotarlo como «Crear» obliga a quien lee la bitacora a abrir la
+#: ruta para entender que paso.
+POR_RUTA = {
+    "/auth/login": ("INICIAR_SESION", "INTENTO_FALLIDO"),
+    "/auth/logout": ("CERRAR_SESION", "CERRAR_SESION"),
+    "/reportes/voz": ("PEDIR_REPORTE_POR_VOZ", "PEDIR_REPORTE_POR_VOZ"),
+}
 
 #: De `POST /api/v1/catalogo/productos/12/variantes` saca («producto», «12»).
 #:
@@ -111,6 +145,49 @@ def _ip_de(peticion: Request) -> str | None:
     return peticion.client.host if peticion.client else None
 
 
+def _exportado(ruta: str) -> tuple[str | None, str | None]:
+    """De la ruta de una descarga saca que se llevo y en que formato."""
+    ultimo = ruta.rstrip("/").split("/")[-1]
+    if ultimo == "comprobante":
+        partes = ruta.rstrip("/").split("/")
+        # `/tienda/compras/VB-20260920-A3F2/comprobante`
+        return "comprobante", partes[-2] if len(partes) >= 2 else None
+    if "." in ultimo:
+        tipo, _, formato = ultimo.rpartition(".")
+        return f"reporte de {tipo}", formato
+    return None, None
+
+
+def _detalle(peticion: Request) -> dict | None:
+    """Que se guarda en la columna `detalle`.
+
+    LOS PARAMETROS DE LA CONSULTA, NO EL CUERPO
+    --------------------------------------------
+    Es una decision y no una limitacion. Leer el cuerpo aca obligaria a
+    consumir el flujo de la peticion antes de que lo lea la ruta, y
+    `BaseHTTPMiddleware` no lo devuelve intacto: habria que reinyectarlo a
+    mano y cualquier error ahi rompe TODAS las peticiones del sistema, no
+    solo la bitacora. No vale el riesgo por un dato de auditoria.
+
+    Los parametros, en cambio, estan en la URL y no cuestan nada --- y son
+    justo lo interesante de una exportacion: **que periodo y que filtros**
+    tenia el reporte que alguien se llevo.
+
+    Una ruta que quiera guardar mas puede dejarlo en
+    `peticion.state.bitacora_detalle`, que es lo que ya hace el login con el
+    correo intentado. Se mezclan los dos, con el de la ruta arriba.
+    """
+    detalle: dict = {}
+    if peticion.query_params:
+        detalle["parametros"] = dict(peticion.query_params)
+
+    propio = getattr(peticion.state, "bitacora_detalle", None)
+    if isinstance(propio, dict):
+        detalle.update(propio)
+
+    return detalle or None
+
+
 class BitacoraMiddleware(BaseHTTPMiddleware):
     """Anota toda peticion que cambie algo."""
 
@@ -132,9 +209,13 @@ class BitacoraMiddleware(BaseHTTPMiddleware):
 
     def _anotar(self, peticion: Request, respuesta) -> None:
         ruta = peticion.url.path
-        if peticion.method not in METODOS:
-            return
         if any(t in ruta for t in SIN_ANOTAR):
+            return
+
+        exporta = peticion.method == "GET" and any(
+            p.search(ruta) for p in EXPORTACIONES
+        )
+        if peticion.method not in METODOS and not exporta:
             return
 
         estado = respuesta.status_code
@@ -153,13 +234,17 @@ class BitacoraMiddleware(BaseHTTPMiddleware):
         accion = ACCIONES.get(peticion.method, peticion.method)
         entidad, entidad_id = _sujeto(ruta)
 
-        if ruta.endswith("/auth/login"):
-            accion = "INICIAR_SESION" if exito else "INTENTO_FALLIDO"
+        conocida = next(
+            (v for k, v in POR_RUTA.items() if ruta.endswith(k)), None
+        )
+        if conocida is not None:
+            accion = conocida[0] if exito else conocida[1]
             entidad, entidad_id = None, None
-        elif ruta.endswith("/auth/logout"):
-            accion = "CERRAR_SESION"
-            entidad, entidad_id = None, None
-        elif not exito:
+        elif exporta:
+            # De `/reportes/ventas.xlsx` sale («reporte de ventas», «xlsx»).
+            accion = "EXPORTAR"
+            entidad, entidad_id = _exportado(ruta)
+        if not exito and (conocida is None or conocida[0] == conocida[1]):
             accion = f"{accion}_RECHAZADO"
 
         # SESION PROPIA, no la de la peticion: la de la peticion ya se
@@ -183,14 +268,19 @@ class BitacoraMiddleware(BaseHTTPMiddleware):
                 ruta=ruta,
                 estado_http=estado,
                 exito=exito,
-                usuario_id=getattr(usuario, "id", None),
+                # La ruta puede saber quien es cuando el token todavia no
+                # existe: es el caso del login, donde el usuario se resuelve
+                # reciEn al validarse las credenciales.
+                usuario_id=getattr(usuario, "id", None)
+                or getattr(peticion.state, "bitacora_usuario_id", None),
                 actor=getattr(usuario, "correo", None) or intento,
-                rol=getattr(usuario, "rol", None),
+                rol=getattr(usuario, "rol", None)
+                or getattr(peticion.state, "bitacora_rol", None),
                 entidad=entidad,
                 entidad_id=entidad_id,
                 ip=_ip_de(peticion),
                 agente=peticion.headers.get("user-agent"),
-                detalle=getattr(peticion.state, "bitacora_detalle", None),
+                detalle=_detalle(peticion),
             )
         finally:
             generador.close()

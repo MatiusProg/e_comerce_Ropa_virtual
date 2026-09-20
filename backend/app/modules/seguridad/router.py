@@ -107,7 +107,7 @@ def iniciar_sesion(peticion: Request, datos: LoginIn, db: DbSession) -> TokenOut
     peticion.state.bitacora_actor = datos.correo
 
     try:
-        return service.autenticar(db, datos)
+        emitido = service.autenticar(db, datos)
     except service.CredencialesInvalidas:
         # Un solo mensaje para correo inexistente y contrasena incorrecta: si
         # se distinguieran, se podria averiguar que correos estan registrados.
@@ -123,6 +123,17 @@ def iniciar_sesion(peticion: Request, datos: LoginIn, db: DbSession) -> TokenOut
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Su cuenta está desactivada. Contacte al administrador.",
         )
+
+    # QUIEN entro, para la bitacora. Sin esto el asiento de un inicio de
+    # sesion sale sin rol y sin usuario ---en ese momento todavia no hay
+    # token que resolver--- y eso tiene dos consecuencias feas: la fila se
+    # ve distinta de todas las demas, y filtrar por «solo empleados» deja
+    # fuera justamente sus entradas al sistema, que es de lo primero que se
+    # quiere auditar.
+    peticion.state.bitacora_usuario_id = emitido.usuario.id
+    peticion.state.bitacora_rol = emitido.usuario.rol
+
+    return emitido
 
 
 @router.post(

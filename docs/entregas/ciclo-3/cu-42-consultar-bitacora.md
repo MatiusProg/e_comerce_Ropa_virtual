@@ -53,6 +53,27 @@ Quedan fuera además el **webhook de la pasarela** (llega miles de veces con
 reintentos, no lo hace una persona, y tiene su propio rastro en `pago`) y **la
 bitácora misma**, que si no agregaría una fila a lo que se está consultando.
 
+### Llevarse datos también deja rastro — agregado el 20/09
+
+La primera versión solo anotaba lo que **cambia** algo. Al mirar producción,
+el resultado fue elocuente: **de 28 asientos, 24 eran entrar y salir.**
+
+La regla estaba bien planteada pero incompleta: **«leer» y «llevarse» no son
+lo mismo.** Bajar el reporte de ventas de un mes es sacar información a un
+archivo que después vive fuera, se manda por correo y ya no se controla. Es
+justamente lo que una auditoría quiere saber, y no dejaba rastro alguno.
+
+Ahora también se anotan, como acción **`EXPORTAR`**:
+
+| Ruta | Queda como |
+|---|---|
+| `GET /reportes/{tipo}.{pdf\|xlsx}` | entidad «reporte de ventas», id «xlsx» |
+| `GET .../{codigo}/comprobante` | entidad «comprobante», id el código |
+
+**El tablero no entra**, y es deliberado: se mira en pantalla, no genera
+archivo, y en el teléfono se refresca tirando hacia abajo. Anotarlo llenaría
+la bitácora de ruido que nadie pidió.
+
 ### Los fallos son lo que más interesa
 
 Un `401` o un `403` **sí** se anotan, como `CREAR_RECHAZADO`: son los intentos
@@ -67,6 +88,51 @@ qué cuenta** — que es el único dato que importa de un intento fallido.
 
 Lo resuelve la ruta de login dejando el correo en `request.state`, y el
 middleware lo recoge. Es la única excepción a «el middleware se arregla solo».
+
+### El detalle: los parámetros, no el cuerpo
+
+La columna `detalle` existía desde el principio, ya filtraba credenciales y
+**estaba vacía en todo salvo el login**. Ahora guarda los **parámetros de la
+consulta**, que en una exportación son justo lo interesante: con qué período
+y con qué filtros salió el reporte que alguien se llevó.
+
+Se guardan los parámetros y **no el cuerpo de la petición**, y es una
+decisión. Leer el cuerpo en el middleware obliga a consumir el flujo antes de
+que lo lea la ruta, y `BaseHTTPMiddleware` no lo devuelve intacto: habría que
+reinyectarlo a mano, y **un error ahí rompe todas las peticiones del
+sistema**, no solo la bitácora. No vale el riesgo por un dato de auditoría.
+
+Una ruta que quiera guardar más lo deja en `request.state.bitacora_detalle`,
+que es lo que ya hace el login con el correo intentado.
+
+### Dos defectos que aparecieron al revisarlo
+
+- **`POST /pagos/webhook` se estaba anotando** pese a estar excluido: la lista
+  decía `/webhooks/` y la ruta real es `/pagos/webhook`. En producción se
+  coló un asiento antes de que se notara.
+- **El pedido por voz salía como `CREAR`**, que miente: no crea nada, le pide
+  a un modelo que interprete una frase. Ahora es `PEDIR_REPORTE_POR_VOZ`.
+  Quedó un mapa de rutas donde el verbo HTTP no dice la verdad.
+
+### El inicio de sesión ahora lleva su rol
+
+Se anotaba **sin rol y sin usuario**: en ese momento todavía no hay token que
+resolver, así que el middleware no sabe quién es. Dos consecuencias, y la
+segunda es de fondo:
+
+1. la fila se veía distinta de todas las demás;
+2. **filtrar por «solo empleados» dejaba fuera sus entradas al sistema** —
+   que es de lo primero que se quiere auditar.
+
+Lo resuelve la ruta de login, que sí sabe quién es apenas valida las
+credenciales. Un **intento fallido sigue sin rol**, y está bien: ahí no hay
+usuario, solo el correo intentado.
+
+> **Y no, un inicio de sesión no deja dos asientos.** Se revisó porque lo
+> parecía: deja uno solo, verificado contra producción con una ventana de
+> ±3 s y sin un solo duplicado en la tabla. Lo que se ve son **dos acciones
+> distintas y las dos reales** —cerrar la sesión anterior y abrir una nueva—
+> que al cambiar de cuenta quedan una al lado de la otra.
 
 ## 4. Inmutable, como el movimiento de inventario
 
@@ -166,10 +232,8 @@ Ver `hora-boliviana.md`, que se escribió en la misma tanda.
 
 ## 11. Límites conocidos
 
-- **No se guarda el cuerpo de la petición.** El `detalle` está preparado y
-  filtrado, pero hoy solo lo llena el login. Guardar el cuerpo entero de cada
-  `POST` multiplicaría el tamaño de la tabla y exigiría decidir caso por caso
-  qué es interesante; se dejó el mecanismo listo y sin usar.
+- **No se guarda el cuerpo de la petición**, solo los parámetros de la
+  consulta. Ver arriba: el motivo es técnico y no de alcance.
 - **No dice qué cambió, solo que se cambió.** Un «antes y después» exigiría
   leer la fila antes de cada modificación, que es una consulta más por
   operación en todo el sistema.

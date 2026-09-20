@@ -208,6 +208,26 @@ class RepositorioCompra {
     }
   }
 
+  /// CU-29 · el historial de compras del cliente.
+  ///
+  /// **Vienen TODAS**, incluidas las canceladas y las que esperan pago: es lo
+  /// que decide el servidor y esta bien que asi sea. Un historial que solo
+  /// mostrara lo pagado dejaria al cliente sin encontrar el pedido que acaba
+  /// de hacer ---que es justo el que va a buscar--- ni entender por que un
+  /// cobro que recuerda no aparece. El estado se muestra; la fila no se
+  /// esconde.
+  Future<PaginaDeCompras> misCompras({int pagina = 1, int tamano = 10}) async {
+    try {
+      final respuesta = await _dio.get<Map<String, dynamic>>(
+        '/tienda/compras',
+        queryParameters: {'pagina': pagina, 'tamano': tamano},
+      );
+      return PaginaDeCompras.desdeJson(respuesta.data!);
+    } on DioException catch (fallo) {
+      throw _traducir(fallo);
+    }
+  }
+
   /// La ficha de un pedido propio.
   ///
   /// Es lo que se consulta al volver de la pasarela, y devuelve el estado que

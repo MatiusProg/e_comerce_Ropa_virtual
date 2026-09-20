@@ -164,8 +164,53 @@ justamente para esto.
 Ruta `mi-cuenta/compras` —bajo `/mi-cuenta` y no bajo `/tienda`, por la misma
 distinción— y su enlace en la barra del Cliente.
 
+**Móvil** — *agregado el 20/09/2026.*
+
+Hasta esa fecha **el caso de uso no existía en el teléfono**: se veía el pedido
+recién pagado —porque la pantalla de CU-27 vuelve a él— y nada más. **Comprar y
+después no poder volver a ver la compra es lo primero que alguien intenta**, y
+en una demostración se nota enseguida.
+
+Es la cuarta vez en el Ciclo 3 que aparece el mismo agujero —pasó con CU-33,
+con CU-37 y con los datos de CU-39—: **un caso de uso sin forma de llegar no
+está hecho.**
+
+| Archivo | Qué |
+|---|---|
+| `data/modelos/compra.dart` | `PaginaDeCompras`; **reusa `Pedido`**, que ya existía para CU-27 |
+| `data/repositorios/repositorio_compra.dart` | `misCompras()` |
+| `features/compra/estado_compra.dart` | `misComprasProvider` |
+| `features/compra/pantalla_mis_compras.dart` | la pantalla |
+
+Ruta `/compras`, **suelta y no anidada bajo `/carrito`** aunque el detalle del
+pedido sí lo esté: el carrito es *lo que estoy por comprar* y esto es *lo que
+ya compré*. Colgarla de ahí haría que el botón de volver del teléfono llevara
+al carrito, que no es de donde se vino. Con su entrada en la pantalla de
+inicio, justo debajo de «Mi carrito».
+
+Tres decisiones de la pantalla:
+
+- **El provider se invalida cuando cambia el carrito.** Confirmar un pedido lo
+  vacía y agrega una compra; sin eso, al volver del pago la lista traería una
+  compra menos.
+- **El estado se distingue por color Y por icono.** Quien no distingue rojo y
+  verde tiene que poder ver igual si su pedido se pagó.
+- **La fila lleva el total y el estado, no las prendas.** El pedido ya viene
+  con sus líneas y dibujarlas sería gratis, pero una lista donde cada fila
+  mide media pantalla deja de ser una lista. Acá se busca *cuál* compra; el
+  detalle está a un toque.
+
+**El comprobante en PDF no se descarga desde el móvil**, solo desde la web. En
+un teléfono sin lector de PDF, abrirlo termina en «no hay ninguna aplicación»,
+que se lee como que la descarga falló — el mismo criterio que ya se tomó en
+CU-35 con los reportes.
+
 ## Deuda que queda anotada
 
 - **La numeración no es fiscal.** Ver §3.
 - **No hay FACTURA**, sólo RECIBO. Ver §4.
 - **Nada se miró a 390 px**, como el resto de las pantallas del ciclo.
+- **El móvil no descarga el comprobante.** Ver arriba.
+- **El móvil no pagina**: trae las diez primeras compras. Con el volumen de la
+  demostración alcanza, y agregar el desplazamiento infinito sin tener con qué
+  probarlo sería código que nadie ejercitó.

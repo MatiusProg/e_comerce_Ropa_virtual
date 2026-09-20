@@ -25,13 +25,25 @@ def agregar(db: Session, **campos: Any) -> AsientoBitacora:
     return asiento
 
 
-def _filtrar(consulta, *, desde, hasta, usuario_id, accion, entidad, exito, busqueda):
+def _filtrar(
+    consulta, *, desde, hasta, usuario_id, rol, accion, entidad, exito, busqueda
+):
     if desde is not None:
         consulta = consulta.where(AsientoBitacora.ocurrido_en >= desde)
     if hasta is not None:
         consulta = consulta.where(AsientoBitacora.ocurrido_en < hasta)
     if usuario_id is not None:
         consulta = consulta.where(AsientoBitacora.usuario_id == usuario_id)
+    if rol:
+        # `EMPLEADOS` en vez de un rol suelto: «que hicieron los empleados» es
+        # la pregunta que se hace de verdad, y obligar a mirarlos de a un rol
+        # por vez la convierte en tres consultas.
+        if rol == "EMPLEADOS":
+            consulta = consulta.where(
+                AsientoBitacora.rol.in_(("ADMINISTRADOR", "ENCARGADO", "CAJERO"))
+            )
+        else:
+            consulta = consulta.where(AsientoBitacora.rol == rol)
     if accion:
         consulta = consulta.where(AsientoBitacora.accion == accion)
     if entidad:
@@ -86,6 +98,19 @@ def acciones(db: Session) -> list[str]:
     return list(
         db.scalars(
             select(AsientoBitacora.accion).distinct().order_by(AsientoBitacora.accion)
+        ).all()
+    )
+
+
+def roles(db: Session) -> list[str]:
+    """Los roles que aparecen en la tabla. Sin los nulos: un intento de
+    sesion fallido no tiene rol, y ofrecerlo como filtro no da nada."""
+    return list(
+        db.scalars(
+            select(AsientoBitacora.rol)
+            .where(AsientoBitacora.rol.is_not(None))
+            .distinct()
+            .order_by(AsientoBitacora.rol)
         ).all()
     )
 

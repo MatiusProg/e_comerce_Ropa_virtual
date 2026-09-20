@@ -47,6 +47,13 @@ dependencies:
   # cree. Ademas Stripe lo desaconseja.
   url_launcher: ^6.3.1
 
+  # CU-35 y CU-37. Lo que se baja se guarda en el directorio PRIVADO de la
+  # aplicacion, que el explorador de archivos del telefono no muestra: el
+  # reporte quedaba bajado y el usuario no lo encontraba. Con la hoja de
+  # compartir del sistema se manda a Drive, a WhatsApp o a «Archivos», que es
+  # donde la persona lo va a buscar.
+  share_plus: ^13.3.0
+
   # --- Utilidades --------------------------------------------------------
   intl: ^0.20.3 # formato de fechas y moneda
 

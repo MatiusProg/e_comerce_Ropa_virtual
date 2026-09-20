@@ -37,6 +37,35 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+
+            // SIN MINIFICACION, Y ES A PROPOSITO.
+            //
+            // Desde AGP 9 la minificacion viene ENCENDIDA por omision en
+            // `release`. Nadie la activo aca, asi que tampoco nadie escribio
+            // reglas de conservacion --- y el 20/09/2026 eso hizo que el APK
+            // de produccion **no abriera**:
+            //
+            //   java.lang.RuntimeException: Unable to get provider
+            //   androidx.startup.InitializationProvider: Failed to create an
+            //   instance of androidx.work.impl.WorkDatabase
+            //
+            // La cadena es: `google_mlkit_pose_detection` (el vestidor de
+            // CU-21) arrastra WorkManager, WorkManager usa Room, y Room carga
+            // su clase generada `WorkDatabase_Impl` **por reflexion**. R8 la
+            // renombra, Room no la encuentra y la aplicacion muere antes de
+            // pintar el primer cuadro.
+            //
+            // Solo pasa en release: en debug no hay R8, y por eso el APK de
+            // depuracion venia funcionando y este no.
+            //
+            // Se apaga en vez de escribir reglas de conservacion porque no hay
+            // ninguna exigencia de tamano ni de rendimiento en el proyecto, y
+            // las reglas habria que mantenerlas para Room, WorkManager y ML
+            // Kit cada vez que uno de los tres cambie de version. El costo es
+            // un APK mas grande; la alternativa es que deje de abrir por algo
+            // que no avisa hasta que se instala.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }

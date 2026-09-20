@@ -102,6 +102,7 @@ class PantallaInicio extends ConsumerWidget {
           const _MiCuenta(),
           const SizedBox(height: 20),
           const _PendientesDelCiclo(),
+          const _Gestion(),
           const SizedBox(height: 20),
           Center(
             child: Text(
@@ -203,14 +204,14 @@ class _PendientesDelCiclo extends StatelessWidget {
         Icons.shopping_bag_outlined,
         Rutas.carrito,
       ),
-      // CU-35. Va en la lista aunque sea del administrador: el servidor
-      // rechaza a quien no corresponda, y esconderlo aca obligaria a la
-      // pantalla de inicio a conocer los roles, que hoy no conoce.
+      // CU-29. Va JUSTO despues del carrito: comprar y despues buscar lo
+      // comprado es la secuencia natural, y hasta el 20/09 la segunda mitad
+      // no existia en el telefono.
       (
-        'Pedir un reporte',
-        'CU-35 · voz',
-        Icons.mic_none,
-        Rutas.reportePorVoz,
+        'Mis compras',
+        'CU-29',
+        Icons.receipt_long_outlined,
+        Rutas.misCompras,
       ),
     ];
 
@@ -240,6 +241,79 @@ class _PendientesDelCiclo extends StatelessWidget {
                   ruta == null ? Icons.circle_outlined : Icons.chevron_right,
                   size: 18,
                   color: const Color(0xFFD6C4CC),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Las pantallas de gestión: tablero, reportes y bitácora.
+///
+/// SE MUESTRAN SEGÚN EL ROL, Y ESO CAMBIÓ EL 20/09/2026
+/// ------------------------------------------------------
+/// Antes «Pedir un reporte» aparecía para todo el mundo, con este argumento:
+/// *el servidor rechaza a quien no corresponda, y esconderlo obligaría a la
+/// pantalla de inicio a conocer los roles*.
+///
+/// **El argumento estaba mal.** Ofrecerle a un cliente una puerta que se le
+/// cierra en la cara no es neutral: le dice que hay algo que podría hacer y
+/// no puede, y lo manda a averiguar por qué. Un control que no hace nada es
+/// peor que un control ausente.
+///
+/// Y la premisa tampoco era cierta: la sesión **sí** conoce el rol, viene en
+/// `UsuarioAutenticado.rol` desde el primer ciclo.
+///
+/// El PROVEEDOR tampoco los ve: sus pantallas son otras y están en la web.
+class _Gestion extends ConsumerWidget {
+  const _Gestion();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sesion = ref.watch(sesionProvider);
+    if (sesion is! SesionAbierta) return const SizedBox.shrink();
+
+    final rol = sesion.usuario.rol;
+    final esAdmin = rol == 'ADMINISTRADOR';
+    final esEncargado = rol == 'ENCARGADO';
+    if (!esAdmin && !esEncargado) return const SizedBox.shrink();
+
+    // La bitácora es SOLO del administrador: dice a qué hora entra cada
+    // empleado y qué toca. En manos de un encargado eso es vigilancia de sus
+    // compañeros, no auditoría. Es la misma regla que aplica el servidor,
+    // repetida acá para no ofrecer lo que después se rechaza.
+    final entradas = <(String, String, IconData, String)>[
+      ('Tablero', 'CU-36 · indicadores', Icons.dashboard_outlined, Rutas.tablero),
+      ('Reportes', 'CU-37 · PDF y Excel', Icons.download_outlined, Rutas.reportes),
+      ('Pedir un reporte', 'CU-35 · voz', Icons.mic_none, Rutas.reportePorVoz),
+      if (esAdmin)
+        ('Bitácora', 'CU-42 · quién hizo qué', Icons.history, Rutas.bitacora),
+    ];
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          children: [
+            const ListTile(
+              dense: true,
+              title: Text(
+                'Gestión',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            for (final (titulo, casos, icono, ruta) in entradas)
+              ListTile(
+                leading: Icon(icono, color: ColoresVB.malva),
+                title: Text(titulo),
+                subtitle: Text(casos),
+                onTap: () => context.push(ruta),
+                trailing: const Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: Color(0xFFD6C4CC),
                 ),
               ),
           ],

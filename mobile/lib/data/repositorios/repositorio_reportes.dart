@@ -62,11 +62,93 @@ class PedidoEntendido {
       );
 }
 
+/// Una opcion de un filtro, ya resuelta por el servidor.
+class OpcionDeFiltro {
+  const OpcionDeFiltro({required this.valor, required this.etiqueta});
+
+  final String valor;
+  final String etiqueta;
+
+  factory OpcionDeFiltro.desdeJson(Map<String, dynamic> j) => OpcionDeFiltro(
+    valor: '${j['valor']}',
+    etiqueta: '${j['etiqueta']}',
+  );
+}
+
+/// Un filtro que ESTE reporte admite, con sus opciones.
+///
+/// Vienen del servidor y no estan escritas aca: las sucursales, los
+/// proveedores y las temporadas salen de la base. Si un reporte acepta un
+/// filtro mas, aparece en la pantalla sin tocar la app.
+class FiltroDeReporte {
+  const FiltroDeReporte({
+    required this.campo,
+    required this.etiqueta,
+    required this.opciones,
+  });
+
+  final String campo;
+  final String etiqueta;
+  final List<OpcionDeFiltro> opciones;
+
+  factory FiltroDeReporte.desdeJson(Map<String, dynamic> j) => FiltroDeReporte(
+    campo: j['campo'] as String,
+    etiqueta: j['etiqueta'] as String,
+    opciones: ((j['opciones'] as List?) ?? const [])
+        .map((o) => OpcionDeFiltro.desdeJson(o as Map<String, dynamic>))
+        .toList(growable: false),
+  );
+}
+
+/// CU-37 · un reporte que el servidor sabe generar.
+class ReporteDisponible {
+  const ReporteDisponible({
+    required this.tipo,
+    required this.titulo,
+    required this.columnas,
+    required this.usaPeriodo,
+    required this.filtros,
+  });
+
+  final String tipo;
+  final String titulo;
+  final List<String> columnas;
+
+  /// `false` para el inventario: es una foto de ahora, no un acumulado. La
+  /// pantalla esconde el selector de fechas cuando es falso --- ofrecer un
+  /// rango que despues se ignora es mentirle a quien lo elige.
+  final bool usaPeriodo;
+
+  final List<FiltroDeReporte> filtros;
+
+  factory ReporteDisponible.desdeJson(Map<String, dynamic> j) =>
+      ReporteDisponible(
+        tipo: j['tipo'] as String,
+        titulo: j['titulo'] as String,
+        columnas: ((j['columnas'] as List?) ?? const [])
+            .map((c) => '$c')
+            .toList(growable: false),
+        usaPeriodo: j['usa_periodo'] as bool? ?? true,
+        filtros: ((j['filtros'] as List?) ?? const [])
+            .map((f) => FiltroDeReporte.desdeJson(f as Map<String, dynamic>))
+            .toList(growable: false),
+      );
+}
+
 class ArchivoDeReporte {
   const ArchivoDeReporte({required this.contenido, required this.nombre});
 
   final Uint8List contenido;
   final String nombre;
+
+  /// El tipo del archivo, deducido de la extension.
+  ///
+  /// Hace falta para la hoja de compartir: sin el, Android la abre con la
+  /// lista generica y no ofrece las aplicaciones que saben abrir una planilla
+  /// o un PDF.
+  String get tipoMime => nombre.toLowerCase().endsWith('.pdf')
+      ? 'application/pdf'
+      : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 }
 
 class RepositorioReportes {
@@ -99,6 +181,21 @@ class RepositorioReportes {
         options: Options(receiveTimeout: const Duration(seconds: 90)),
       );
       return PedidoEntendido.desdeJson(r.data ?? const {});
+    } on DioException catch (fallo) {
+      throw traducirError(fallo);
+    }
+  }
+
+  /// CU-37 · que reportes hay, con sus filtros ya resueltos.
+  ///
+  /// La pantalla NO tiene la lista escrita: si se agrega un reporte en el
+  /// servidor, aparece solo en el telefono.
+  Future<List<ReporteDisponible>> catalogo() async {
+    try {
+      final r = await _dio.get<List<dynamic>>('/reportes/catalogo');
+      return (r.data ?? const [])
+          .map((e) => ReporteDisponible.desdeJson(e as Map<String, dynamic>))
+          .toList(growable: false);
     } on DioException catch (fallo) {
       throw traducirError(fallo);
     }

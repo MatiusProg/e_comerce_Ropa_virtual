@@ -6,6 +6,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -56,12 +57,20 @@ class _PantallaLoginState extends ConsumerState<PantallaLogin> {
     });
 
     try {
-      await ref
-          .read(sesionProvider.notifier)
-          .iniciarSesion(
+      await ref.read(sesionProvider.notifier).iniciarSesion(
             correo: _correo.text,
             contrasena: _contrasena.text,
           );
+      // ESTO ES LO QUE HACE QUE EL GESTOR OFREZCA GUARDAR.
+      //
+      // Los `autofillHints` solos no bastan: le dicen a Android QUE es cada
+      // campo, pero no que la credencial sirvio. `finishAutofillContext` es
+      // el aviso de «esto funciono», y recien ahi Google ofrece guardarla
+      // --- y por lo tanto recien ahi hay algo que autocompletar la proxima
+      // vez. Va DESPUES del login correcto y no antes: guardar una
+      // contrasena equivocada es peor que no guardar ninguna.
+      TextInput.finishAutofillContext();
+
       // No se navega a mano: al cambiar la sesion, la redireccion del
       // enrutador lleva sola al inicio.
     } on ErrorApi catch (fallo) {
@@ -90,89 +99,97 @@ class _PantallaLoginState extends ConsumerState<PantallaLogin> {
                     Card(
                       child: Padding(
                         padding: const EdgeInsets.all(24),
-                        child: Form(
-                          key: _formulario,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Text(
-                                'Iniciar sesión',
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context).textTheme.titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.w600),
-                              ),
-                              const SizedBox(height: 20),
-                              TextFormField(
-                                controller: _correo,
-                                enabled: !_enviando,
-                                keyboardType: TextInputType.emailAddress,
-                                textInputAction: TextInputAction.next,
-                                autofillHints: const [AutofillHints.email],
-                                decoration: const InputDecoration(
-                                  labelText: 'Correo electrónico',
-                                  prefixIcon: Icon(Icons.mail_outline),
+                        // `AutofillGroup` es lo que le dice a Android que
+                        // estos dos campos son UNA credencial. Sin el, los
+                        // `autofillHints` de abajo no alcanzan: el gestor los
+                        // ve sueltos y no ofrece ni guardar ni completar.
+                        child: AutofillGroup(
+                          child: Form(
+                            key: _formulario,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Text(
+                                  'Iniciar sesión',
+                                  textAlign: TextAlign.center,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleLarge
+                                      ?.copyWith(fontWeight: FontWeight.w600),
                                 ),
-                                validator: validarCorreo,
-                              ),
-                              const SizedBox(height: 14),
-                              TextFormField(
-                                controller: _contrasena,
-                                enabled: !_enviando,
-                                obscureText: _ocultarContrasena,
-                                textInputAction: TextInputAction.done,
-                                autofillHints: const [AutofillHints.password],
-                                onFieldSubmitted: (_) => _entrar(),
-                                decoration: InputDecoration(
-                                  labelText: 'Contraseña',
-                                  prefixIcon: const Icon(Icons.lock_outline),
-                                  suffixIcon: IconButton(
-                                    onPressed: () => setState(
-                                      () => _ocultarContrasena =
-                                          !_ocultarContrasena,
+                                const SizedBox(height: 20),
+                                TextFormField(
+                                  controller: _correo,
+                                  enabled: !_enviando,
+                                  keyboardType: TextInputType.emailAddress,
+                                  textInputAction: TextInputAction.next,
+                                  autofillHints: const [AutofillHints.email],
+                                  decoration: const InputDecoration(
+                                    labelText: 'Correo electrónico',
+                                    prefixIcon: Icon(Icons.mail_outline),
+                                  ),
+                                  validator: validarCorreo,
+                                ),
+                                const SizedBox(height: 14),
+                                TextFormField(
+                                  controller: _contrasena,
+                                  enabled: !_enviando,
+                                  obscureText: _ocultarContrasena,
+                                  textInputAction: TextInputAction.done,
+                                  autofillHints: const [AutofillHints.password],
+                                  onFieldSubmitted: (_) => _entrar(),
+                                  decoration: InputDecoration(
+                                    labelText: 'Contraseña',
+                                    prefixIcon: const Icon(Icons.lock_outline),
+                                    suffixIcon: IconButton(
+                                      onPressed: () => setState(
+                                        () => _ocultarContrasena =
+                                            !_ocultarContrasena,
+                                      ),
+                                      icon: Icon(
+                                        _ocultarContrasena
+                                            ? Icons.visibility_outlined
+                                            : Icons.visibility_off_outlined,
+                                      ),
+                                      tooltip: _ocultarContrasena
+                                          ? 'Mostrar contraseña'
+                                          : 'Ocultar contraseña',
                                     ),
-                                    icon: Icon(
-                                      _ocultarContrasena
-                                          ? Icons.visibility_outlined
-                                          : Icons.visibility_off_outlined,
-                                    ),
-                                    tooltip: _ocultarContrasena
-                                        ? 'Mostrar contraseña'
-                                        : 'Ocultar contraseña',
+                                  ),
+                                  validator: (valor) =>
+                                      (valor == null || valor.isEmpty)
+                                          ? 'Ingrese su contraseña'
+                                          : null,
+                                ),
+                                if (_error != null) ...[
+                                  const SizedBox(height: 16),
+                                  AvisoError(mensaje: _error!),
+                                ],
+                                const SizedBox(height: 22),
+                                FilledButton(
+                                  onPressed: _enviando ? null : _entrar,
+                                  child: _enviando
+                                      ? const SizedBox(
+                                          width: 22,
+                                          height: 22,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.5,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : const Text('Entrar'),
+                                ),
+                                const SizedBox(height: 6),
+                                TextButton(
+                                  onPressed: _enviando
+                                      ? null
+                                      : () => context.go(Rutas.registro),
+                                  child: const Text(
+                                    'No tengo cuenta — Registrarme',
                                   ),
                                 ),
-                                validator: (valor) =>
-                                    (valor == null || valor.isEmpty)
-                                    ? 'Ingrese su contraseña'
-                                    : null,
-                              ),
-                              if (_error != null) ...[
-                                const SizedBox(height: 16),
-                                AvisoError(mensaje: _error!),
                               ],
-                              const SizedBox(height: 22),
-                              FilledButton(
-                                onPressed: _enviando ? null : _entrar,
-                                child: _enviando
-                                    ? const SizedBox(
-                                        width: 22,
-                                        height: 22,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2.5,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : const Text('Entrar'),
-                              ),
-                              const SizedBox(height: 6),
-                              TextButton(
-                                onPressed: _enviando
-                                    ? null
-                                    : () => context.go(Rutas.registro),
-                                child: const Text(
-                                  'No tengo cuenta — Registrarme',
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
                       ),

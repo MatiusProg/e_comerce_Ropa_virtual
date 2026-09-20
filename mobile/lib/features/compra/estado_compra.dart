@@ -39,6 +39,17 @@ final carritoProvider = AsyncNotifierProvider<ControlCarrito, Carrito>(
 ///
 /// `FutureProvider` y no `Notifier` porque, al reves que el carrito, esto lo
 /// mira una sola pantalla y no cambia solo: se refresca invalidandolo.
+/// CU-29 · el historial de compras.
+///
+/// `FutureProvider` y no `Notifier`: es una lectura y nadie la muta desde la
+/// pantalla. Se invalida cuando el carrito cambia ---porque confirmar un
+/// pedido lo vacia y agrega una compra--- para que al volver del pago la
+/// lista ya traiga el pedido recien hecho y no uno menos.
+final misComprasProvider = FutureProvider<PaginaDeCompras>((ref) async {
+  ref.watch(carritoProvider);
+  return ref.watch(repositorioCompraProvider).misCompras();
+});
+
 final opcionesDePedidoProvider = FutureProvider<OpcionesDePedido>((ref) async {
   // Depende del carrito a proposito: si el cliente vuelve atras y saca una
   // prenda, las sucursales que abastecen cambian, y esta pantalla tiene que

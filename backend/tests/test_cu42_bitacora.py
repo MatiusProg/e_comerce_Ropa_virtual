@@ -37,6 +37,14 @@ LOGIN = "/api/v1/auth/login"
 CATEGORIAS = "/api/v1/catalogo/categorias"
 
 
+def _sustituir_interprete(monkeypatch) -> None:
+    """CU-35 sin salir a internet. Solo importa que la ruta se anote bien."""
+    from app.integrations import interprete
+
+    monkeypatch.setattr(interprete, "esta_disponible", lambda: True)
+    monkeypatch.setattr(interprete, "interpretar", lambda t, r, h: None)
+
+
 def _asientos(api: TestClient, cab: dict, **params) -> list[dict]:
     r = api.get(BITACORA, headers=cab, params=params)
     assert r.status_code == 200, r.text
@@ -344,3 +352,212 @@ def test_SI_LA_BITACORA_FALLA_LA_OPERACION_SIGUE(
         json={"nombre": "Sobretodos", "orden": 0, "activa": True},
     )
     assert alta.status_code == 201, alta.text
+
+
+# --- Lo que se agregó el 20/09: llevarse datos también deja rastro ---------
+#
+# La primera versión solo anotaba lo que CAMBIA algo, y en producción el
+# resultado fue elocuente: de 28 asientos, 24 eran entrar y salir. Bajar el
+# reporte de ventas de un mes ---que es sacar información del sistema a un
+# archivo que después vive fuera--- no dejaba ningún rastro.
+
+
+def test_BAJAR_UN_REPORTE_DEJA_ASIENTO_aunque_sea_una_lectura(
+    api: TestClient, cabeceras_admin: dict[str, str]
+) -> None:
+    """«Leer» y «llevarse» no son lo mismo.
+
+    Es la excepción a la regla de que un GET no se anota, y es justo lo que
+    una auditoría quiere saber.
+    """
+    r = api.get(
+        "/api/v1/reportes/ventas.xlsx",
+        headers=cabeceras_admin,
+        params={"desde": "2026-09-01", "hasta": "2026-09-30"},
+    )
+    assert r.status_code == 200, r.text
+
+    asiento = _asientos(api, cabeceras_admin, accion="EXPORTAR")[0]
+    assert asiento["entidad"] == "reporte de ventas"
+    assert asiento["entidad_id"] == "xlsx"
+    assert asiento["exito"] is True
+
+
+def test_el_asiento_de_una_exportacion_dice_CON_QUE_FILTROS(
+    api: TestClient, cabeceras_admin: dict[str, str]
+) -> None:
+    """Sin esto, el asiento dice que alguien se llevó «el reporte de ventas»
+    sin decir de qué período. Media auditoría."""
+    api.get(
+        "/api/v1/reportes/ventas.xlsx",
+        headers=cabeceras_admin,
+        params={"desde": "2026-09-01", "hasta": "2026-09-30", "canal": "DIGITAL"},
+    )
+
+    detalle = _asientos(api, cabeceras_admin, accion="EXPORTAR")[0]["detalle"]
+    assert detalle["parametros"]["desde"] == "2026-09-01"
+    assert detalle["parametros"]["canal"] == "DIGITAL"
+
+
+def test_una_lectura_comun_sigue_SIN_dejar_asiento(
+    api: TestClient, cabeceras_admin: dict[str, str]
+) -> None:
+    """La regla general no cambió: solo las exportaciones son la excepción.
+
+    El tablero entra acá a propósito: se mira en pantalla, no genera archivo,
+    y en el teléfono se refresca tirando hacia abajo — anotarlo llenaría la
+    bitácora de ruido que nadie pidió.
+    """
+    api.get("/api/v1/reportes/catalogo", headers=cabeceras_admin)
+    api.get("/api/v1/reportes/tablero", headers=cabeceras_admin)
+
+    assert [
+        a for a in _asientos(api, cabeceras_admin) if a["metodo"] == "GET"
+    ] == []
+
+
+def test_el_pedido_por_voz_no_se_anota_como_CREAR(
+    api: TestClient, cabeceras_admin: dict[str, str], monkeypatch
+) -> None:
+    """`POST /reportes/voz` no crea nada: le pide a un modelo que interprete.
+
+    Anotarlo como «Crear» obliga a quien lee la bitácora a abrir la ruta para
+    entender qué pasó.
+    """
+    _sustituir_interprete(monkeypatch)
+    api.post(
+        "/api/v1/reportes/voz",
+        headers=cabeceras_admin,
+        json={"texto": "las ventas de este mes"},
+    )
+
+    acciones = {a["accion"] for a in _asientos(api, cabeceras_admin)}
+    assert "PEDIR_REPORTE_POR_VOZ" in acciones
+    assert "CREAR" not in acciones
+
+
+def test_el_webhook_de_la_pasarela_NO_se_anota(
+    api: TestClient, cabeceras_admin: dict[str, str]
+) -> None:
+    """Llega miles de veces con reintentos y no lo hace una persona; su
+    rastro propio está en `pago`.
+
+    Estaba excluido desde el principio y **la exclusión no funcionaba**: la
+    lista decía `/webhooks/` y la ruta real es `/pagos/webhook`. En
+    producción se coló un asiento antes de que se notara.
+    """
+    api.post("/api/v1/pagos/webhook", json={"cualquier": "cosa"})
+
+    assert [
+        a for a in _asientos(api, cabeceras_admin) if "webhook" in a["ruta"]
+    ] == []
+
+
+# --- El filtro por rol ------------------------------------------------------
+
+
+def test_SE_PUEDE_MIRAR_SOLO_LO_QUE_HICIERON_LOS_EMPLEADOS(
+    api: TestClient, cabeceras_admin: dict[str, str], cabeceras_cliente: dict
+) -> None:
+    """«Qué hicieron los empleados» es la pregunta que se hace de verdad.
+
+    Se anota a todos ---cancelar una reserva también es auditable--- pero
+    tiene que poder mirarse solo lo interno sin leer la lista entera.
+    """
+    api.post(
+        CATEGORIAS,
+        headers=cabeceras_admin,
+        json={"nombre": "Botas", "orden": 0, "activa": True},
+    )
+    api.post(
+        CATEGORIAS,
+        headers=cabeceras_cliente,
+        json={"nombre": "Colada", "orden": 0, "activa": True},
+    )
+
+    empleados = _asientos(api, cabeceras_admin, rol="EMPLEADOS")
+    assert empleados, "el alta del administrador tiene que estar"
+    assert all(
+        a["rol"] in ("ADMINISTRADOR", "ENCARGADO", "CAJERO") for a in empleados
+    )
+
+    # Y el cliente sigue registrado: se filtra, no se descarta.
+    clientes = _asientos(api, cabeceras_admin, rol="CLIENTE")
+    assert clientes
+
+
+def test_los_roles_del_filtro_salen_de_la_tabla(
+    api: TestClient, cabeceras_admin: dict[str, str]
+) -> None:
+    """Hace falta una operación antes: **el login se anota sin rol.**
+
+    En ese momento todavía no hay token resuelto —se está pidiendo uno— así
+    que el asiento sale con `rol` nulo. Los roles del filtro salen de las
+    operaciones, no de las entradas.
+    """
+    api.post(
+        CATEGORIAS,
+        headers=cabeceras_admin,
+        json={"nombre": "Sombreros", "orden": 0, "activa": True},
+    )
+
+    r = api.get(f"{BITACORA}/opciones", headers=cabeceras_admin)
+    assert r.status_code == 200, r.text
+    assert "ADMINISTRADOR" in r.json()["roles"]
+
+
+def test_EL_INICIO_DE_SESION_QUEDA_CON_SU_ROL(
+    api: TestClient, cabeceras_admin: dict[str, str]
+) -> None:
+    """Sin esto el asiento de una entrada sale sin rol y sin usuario.
+
+    En el momento del login todavía no hay token que resolver, así que el
+    middleware no sabe quién es: lo tiene que decir la ruta, que sí lo sabe
+    apenas se validan las credenciales.
+
+    Tiene dos consecuencias feas y una de ellas es de fondo: la fila se ve
+    distinta de todas las demás, y **filtrar por «solo empleados» dejaba
+    fuera justamente sus entradas al sistema** — que es de lo primero que
+    se quiere auditar.
+    """
+    entrada = _asientos(api, cabeceras_admin, accion="INICIAR_SESION")[0]
+    assert entrada["rol"] == "ADMINISTRADOR"
+    assert entrada["usuario_id"] is not None
+
+    # Y por lo tanto entra en el filtro de empleados.
+    empleados = _asientos(api, cabeceras_admin, rol="EMPLEADOS")
+    assert any(a["accion"] == "INICIAR_SESION" for a in empleados)
+
+
+def test_un_intento_fallido_sigue_SIN_rol(api: TestClient, cabeceras_admin: dict) -> None:
+    """Y está bien: no hay usuario que resolver.
+
+    Lo que sí lleva es el correo intentado, que es el único dato que
+    importa de un intento fallido.
+    """
+    api.post(LOGIN, json={"correo": "nadie@ejemplo.com", "contrasena": "Loquesea1"})
+
+    fallido = _asientos(api, cabeceras_admin, accion="INTENTO_FALLIDO")[0]
+    assert fallido["rol"] is None
+    assert fallido["usuario_id"] is None
+    assert fallido["actor"] == "nadie@ejemplo.com"
+
+
+def test_UN_LOGIN_DEJA_UN_SOLO_ASIENTO(
+    api: TestClient, cabeceras_admin: dict[str, str]
+) -> None:
+    """Se revisó porque parecía que dejaba dos.
+
+    No los deja: lo que se ve son DOS acciones distintas y las dos reales
+    —cerrar la sesión anterior y abrir una nueva—, que al cambiar de cuenta
+    quedan una al lado de la otra. Se comprobó también contra producción:
+    cero asientos duplicados en la tabla.
+    """
+    api.post(LOGIN, json={"correo": "nadie@ejemplo.com", "contrasena": "Mala12345"})
+
+    entradas = [
+        a
+        for a in _asientos(api, cabeceras_admin)
+        if a["ruta"].endswith("/auth/login") and a["actor"] == "nadie@ejemplo.com"
+    ]
+    assert len(entradas) == 1

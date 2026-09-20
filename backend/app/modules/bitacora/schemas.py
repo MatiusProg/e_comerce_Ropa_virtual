@@ -58,3 +58,4 @@ class OpcionesBitacoraOut(BaseModel):
 
     acciones: list[str] = Field(default_factory=list)
     entidades: list[str] = Field(default_factory=list)
+    roles: list[str] = Field(default_factory=list)
