@@ -7,6 +7,7 @@ import { registerLocaleData } from '@angular/common';
 import localeEsBo from '@angular/common/locales/es-BO';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { MatPaginatorIntl } from '@angular/material/paginator';
+import { provideNativeDateAdapter } from '@angular/material/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 
 import { authInterceptor } from './core/interceptors/auth.interceptor';
@@ -26,6 +27,23 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
     { provide: LOCALE_ID, useValue: 'es-BO' },
     { provide: MatPaginatorIntl, useFactory: paginadorEnEspanol },
+    // EL DATEPICKER NO TRAE SU PROPIO `DateAdapter` --- y sin él LANZA.
+    //
+    // `MatDatepickerModule` no lo incluye: hay que proveerlo acá. Sin esta
+    // línea, todo compila, arranca y se despliega sin que nada avise, y el
+    // formulario de reserva (CU-22) revienta en tiempo de ejecución en cuanto
+    // el cliente agrega una prenda y aparece el calendario:
+    //
+    //     MatDatepicker: No provider found for DateAdapter
+    //
+    // Estuvo faltando desde que se escribió CU-22. No se notó porque el
+    // datepicker vive dentro de un `@if`: abrir el diálogo vacío no lo
+    // instancia, así que probarlo a mano «sin agregar nada» daba bien.
+    //
+    // El nativo alcanza: las fechas viajan como cadena ISO y el `LOCALE_ID` de
+    // arriba ya las formatea en es-BO. Los otros adaptadores existen para
+    // trabajar con Luxon, date-fns o Moment, que este proyecto no usa.
+    provideNativeDateAdapter(),
     // Chart.js NO se provee acá: ver la nota de la ruta 'admin/tablero' en
     // app.routes.ts. Ponerlo en esta lista sumaba 211 kB al arranque de TODAS
     // las pantallas, incluida la vitrina pública en un teléfono.
