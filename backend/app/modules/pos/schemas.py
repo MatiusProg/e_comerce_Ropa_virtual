@@ -28,6 +28,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.modules.catalogo.promociones_schemas import DescuentoOut
+
 #: Como se cobra en el mostrador. Es el mismo conjunto que
 #: `ventas.models.METODOS_PAGO`, que es lo que el CHECK `ck_venta_metodo_pago`
 #: acepta y lo que el arqueo de CU-30 sabe leer.
@@ -58,9 +60,16 @@ class PrendaEnMostradorOut(BaseModel):
     producto: str
     talla: str
     color: str
-    #: El precio VIGENTE de la variante. Se congela recien al vender, en
-    #: `detalle_venta.precio_unitario`.
+    #: El precio VIGENTE de la variante, SIN descuento. Se congela recien al
+    #: vender, en `detalle_venta.precio_unitario`.
     precio: Decimal
+    #: La promocion vigente que gano para esta prenda, o nada (CU-12).
+    #:
+    #: **Tiene que viajar hasta el mostrador.** La pantalla arma su total con
+    #: estos precios y lo manda como `total_esperado`; si no supiera del
+    #: descuento, su total seria mayor que el del servidor y CU-31 rechazaria
+    #: con 409 *toda* venta de una prenda en promocion.
+    descuento: DescuentoOut | None = None
     disponible: int
 
 
@@ -92,7 +101,10 @@ class LineaDeReservaOut(BaseModel):
     talla: str
     color: str
     cantidad: int
+    #: Precio de lista. El descuento va aparte, como en la busqueda.
     precio: Decimal
+    descuento: DescuentoOut | None = None
+    #: Ya con el descuento aplicado.
     subtotal: Decimal
 
 

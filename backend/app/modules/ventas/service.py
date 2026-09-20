@@ -69,6 +69,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.integrations.pasarela_pago import LineaDePago
 from app.modules.catalogo import imagenes_almacen as almacen
+from app.modules.catalogo import promociones_service as promociones
 from app.modules.catalogo_publico import service as catalogo_publico
 from app.modules.inventario import service as inventario
 from app.modules.pagos import service as pagos
@@ -434,12 +435,31 @@ def crear_pedido(
         raise CarritoConPrendasCaidas()
 
     # --- El total, y la comparacion con lo que el cliente vio -------------
+    #
+    # CU-12: las promociones vigentes se leen AHORA, no cuando el cliente agrego
+    # la prenda al carrito. Es la misma regla que el precio --- el carrito es una
+    # intencion y no guarda ninguno de los dos --- y es lo que hace que una
+    # promocion vencida no se honre indefinidamente.
+    #
+    # Se pide una sola vez para todo el pedido, no una por linea.
+    descuentos = promociones.descuentos_por_variante(
+        db, {linea.variante_id: linea.precio for linea in lineas}
+    )
+
     subtotal = sum(
         (linea.precio * linea.cantidad for linea in lineas), Decimal("0.00")
     )
-    # Cero hasta que exista CU-12. La columna esta desde ahora para no tener
-    # que reescribir ventas viejas cuando llegue.
-    descuento = Decimal("0.00")
+    # El subtotal es a precio de LISTA y el descuento sale aparte: asi lo pide
+    # el CHECK `total = subtotal - descuento`, y asi la venta guarda cuanto se
+    # rebajo --- que es lo que el tablero de CU-36 necesita para poder decirlo ---.
+    descuento = sum(
+        (
+            descuentos[linea.variante_id].monto_unitario * linea.cantidad
+            for linea in lineas
+            if linea.variante_id in descuentos
+        ),
+        Decimal("0.00"),
+    )
     total = subtotal - descuento
 
     if Decimal(datos.total_esperado) != total:
@@ -474,7 +494,15 @@ def crear_pedido(
             descripcion=f"{linea.producto_nombre} · {linea.talla_codigo or ''} "
             f"{linea.color_nombre or ''}".strip(),
             cantidad=linea.cantidad,
-            precio_unitario=linea.precio,
+            # Con el descuento YA aplicado: la pasarela cobra lo que se cobra.
+            # Mandarle el precio de lista le cobraria al cliente de mas y el
+            # webhook de CU-28 confirmaria un importe que no coincide con la
+            # venta guardada.
+            precio_unitario=(
+                descuentos[linea.variante_id].precio_final
+                if linea.variante_id in descuentos
+                else linea.precio
+            ),
         )
         for linea in lineas
     ]
@@ -514,9 +542,15 @@ def crear_pedido(
             venta_id=venta.id,
             variante_id=linea.variante_id,
             cantidad=linea.cantidad,
-            # CONGELADO. Desde aca el precio de esta linea ya no cambia nunca.
+            # CONGELADOS LOS DOS. Desde aca ni el precio ni el descuento de esta
+            # linea cambian nunca: si manana la promocion se apaga, este pedido
+            # sigue explicando por que se cobro lo que se cobro.
             precio_unitario=linea.precio,
-            descuento_unitario=Decimal("0.00"),
+            descuento_unitario=(
+                descuentos[linea.variante_id].monto_unitario
+                if linea.variante_id in descuentos
+                else Decimal("0.00")
+            ),
         )
 
     url_pago, _ = pagos.iniciar_cobro(
