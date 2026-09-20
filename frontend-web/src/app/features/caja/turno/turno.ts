@@ -1,6 +1,7 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -75,6 +76,20 @@ export class Turno implements OnInit {
   protected readonly ocupadas = computed(() => this.cajas().filter((c) => c.ocupada));
 
   /**
+   * Lo contado, COMO SEÑAL.
+   *
+   * El valor de un `FormControl` **no es una señal**: un `computed` que lo lee
+   * no registra dependencia, no se invalida nunca y devuelve para siempre lo
+   * que calculó la primera vez. Sin esto, `diferencia` quedaba clavada en nulo
+   * y **la diferencia antes de confirmar no aparecía nunca** — que es
+   * justamente lo que esta pantalla existe para mostrar. Lo encontró la prueba
+   * equivalente de CU-31 (`venta.spec.ts`), con el mismo defecto.
+   */
+  private readonly loContado = toSignal(this.montoCierre.valueChanges, {
+    initialValue: '',
+  });
+
+  /**
    * La diferencia que va a quedar registrada, calculada mientras se escribe.
    *
    * Nula si todavía no hay un monto válido: mostrar «−Bs 1.234,00» porque la
@@ -83,7 +98,7 @@ export class Turno implements OnInit {
   protected readonly diferencia = computed(() => {
     const t = this.turno();
     if (!t) return null;
-    const contado = this.aNumero(this.montoCierre.value);
+    const contado = this.aNumero(this.loContado());
     if (contado === null) return null;
     return contado - Number(t.monto_esperado);
   });

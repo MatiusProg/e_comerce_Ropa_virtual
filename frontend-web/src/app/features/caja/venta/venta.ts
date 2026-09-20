@@ -1,6 +1,7 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -127,6 +128,25 @@ export class Venta implements OnInit {
   );
 
   /**
+   * Lo escrito en «con cuánto paga», COMO SEÑAL.
+   *
+   * POR QUÉ NO SE LEE `recibido.value` DIRECTO EN EL `computed`
+   * -----------------------------------------------------------
+   * Porque el valor de un `FormControl` **no es una señal**: un `computed` que
+   * lo lee no registra ninguna dependencia, no se invalida nunca y devuelve
+   * para siempre lo que calculó la primera vez. El vuelto quedaba clavado en
+   * nulo por más que el cajero escribiera, y nada avisaba — la pantalla se
+   * dibuja igual, solo que con el número de antes.
+   *
+   * Lo encontró `venta.spec.ts`: tres comprobaciones que ponían un monto y
+   * esperaban el vuelto recibían `null`. Sin esas pruebas el defecto llegaba
+   * al mostrador.
+   */
+  private readonly loRecibido = toSignal(this.recibido.valueChanges, {
+    initialValue: '',
+  });
+
+  /**
    * El vuelto, calculado mientras se escribe. Nulo si todavía no se puede.
    *
    * Solo con efectivo: dar vuelto por un cobro con tarjeta sería sacar plata
@@ -134,7 +154,7 @@ export class Venta implements OnInit {
    */
   protected readonly vuelto = computed(() => {
     if (this.metodo() !== 'EFECTIVO') return null;
-    const recibido = this.aCentavosSeguro(this.recibido.value);
+    const recibido = this.aCentavosSeguro(this.loRecibido());
     if (recibido === null) return null;
     return recibido - this.totalCentavos();
   });
