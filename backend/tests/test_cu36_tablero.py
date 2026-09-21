@@ -30,6 +30,8 @@ from datetime import date, datetime, timedelta, timezone
 import pytest
 from fastapi.testclient import TestClient
 
+from app.core import tiempo
+
 from app.modules.reportes.tablero_service import ESTADOS_ABIERTOS, ESTADOS_CERRADOS
 from app.modules.reservas.models import ESTADOS_RESERVA
 
@@ -272,7 +274,7 @@ def test_el_periodo_por_omision_son_treinta_dias_que_terminan_hoy(
     api: TestClient, cabeceras_admin: dict[str, str]
 ) -> None:
     cuerpo = _tablero(api, cabeceras_admin)
-    hoy = datetime.now(timezone.utc).date()
+    hoy = tiempo.hoy()
 
     assert cuerpo["periodo"]["hasta"] == hoy.isoformat()
     assert cuerpo["periodo"]["desde"] == (hoy - timedelta(days=29)).isoformat()
@@ -500,6 +502,17 @@ def test_una_reserva_cancelada_no_entra_en_el_ranking(
 # =====================================================================
 # El borde del periodo
 # =====================================================================
+#
+# EL «HOY» DE ESTAS PRUEBAS ES EL DE BOLIVIA, NO EL DE UTC
+# ----------------------------------------------------------
+# Estaba escrito `datetime.now(timezone.utc).date()`, y **fallaba entre las
+# 20:00 y la medianoche**: a las 20:04 de Santa Cruz en UTC ya es el dia
+# siguiente, asi que la prueba pedia el 21 y el sistema ---bien--- contestaba
+# el 20.
+#
+# Lo encontro la suite corriendo justo a esa hora el 20/09/2026. El codigo
+# estaba correcto; la prueba llevaba adentro la suposicion vieja, la misma
+# que se arreglo ese dia en el servidor. Ver `app/core/tiempo.py`.
 
 def test_hasta_incluye_el_dia_entero(
     api: TestClient,
@@ -516,7 +529,7 @@ def test_hasta_incluye_el_dia_entero(
     o sea todo. No se nota mirando un mes; se nota mirando un dia.
     """
     _reservar(api, cabeceras_cliente, sucursal_id=sucursal, lineas=[(variantes[0], 1)])
-    hoy = datetime.now(timezone.utc).date().isoformat()
+    hoy = tiempo.hoy().isoformat()
 
     cuerpo = _tablero(api, cabeceras_admin, desde=hoy, hasta=hoy)
 
@@ -535,7 +548,7 @@ def test_un_periodo_viejo_no_ve_lo_de_hoy(
 ) -> None:
     """La otra mitad de la prueba anterior: el filtro filtra de verdad."""
     _reservar(api, cabeceras_cliente, sucursal_id=sucursal, lineas=[(variantes[0], 1)])
-    viejo = (datetime.now(timezone.utc).date() - timedelta(days=90)).isoformat()
+    viejo = (tiempo.hoy() - timedelta(days=90)).isoformat()
 
     cuerpo = _tablero(api, cabeceras_admin, desde=viejo, hasta=viejo)
 
@@ -551,7 +564,7 @@ def test_un_rango_invertido_se_ordena_en_vez_de_rechazarse(
     stock,
 ) -> None:
     _reservar(api, cabeceras_cliente, sucursal_id=sucursal, lineas=[(variantes[0], 1)])
-    hoy = datetime.now(timezone.utc).date()
+    hoy = tiempo.hoy()
     ayer = hoy - timedelta(days=1)
 
     cuerpo = _tablero(
@@ -619,7 +632,7 @@ def test_los_saldos_no_dependen_del_periodo(
     ahora, no cero. Es contraintuitivo leerlo en la pantalla y por eso el
     contrato lo dice ---ver `SaludInventarioOut`--- y la prueba lo fija.
     """
-    viejo = (datetime.now(timezone.utc).date() - timedelta(days=90)).isoformat()
+    viejo = (tiempo.hoy() - timedelta(days=90)).isoformat()
 
     cuerpo = _tablero(api, cabeceras_admin, desde=viejo, hasta=viejo)
 
@@ -841,7 +854,7 @@ def test_vendido_hoy_no_sigue_al_periodo(
     periodo diria «vendido hoy: 0» sobre un dia que no es hoy.
     """
     _vender(api, cabeceras_cliente, tienda, cantidad=2)
-    viejo = (datetime.now(timezone.utc).date() - timedelta(days=90)).isoformat()
+    viejo = (tiempo.hoy() - timedelta(days=90)).isoformat()
 
     ventas = _tablero(api, cabeceras_admin, desde=viejo, hasta=viejo)["ventas"]
 

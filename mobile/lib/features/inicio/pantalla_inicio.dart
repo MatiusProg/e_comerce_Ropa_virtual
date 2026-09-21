@@ -153,13 +153,33 @@ class _MiCuenta extends StatelessWidget {
   }
 }
 
-/// Lista lo que va en esta pantalla durante el Ciclo 2, para que quede a la
-/// vista de quien abra la app y no haya que ir a buscarlo al cronograma.
-class _PendientesDelCiclo extends StatelessWidget {
+/// Las pantallas de la tienda: las que usa un CLIENTE.
+///
+/// EL ROL TAMBIÉN SE MIRA ACÁ, Y ESO CAMBIÓ EL 20/09/2026
+/// -------------------------------------------------------
+/// `_Gestion` ya se filtraba por rol desde esa mañana; esta tarjeta no, y era
+/// la mitad que faltaba del mismo defecto. Un administrador que entraba al
+/// teléfono veía «Mi carrito», «Mis compras», «Mis favoritos» y el asistente
+/// —pantallas que no son suyas y que el servidor le rechaza—, mientras que en
+/// la web nunca las vio: ahí la barra siempre supo el rol.
+///
+/// Es el mismo argumento que se corrigió en `_Gestion`: **ofrecer una puerta
+/// que después se cierra es peor que no ofrecerla.** Quien la toca no aprende
+/// que no le corresponde, aprende que la app falla.
+///
+/// El **catálogo se queda para todos**: mirar qué hay en la tienda no es una
+/// pantalla de cliente, y a un encargado le sirve tanto como a quien compra.
+class _PendientesDelCiclo extends ConsumerWidget {
   const _PendientesDelCiclo();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sesion = ref.watch(sesionProvider);
+    // Sin sesión abierta no hay rol que mirar: se muestra la tienda entera,
+    // que es lo que puede hacer quien todavía no entró.
+    final rol = sesion is SesionAbierta ? sesion.usuario.rol : 'CLIENTE';
+    final esCliente = rol == 'CLIENTE';
+
     // El cuarto elemento es la ruta, o `null` si todavia no existe: lo que
     // esta hecho se abre desde aca y lo que no, se lista igual para que se vea
     // que falta sin ir a buscarlo al cronograma.
@@ -167,13 +187,7 @@ class _PendientesDelCiclo extends StatelessWidget {
     // infiere String en vez de String? y las comprobaciones de abajo quedan
     // marcadas como siempre falsas. Declararlo nullable mantiene la lista
     // preparada para el Ciclo 3, donde vuelve a haber modulos sin ruta.
-    const List<(String, String, IconData, String?)> modulos = [
-      (
-        'Catálogo',
-        'CU-17 · CU-18',
-        Icons.storefront_outlined,
-        Rutas.catalogo,
-      ),
+    const List<(String, String, IconData, String?)> deCliente = [
       (
         'Reservas',
         'CU-22 · CU-23',
@@ -224,6 +238,17 @@ class _PendientesDelCiclo extends StatelessWidget {
       ),
     ];
 
+    // El catálogo va para todos; el resto, solo para quien compra.
+    final List<(String, String, IconData, String?)> modulos = [
+      (
+        'Catálogo',
+        'CU-17 · CU-18',
+        Icons.storefront_outlined,
+        Rutas.catalogo,
+      ),
+      if (esCliente) ...deCliente,
+    ];
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -232,7 +257,7 @@ class _PendientesDelCiclo extends StatelessWidget {
             const ListTile(
               dense: true,
               title: Text(
-                'Ciclo 2',
+                'Tienda',
                 style: TextStyle(fontWeight: FontWeight.w600),
               ),
             ),

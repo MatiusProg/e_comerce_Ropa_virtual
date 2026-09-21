@@ -97,6 +97,49 @@ class TemporadaPrenda {
 }
 
 /// Una tarjeta de la vitrina (CU-17). Sin variantes: solo el rango de precios.
+/// El descuento vigente de una prenda (CU-12), tal como lo manda la API.
+///
+/// EL MÓVIL LO IGNORABA, Y SE LEÍA COMO OTRA BASE DE DATOS
+/// --------------------------------------------------------
+/// Hasta el 20/09 este modelo no existía: la vitrina mandaba `descuento` en
+/// cada producto y el teléfono no lo leía. El efecto era que la web mostraba
+/// «−20 %» y el móvil el precio de lista **sobre los mismos datos**, lo que
+/// parecía un despliegue apuntando a otra base. No lo era: era este campo.
+///
+/// El monto y el precio final **vienen calculados del servidor**, no se
+/// deducen acá. La regla de redondeo es del negocio, y si cada pantalla la
+/// dedujera por su cuenta la web y el móvil mostrarían precios distintos de
+/// la misma prenda --- que es exactamente lo que se acaba de arreglar.
+class DescuentoPrenda {
+  const DescuentoPrenda({
+    required this.nombre,
+    required this.porcentaje,
+    required this.precioFinal,
+  });
+
+  /// Viaja el nombre y no solo el porcentaje: quien ve «−20 %» sin saber de
+  /// qué promoción se pregunta si es un error.
+  final String nombre;
+  final String porcentaje;
+  final String precioFinal;
+
+  /// «20» y no «20.00»: en un rótulo los decimales en cero son ruido.
+  String get porcentajeRotulado {
+    final n = double.tryParse(porcentaje);
+    if (n == null) return porcentaje;
+    return n == n.roundToDouble() ? n.round().toString() : porcentaje;
+  }
+
+  static DescuentoPrenda? desdeJson(Object? json) {
+    if (json is! Map<String, dynamic>) return null;
+    return DescuentoPrenda(
+      nombre: json['nombre']?.toString() ?? 'Promoción',
+      porcentaje: json['porcentaje']?.toString() ?? '0',
+      precioFinal: json['precio_final']?.toString() ?? '',
+    );
+  }
+}
+
 class ProductoVitrina {
   const ProductoVitrina({
     required this.id,
@@ -108,6 +151,7 @@ class ProductoVitrina {
     this.precioDesde,
     this.precioHasta,
     this.imagenUrl,
+    this.descuento,
   });
 
   final int id;
@@ -116,6 +160,9 @@ class ProductoVitrina {
   final String? categoriaNombre;
   final String? precioDesde;
   final String? precioHasta;
+
+  /// La promoción vigente hoy, o `null` si esta prenda no tiene ninguna.
+  final DescuentoPrenda? descuento;
 
   /// Ruta servida por la API (`/media/...`), **no** URL absoluta. La completa
   /// `RepositorioCatalogo.urlDeImagen`.
@@ -147,6 +194,7 @@ class ProductoVitrina {
       precioDesde: json['precio_desde'] as String?,
       precioHasta: json['precio_hasta'] as String?,
       imagenUrl: json['imagen_url'] as String?,
+      descuento: DescuentoPrenda.desdeJson(json['descuento']),
       colores: (json['colores'] as List<dynamic>? ?? [])
           .map((c) => ColorPrenda.desdeJson(c as Map<String, dynamic>))
           .toList(),
@@ -228,6 +276,7 @@ class VariantePrenda {
     this.colorHexadecimal,
     this.imagenVestidorUrl,
     this.vestidorEsSilueta = false,
+    this.descuento,
   });
 
   final int id;
@@ -239,6 +288,14 @@ class VariantePrenda {
   final String? colorNombre;
   final String? colorHexadecimal;
   final String? imagenVestidorUrl;
+
+  /// El descuento DE ESTA VARIANTE (CU-12), o `null`.
+  ///
+  /// Va por variante y no solo por producto porque la ficha muestra el precio
+  /// de la variante elegida: usar el del producto ---calculado sobre el
+  /// precio «desde»--- haria que la talla mas cara anuncie una rebaja que no
+  /// le corresponde y que el carrito cobre otra cosa.
+  final DescuentoPrenda? descuento;
 
   /// Si ese PNG es el DIBUJO que genera el sembrado y no una foto (CU-21).
   ///
@@ -266,6 +323,7 @@ class VariantePrenda {
       // Por omision NO es silueta: un servidor viejo que no mande el campo
       // deja el vestidor eligiendo como elegia antes, sin romperse.
       vestidorEsSilueta: json['vestidor_es_silueta'] as bool? ?? false,
+      descuento: DescuentoPrenda.desdeJson(json['descuento']),
     );
   }
 }
@@ -285,6 +343,7 @@ class FichaPrenda {
     this.categoriaNombre,
     this.precioDesde,
     this.precioHasta,
+    this.descuento,
   });
 
   final int id;
@@ -294,6 +353,10 @@ class FichaPrenda {
   final String? categoriaNombre;
   final String? precioDesde;
   final String? precioHasta;
+
+  /// La promoción vigente hoy (CU-12), o `null`. Ver `DescuentoPrenda`.
+  final DescuentoPrenda? descuento;
+
   final List<ImagenPrenda> imagenes;
 
   /// Ya vienen ordenadas por el orden del maestro de tallas.
@@ -352,6 +415,7 @@ class FichaPrenda {
       categoriaNombre: json['categoria_nombre'] as String?,
       precioDesde: json['precio_desde'] as String?,
       precioHasta: json['precio_hasta'] as String?,
+      descuento: DescuentoPrenda.desdeJson(json['descuento']),
       imagenes: (json['imagenes'] as List<dynamic>? ?? [])
           .map((i) => ImagenPrenda.desdeJson(i as Map<String, dynamic>))
           .toList(),

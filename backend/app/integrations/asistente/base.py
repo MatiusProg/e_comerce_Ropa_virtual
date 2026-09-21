@@ -82,6 +82,18 @@ class Contexto:
     #: tabla contesta igual, inventando el numero.
     tallas: tuple[str, ...] = ()
 
+    #: Las promociones VIGENTES HOY, ya resueltas en dinero.
+    #:
+    #: Van aparte del catalogo aunque cada linea del catalogo tambien las
+    #: marque, y no es redundancia: «¿que ofertas hay?» es una pregunta por
+    #: la LISTA, y contestarla obligaba al modelo a recorrer cincuenta
+    #: lineas buscando cuales tenian descuento. Un modelo que barre una
+    #: lista larga se saltea filas; una seccion corta con las cuatro que
+    #: hay, no.
+    #:
+    #: Vacia significa que hoy no hay ninguna --- y eso tambien se dice.
+    ofertas: tuple[str, ...] = ()
+
     #: Datos sueltos que no entran en las listas: cuantas sucursales hay, el
     #: horario, lo que haga falta contestar sin buscar.
     datos: tuple[str, ...] = field(default_factory=tuple)
