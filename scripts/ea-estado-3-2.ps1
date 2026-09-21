@@ -1081,6 +1081,218 @@ $CASOS = @(
             @{ d = 'Informar error'; h = 'Revisar el carrito'; e = 'reintentar()' },
             @{ d = 'Transaccion completada'; h = '(final)'; e = '' }
         )
+    },
+
+    @{
+        cu = 'CU-21'; ciclo = '#3'; titulo = 'Utilizar vestidor virtual (RA)'
+        nota = 'Flujo de CU-21. El unico del ciclo que NO escribe en la base: todo ocurre en el telefono, y lo unico que persiste es lo que se derive al carrito o a la reserva. Por eso no hay estado de commit.'
+        estados = @(
+            @{ n = 'Abrir el vestidor'; col = 'auth'; fila = 1
+               nota = 'mobile/lib/features/vestidor/pantalla_vestidor.dart. Desde la ficha o desde el menu.' },
+            @{ n = 'Pedir permiso de camara'; col = 'menu'; fila = 0.5
+               nota = 'permission_handler. La camara FRONTAL: es la que sirve para probarse solo.' },
+            @{ n = 'Detectar la pose'; col = 'oper'; fila = 0
+               nota = 'google_mlkit_pose_detection sobre los fotogramas. Corre EN EL TELEFONO.' },
+            @{ n = 'Superponer la prenda'; col = 'oper'; fila = 1.5
+               nota = 'pintor_prenda.dart: escala por hombros, ubica y rota siguiendo hombros y cadera.' },
+            @{ n = 'Capturar la imagen'; col = 'oper'; fila = 3
+               nota = 'Se guarda en el telefono. Nada viaja al servidor.' },
+            @{ n = 'Derivar al carrito o la reserva'; col = 'fin'; fila = 2.5
+               nota = 'Lo unico que persiste de todo el caso de uso.' },
+            @{ n = 'Informar que no se puede probar'; col = 'vali'; fila = 3.5
+               nota = 'Sin permiso, sin PNG transparente o sin cuerpo detectado.' }
+        )
+        transiciones = @(
+            @{ d = '(inicial)'; h = 'Abrir el vestidor'; e = '' },
+            @{ d = 'Abrir el vestidor'; h = 'Pedir permiso de camara'; e = '[el cliente elige probarse]' },
+            @{ d = 'Pedir permiso de camara'; h = 'Detectar la pose'; e = '[permiso concedido]' },
+            @{ d = 'Pedir permiso de camara'; h = 'Informar que no se puede probar'
+               e = '[permiso denegado]  {no se insiste}' },
+            @{ d = 'Detectar la pose'; h = 'Superponer la prenda'
+               e = '[hay un cuerpo en el cuadro]  {hombros y cadera}' },
+            @{ d = 'Detectar la pose'; h = 'Informar que no se puede probar'
+               e = '[no se detecta un cuerpo]' },
+            @{ d = 'Superponer la prenda'; h = 'Superponer la prenda'
+               e = 'cambiarTallaOColor()  [en vivo, sin consultar al servidor]' },
+            @{ d = 'Superponer la prenda'; h = 'Informar que no se puede probar'
+               e = '[la variante no tiene PNG transparente]' },
+            @{ d = 'Superponer la prenda'; h = 'Capturar la imagen'; e = 'capturar()' },
+            @{ d = 'Capturar la imagen'; h = 'Derivar al carrito o la reserva'
+               e = '[el cliente decide llevarla]  {CU-26 o CU-22}' },
+            @{ d = 'Informar que no se puede probar'; h = 'Abrir el vestidor'; e = 'probar otra prenda()' },
+            @{ d = 'Derivar al carrito o la reserva'; h = '(final)'; e = '' }
+        )
+    },
+
+    @{
+        cu = 'CU-28'; ciclo = '#3'; titulo = 'Confirmar pago del pedido'
+        nota = 'Flujo transaccional de CU-28. Lo INICIA UNA MAQUINA, no una persona: la pasarela llama al webhook. Por eso la guarda de entrada no es un token sino la firma, y por eso este caso de uso no deja asiento en la bitacora. Rutas sin el prefijo /api/v1.'
+        estados = @(
+            @{ n = 'Recibir la notificacion'; col = 'auth'; fila = 1
+               nota = 'POST /pagos/webhook. Sin sesion: el que llama es el cobrador.' },
+            @{ n = 'Validar la firma'; col = 'vali'; fila = 0
+               nota = 'Antes de LEER el contenido. Un webhook sin verificar deja a cualquiera marcar pedidos como pagados.' },
+            @{ n = 'Buscar la transaccion y la venta'; col = 'menu'; fila = 1.5
+               nota = 'transaccion_pasarela -> venta.' },
+            @{ n = 'Comprobar si ya se aplico'; col = 'vali'; fila = 1.5
+               nota = 'Las pasarelas reintentan. Sin esto se descuenta el inventario dos veces.' },
+            @{ n = 'Marcar la venta PAGADA'; col = 'oper'; fila = 1.5
+               nota = 'Es el unico lugar del sistema que mueve una venta a PAGADA.' },
+            @{ n = 'Descontar inventario y emitir comprobante'; col = 'oper'; fila = 2.5
+               nota = 'El apartado se vuelve salida definitiva, con su movimiento inmutable.' },
+            @{ n = 'Descartar la notificacion'; col = 'vali'; fila = 3.5
+               nota = 'Firma invalida o venta inexistente. No se crea nada a partir de un aviso.' },
+            @{ n = 'Transaccion completada'; col = 'fin'; fila = 2
+               nota = 'Se responde para que la pasarela deje de reintentar.' }
+        )
+        transiciones = @(
+            @{ d = '(inicial)'; h = 'Recibir la notificacion'; e = '' },
+            @{ d = 'Recibir la notificacion'; h = 'Validar la firma'; e = '{POST /pagos/webhook}' },
+            @{ d = 'Validar la firma'; h = 'Buscar la transaccion y la venta'; e = '[firma valida]' },
+            @{ d = 'Validar la firma'; h = 'Descartar la notificacion'; e = '[firma invalida]  {400}' },
+            @{ d = 'Buscar la transaccion y la venta'; h = 'Comprobar si ya se aplico'
+               e = '[la venta existe]' },
+            @{ d = 'Buscar la transaccion y la venta'; h = 'Descartar la notificacion'
+               e = '[no hay venta para ese aviso]' },
+            @{ d = 'Comprobar si ya se aplico'; h = 'Marcar la venta PAGADA'; e = '[es la primera vez]' },
+            @{ d = 'Comprobar si ya se aplico'; h = 'Transaccion completada'
+               e = '[reintento de la pasarela]  {idempotente}' },
+            @{ d = 'Marcar la venta PAGADA'; h = 'Descontar inventario y emitir comprobante'
+               e = '[pago aprobado]' },
+            @{ d = 'Marcar la venta PAGADA'; h = 'Transaccion completada'
+               e = '[pago rechazado]  {la venta sigue pendiente}' },
+            @{ d = 'Descontar inventario y emitir comprobante'; h = 'Transaccion completada'
+               e = '{db.commit()}' },
+            @{ d = 'Descartar la notificacion'; h = '(final-rechazo)'; e = '' },
+            @{ d = 'Transaccion completada'; h = '(final)'; e = '' }
+        )
+    },
+
+    @{
+        cu = 'CU-31'; ciclo = '#3'; titulo = 'Registrar venta presencial'
+        nota = 'Flujo transaccional de CU-31. La guarda de entrada NO es el rol sino el TURNO DE CAJA ABIERTO: sin turno el dinero cobrado no es atribuible. Rutas sin el prefijo /api/v1.'
+        estados = @(
+            @{ n = 'Abrir el mostrador'; col = 'auth'; fila = 1
+               nota = 'Exige rol CAJERO y sucursal asignada.' },
+            @{ n = 'Verificar turno abierto'; col = 'vali'; fila = 0
+               nota = 'GET /caja/turnos/mio. Sin turno no se cobra.' },
+            @{ n = 'Buscar prendas del mostrador'; col = 'menu'; fila = 1.5
+               nota = 'GET /pos/prendas: solo las que tienen existencia en SU sucursal.' },
+            @{ n = 'Armar el detalle y el total'; col = 'oper'; fila = 0.5
+               nota = 'El total aplica las promociones vigentes de CU-12.' },
+            @{ n = 'Descontar inventario y registrar la venta'; col = 'oper'; fila = 2
+               nota = 'FOR UPDATE sobre la existencia: dos cajeros no venden la misma ultima unidad.' },
+            @{ n = 'Emitir el comprobante'; col = 'oper'; fila = 3
+               nota = 'GET /pos/ventas/:codigo/comprobante. Se puede volver a descargar.' },
+            @{ n = 'Informar error'; col = 'vali'; fila = 3.5
+               nota = 'Sin turno, existencia insuficiente o prenda de otra sucursal.' },
+            @{ n = 'Transaccion completada'; col = 'fin'; fila = 2.5
+               nota = 'La venta queda asociada al turno, que es lo que permite cuadrar la caja.' }
+        )
+        transiciones = @(
+            @{ d = '(inicial)'; h = 'Abrir el mostrador'; e = '' },
+            @{ d = 'Abrir el mostrador'; h = 'Verificar turno abierto'; e = '{GET /caja/turnos/mio}' },
+            @{ d = 'Verificar turno abierto'; h = 'Buscar prendas del mostrador'; e = '[hay turno abierto]' },
+            @{ d = 'Verificar turno abierto'; h = 'Informar error'
+               e = '[sin turno]  {lleva a abrir caja, CU-30}' },
+            @{ d = 'Buscar prendas del mostrador'; h = 'Armar el detalle y el total'
+               e = '[elegir prendas y cantidades]' },
+            @{ d = 'Buscar prendas del mostrador'; h = 'Armar el detalle y el total'
+               e = 'cargarReservaAtendida()  {GET /pos/reservas}' },
+            @{ d = 'Armar el detalle y el total'; h = 'Descontar inventario y registrar la venta'
+               e = '[efectivo o tarjeta]  {POST /pos/ventas}' },
+            @{ d = 'Descontar inventario y registrar la venta'; h = 'Informar error'
+               e = '[existencia insuficiente]  {409, la venta no entra parcial}' },
+            @{ d = 'Descontar inventario y registrar la venta'; h = 'Emitir el comprobante'
+               e = '[descuento aplicado]  {movimiento de salida}' },
+            @{ d = 'Emitir el comprobante'; h = 'Transaccion completada'; e = '{db.commit() -> 201}' },
+            @{ d = 'Informar error'; h = 'Buscar prendas del mostrador'; e = 'reintentar()' },
+            @{ d = 'Transaccion completada'; h = '(final)'; e = '' }
+        )
+    },
+
+    @{
+        cu = 'CU-33'; ciclo = '#3'; titulo = 'Recibir recomendaciones de prendas'
+        nota = 'Flujo de CU-33. NO ESCRIBE EN LA BASE: es una consulta asistida. Lo que lo distingue es `Validar contra el catalogo`, que descarta lo que el modelo invente, y el reintento cuando sobreviven menos de tres. Rutas sin el prefijo /api/v1.'
+        estados = @(
+            @{ n = 'Abrir Para vos'; col = 'auth'; fila = 1
+               nota = 'Exige rol CLIENTE. Web y movil.' },
+            @{ n = 'Reunir la senal del cliente'; col = 'menu'; fila = 1
+               nota = 'Favoritos, compras, reservas, talla habitual y temporada vigente.' },
+            @{ n = 'Armar el contexto'; col = 'oper'; fila = 0
+               nota = 'Catalogo ya filtrado, con el par id -> nombre. Se arma en CADA pedido, sin cache.' },
+            @{ n = 'Consultar al modelo'; col = 'oper'; fila = 1.5
+               nota = 'El modelo elige y ordena; no consulta la base.' },
+            @{ n = 'Validar contra el catalogo'; col = 'vali'; fila = 1.5
+               nota = 'Descarta lo inventado, lo desactivado y lo agotado. La existencia entra por la costura C1.' },
+            @{ n = 'Mostrar las prendas sugeridas'; col = 'fin'; fila = 1.5
+               nota = 'Cada una con su motivo.' },
+            @{ n = 'Informar que no esta disponible'; col = 'vali'; fila = 3.5
+               nota = 'Sin proveedor de IA no se dibuja una version degradada.' }
+        )
+        transiciones = @(
+            @{ d = '(inicial)'; h = 'Abrir Para vos'; e = '' },
+            @{ d = 'Abrir Para vos'; h = 'Reunir la senal del cliente'
+               e = '{GET /tienda/recomendaciones}' },
+            @{ d = 'Reunir la senal del cliente'; h = 'Armar el contexto'; e = '' },
+            @{ d = 'Armar el contexto'; h = 'Consultar al modelo'; e = '[hay proveedor de IA]' },
+            @{ d = 'Armar el contexto'; h = 'Informar que no esta disponible'; e = '[sin proveedor de IA]' },
+            @{ d = 'Consultar al modelo'; h = 'Validar contra el catalogo'; e = '[el modelo contesta]' },
+            @{ d = 'Consultar al modelo'; h = 'Consultar al modelo'
+               e = '[saturado o agotado el tiempo]  {modelo de respaldo}' },
+            @{ d = 'Consultar al modelo'; h = 'Informar que no esta disponible'
+               e = '[tampoco contesta el de respaldo]' },
+            @{ d = 'Validar contra el catalogo'; h = 'Consultar al modelo'
+               e = '[sobreviven menos de MINIMO_UTIL]  {se vuelve a pedir}' },
+            @{ d = 'Validar contra el catalogo'; h = 'Mostrar las prendas sugeridas'
+               e = '[quedan suficientes prendas reales]' },
+            @{ d = 'Informar que no esta disponible'; h = '(final-rechazo)'; e = '' },
+            @{ d = 'Mostrar las prendas sugeridas'; h = '(final)'; e = '' }
+        )
+    },
+
+    @{
+        cu = 'CU-34'; ciclo = '#3'; titulo = 'Conversar con el asistente virtual'
+        nota = 'Flujo de CU-34. NO ESCRIBE EN LA BASE, ni siquiera la conversacion: los turnos viven en la pantalla y se pierden al recargar, a proposito. El bucle sobre `Esperando la pregunta` es lo que lo hace conversacional. Rutas sin el prefijo /api/v1.'
+        estados = @(
+            @{ n = 'Abrir el asistente'; col = 'auth'; fila = 1
+               nota = 'Exige rol CLIENTE. GET /asistente/disponible.' },
+            @{ n = 'Esperando la pregunta'; col = 'menu'; fila = 1
+               nota = 'Ofrece seis preguntas de ejemplo y el campo libre.' },
+            @{ n = 'Armar el contexto'; col = 'oper'; fila = 0
+               nota = 'Catalogo, promociones vigentes, tallas en cm, y SUS pedidos, reservas y medidas. Entero, en cada pregunta.' },
+            @{ n = 'Consultar al modelo'; col = 'oper'; fila = 1.5
+               nota = 'Una sola llamada, con los ultimos turnos. Tarda entre 3 y 25 segundos.' },
+            @{ n = 'Validar los codigos citados'; col = 'vali'; fila = 1.5
+               nota = 'Un codigo inventado no llega a la pantalla.' },
+            @{ n = 'Mostrar la respuesta'; col = 'fin'; fila = 1.5
+               nota = 'Con las prendas mencionadas como enlaces. El turno se guarda EN MEMORIA.' },
+            @{ n = 'Informar que no esta disponible'; col = 'vali'; fila = 3.5
+               nota = 'Sin proveedor de IA no se contesta una version degradada.' }
+        )
+        transiciones = @(
+            @{ d = '(inicial)'; h = 'Abrir el asistente'; e = '' },
+            @{ d = 'Abrir el asistente'; h = 'Esperando la pregunta'
+               e = '[hay proveedor de IA]  {GET /asistente/disponible}' },
+            @{ d = 'Abrir el asistente'; h = 'Informar que no esta disponible'
+               e = '[sin proveedor de IA]' },
+            @{ d = 'Esperando la pregunta'; h = 'Armar el contexto'
+               e = '[pregunta de 1 a 500 caracteres]  {POST /asistente}' },
+            @{ d = 'Esperando la pregunta'; h = 'Esperando la pregunta'
+               e = '[vacia o muy larga]  {422, sin gastar una llamada al modelo}' },
+            @{ d = 'Armar el contexto'; h = 'Consultar al modelo'; e = '{contexto y los ultimos turnos}' },
+            @{ d = 'Consultar al modelo'; h = 'Validar los codigos citados'; e = '[el modelo contesta]' },
+            @{ d = 'Consultar al modelo'; h = 'Consultar al modelo'
+               e = '[saturado o agotado el tiempo]  {modelo de respaldo}' },
+            @{ d = 'Consultar al modelo'; h = 'Informar que no esta disponible'
+               e = '[tampoco contesta el de respaldo]' },
+            @{ d = 'Validar los codigos citados'; h = 'Mostrar la respuesta'
+               e = '[solo los codigos que existen]' },
+            @{ d = 'Mostrar la respuesta'; h = 'Esperando la pregunta'
+               e = 'repreguntar()  [el historial viaja con la siguiente]' },
+            @{ d = 'Informar que no esta disponible'; h = '(final-rechazo)'; e = '' },
+            @{ d = 'Mostrar la respuesta'; h = '(final)'; e = 'cerrar  [la conversacion se pierde]' }
+        )
     }
 )
 

@@ -399,6 +399,164 @@ $CASOS = @(
                 )
             }
         )
+    },
+
+    @{
+        cu = 'CU-28'; ciclo = '#3'; escenario = 'Confirmar el pago del pedido'
+        nota = "Escenario: la pasarela avisa que el cobro entro. La linea 1 no arranca autenticando por token sino VALIDANDO LA FIRMA: el que llama es una maquina. Las lineas 2 y 3 muestran el pedido cerrandose y el stock apartado volviendose salida definitiva, las dos en el mismo commit. $LEYENDA"
+        lineas = @(
+            (LineaTransaccion 'POST /pagos/webhook' 'firma valida y aviso no aplicado' 'UPDATE venta + movimiento_inventario' '200' ''),
+            @{
+                k = 'venta'; n = 'Pedido'; clasificador = 'Venta'
+                estados = @('PENDIENTE_PAGO', 'PAGADA')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'PENDIENTE_PAGO'; ev = 'creado por CU-27  '; tc = '' },
+                    @{ t = $T.commit; s = 'PAGADA';         ev = 'db.commit()  ';      tc = 'RNF11' }
+                )
+            },
+            @{
+                k = 'existencia'; n = 'Existencia'; clasificador = 'Existencia'
+                estados = @('reservada', 'vendida')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'reservada'; ev = 'apartada por CU-27  '; tc = '' },
+                    @{ t = $T.commit; s = 'vendida';   ev = 'SALIDA registrada  ';   tc = 'RNF10' }
+                )
+            }
+        )
+    },
+
+    @{
+        cu = 'CU-31'; ciclo = '#3'; escenario = 'Registrar una venta presencial'
+        nota = "Escenario: el cajero cobra en el mostrador. La guarda de la linea 1 no es un rol sino el TURNO ABIERTO. La linea 3 es lo que justifica CU-30: el dinero entra a un turno concreto, y por eso al cierre se puede cuadrar. $LEYENDA"
+        lineas = @(
+            (LineaTransaccion 'POST /pos/ventas' 'turno abierto y existencia suficiente' 'INSERT venta + movimiento_inventario' '201' '8 h'),
+            @{
+                k = 'existencia'; n = 'Existencia'; clasificador = 'Existencia'
+                estados = @('disponible', 'vendida')
+                marcas = @(
+                    @{ t = $T.inicio;  s = 'disponible'; ev = '';                     tc = '' },
+                    @{ t = $T.escribe; s = 'vendida';    ev = 'SALIDA registrada  '; tc = 'RNF10' }
+                )
+            },
+            @{
+                k = 'turno'; n = 'Turno de caja'; clasificador = 'TurnoCaja'
+                estados = @('Abierto', 'Cerrado')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Abierto'; ev = 'abierto por CU-30  '; tc = '' },
+                    @{ t = 84;        s = 'Cerrado'; ev = 'arqueo del turno  ';  tc = '1 turno' }
+                )
+            }
+        )
+    },
+
+    @{
+        cu = 'CU-33'; ciclo = '#3'; escenario = 'Recibir recomendaciones de prendas'
+        nota = "Escenario: el cliente abre `Para vos`. ESTE NO USA LA LINEA DE TRANSACCION porque no escribe nada: es una consulta asistida. Lo que hay que mirar es el ancho del tramo `Esperando al modelo`, que es casi todo el tiempo de la peticion --medido entre 3 y 25 segundos--, y el lazo de reintento cuando la validacion deja menos de tres prendas en pie. $LEYENDA"
+        lineas = @(
+            @{
+                k = 'peticion'; n = 'Peticion'; clasificador = ''
+                estados = @('Inactiva', 'Reuniendo la senal', 'Esperando al modelo', 'Validando', 'Respondida')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Inactiva';           ev = '';                             tc = '' },
+                    @{ t = 8;         s = 'Reuniendo la senal'; ev = 'GET /tienda/recomendaciones';  tc = '' },
+                    @{ t = 20;        s = 'Esperando al modelo'; ev = 'contexto armado  ';           tc = '3-25 s' },
+                    @{ t = 70;        s = 'Validando';          ev = 'el modelo contesta  ';         tc = '' },
+                    @{ t = 80;        s = 'Respondida';         ev = 'solo prendas reales  ';        tc = 'RNF02' }
+                )
+            },
+            @{
+                k = 'modelo'; n = 'Proveedor de IA'; clasificador = 'ProveedorRecomendador'
+                estados = @('Ocioso', 'Generando', 'Saturado')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Ocioso';    ev = '';                          tc = '' },
+                    @{ t = 20;        s = 'Generando'; ev = 'prompt enviado  ';          tc = '22 s' },
+                    @{ t = 62;        s = 'Saturado';  ev = 'sin respuesta a tiempo  ';  tc = 'respaldo' },
+                    @{ t = 70;        s = 'Ocioso';    ev = 'contesta el de respaldo  '; tc = '' }
+                )
+            },
+            @{
+                k = 'sugerencias'; n = 'Sugerencias'; clasificador = ''
+                estados = @('Ninguna', 'Sin validar', 'Utiles')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Ninguna';     ev = '';                                tc = '' },
+                    @{ t = 70;        s = 'Sin validar'; ev = 'lo que dijo el modelo  ';          tc = '' },
+                    @{ t = 80;        s = 'Utiles';      ev = 'activas y con stock  ';            tc = 'min 3' }
+                )
+            }
+        )
+    },
+
+    @{
+        cu = 'CU-34'; ciclo = '#3'; escenario = 'Conversar con el asistente virtual'
+        nota = "Escenario: el cliente hace una pregunta. Es el caso que el auxiliar uso de ejemplo para este diagrama, y aca con los tiempos MEDIDOS del sistema: armar el contexto es barato --tres consultas-- y esperar al modelo es casi toda la espera. La linea 3 muestra lo que define a este caso de uso: la conversacion NUNCA llega a la base. $LEYENDA"
+        lineas = @(
+            @{
+                k = 'peticion'; n = 'Peticion'; clasificador = ''
+                estados = @('Inactiva', 'Armando el contexto', 'Esperando al modelo', 'Validando codigos', 'Respondida')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Inactiva';            ev = '';                        tc = '' },
+                    @{ t = 8;         s = 'Armando el contexto'; ev = 'POST /asistente';         tc = '' },
+                    @{ t = 22;        s = 'Esperando al modelo'; ev = 'una sola llamada  ';      tc = '3-25 s' },
+                    @{ t = 72;        s = 'Validando codigos';   ev = 'el modelo contesta  ';    tc = '' },
+                    @{ t = 82;        s = 'Respondida';          ev = 'solo prendas del catalogo  '; tc = 'RNF02' }
+                )
+            },
+            @{
+                k = 'modelo'; n = 'Proveedor de IA'; clasificador = 'ProveedorAsistente'
+                estados = @('Ocioso', 'Generando', 'Saturado')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Ocioso';    ev = '';                           tc = '' },
+                    @{ t = 22;        s = 'Generando'; ev = 'contexto e historial  ';     tc = '22 s' },
+                    @{ t = 64;        s = 'Saturado';  ev = 'se agota el tiempo  ';       tc = 'respaldo' },
+                    @{ t = 72;        s = 'Ocioso';    ev = 'contesta el de respaldo  ';  tc = '' }
+                )
+            },
+            @{
+                k = 'conversacion'; n = 'Conversacion'; clasificador = ''
+                estados = @('En la pantalla', 'Perdida')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'En la pantalla'; ev = 'turnos anteriores  ';         tc = '6 turnos' },
+                    @{ t = 82;        s = 'En la pantalla'; ev = 'se agrega el turno nuevo  ';  tc = '' },
+                    @{ t = 84;        s = 'Perdida';        ev = 'al recargar  {NO va a la base}'; tc = '' }
+                )
+            }
+        )
+    },
+
+    @{
+        cu = 'CU-21'; ciclo = '#3'; escenario = 'Probarse una prenda en el vestidor'
+        nota = "Escenario: el cliente se prueba una prenda. NO HAY LINEA DE TRANSACCION ni commit: todo ocurre en el telefono y nada se escribe, salvo lo que despues se derive al carrito. La escala aca NO es la de una peticion: es el ciclo de UN FOTOGRAMA, y lo que hay que mirar es que la deteccion y el dibujo entren dentro del cuadro para sostener los 12-20 fps medidos en el prototipo. $LEYENDA"
+        lineas = @(
+            @{
+                k = 'camara'; n = 'Camara frontal'; clasificador = ''
+                estados = @('Apagada', 'Pidiendo permiso', 'Transmitiendo')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Apagada';          ev = '';                       tc = '' },
+                    @{ t = 10;        s = 'Pidiendo permiso'; ev = 'abrir el vestidor  ';    tc = '' },
+                    @{ t = 24;        s = 'Transmitiendo';    ev = 'permiso concedido  ';    tc = '12-20 fps' }
+                )
+            },
+            @{
+                k = 'pose'; n = 'Deteccion de pose'; clasificador = 'PoseDetector'
+                estados = @('Ociosa', 'Analizando', 'Con pose')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Ociosa';     ev = '';                        tc = '' },
+                    @{ t = 30;        s = 'Analizando'; ev = 'fotograma recibido  ';    tc = 'en el telefono' },
+                    @{ t = 52;        s = 'Con pose';   ev = 'hombros y cadera  ';      tc = '' },
+                    @{ t = 80;        s = 'Analizando'; ev = 'siguiente fotograma  ';   tc = '' }
+                )
+            },
+            @{
+                k = 'prenda'; n = 'Prenda superpuesta'; clasificador = ''
+                estados = @('Sin dibujar', 'Dibujada', 'Capturada')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Sin dibujar'; ev = '';                          tc = '' },
+                    @{ t = 58;        s = 'Dibujada';    ev = 'escalada y rotada  ';       tc = 'PNG alfa' },
+                    @{ t = 74;        s = 'Capturada';   ev = 'capturar()  {al telefono}'; tc = '' },
+                    @{ t = 84;        s = 'Dibujada';    ev = 'sigue probandose  ';        tc = '' }
+                )
+            }
+        )
     }
 )
 

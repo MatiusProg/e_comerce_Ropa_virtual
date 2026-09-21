@@ -3,6 +3,12 @@
     [switch]$Rehacer,
     # Genera solo este actor (p. ej. -Actor Administrador). Vacío = todos.
     [string]$Actor = '',
+    # Genera solo este caso de uso (p. ej. -CU CU-27). Vacío = todos.
+    #
+    # Existe desde el 20/09, cuando el capítulo pasó a llevar también
+    # bloques POR CASO DE USO: sin este filtro, pedir el de CU-27 por su
+    # actor arrastraba de vuelta los mapas acumulativos del Cliente.
+    [string]$CU = '',
     # Para probar sobre una copia sin tocar el modelo bueno.
     [string]$Modelo = 'D:\UNI\Si2\PRIMER_PARCIAL\docs\diagramas\VioletBoutique.eapx'
 )
@@ -594,6 +600,7 @@ $ACTORES = @(
     @{
         actor  = 'Cliente'
         ciclo  = '#3'
+        cu     = 'CU-27'
         nombre = '3.2 Diagrama de Navegacion - CU-27 Realizar pedido y pagar en linea'
         guarda = '[sesion + CLIENTE]'
         nota   = 'Navegacion de CU-27, POR CASO DE USO y no por actor: es el piloto del patron que pide el auxiliar. Extension UWE (no es UML 2.5). El recorrido es carrito -> checkout -> pasarela -> retorno. La vuelta desde la pasarela NO es un link: el estado del pedido lo fija el webhook de CU-28, y la pantalla de retorno solo consulta. Espejo de app.routes.ts.'
@@ -620,6 +627,152 @@ $ACTORES = @(
                            attrs = @('codigo') }
                 ctrl  = @{ n = 'ventas/pedidos_router.py'
                            ops = @('estado_del_pedido') }
+            }
+        )
+    },
+
+    @{
+        actor  = 'Cliente'
+        ciclo  = '#3'
+        cu     = 'CU-33'
+        nombre = '3.2 Diagrama de Navegacion - CU-33 Recibir recomendaciones de prendas'
+        guarda = '[sesion + CLIENTE]'
+        nota   = 'Navegacion de CU-33, POR CASO DE USO. Extension UWE (no es UML 2.5). Es el recorrido mas corto del ciclo y eso es el hallazgo: `Para vos` no tiene formulario --el cliente no pide nada, el sistema propone-- asi que no hay <submit>. La unica salida es el <link> a la ficha de una prenda sugerida.'
+        menu   = @{ n = 'para-vos.ts'; ruta = '/tienda/para-vos'
+                    carpeta = 'features/tienda/para-vos'
+                    ops = @() }
+        areas = @(
+            @{
+                k = 'sugerencias'; cu = 'CU-33'
+                vista = @{ n = 'para-vos.ts'; ruta = '/tienda/para-vos'
+                           carpeta = 'features/tienda/para-vos'
+                           attrs = @('prenda', 'motivo', 'precio') }
+                ctrl  = @{ n = 'ia/router.py'
+                           ops = @('mis_recomendaciones') }
+            },
+            @{
+                k = 'ficha'; cu = 'CU-33'
+                vista = @{ n = 'ficha.ts'; ruta = '/tienda/producto/:id'
+                           carpeta = 'features/tienda/ficha'
+                           attrs = @('producto_id') }
+                ctrl  = @{ n = 'catalogo_publico/router.py'
+                           ops = @('ficha_de_producto') }
+            }
+        )
+    },
+
+    @{
+        actor  = 'Cliente'
+        ciclo  = '#3'
+        cu     = 'CU-34'
+        nombre = '3.2 Diagrama de Navegacion - CU-34 Conversar con el asistente virtual'
+        guarda = '[sesion + CLIENTE]'
+        nota   = 'Navegacion de CU-34, POR CASO DE USO. Extension UWE (no es UML 2.5). El <submit> de la pregunta NO redirige: el controlador devuelve a la MISMA pantalla, que es lo que permite seguir conversando. Los enlaces a las fichas salen de los codigos que el servidor valido; un codigo inventado por el modelo no llega a dibujarse.'
+        menu   = @{ n = 'asistente.ts'; ruta = '/tienda/asistente'
+                    carpeta = 'features/tienda/asistente'
+                    ops = @() }
+        areas = @(
+            @{
+                k = 'conversacion'; cu = 'CU-34'
+                vista = @{ n = 'asistente.ts'; ruta = '/tienda/asistente'
+                           carpeta = 'features/tienda/asistente'
+                           attrs = @('turnos', 'ejemplos', 'pensando') }
+                form  = @{ n = 'redaccion.html'
+                           carpeta = 'features/tienda/asistente'
+                           attrs = @('pregunta', 'historial') }
+                ctrl  = @{ n = 'ia/asistente_router.py'
+                           ops = @('esta_disponible', 'preguntar') }
+            },
+            @{
+                k = 'ficha'; cu = 'CU-34'
+                vista = @{ n = 'ficha.ts'; ruta = '/tienda/producto/:id'
+                           carpeta = 'features/tienda/ficha'
+                           attrs = @('producto_id') }
+                ctrl  = @{ n = 'catalogo_publico/router.py'
+                           ops = @('ficha_de_producto') }
+            }
+        )
+    },
+
+    @{
+        actor  = 'Cajero'
+        ciclo  = '#3'
+        cu     = 'CU-31'
+        nombre = '3.2 Diagrama de Navegacion - CU-31 Registrar venta presencial'
+        guarda = '[sesion + CAJERO]'
+        nota   = 'Navegacion de CU-31, POR CASO DE USO. Extension UWE (no es UML 2.5). El eje NO es el mostrador sino la CAJA: sin turno abierto no se llega a cobrar, y por eso la apertura de turno (CU-30) esta dibujada como la puerta. Las dos entradas al mostrador --buscar prendas y cargar una reserva atendida-- terminan en el mismo <submit>.'
+        menu   = @{ n = 'caja.ts'; ruta = '/caja'
+                    carpeta = 'features/caja/turno'
+                    ops = @() }
+        areas = @(
+            @{
+                k = 'mostrador'; cu = 'CU-31'
+                vista = @{ n = 'mostrador.ts'; ruta = '/caja/venta'
+                           carpeta = 'features/caja/mostrador'
+                           attrs = @('busqueda', 'sucursal_id') }
+                form  = @{ n = 'venta-formulario.ts'
+                           carpeta = 'features/caja/mostrador'
+                           attrs = @('detalle', 'medio_pago', 'total') }
+                ctrl  = @{ n = 'pos/router.py'
+                           ops = @('prendas_del_mostrador', 'registrar_venta', 'ver_venta') }
+            },
+            @{
+                k = 'reservas'; cu = 'CU-31'
+                vista = @{ n = 'reservas-por-cobrar.ts'; ruta = '/caja/reservas'
+                           carpeta = 'features/caja/reservas'
+                           attrs = @('sucursal_id', 'estado') }
+                ctrl  = @{ n = 'pos/router.py'
+                           ops = @('reservas_por_cobrar', 'ver_reserva') }
+            },
+            @{
+                k = 'comprobante'; cu = 'CU-31'
+                vista = @{ n = 'comprobante.ts'; ruta = '/caja/venta/:codigo'
+                           carpeta = 'features/caja/comprobante'
+                           attrs = @('codigo') }
+                ctrl  = @{ n = 'pos/router.py'
+                           ops = @('comprobante') }
+            }
+        )
+    },
+
+    @{
+        actor  = 'Cliente'
+        ciclo  = '#3'
+        cu     = 'CU-21'
+        base   = 'mobile/lib'
+        nombre = '3.2 Diagrama de Navegacion - CU-21 Utilizar vestidor virtual (RA)'
+        guarda = '[sesion + CLIENTE, solo movil]'
+        nota   = 'Navegacion de CU-21, POR CASO DE USO. Extension UWE (no es UML 2.5). OJO: este es el UNICO del capitulo que NO esta en la web --el vestidor existe solo en el telefono--, asi que las rutas son de go_router y las carpetas de mobile/lib, no de frontend-web. El <submit> de las medidas es el unico que escribe; el vestidor en si no persiste nada.'
+        menu   = @{ n = 'pantalla_vestidor.dart'; ruta = '/vestidor'
+                    carpeta = 'features/vestidor'
+                    ops = @() }
+        areas = @(
+            @{
+                k = 'medidas'; cu = 'CU-21'
+                vista = @{ n = 'pantalla_medidas.dart'; ruta = '/vestidor/medidas'
+                           carpeta = 'features/vestidor'
+                           attrs = @('busto_cm', 'cintura_cm', 'cadera_cm', 'altura_cm') }
+                form  = @{ n = 'formulario_medidas.dart'
+                           carpeta = 'features/vestidor'
+                           attrs = @('busto_cm', 'cintura_cm', 'cadera_cm', 'altura_cm') }
+                ctrl  = @{ n = 'medidas/router.py'
+                           ops = @('ver_mis_medidas', 'guardar_mis_medidas') }
+            },
+            @{
+                k = 'probable'; cu = 'CU-21'
+                vista = @{ n = 'pantalla_catalogo.dart'; ruta = '/catalogo?solo_vestidor'
+                           carpeta = 'features/catalogo'
+                           attrs = @('solo_vestidor', 'busqueda', 'pagina') }
+                ctrl  = @{ n = 'catalogo_publico/router.py'
+                           ops = @('listar_catalogo', 'ajuste_del_producto') }
+            },
+            @{
+                k = 'derivar'; cu = 'CU-21'
+                vista = @{ n = 'pantalla_carrito.dart'; ruta = '/carrito'
+                           carpeta = 'features/compra'
+                           attrs = @('variante_id', 'cantidad') }
+                ctrl  = @{ n = 'ventas/carrito_router.py'
+                           ops = @('agregar_al_carrito') }
             }
         )
     }
@@ -754,6 +907,15 @@ $hechos = 0
 
 foreach ($a in $ACTORES) {
     if ($Actor -and $a.actor -ne $Actor) { continue }
+    if ($CU    -and $a.cu    -ne $CU)    { continue }
+
+    # De que arbol salen las pantallas. Por omision la web; CU-21 vive
+    # solo en el telefono y decir `frontend-web` ahi seria mentir sobre
+    # donde esta el codigo, que es la regla de oro 10.
+    $BASE = if ($a.base) { $a.base } else { 'frontend-web/src/app' }
+    # Sin -CU no se dibujan los bloques POR CASO DE USO: son muchos y
+    # cada uno es su propio diagrama. Se piden de a uno, a proposito.
+    if (-not $CU -and $a.cu) { continue }
 
     # Un bloque puede nombrar su propio diagrama. Se agrego el 20/09 porque
     # el auxiliar pide la navegacion POR CASO DE USO y este generador estaba
@@ -785,7 +947,7 @@ foreach ($a in $ACTORES) {
 
     # ---- Los elementos. Se guarda el ID, NUNCA la referencia COM.
     $menuId = NuevaClase $pkg $a.menu.n $EST_MENU `
-        "Eje de navegacion del actor. frontend-web/src/app/$($a.menu.carpeta)/. Ruta $($a.menu.ruta)." `
+        "Eje de navegacion del actor. $BASE/$($a.menu.carpeta)/. Ruta $($a.menu.ruta)." `
         @("ruta: $($a.menu.ruta)") $a.menu.ops
 
     # Los controladores se crean UNA VEZ POR ARCHIVO, no por área: dos áreas
@@ -801,12 +963,12 @@ foreach ($a in $ACTORES) {
     foreach ($ar in $a.areas) {
         if ($ar.vista) {
             $ids["$($ar.k)|vista"] = NuevaClase $pkg $ar.vista.n $EST_VISTA `
-                "$($ar.cu). Ruta $($ar.vista.ruta). frontend-web/src/app/$($ar.vista.carpeta)/$($ar.vista.n) y su .html. Los atributos son los filtros reales del endpoint de listado." `
+                "$($ar.cu). Ruta $($ar.vista.ruta). $BASE/$($ar.vista.carpeta)/$($ar.vista.n) y su .html. Los atributos son los filtros reales del endpoint de listado." `
                 (@("ruta: $($ar.vista.ruta)") + $ar.vista.attrs) @()
         }
         if ($ar.form) {
             $ids["$($ar.k)|form"] = NuevaClase $pkg $ar.form.n $EST_FORM `
-                "$($ar.cu). frontend-web/src/app/$($ar.form.carpeta)/$($ar.form.n). Los atributos son los campos reales del formulario." `
+                "$($ar.cu). $BASE/$($ar.form.carpeta)/$($ar.form.n). Los atributos son los campos reales del formulario." `
                 $ar.form.attrs @()
         }
         if (-not $ctrls.ContainsKey($ar.ctrl.n)) {
