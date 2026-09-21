@@ -66,7 +66,8 @@ $OPS = @{
     @{n='bloquear_cliente'; r='None'; p=@(@{n='db';t='Session'}; @{n='cliente_id';t='int'})},
     @{n='stock_por_sucursal'; r='dict[int, dict[int, int]]'; p=@(@{n='db';t='Session'}; @{n='variante_ids';t='list[int]'})},
     @{n='agregar_venta_presencial'; r='Venta'; p=@(@{n='db';t='Session'})},
-    @{n='venta_de_sucursal'; r='Venta | None'; p=@(@{n='db';t='Session'})}
+    @{n='venta_de_sucursal'; r='Venta | None'; p=@(@{n='db';t='Session'})},
+    @{n='pedidos_del_cliente'; r='list[tuple]'; p=@(@{n='db';t='Session'}; @{n='cliente_id';t='int'}; @{n='limite';t='int'})}
   )
   'DetalleVenta' = @(
     @{n='agregar_detalle'; r='DetalleVenta'; p=@(@{n='db';t='Session'})},
@@ -244,9 +245,14 @@ $CTRL = @{
   'GestorVestidor' = @(
     @{n='estado'; r='EstadoDelProbador'; p=@()},
     @{n='probar'; r='tuple[bytes, str, str]'; p=@(@{n='db';t='Session'})},
-    @{n='ajuste_de_producto'; r='AjusteDeProducto'; p=@(@{n='db';t='Session'}; @{n='producto_id';t='int'}; @{n='usuario_id';t='int'})},
+    @{n='ajuste_de_producto'; r='AjusteDeProducto'; p=@(@{n='db';t='Session'}; @{n='producto_id';t='int'}; @{n='usuario_id';t='int'})}
+  )
+  'GestorAsistente' = @(
     @{n='esta_disponible'; r='bool'; p=@()},
-    @{n='probar'; r='ResultadoDeProbado'; p=@(@{n='solicitud';t='SolicitudDeProbado'})}
+    @{n='armar_contexto'; r='Contexto'; p=@(@{n='db';t='Session'}; @{n='cliente';t=''}; @{n='nombre';t='str'})},
+    @{n='responder'; r='RespuestaAlCliente'; p=@(@{n='db';t='Session'}; @{n='usuario_id';t='int'})},
+    @{n='esta_disponible'; r='bool'; p=@()},
+    @{n='responder'; r='Respuesta'; p=@(@{n='pregunta';t='str'}; @{n='contexto';t='Contexto'}; @{n='historial';t='list[tuple[str, str]]'})}
   )
   'GestorCatalogoProveedor' = @(
     @{n='listas_del_formulario'; r='ListasDelFormularioOut'; p=@(@{n='db';t='Session'})},
@@ -398,5 +404,13 @@ $FRONT = @{
   'CanalDeAviso' = @(
     @{n='obtener_proveedor'; r='ProveedorCorreo'; p=@()},
     @{n='enviar'; r='None'; p=@(@{n='mensaje';t='Mensaje'})}
+  )
+  'PantallaAsistente' = @(
+    @{n='agregar'; r='void'; p=@(@{n='turno';t='Turno'})},
+    @{n='limpiar'; r='void'; p=@()},
+    @{n='disponible'; r='Observable<EstadoAsistente>'; p=@()},
+    @{n='preguntar'; r='Observable<RespuestaAsistente>'; p=@(@{n='pregunta';t='string'}; @{n='historial';t='Turno[]'})},
+    @{n='hay_asistente'; r='DisponibleOut'; p=@()},
+    @{n='preguntar'; r='RespuestaOut'; p=@(@{n='datos';t='PreguntaIn'}; @{n='db';t='DbSession'}; @{n='usuario';t='Usuario'})}
   )
 }

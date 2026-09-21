@@ -60,6 +60,10 @@ MODULOS = {
     "dev_rt": "pos/devolucion_router.py",
     # CU-33 recomendaciones
     "ia_repo": "ia/repository.py",
+    # CU-34 asistente virtual (lo entrego Mateo el 20/09, PR #64 a #67)
+    "asis_repo": "ia/asistente_repository.py",
+    "asis_svc": "ia/asistente_service.py",
+    "asis_rt": "ia/asistente_router.py",
     "ia_svc": "ia/service.py",
     "ia_rt": "ia/router.py",
     # CU-36 y CU-37 reportes
@@ -106,10 +110,12 @@ INTEGRACIONES = {
     "probador": "probador_ia/__init__.py",
     "recomendador": "recomendador/__init__.py",
     "correo": "correo/__init__.py",
+    "asistente": "asistente/__init__.py",
     "pasarela": "pasarela_pago/__init__.py",
 }
 
 SERVICIOS = [
+    "asistente.service.ts",
     "promociones.service.ts", "carrito.service.ts", "pedidos.service.ts",
     "compras.service.ts", "caja.service.ts", "pos.service.ts",
     "devoluciones.service.ts", "tablero.service.ts", "reportes.service.ts",
@@ -252,7 +258,8 @@ OPS = {
         "obtener_pedido", "obtener_venta_entidad", "agregar_venta", "existe_codigo",
         "pedido_pendiente_de", "listar_pendientes_vencidos", "bloquear_cliente",
         "stock_por_sucursal")]
-        + [("pos_repo", n) for n in ("agregar_venta_presencial", "venta_de_sucursal")],
+        + [("pos_repo", n) for n in ("agregar_venta_presencial", "venta_de_sucursal")]
+        + [("asis_repo", "pedidos_del_cliente")],
     "DetalleVenta": [("vent_repo", n) for n in (
         "agregar_detalle", "lineas_de_pedido", "detalles_de")]
         + [("pos_repo", "lineas_llevadas")],
@@ -321,17 +328,25 @@ CTRL = {
     "GestorFavoritos": [("fav_svc", n) for n in (
         "listar_favoritos", "ids_de_favoritos", "marcar_favorito",
         "desmarcar_favorito")],
+    # SIN el adaptador `probador_ia`, a proposito. Mateo dejo escrito en
+    # docs/entregas/ciclo-3/cu-21-alcance-real-para-los-diagramas.md que
+    # «amoldar por IA» esta apagado por omision y NO va en los diagramas de
+    # CU-21 ---ni como paso, ni como flujo alternativo, ni como actor
+    # externo---. Quedan las dos funciones del modulo, que si existen.
     "GestorVestidor": [("vest_svc", n) for n in ("estado", "probar")]
-        + [("med_svc", "ajuste_de_producto")]
-        + [("probador", n) for n in ("esta_disponible", "probar")],
+        + [("med_svc", "ajuste_de_producto")],
+    "GestorAsistente": [("asis_svc", n) for n in (
+        "esta_disponible", "armar_contexto", "responder")]
+        + [("asistente", n) for n in ("esta_disponible", "responder")],
     "GestorCatalogoProveedor": [("prov_svc", n) for n in (
         "listas_del_formulario", "listar_mis_productos", "obtener_mi_producto",
         "registrar_mi_producto", "editar_mi_producto",
         "cambiar_estado_de_mi_producto", "generar_variantes_de_mi_producto")],
     "GestorReportePorVoz": [("interprete", n) for n in (
         "esta_disponible", "interpretar", "obtener_proveedor")],
-    # GestorAsistente (CU-34) y GestorNotificaciones (CU-40) no figuran: no
-    # hay codigo que leer. Se dibujan vacios, que es la verdad del modelo.
+    # GestorNotificaciones (CU-40) no figura: no hay codigo que leer. Se
+    # dibuja vacio, que es la verdad del modelo. CU-34 SI figura desde el
+    # 20/09: Mateo lo entrego en los PR #64 a #67.
 }
 
 # --- fronteras -> el servicio de Angular y el endpoint del router -------------
@@ -363,8 +378,7 @@ FRONT = {
     "PantallaRecuperacion": {"web": ("auth", None), "rt": "seg_rt",
                              "sel": ("solicitar_recuperacion", "confirmar_recuperacion")},
     "CanalDeAviso": {"web": None, "rt": "correo"},
-    # PantallaAsistente (CU-34) queda fuera por la misma razon que
-    # GestorAsistente: todavia no existe.
+    "PantallaAsistente": {"web": ("asistente", None), "rt": "asis_rt"},
 }
 
 

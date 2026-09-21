@@ -94,7 +94,14 @@ $indice23 = @{}
 foreach ($e in $p23.Elements) { $indice23[$e.Name] = $e }
 
 function Get-OCrearClase23($nombre, $estereotipo, $notas) {
-    if ($indice23.ContainsKey($nombre)) { return $indice23[$nombre] }
+    if ($indice23.ContainsKey($nombre)) {
+        # La nota SI se actualiza. Un elemento que ya existe conserva la de la
+        # corrida anterior, y eso dejaria a CU-34 diciendo «todavia no
+        # construido» despues de que Mateo lo entregara.
+        $viejo = $indice23[$nombre]
+        if ($notas -and $viejo.Notes -ne $notas) { $viejo.Notes = $notas; [void]$viejo.Update() }
+        return $viejo
+    }
     $e = $p23.Elements.AddNew($nombre, 'Class')
     $e.Stereotype = $estereotipo
     $e.StereotypeEx = $estereotipo
@@ -236,7 +243,7 @@ $desc = @{
     'PantallaVenta'           = 'Frontera de CU-31, el mostrador. Frontend: features/caja/venta con PosService; backend: app/modules/pos/router.py sobre /api/v1/pos.'
     'PantallaDevolucion'      = 'Frontera de CU-32. Frontend: features/caja/devolucion con DevolucionesService; backend: app/modules/pos/devolucion_router.py.'
     'PantallaParaVos'         = 'Frontera de CU-33, la seccion "Para vos". Frontend y movil: la vitrina del Cliente; backend: app/modules/ia/router.py sobre /api/v1/ia/recomendaciones.'
-    'PantallaAsistente'       = 'Frontera de CU-34. TODAVIA NO CONSTRUIDA: el caso de uso esta en el alcance del Ciclo 3 y aun no tiene codigo. Se dibuja vacia a proposito, para que el modelo no diga que existe algo que no existe.'
+    'PantallaAsistente'       = 'Frontera de CU-34. Frontend: features/tienda/asistente con AsistenteService; movil: mobile/lib/features/asistente; backend: app/modules/ia/asistente_router.py. Entregada por Mateo el 20/09 (PR #64 a #67).'
     'PantallaReportePorVoz'   = 'Frontera de CU-35. Frontend: DictadoService, que transcribe en el navegador con la Web Speech API; backend: los endpoints /voz de app/modules/reportes/reportes_router.py. El audio NO viaja al servidor: viaja el texto.'
     'PantallaTablero'         = 'Frontera de CU-36. Frontend: features/admin/tablero con TableroService; backend: app/modules/reportes/tablero_router.py.'
     'PantallaReportes'        = 'Frontera de CU-37. Frontend: features/admin/reportes con ReportesService; backend: los endpoints de catalogo y descarga de app/modules/reportes/reportes_router.py, que arma el PDF y el Excel.'
@@ -249,7 +256,7 @@ $desc = @{
     # --- controladores ---
     'GestorPromociones'       = 'app/modules/catalogo/promociones_service.py. Elige UN descuento por prenda cuando hay varios que alcanzan: gana el porcentaje mayor y, si empatan, el mas especifico (producto > categoria > temporada). Recorre el arbol de categorias, asi que una promocion en la categoria madre alcanza a las hijas.'
     'GestorFavoritos'         = 'app/modules/catalogo_publico/service.py. Marca y desmarca, y lista solo lo ofrecible: un producto que dejo de estar a la venta no desaparece del favorito, pero tampoco se muestra como disponible.'
-    'GestorVestidor'          = 'app/modules/vestidor_virtual/service.py con app/modules/medidas/service.py. Compone la prenda sobre la foto usando el PNG transparente de la variante y devuelve el ajuste segun las medidas del Cliente. Si el proveedor de IA no esta configurado responde que no esta disponible, en vez de fallar al tocarlo.'
+    'GestorVestidor'          = 'app/modules/vestidor_virtual/service.py con app/modules/medidas/service.py. Entrega el PNG transparente de la variante y el ajuste por talla segun las medidas que el Cliente ESCRIBIO a mano. OJO: el sistema NO estima medidas a partir de una foto, y «amoldar por IA» esta apagado por omision --- ver docs/entregas/ciclo-3/cu-21-alcance-real-para-los-diagramas.md. La prenda se superpone en el telefono con deteccion de pose, no en el servidor.'
     'GestorCarrito'           = 'app/modules/ventas/carrito_service.py. Un carrito por cliente. Resuelve el precio con GestorPromociones en cada lectura --- el precio NO se congela en el carrito --- y comprueba stock contra P4.'
     'GestorPedidos'           = 'app/modules/ventas/service.py. Arma el pedido, genera su codigo con la fecha boliviana y fija el vencimiento. Delega en GestorInventario: es P4 quien aparta, por la regla de que ninguna cantidad cambia sin su movimiento.'
     'GestorPagos'             = 'app/modules/pagos/service.py. Inicia el cobro contra el adaptador de pasarela y aplica el resultado SOLO desde la notificacion firmada (decision D5). Una notificacion repetida no descuenta el inventario dos veces.'
@@ -258,7 +265,7 @@ $desc = @{
     'GestorMostrador'         = 'app/modules/pos/service.py. Registra la venta presencial, que segun la decision D2 es la MISMA entidad Venta que la del canal en linea. Si la venta sale de una reserva ya atendida no vuelve a descontar stock --- la prenda ya se descontro al atenderla.'
     'GestorDevoluciones'      = 'app/modules/pos/devolucion_service.py. Busca la venta devolvible y registra la devolucion dentro del turno abierto, devolviendo las unidades al inventario por GestorInventario.'
     'GestorRecomendaciones'   = 'app/modules/ia/service.py. Arma el perfil del Cliente, elige candidatas y las ordena con el adaptador de recomendacion. Guarda el resultado y lo invalida cuando el perfil cambia; sin proveedor de IA cae al orden por popularidad.'
-    'GestorAsistente'         = 'Control de CU-34. TODAVIA NO CONSTRUIDO: no hay modulo que leer. Se dibuja sin operaciones a proposito.'
+    'GestorAsistente'         = 'app/modules/ia/asistente_service.py con el adaptador app/integrations/asistente. Arma el contexto ---catalogo ofrecible, pedidos y reservas del cliente, sucursales--- y se lo pasa al proveedor para que responda. Sin proveedor configurado avisa que no esta disponible antes de ofrecer la pantalla.'
     'GestorReportePorVoz'     = 'app/integrations/interprete. Convierte el texto dictado en un pedido de reporte (que reporte, que periodo, que sucursal) y se lo pasa a GestorReportes. Si no hay proveedor configurado avisa que no esta disponible ANTES de ofrecer el boton.'
     'GestorTablero'           = 'app/modules/reportes/tablero_service.py. Resuelve el periodo en hora boliviana con app/core/tiempo.py y arma los indicadores de reservas, conversion, inventario y ventas.'
     'GestorReportes'          = 'app/modules/reportes/reportes_service.py. Arma los seis reportes de gestion y los exporta a PDF y Excel con app/modules/reportes/exportador.py.'
@@ -374,6 +381,26 @@ foreach ($e in $p23.Elements) {
     $e.Connectors.Refresh()
 }
 if ($limpiados) { Write-Output "Asociaciones OPERA_DESDE que salian de una clase, borradas: $limpiados" }
+
+# CU-21 llevaba al Servicio de IA colgado de GestorVestidor. No va: el
+# documento cu-21-alcance-real-para-los-diagramas.md dice que «amoldar por IA»
+# esta apagado y no entra «ni como paso, ni como flujo alternativo, ni como
+# actor externo». La asociacion ya quedo creada en una corrida anterior, asi
+# que hay que sacarla a mano --- borrarla del cuadro de casos no la borra del
+# modelo (regla 5).
+$ia = $null
+foreach ($e in $p23.Elements) { if ($e.Name -eq 'Servicio de IA' -and $e.Type -eq 'Actor') { $ia = $e } }
+if ($ia) {
+    $ia.Connectors.Refresh()
+    for ($i = $ia.Connectors.Count - 1; $i -ge 0; $i--) {
+        $c = $ia.Connectors.GetAt($i)
+        if ($c.Name -eq 'RESUELVE_PARA' -and $c.SupplierID -eq $indice23['GestorVestidor'].ElementID) {
+            $ia.Connectors.DeleteAt($i, $false)
+            Write-Output '  CU-21: quitado el Servicio de IA de GestorVestidor'
+        }
+    }
+    $ia.Connectors.Refresh()
+}
 foreach ($a in @(
     @{n='Cliente';                       d='Quien compra. Es el disparador de la vitrina, el carrito, el pedido, el vestidor y los favoritos.'},
     @{n='Administrador';                 d='Configura el sistema y lee los indicadores. Disparador de promociones, tablero, reportes y bitacora.'},
@@ -551,7 +578,7 @@ $casos = @(
   @{ n='2.3 CU-20 Gestionar favoritos';                f='PantallaFavoritos';     c=@('GestorFavoritos','GestorVitrina','GestorAutenticacion');                                    e=@('Favorito','Producto');
      act=@(@{a='Cliente'; d='PantallaFavoritos'; r='OPERA_DESDE'}) },
   @{ n='2.3 CU-21 Utilizar vestidor virtual (RA)';     f='PantallaVestidor';      c=@('GestorVestidor','GestorVitrina','GestorAutenticacion');                                     e=@('MedidaCliente','ImagenProducto','VarianteProducto');
-     act=@(@{a='Cliente'; d='PantallaVestidor'; r='OPERA_DESDE'}, @{a='Servicio de IA'; d='GestorVestidor'; r='RESUELVE_PARA'}) },
+     act=@(@{a='Cliente'; d='PantallaVestidor'; r='OPERA_DESDE'}) },
   @{ n='2.3 CU-26 Gestionar carrito de compras';       f='PantallaCarrito';       c=@('GestorCarrito','GestorPromociones','GestorInventario','GestorAutenticacion');               e=@('Carrito','CarritoDetalle','VarianteProducto');
      act=@(@{a='Cliente'; d='PantallaCarrito'; r='OPERA_DESDE'}) },
   @{ n='2.3 CU-27 Realizar pedido y pagar en línea';   f='PantallaCheckout';      c=@('GestorPedidos','GestorPagos','GestorInventario','GestorPromociones','GestorAutenticacion'); e=@('Venta','DetalleVenta','Pago','Existencia');
