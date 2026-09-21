@@ -106,7 +106,10 @@ class PantallaInicio extends ConsumerWidget {
           const SizedBox(height: 20),
           Center(
             child: Text(
-              'API: $apiUrlBase',
+              // La version va PRIMERO y en la misma linea que la API: las dos
+              // contestan la misma pregunta ---«esto que estoy mirando, que
+              // es»--- y separarlas obligaria a buscar en dos lugares.
+              'v$versionApp  ·  API: $apiUrlBase',
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 11, color: Color(0xFF9A8A92)),
             ),

@@ -31,6 +31,23 @@ const String apiUrlBase = String.fromEnvironment(
   defaultValue: 'https://ecomerceropavirtual-production.up.railway.app/api/v1',
 );
 
+/// La version de esta compilacion, para poder saber CUAL esta instalada.
+///
+/// POR QUE ESTA A MANO Y NO SALE DEL `pubspec`
+/// ---------------------------------------------
+/// Dart no puede leer el `pubspec` en tiempo de ejecucion: hace falta un
+/// complemento (`package_info_plus`) que consulte al sistema operativo. Una
+/// constante duplicada es peor que una fuente unica, pero agregar una
+/// dependencia nativa la vispera de la entrega es peor todavia.
+///
+/// **Si cambia el `version:` del `pubspec`, cambiar esta linea tambien.**
+///
+/// Existe porque el 20/09 se publico un APK nuevo, se instalo encima del
+/// viejo, y no habia forma de saber desde la pantalla cual de los dos estaba
+/// corriendo: las dos versiones se veian parecidas y la duda tardo en
+/// resolverse. Un numero a la vista lo contesta en un segundo.
+const String versionApp = '1.0.0+2';
+
 /// Tiempo maximo de espera para establecer la conexion.
 const Duration tiempoDeConexion = Duration(seconds: 15);
 

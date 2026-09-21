@@ -573,6 +573,55 @@ $ACTORES = @(
                                    'preparar_reserva', 'atender_reserva') }
             }
         )
+    },
+
+    # ================= CICLO 3 =================================
+    #
+    # PILOTO DEL 20/09. Un solo caso de uso, para revisar el patron antes de
+    # escribir los demas.
+    #
+    # ESTE BLOQUE NO ES UN ACTOR, ES UN CASO DE USO, y por eso trae `nombre`.
+    # El auxiliar pide la navegacion POR CU; los diagramas de los Ciclos 1 y 2
+    # se hicieron POR ACTOR, que es la otra forma que el mismo generador
+    # soporta. Se deja el bloque acumulativo como esta y el nuevo se dibuja
+    # aparte: si el patron por CU convence, los del Ciclo 3 salen todos asi.
+    #
+    # CU-27 es el mejor candidato del ciclo para probarlo porque es el unico
+    # recorrido con las cuatro clases de enlace que el auxiliar describe:
+    # link entre paginas, build de la lista, submit al controlador y
+    # redirect de vuelta.
+
+    @{
+        actor  = 'Cliente'
+        ciclo  = '#3'
+        nombre = '3.2 Diagrama de Navegacion - CU-27 Realizar pedido y pagar en linea'
+        guarda = '[sesion + CLIENTE]'
+        nota   = 'Navegacion de CU-27, POR CASO DE USO y no por actor: es el piloto del patron que pide el auxiliar. Extension UWE (no es UML 2.5). El recorrido es carrito -> checkout -> pasarela -> retorno. La vuelta desde la pasarela NO es un link: el estado del pedido lo fija el webhook de CU-28, y la pantalla de retorno solo consulta. Espejo de app.routes.ts.'
+        menu   = @{ n = 'carrito.ts'; ruta = '/tienda/carrito'
+                    carpeta = 'features/tienda/carrito'
+                    ops = @() }
+        areas = @(
+            @{
+                k = 'checkout'; cu = 'CU-27'
+                vista = @{ n = 'checkout.ts'; ruta = '/tienda/checkout'
+                           carpeta = 'features/tienda/checkout'
+                           attrs = @('modalidad_entrega', 'sucursal_id', 'total_visto') }
+                form  = @{ n = 'entrega-formulario.ts'
+                           carpeta = 'features/tienda/checkout'
+                           attrs = @('modalidad_entrega', 'sucursal_id', 'direccion', 'telefono') }
+                ctrl  = @{ n = 'ventas/pedidos_router.py'
+                           ops = @('opciones_de_pedido', 'confirmar_pedido',
+                                   'estado_del_pedido', 'cancelar_pedido') }
+            },
+            @{
+                k = 'retorno'; cu = 'CU-27'
+                vista = @{ n = 'pago-retorno.ts'; ruta = '/pago/exito'
+                           carpeta = 'features/tienda/pago'
+                           attrs = @('codigo') }
+                ctrl  = @{ n = 'ventas/pedidos_router.py'
+                           ops = @('estado_del_pedido') }
+            }
+        )
     }
 )
 
@@ -706,7 +755,12 @@ $hechos = 0
 foreach ($a in $ACTORES) {
     if ($Actor -and $a.actor -ne $Actor) { continue }
 
-    $NOMBRE_DIA = "3.2 Diagrama de Navegacion - $($a.actor) - CICLO $($a.ciclo)"
+    # Un bloque puede nombrar su propio diagrama. Se agrego el 20/09 porque
+    # el auxiliar pide la navegacion POR CASO DE USO y este generador estaba
+    # agrupado POR ACTOR: sin esto, un bloque de un solo CU se dibujaria con
+    # el nombre del actor y se pisaria con el mapa acumulativo del ciclo.
+    $NOMBRE_DIA = if ($a.nombre) { $a.nombre }
+                  else { "3.2 Diagrama de Navegacion - $($a.actor) - CICLO $($a.ciclo)" }
     if (BuscarDiagrama $pkg $NOMBRE_DIA) {
         Write-Output "  $NOMBRE_DIA ya existe, no se toca"
         continue

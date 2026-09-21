@@ -357,6 +357,48 @@ $CASOS = @(
                 )
             }
         )
+    },
+
+    # ================= CICLO 3 =================================
+    #
+    # PILOTO DEL 20/09. Un solo caso de uso, para revisar el patron antes de
+    # escribir los demas.
+    #
+    # CU-27 es el que mejor justifica un diagrama de tiempo del ciclo: es el
+    # UNICO donde una entidad cambia de estado SIN que nadie la toque. El
+    # pedido nace apartando stock y, si el pago no llega, la barrida lo
+    # expira sola. Eso ---cuanto tarda un estado en cambiar--- es justo lo
+    # que este diagrama existe para mostrar, y no se ve en el de estados.
+    #
+    # Por eso la linea del pedido y la de la existencia NO terminan en el
+    # commit como en los CU de gestion: siguen hasta la resolucion.
+
+    @{
+        cu = 'CU-27'; ciclo = '#3'; escenario = 'Realizar pedido y pagar en linea'
+        nota = "Escenario: el cliente confirma el carrito y el pedido queda esperando el pago. La transaccion cierra en el commit, pero LA VENTA NO: queda PENDIENTE_PAGO hasta que la pasarela confirme (CU-28) o venza el plazo y la barrida devuelva el stock. Las dos ultimas marcas de las lineas 2 y 3 son ese desenlace, fuera de la peticion. $LEYENDA"
+        lineas = @(
+            (LineaTransaccion 'POST /tienda/pedidos' 'total coincide y sin otro pendiente' 'INSERT venta + detalle_venta' '201' '8 h'),
+            @{
+                k = 'venta'; n = 'Pedido'; clasificador = 'Venta'
+                estados = @('Inexistente', 'PENDIENTE_PAGO', 'PAGADA', 'EXPIRADA')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Inexistente';    ev = '';                                  tc = '' },
+                    @{ t = $T.commit; s = 'PENDIENTE_PAGO'; ev = 'db.commit()  ';                     tc = 'RNF11' },
+                    @{ t = 76;        s = 'PAGADA';         ev = 'webhook firmado  {CU-28}';          tc = '' },
+                    @{ t = 84;        s = 'EXPIRADA';       ev = 'nadie pago  {expirar-vencidos}';    tc = '' }
+                )
+            },
+            @{
+                k = 'existencia'; n = 'Existencia'; clasificador = 'Existencia'
+                estados = @('disponible', 'reservada', 'vendida')
+                marcas = @(
+                    @{ t = $T.inicio;  s = 'disponible'; ev = '';                              tc = '' },
+                    @{ t = $T.escribe; s = 'reservada';  ev = 'apartar_para_reserva()  ';      tc = 'RNF10' },
+                    @{ t = 76;         s = 'vendida';    ev = 'salida definitiva  {CU-28}';    tc = 'RNF10' },
+                    @{ t = 84;         s = 'disponible'; ev = 'devuelta por la barrida  ';     tc = 'RNF10' }
+                )
+            }
+        )
     }
 )
 

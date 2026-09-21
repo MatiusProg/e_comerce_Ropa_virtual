@@ -1017,6 +1017,70 @@ $CASOS = @(
             @{ d = 'Marcar EXPIRADA'; h = 'Transaccion completada'; e = '' },
             @{ d = 'Transaccion completada'; h = '(final)'; e = '' }
         )
+    },
+
+    # ================= CICLO 3 =================================
+    #
+    # PILOTO DEL 20/09. Un solo caso de uso, para revisar que el patron sirve
+    # tal cual antes de escribir los demas del ciclo.
+    #
+    # Se eligio CU-27 porque tiene la maquina de estados mas rica del ciclo
+    # ---y porque cubre de una vez tres de los seis procesos que el auxiliar
+    # nombra: venta, compra y pagos---. A diferencia de los CU de gestion del
+    # Ciclo 1, aca la transaccion NO termina en el commit: el pedido queda
+    # PENDIENTE_PAGO y su estado final lo decide otro actor ---la pasarela,
+    # en CU-28--- o el paso del tiempo.
+
+    @{
+        cu = 'CU-27'; ciclo = '#3'; titulo = 'Realizar pedido y pagar en linea'
+        nota = 'Flujo transaccional de CU-27. OJO: el commit NO es el final. El pedido nace PENDIENTE_PAGO y se resuelve por CU-28 (pago confirmado), por cancelacion del cliente o por la barrida de vencidos. Rutas sin el prefijo /api/v1.'
+        estados = @(
+            @{ n = 'Revisar el carrito'; col = 'auth'; fila = 1
+               nota = 'features/tienda/checkout. Exige sesion de CLIENTE.' },
+            @{ n = 'Elegir entrega y sucursal'; col = 'menu'; fila = 1
+               nota = 'GET /tienda/pedidos/opciones dice que sucursal puede abastecerlo completo.' },
+            @{ n = 'Validar total y pendiente'; col = 'vali'; fila = 0.5
+               nota = 'Bloquea la fila del CLIENTE antes de mirar: una consulta sin filas no bloquea nada.' },
+            @{ n = 'Apartar stock'; col = 'oper'; fila = 1.5
+               nota = 'Reusa apartar_para_reserva de P4, con FOR UPDATE por variante.' },
+            @{ n = 'Crear venta PENDIENTE_PAGO'; col = 'oper'; fila = 2.5
+               nota = 'Congela los precios en detalle_venta y vacia el carrito.' },
+            @{ n = 'Esperando el pago'; col = 'fin'; fila = 1.5
+               nota = 'Aca termina CU-27. El estado siguiente no lo decide el cliente.' },
+            @{ n = 'Informar error'; col = 'vali'; fila = 3.5
+               nota = 'Sumidero de los rechazos: 409 total desactualizado, 409 ya hay pendiente, 409 ninguna sucursal completa.' },
+            @{ n = 'Liberar stock apartado'; col = 'oper'; fila = 4
+               nota = 'Cancelacion del cliente o barrida de vencidos. Sin esto, apartar seria un defecto.' },
+            @{ n = 'Transaccion completada'; col = 'fin'; fila = 3.5
+               nota = 'El pedido queda resuelto: pagado por CU-28, cancelado o expirado.' }
+        )
+        transiciones = @(
+            @{ d = '(inicial)'; h = 'Revisar el carrito'; e = '' },
+            @{ d = 'Revisar el carrito'; h = 'Elegir entrega y sucursal'
+               e = '[el cliente decide comprar]  {GET /tienda/pedidos/opciones}' },
+            @{ d = 'Elegir entrega y sucursal'; h = 'Validar total y pendiente'
+               e = '[confirmar]  {POST /tienda/pedidos}' },
+            @{ d = 'Validar total y pendiente'; h = 'Apartar stock'
+               e = '[total coincide y no hay otro pendiente]' },
+            @{ d = 'Validar total y pendiente'; h = 'Informar error'
+               e = '[total desactualizado / ya hay pendiente / ninguna completa]  {409}' },
+            @{ d = 'Apartar stock'; h = 'Crear venta PENDIENTE_PAGO'
+               e = '[hay existencia en la sucursal elegida]  {FOR UPDATE por variante}' },
+            @{ d = 'Apartar stock'; h = 'Informar error'
+               e = '[existencia insuficiente]  {409}' },
+            @{ d = 'Crear venta PENDIENTE_PAGO'; h = 'Esperando el pago'
+               e = '{db.commit() -> 201 y URL de la pasarela}' },
+            @{ d = 'Esperando el pago'; h = 'Transaccion completada'
+               e = '[la pasarela confirma]  {CU-28: POST /pagos/webhook}' },
+            @{ d = 'Esperando el pago'; h = 'Liberar stock apartado'
+               e = '[el cliente cancela]  {POST /tienda/pedidos/:codigo/cancelar}' },
+            @{ d = 'Esperando el pago'; h = 'Liberar stock apartado'
+               e = '[vence el plazo sin pago]  {POST /pedidos/expirar-vencidos}' },
+            @{ d = 'Liberar stock apartado'; h = 'Transaccion completada'
+               e = '{el stock vuelve a disponible}' },
+            @{ d = 'Informar error'; h = 'Revisar el carrito'; e = 'reintentar()' },
+            @{ d = 'Transaccion completada'; h = '(final)'; e = '' }
+        )
     }
 )
 
