@@ -42,7 +42,24 @@
 # agregacion o composicion.
 # =========================================================================
 
-param([switch]$Rehacer)
+param(
+    # Borra y vuelve a dibujar los diagramas del 2.3 del Ciclo 3.
+    [switch]$Rehacer,
+
+    # Limita -Rehacer a los casos que se nombren: `-Solo 'CU-21','CU-34'`.
+    #
+    # POR QUE EXISTE (pedido de Karen, 20/09/2026)
+    # -------------------------------------------
+    # `-Rehacer` a secas rehace los veinte. Mientras el unico contenido sea el
+    # generado eso da igual ---salen identicos---, pero en cuanto alguien
+    # acomoda un diagrama a mano, rehacerlo entero le borra el trabajo. Y la
+    # correccion tipica es de uno o dos casos: cuando Mateo entrego CU-34 y
+    # fijo el alcance de CU-21, habia que tocar esos dos y ninguno mas.
+    #
+    # Sin `-Solo`, la unica forma de arreglar uno era arriesgar los otros
+    # diecinueve.
+    [string[]]$Solo = @()
+)
 
 $ErrorActionPreference = 'Stop'
 $modelo = 'D:\UNI\SI2\Primer_Parcial\docs\diagramas\VioletBoutique.eapx'
@@ -643,6 +660,14 @@ $COLS = @(
 
 $hechos = 0
 foreach ($caso in $casos) {
+    # Con -Solo, todo lo que no se nombro se deja como esta aunque haya
+    # -Rehacer. La comparacion es por el codigo del caso ('CU-21'), que es
+    # como se lo nombra al pedirlo.
+    if ($Solo.Count -and -not ($Solo | Where-Object { $caso.n -like "*$_*" })) {
+        Write-Output "  $($caso.n) fuera de -Solo, no se toca"
+        continue
+    }
+
     $ya = BuscarDiagrama $p23 $caso.n
     if ($ya) {
         if (-not $Rehacer) { Write-Output "  $($caso.n) ya existe, no se toca"; continue }
