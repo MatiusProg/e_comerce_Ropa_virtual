@@ -109,11 +109,66 @@ Eso deja una pregunta abierta que es del equipo, no del generador: **si los
 de navegación de los Ciclos 1 y 2 hay que rehacerlos por CU**, o si se
 entregan como están y solo el Ciclo 3 va por caso de uso.
 
-## 6. Los Ciclos 1 y 2 quedaron sin estos tres diagramas
+## 6. Los Ciclos 1 y 2, rehechos por caso de uso
 
-Los que había se borraron por estar mal, así que **hoy los Ciclos 1 y 2 no
-tienen ninguno de estos tres**. Rehacerlos con el patrón nuevo es el trabajo
-que sigue, si se decide que van.
+Los 43 viejos se borraron por estar mal. En su lugar hay **10**, elegidos con
+el mismo criterio —caer en uno de los seis procesos y tener algo que el
+diagrama pueda mostrar—:
 
-Las carpetas `docs/diagramas/Estado/`, `Navegacion/` y `Tiempo/` siguen
-vacías: **la exportación de los JPG la hace Mateo**, no el generador.
+| CU | Estado | Tiempo | Navegación | Por qué entra |
+|---|:---:|:---:|:---:|---|
+| CU-02 Iniciar y cerrar sesión | ✔ | ✔ | ✔ | El token caduca **solo** a las 8 h |
+| CU-17 Consultar catálogo | — | ✔ | ✔ | «catálogo» está en la lista del auxiliar; el RNF02 se juega acá |
+| CU-22 Crear reserva | ✔ | ✔ | ✔ | La entidad con más estados del proyecto |
+| CU-25 Expirar reservas | ✔ | ✔ | — | El caso más puro: **ningún actor interviene** |
+
+**Diez y no cuarenta y tres, a propósito.** Un alta-baja-modificación no
+tiene estados que dibujar: tiene un formulario que valida. El diagrama de
+tiempo de un CRUD contesta siempre lo mismo —lo que dura la petición—, y
+dieciocho copias de esa respuesta no dicen nada.
+
+Las dos ausencias tienen el mismo motivo que la de CU-28:
+
+- **CU-17 no lleva estado.** Es una consulta: no hay máquina de estados, hay
+  filtros.
+- **CU-25 no lleva navegación.** No tiene pantallas: lo dispara el
+  planificador.
+
+### Los mapas por actor se fueron
+
+Los siete de navegación estaban **por actor** y acumulaban todo el ciclo: el
+del Administrador del Ciclo 2 tenía doce áreas en un solo lienzo. Ahora son
+por caso de uso, como pide el auxiliar, y cada uno entra en una página.
+
+## 7. Total en el modelo
+
+| | Estado | Tiempo | Navegación |
+|---|:---:|:---:|:---:|
+| Ciclos 1 y 2 | 3 | 4 | 3 |
+| Ciclo 3 | 6 | 6 | 5 |
+| **Total** | **9** | **10** | **8** |
+
+**27 diagramas** donde antes había 43. Modelo verificado: 185 diagramas en
+total y **cero conectores rotos**.
+
+**La exportación de los JPG la hace Mateo.** Las carpetas
+`docs/diagramas/Estado/`, `Navegacion/` y `Tiempo/` siguen vacías.
+
+## 8. Lo que falta: los de secuencia del Ciclo 3
+
+**Están bloqueados, y no por el generador.** `ea-secuencia-3-2.ps1` enlaza
+cada línea de vida a su clase de **2.3**, y el 2.3 se corta en el Ciclo 2:
+hay 56 clases y 22 diagramas, todos de CU-01 a CU-25.
+
+No existen `GestorPedidos`, `GestorPagos`, `GestorAsistente`, `Venta`,
+`Pago`, `PantallaCheckout` ni ninguna de las del Ciclo 3 en ese paquete. El
+generador lanza `Falta la clase de 2.3: X` y no dibuja nada.
+
+Los nombres **sí** están decididos: los usan los diagramas de comunicación
+2.2 del Ciclo 3, que están completos. Lo que falta es el juego de 2.3 —con
+estereotipos en español y con sus atributos y operaciones sacados del
+código, que es como se generó el de los Ciclos 1 y 2 con
+`scripts/gen-ops-2-3.py`—.
+
+Es un artefacto del CAP. 2, no del 3, y hay que decidir quién lo hace antes
+de seguir.

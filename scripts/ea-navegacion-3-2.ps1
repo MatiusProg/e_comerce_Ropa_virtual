@@ -108,478 +108,9 @@ $EST_MENU  = 'menu'
 #              ctrl  -> n, archivo, ops (los ENDPOINTS, con su verbo)
 # =========================================================================
 $ACTORES = @(
-    @{
-        actor  = 'Administrador'
-        ciclo  = '#1'
-        guarda = '[sesion + ADMINISTRADOR]'
-        nota   = 'Navegacion del Administrador en el Ciclo 1. Extension UWE (no es UML 2.5). Espejo de app.routes.ts: cada vista es un componente y cada controlador es el router.py de su modulo. Los enlaces build/submit son las dos direcciones del ciclo peticion/respuesta.'
-        menu   = @{ n = 'admin-layout.ts'; ruta = '/admin'
-                    carpeta = 'features/admin/admin-layout'
-                    ops = @() }
-        areas = @(
-            @{
-                k = 'usuarios'; cu = 'CU-03'
-                vista = @{ n = 'usuarios.ts'; ruta = '/admin/usuarios'
-                           carpeta = 'features/admin/usuarios'
-                           attrs = @('busqueda', 'rol', 'activo', 'pagina', 'tamano') }
-                form  = @{ n = 'usuario-formulario.ts'
-                           carpeta = 'features/admin/usuarios'
-                           attrs = @('correo', 'nombres', 'apellidos', 'rol', 'sucursal_id', 'contrasena') }
-                ctrl  = @{ n = 'seguridad/router.py'
-                           ops = @('listar_usuarios', 'crear_usuario', 'obtener_usuario',
-                                   'editar_usuario', 'cambiar_estado', 'eliminar_usuario') }
-            },
-            @{
-                k = 'ciudades'; cu = 'CU-05'
-                vista = @{ n = 'ciudades.ts'; ruta = '/admin/ciudades'
-                           carpeta = 'features/admin/ciudades'
-                           attrs = @('busqueda') }
-                form  = @{ n = 'ciudad-formulario.ts'
-                           carpeta = 'features/admin/ciudades'
-                           attrs = @('nombre') }
-                # Ciudades y sucursales son el MISMO archivo. Comparten caja: es
-                # la consecuencia de nombrar por archivo (regla de oro 10).
-                ctrl  = @{ n = 'organizacion/router.py'
-                           ops = @('listar_ciudades', 'crear_ciudad', 'obtener_ciudad',
-                                   'editar_ciudad', 'eliminar_ciudad',
-                                   'listar_sucursales', 'crear_sucursal', 'obtener_sucursal',
-                                   'editar_sucursal', 'cambiar_estado_sucursal') }
-            },
-            @{
-                k = 'sucursales'; cu = 'CU-05'
-                vista = @{ n = 'sucursales.ts'; ruta = '/admin/sucursales'
-                           carpeta = 'features/admin/sucursales'
-                           attrs = @('ciudad_id', 'activa') }
-                form  = @{ n = 'sucursal-formulario.ts'
-                           carpeta = 'features/admin/sucursales'
-                           attrs = @('nombre', 'ciudad_id', 'direccion', 'telefono') }
-                ctrl  = @{ n = 'organizacion/router.py'
-                           ops = @('listar_ciudades', 'crear_ciudad', 'obtener_ciudad',
-                                   'editar_ciudad', 'eliminar_ciudad',
-                                   'listar_sucursales', 'crear_sucursal', 'obtener_sucursal',
-                                   'editar_sucursal', 'cambiar_estado_sucursal') }
-            },
-            @{
-                k = 'empleados'; cu = 'CU-06'
-                vista = @{ n = 'empleados.ts'; ruta = '/admin/empleados'
-                           carpeta = 'features/admin/empleados'
-                           attrs = @('sucursal_id', 'cargo', 'activo') }
-                form  = @{ n = 'empleado-formulario.ts'
-                           carpeta = 'features/admin/empleados'
-                           attrs = @('usuario_id', 'documento', 'cargo', 'sucursal_id') }
-                ctrl  = @{ n = 'organizacion/empleados/router.py'
-                           ops = @('listar_empleados', 'listar_cargos', 'listar_usuarios_vinculables',
-                                   'crear_empleado', 'obtener_empleado', 'editar_empleado',
-                                   'dar_de_baja') }
-            },
-            @{
-                k = 'proveedores'; cu = 'CU-07'
-                vista = @{ n = 'proveedores.ts'; ruta = '/admin/proveedores'
-                           carpeta = 'features/admin/proveedores'
-                           attrs = @('busqueda', 'activo') }
-                form  = @{ n = 'proveedor-formulario.ts'
-                           carpeta = 'features/admin/proveedores'
-                           attrs = @('razon_social', 'identificacion_tributaria', 'contacto', 'telefono') }
-                ctrl  = @{ n = 'organizacion/proveedores_router.py'
-                           ops = @('listar_proveedores', 'crear_proveedor', 'obtener_proveedor',
-                                   'editar_proveedor', 'cambiar_estado_proveedor',
-                                   'habilitar_acceso') }
-            },
-            @{
-                k = 'maestros'; cu = 'CU-08'
-                vista = @{ n = 'maestros.ts'; ruta = '/admin/maestros'
-                           carpeta = 'features/admin/maestros'
-                           attrs = @('pestana', 'busqueda', 'activo') }
-                form  = @{ n = 'categoria-formulario.ts'
-                           carpeta = 'features/admin/maestros'
-                           attrs = @('nombre', 'categoria_padre_id') }
-                ctrl  = @{ n = 'catalogo/maestros/router.py'
-                           ops = @('listar_categorias', 'crear_categoria', 'editar_categoria',
-                                   'cambiar_estado_categoria', 'eliminar_categoria',
-                                   'listar_tallas', 'listar_tipos_de_prenda', 'crear_talla',
-                                   'editar_talla', 'cambiar_estado_talla', 'eliminar_talla',
-                                   'listar_colores', 'crear_color', 'editar_color',
-                                   'cambiar_estado_color', 'eliminar_color') }
-            },
-            @{
-                k = 'temporadas'; cu = 'CU-09'
-                vista = @{ n = 'temporadas.ts'; ruta = '/admin/temporadas'
-                           carpeta = 'features/admin/temporadas'
-                           attrs = @('activa') }
-                form  = @{ n = 'temporada-formulario.ts'
-                           carpeta = 'features/admin/temporadas'
-                           attrs = @('nombre', 'fecha_inicio', 'fecha_fin', 'activa') }
-                ctrl  = @{ n = 'catalogo/temporadas_router.py'
-                           ops = @('listar_temporadas', 'crear_temporada', 'obtener_temporada',
-                                   'editar_temporada', 'cambiar_estado_temporada',
-                                   'eliminar_temporada', 'listar_colecciones', 'crear_coleccion',
-                                   'obtener_coleccion', 'editar_coleccion',
-                                   'cambiar_estado_coleccion') }
-            }
-        )
-    },
-
-    @{
-        actor  = 'Cliente'
-        ciclo  = '#1'
-        guarda = '[sesion + CLIENTE]'
-        nota   = 'Navegacion del Cliente en el Ciclo 1. Es el unico actor con pantallas PUBLICAS: /login y /registro no declaran canActivate, y por eso cuelgan del actor y no del eje del rol. El perfil es UNA pantalla con dos formularios encima, sin lista propia.'
-        menu   = @{ n = 'perfil.ts'; ruta = '/mi-cuenta'
-                    carpeta = 'features/cliente/perfil'
-                    ops = @() }
-        areas = @(
-            @{
-                k = 'acceso'; cu = 'CU-01'; publica = $true
-                vista = @{ n = 'login.ts'; ruta = '/login'
-                           carpeta = 'features/auth/login'
-                           attrs = @('correo', 'contrasena') }
-                form  = @{ n = 'registro.ts'
-                           carpeta = 'features/auth/registro'
-                           attrs = @('correo', 'documento', 'nombres', 'apellidos', 'contrasena') }
-                ctrl  = @{ n = 'seguridad/router.py'
-                           ops = @('registrar_cliente', 'iniciar_sesion', 'cerrar_sesion',
-                                   'usuario_autenticado') }
-            },
-            @{
-                k = 'direcciones'; cu = 'CU-04'
-                form  = @{ n = 'direccion-formulario.ts'
-                           carpeta = 'features/cliente/perfil'
-                           attrs = @('ciudad_id', 'calle', 'referencia', 'predeterminada') }
-                ctrl  = @{ n = 'seguridad/router.py'
-                           ops = @('obtener_perfil', 'editar_perfil', 'guardar_preferencias',
-                                   'agregar_direccion', 'marcar_predeterminada',
-                                   'eliminar_direccion', 'cambiar_contrasena') }
-            },
-            @{
-                k = 'contrasena'; cu = 'CU-04'
-                form  = @{ n = 'cambio-contrasena.ts'
-                           carpeta = 'features/cliente/perfil'
-                           attrs = @('contrasena_actual', 'contrasena_nueva') }
-                ctrl  = @{ n = 'seguridad/router.py'
-                           ops = @('obtener_perfil', 'editar_perfil', 'guardar_preferencias',
-                                   'agregar_direccion', 'marcar_predeterminada',
-                                   'eliminar_direccion', 'cambiar_contrasena') }
-            }
-        )
-    },
-
-    @{
-        actor  = 'Encargado de Sucursal'
-        ciclo  = '#1'
-        guarda = '[sesion + ENCARGADO]'
-        nota   = 'Navegacion del Encargado en el Ciclo 1. Se reduce a la pantalla de bienvenida con el nombre de su sucursal: sus funciones propias llegan con las reservas y el inventario del Ciclo 2. Se dibuja igual para mostrar que la guarda por rol ya esta operando.'
-        menu   = @{ n = 'bienvenida.ts'; ruta = '/sucursal'
-                    carpeta = 'shared/bienvenida'
-                    ops = @() }
-        areas = @()
-    },
-
-    @{
-        actor  = 'Cajero'
-        ciclo  = '#1'
-        guarda = '[sesion + CAJERO]'
-        # OJO: NO es el mismo componente que el del Encargado. /sucursal monta
-        # shared/bienvenida y /caja monta features/inicio; se ven parecidos pero
-        # son dos archivos, y por la regla de oro 10 el nombre es el archivo.
-        nota   = 'Navegacion del Cajero en el Ciclo 1. Solo la pantalla de inicio: el punto de venta es del Ciclo 3. Se dibuja igual para mostrar que la guarda por rol ya esta operando.'
-        menu   = @{ n = 'inicio.ts'; ruta = '/caja'
-                    carpeta = 'features/inicio'
-                    ops = @() }
-        areas = @()
-    },
-
-    @{
-        actor  = 'Cliente'
-        ciclo  = '#2'
-        guarda = '[sesion + CLIENTE]'
-        nota   = 'Navegacion del Cliente en el Ciclo 2. ACUMULATIVA: lleva lo del Ciclo 1 mas la vitrina y las reservas, porque un mapa de navegacion es la foto de todo lo que el actor puede alcanzar, no solo lo nuevo. OJO: /tienda y /tienda/producto/:id son PUBLICAS --no declaran canActivate-- y por eso cuelgan del actor; que desde la zona con sesion no salga ninguna flecha de vuelta a /tienda es el defecto de navegacion detectado el 13/09.'
-        menu   = @{ n = 'perfil.ts'; ruta = '/mi-cuenta'
-                    carpeta = 'features/cliente/perfil'
-                    ops = @() }
-        areas = @(
-            @{
-                k = 'acceso'; cu = 'CU-01'; publica = $true
-                vista = @{ n = 'login.ts'; ruta = '/login'
-                           carpeta = 'features/auth/login'
-                           attrs = @('correo', 'contrasena') }
-                form  = @{ n = 'registro.ts'
-                           carpeta = 'features/auth/registro'
-                           attrs = @('correo', 'documento', 'nombres', 'apellidos', 'contrasena') }
-                ctrl  = @{ n = 'seguridad/router.py'
-                           ops = @('registrar_cliente', 'iniciar_sesion', 'cerrar_sesion',
-                                   'usuario_autenticado') }
-            },
-            @{
-                k = 'vitrina'; cu = 'CU-17'; publica = $true
-                vista = @{ n = 'catalogo.ts'; ruta = '/tienda'
-                           carpeta = 'features/tienda/catalogo'
-                           attrs = @('busqueda', 'categoria_id', 'talla_id', 'color_id', 'pagina') }
-                ctrl  = @{ n = 'catalogo_publico/router.py'
-                           ops = @('listar_catalogo', 'ficha_de_producto',
-                                   'disponibilidad_por_sucursal') }
-            },
-            @{
-                k = 'favoritos'; cu = 'CU-20'
-                vista = @{ n = 'favoritos.ts'; ruta = '/tienda/favoritos'
-                           carpeta = 'features/tienda/favoritos'
-                           attrs = @('pagina') }
-                ctrl  = @{ n = 'catalogo_publico/router.py'
-                           ops = @('listar_catalogo', 'ficha_de_producto',
-                                   'disponibilidad_por_sucursal') }
-            },
-            @{
-                k = 'reservas'; cu = 'CU-22'
-                vista = @{ n = 'reservas.ts'; ruta = '/mi-cuenta/reservas'
-                           carpeta = 'features/cliente/reservas'
-                           attrs = @('estado') }
-                form  = @{ n = 'reserva-formulario.ts'
-                           carpeta = 'features/cliente/reservas'
-                           attrs = @('sucursal_id', 'franja_inicio', 'franja_fin', 'variantes') }
-                ctrl  = @{ n = 'reservas/router.py'
-                           ops = @('listar_mis_reservas', 'crear_reserva', 'obtener_reserva',
-                                   'cancelar_reserva') }
-            },
-            @{
-                k = 'direcciones'; cu = 'CU-04'
-                form  = @{ n = 'direccion-formulario.ts'
-                           carpeta = 'features/cliente/perfil'
-                           attrs = @('ciudad_id', 'calle', 'referencia', 'predeterminada') }
-                ctrl  = @{ n = 'seguridad/router.py'
-                           ops = @('obtener_perfil', 'editar_perfil', 'guardar_preferencias',
-                                   'agregar_direccion', 'marcar_predeterminada',
-                                   'eliminar_direccion', 'cambiar_contrasena') }
-            },
-            @{
-                k = 'contrasena'; cu = 'CU-04'
-                form  = @{ n = 'cambio-contrasena.ts'
-                           carpeta = 'features/cliente/perfil'
-                           attrs = @('contrasena_actual', 'contrasena_nueva') }
-                ctrl  = @{ n = 'seguridad/router.py'
-                           ops = @('obtener_perfil', 'editar_perfil', 'guardar_preferencias',
-                                   'agregar_direccion', 'marcar_predeterminada',
-                                   'eliminar_direccion', 'cambiar_contrasena') }
-            }
-        )
-    },
-
-    @{
-        actor  = 'Encargado de Sucursal'
-        ciclo  = '#2'
-        guarda = '[sesion + ENCARGADO]'
-        nota   = 'Navegacion del Encargado en el Ciclo 2. Aqui aparece su zona propia: /sucursal con reservas, disponibilidad e inventario. El ambito de datos sale del token, no de la ruta: el Encargado solo ve su sucursal.'
-        menu   = @{ n = 'sucursal-layout.ts'; ruta = '/sucursal'
-                    carpeta = 'features/sucursal/sucursal-layout'
-                    ops = @() }
-        areas = @(
-            @{
-                # Un archivo montado en DOS rutas: el Encargado lo ve en
-                # /sucursal/reservas y el Administrador en /admin/reservas. Es
-                # el mismo elemento del modelo, asi que el atributo `ruta` lleva
-                # las dos.
-                k = 'reservas'; cu = 'CU-24'
-                vista = @{ n = 'reservas-sucursal.ts'; ruta = '/sucursal/reservas y /admin/reservas'
-                           carpeta = 'features/sucursal/reservas'
-                           attrs = @('estado', 'fecha') }
-                form  = @{ n = 'atencion-formulario.ts'
-                           carpeta = 'features/sucursal/reservas'
-                           attrs = @('resultado_por_prenda', 'observacion') }
-                ctrl  = @{ n = 'reservas/router.py'
-                           ops = @('listar_reservas_de_sucursal', 'obtener_reserva_de_sucursal',
-                                   'preparar_reserva', 'atender_reserva') }
-            },
-            @{
-                k = 'disponibilidad'; cu = 'CU-16'
-                vista = @{ n = 'disponibilidad.ts'; ruta = '/sucursal/disponibilidad'
-                           carpeta = 'features/sucursal/disponibilidad'
-                           attrs = @('busqueda', 'solo_alertas') }
-                form  = @{ n = 'minimo-formulario.ts'
-                           carpeta = 'features/admin/inventario'
-                           attrs = @('stock_minimo') }
-                ctrl  = @{ n = 'inventario/router.py'
-                           ops = @('listar_existencias', 'alertas_de_stock', 'fijar_stock_minimo',
-                                   'listar_movimientos', 'listar_tipos_de_movimiento') }
-            },
-            @{
-                # Igual que las reservas: un archivo en dos rutas.
-                k = 'inventario'; cu = 'CU-13'
-                vista = @{ n = 'inventario.ts'; ruta = '/sucursal/inventario y /admin/inventario'
-                           carpeta = 'features/admin/inventario'
-                           attrs = @('sucursal_id', 'tipo', 'desde', 'hasta') }
-                form  = @{ n = 'ingreso-formulario.ts'
-                           carpeta = 'features/admin/inventario'
-                           attrs = @('proveedor_id', 'sucursal_id', 'lineas') }
-                ctrl  = @{ n = 'inventario/router.py'
-                           ops = @('registrar_ingreso', 'listar_ingresos', 'detalle_de_ingreso',
-                                   'registrar_ajuste', 'registrar_transferencia') }
-            }
-        )
-    },
-
-    @{
-        actor  = 'Administrador'
-        ciclo  = '#2'
-        guarda = '[sesion + ADMINISTRADOR]'
-        nota   = 'Navegacion del Administrador en el Ciclo 2. ACUMULATIVA: lleva las siete areas del Ciclo 1 mas las cinco nuevas (productos, imagenes, inventario, consolidado y reservas de la red), porque un mapa de navegacion es la foto de todo lo que el actor puede alcanzar. Es el diagrama mas grande del capitulo; para el .docx conviene partirlo o apretarlo.'
-        menu   = @{ n = 'admin-layout.ts'; ruta = '/admin'
-                    carpeta = 'features/admin/admin-layout'
-                    ops = @() }
-        areas = @(
-            @{
-                k = 'usuarios'; cu = 'CU-03'
-                vista = @{ n = 'usuarios.ts'; ruta = '/admin/usuarios'
-                           carpeta = 'features/admin/usuarios'
-                           attrs = @('busqueda', 'rol', 'activo', 'pagina', 'tamano') }
-                form  = @{ n = 'usuario-formulario.ts'
-                           carpeta = 'features/admin/usuarios'
-                           attrs = @('correo', 'nombres', 'apellidos', 'rol', 'sucursal_id', 'contrasena') }
-                ctrl  = @{ n = 'seguridad/router.py'
-                           ops = @('listar_usuarios', 'crear_usuario', 'obtener_usuario',
-                                   'editar_usuario', 'cambiar_estado', 'eliminar_usuario') }
-            },
-            @{
-                k = 'ciudades'; cu = 'CU-05'
-                vista = @{ n = 'ciudades.ts'; ruta = '/admin/ciudades'
-                           carpeta = 'features/admin/ciudades'
-                           attrs = @('busqueda') }
-                form  = @{ n = 'ciudad-formulario.ts'
-                           carpeta = 'features/admin/ciudades'
-                           attrs = @('nombre') }
-                ctrl  = @{ n = 'organizacion/router.py'
-                           ops = @('listar_ciudades', 'crear_ciudad', 'obtener_ciudad',
-                                   'editar_ciudad', 'eliminar_ciudad',
-                                   'listar_sucursales', 'crear_sucursal', 'obtener_sucursal',
-                                   'editar_sucursal', 'cambiar_estado_sucursal') }
-            },
-            @{
-                k = 'sucursales'; cu = 'CU-05'
-                vista = @{ n = 'sucursales.ts'; ruta = '/admin/sucursales'
-                           carpeta = 'features/admin/sucursales'
-                           attrs = @('ciudad_id', 'activa') }
-                form  = @{ n = 'sucursal-formulario.ts'
-                           carpeta = 'features/admin/sucursales'
-                           attrs = @('nombre', 'ciudad_id', 'direccion', 'telefono') }
-                ctrl  = @{ n = 'organizacion/router.py'
-                           ops = @('listar_ciudades', 'crear_ciudad', 'obtener_ciudad',
-                                   'editar_ciudad', 'eliminar_ciudad',
-                                   'listar_sucursales', 'crear_sucursal', 'obtener_sucursal',
-                                   'editar_sucursal', 'cambiar_estado_sucursal') }
-            },
-            @{
-                k = 'empleados'; cu = 'CU-06'
-                vista = @{ n = 'empleados.ts'; ruta = '/admin/empleados'
-                           carpeta = 'features/admin/empleados'
-                           attrs = @('sucursal_id', 'cargo', 'activo') }
-                form  = @{ n = 'empleado-formulario.ts'
-                           carpeta = 'features/admin/empleados'
-                           attrs = @('usuario_id', 'documento', 'cargo', 'sucursal_id') }
-                ctrl  = @{ n = 'organizacion/empleados/router.py'
-                           ops = @('listar_empleados', 'listar_cargos', 'listar_usuarios_vinculables',
-                                   'crear_empleado', 'obtener_empleado', 'editar_empleado',
-                                   'dar_de_baja') }
-            },
-            @{
-                k = 'proveedores'; cu = 'CU-07'
-                vista = @{ n = 'proveedores.ts'; ruta = '/admin/proveedores'
-                           carpeta = 'features/admin/proveedores'
-                           attrs = @('busqueda', 'activo') }
-                form  = @{ n = 'proveedor-formulario.ts'
-                           carpeta = 'features/admin/proveedores'
-                           attrs = @('razon_social', 'identificacion_tributaria', 'contacto', 'telefono') }
-                ctrl  = @{ n = 'organizacion/proveedores_router.py'
-                           ops = @('listar_proveedores', 'crear_proveedor', 'obtener_proveedor',
-                                   'editar_proveedor', 'cambiar_estado_proveedor',
-                                   'habilitar_acceso') }
-            },
-            @{
-                k = 'maestros'; cu = 'CU-08'
-                vista = @{ n = 'maestros.ts'; ruta = '/admin/maestros'
-                           carpeta = 'features/admin/maestros'
-                           attrs = @('pestana', 'busqueda', 'activo') }
-                form  = @{ n = 'categoria-formulario.ts'
-                           carpeta = 'features/admin/maestros'
-                           attrs = @('nombre', 'categoria_padre_id') }
-                ctrl  = @{ n = 'catalogo/maestros/router.py'
-                           ops = @('listar_categorias', 'crear_categoria', 'editar_categoria',
-                                   'cambiar_estado_categoria', 'eliminar_categoria',
-                                   'listar_tallas', 'listar_tipos_de_prenda', 'crear_talla',
-                                   'editar_talla', 'cambiar_estado_talla', 'eliminar_talla',
-                                   'listar_colores', 'crear_color', 'editar_color',
-                                   'cambiar_estado_color', 'eliminar_color') }
-            },
-            @{
-                k = 'temporadas'; cu = 'CU-09'
-                vista = @{ n = 'temporadas.ts'; ruta = '/admin/temporadas'
-                           carpeta = 'features/admin/temporadas'
-                           attrs = @('activa') }
-                form  = @{ n = 'temporada-formulario.ts'
-                           carpeta = 'features/admin/temporadas'
-                           attrs = @('nombre', 'fecha_inicio', 'fecha_fin', 'activa') }
-                ctrl  = @{ n = 'catalogo/temporadas_router.py'
-                           ops = @('listar_temporadas', 'crear_temporada', 'obtener_temporada',
-                                   'editar_temporada', 'cambiar_estado_temporada',
-                                   'eliminar_temporada', 'listar_colecciones', 'crear_coleccion',
-                                   'obtener_coleccion', 'editar_coleccion',
-                                   'cambiar_estado_coleccion') }
-            },
-            @{
-                k = 'productos'; cu = 'CU-10'
-                vista = @{ n = 'productos.ts'; ruta = '/admin/productos'
-                           carpeta = 'features/admin/productos'
-                           attrs = @('busqueda', 'categoria_id', 'temporada_id', 'activo', 'pagina') }
-                form  = @{ n = 'producto-formulario.ts'
-                           carpeta = 'features/admin/productos'
-                           attrs = @('codigo', 'nombre', 'categoria_id', 'temporada_id', 'coleccion_id', 'precio') }
-                ctrl  = @{ n = 'catalogo/router.py'
-                           ops = @('listar_productos', 'crear_producto', 'obtener_producto',
-                                   'editar_producto', 'cambiar_estado_producto', 'eliminar_producto',
-                                   'generar_variantes', 'crear_variante', 'editar_variante',
-                                   'eliminar_variante') }
-            },
-            @{
-                k = 'imagenes'; cu = 'CU-11'
-                vista = @{ n = 'galeria.ts'; ruta = '/admin/productos'
-                           carpeta = 'features/admin/productos'
-                           attrs = @('producto_id', 'variante_id') }
-                ctrl  = @{ n = 'catalogo/imagenes_router.py'
-                           ops = @('listar', 'subir', 'editar', 'marcar_principal',
-                                   'marcar_transparente', 'reordenar', 'eliminar') }
-            },
-            @{
-                k = 'inventario'; cu = 'CU-13'
-                vista = @{ n = 'inventario.ts'; ruta = '/sucursal/inventario y /admin/inventario'
-                           carpeta = 'features/admin/inventario'
-                           attrs = @('sucursal_id', 'tipo', 'desde', 'hasta') }
-                form  = @{ n = 'ingreso-formulario.ts'
-                           carpeta = 'features/admin/inventario'
-                           attrs = @('proveedor_id', 'sucursal_id', 'lineas') }
-                ctrl  = @{ n = 'inventario/router.py'
-                           ops = @('registrar_ingreso', 'listar_ingresos', 'detalle_de_ingreso',
-                                   'registrar_ajuste', 'registrar_transferencia') }
-            },
-            @{
-                # Consulta pura (CU-14): no tiene formulario ni escribe nada.
-                # Entra en el mapa igual, porque el actor puede alcanzarla.
-                k = 'consolidado'; cu = 'CU-14'
-                vista = @{ n = 'consolidado.ts'; ruta = '/admin/consolidado'
-                           carpeta = 'features/admin/consolidado'
-                           attrs = @('categoria_id', 'sucursal_id', 'solo_con_stock') }
-                ctrl  = @{ n = 'inventario/consolidado_router.py'
-                           ops = @('consultar_consolidado') }
-            },
-            @{
-                k = 'reservas'; cu = 'CU-24'
-                vista = @{ n = 'reservas-sucursal.ts'; ruta = '/sucursal/reservas y /admin/reservas'
-                           carpeta = 'features/sucursal/reservas'
-                           attrs = @('estado', 'fecha') }
-                form  = @{ n = 'atencion-formulario.ts'
-                           carpeta = 'features/sucursal/reservas'
-                           attrs = @('resultado_por_prenda', 'observacion') }
-                ctrl  = @{ n = 'reservas/router.py'
-                           ops = @('listar_reservas_de_sucursal', 'obtener_reserva_de_sucursal',
-                                   'preparar_reserva', 'atender_reserva') }
-            }
-        )
-    },
+    # Los siete mapas POR ACTOR se quitaron el 20/09: el auxiliar pide la
+    # navegacion POR CASO DE USO, y ademas el acumulativo crecia hasta ser
+    # ilegible. Los que vuelven, por CU, estan mas abajo.
 
     # ================= CICLO 3 =================================
     #
@@ -773,6 +304,112 @@ $ACTORES = @(
                            attrs = @('variante_id', 'cantidad') }
                 ctrl  = @{ n = 'ventas/carrito_router.py'
                            ops = @('agregar_al_carrito') }
+            }
+        )
+    },
+
+    # ============ CICLO 1 y 2, rehechos POR CASO DE USO ==================
+    #
+    # Los siete mapas por actor se quitaron el 20/09. El auxiliar los pide
+    # por caso de uso, y ademas un mapa acumulativo por rol crecia hasta ser
+    # ilegible: el del Administrador del Ciclo 2 tenia doce areas en un solo
+    # lienzo. Estos tres son los recorridos que vale la pena dibujar.
+
+    @{
+        actor  = 'Cliente'
+        ciclo  = '#1'
+        cu     = 'CU-02'
+        nombre = '3.2 Diagrama de Navegacion - CU-02 Iniciar y cerrar sesion'
+        guarda = '[publica]'
+        nota   = 'Navegacion de CU-02, POR CASO DE USO. Extension UWE (no es UML 2.5). Es la unica del capitulo cuya puerta es PUBLICA: /login y /registro no declaran canActivate. Lo que hay que mirar es el <redirect> de salida: el mismo controlador manda a un area distinta segun el rol que traiga el token, y por eso sale una sola flecha hacia el eje.'
+        menu   = @{ n = 'login.ts'; ruta = '/login'
+                    carpeta = 'features/auth/login'
+                    ops = @() }
+        areas = @(
+            @{
+                k = 'acceso'; cu = 'CU-02'; publica = $true
+                vista = @{ n = 'login.ts'; ruta = '/login'
+                           carpeta = 'features/auth/login'
+                           attrs = @('correo', 'contrasena') }
+                form  = @{ n = 'login.html'
+                           carpeta = 'features/auth/login'
+                           attrs = @('correo', 'contrasena') }
+                ctrl  = @{ n = 'seguridad/router.py'
+                           ops = @('iniciar_sesion', 'cerrar_sesion', 'usuario_autenticado') }
+            },
+            @{
+                k = 'recuperar'; cu = 'CU-41'; publica = $true
+                vista = @{ n = 'olvide.ts'; ruta = '/olvide'
+                           carpeta = 'features/auth/olvide'
+                           attrs = @('correo') }
+                form  = @{ n = 'restablecer.ts'
+                           carpeta = 'features/auth/restablecer'
+                           attrs = @('token', 'contrasena') }
+                ctrl  = @{ n = 'seguridad/recuperacion_router.py'
+                           ops = @('solicitar_recuperacion', 'confirmar_contrasena') }
+            }
+        )
+    },
+
+    @{
+        actor  = 'Cliente'
+        ciclo  = '#2'
+        cu     = 'CU-17'
+        nombre = '3.2 Diagrama de Navegacion - CU-17 Consultar catalogo'
+        guarda = '[publica]'
+        nota   = 'Navegacion de CU-17, POR CASO DE USO. Extension UWE (no es UML 2.5). Las dos paginas son PUBLICAS y por eso cuelgan del actor y no de un eje con sesion. AQUI SE VE EL DEFECTO DEL 13/09: desde la vitrina se entra a todo, pero una vez con sesion ninguna flecha vuelve a /tienda. El <build> de la grilla y el de la ficha salen del mismo controlador.'
+        menu   = @{ n = 'catalogo.ts'; ruta = '/tienda'
+                    carpeta = 'features/tienda/catalogo'
+                    ops = @() }
+        areas = @(
+            @{
+                k = 'vitrina'; cu = 'CU-17'; publica = $true
+                vista = @{ n = 'catalogo.ts'; ruta = '/tienda'
+                           carpeta = 'features/tienda/catalogo'
+                           attrs = @('busqueda', 'categoria_id', 'talla_id', 'color_id', 'pagina') }
+                ctrl  = @{ n = 'catalogo_publico/router.py'
+                           ops = @('listar_catalogo', 'maestros_de_la_vitrina') }
+            },
+            @{
+                k = 'ficha'; cu = 'CU-18'; publica = $true
+                vista = @{ n = 'ficha.ts'; ruta = '/tienda/producto/:id'
+                           carpeta = 'features/tienda/ficha'
+                           attrs = @('producto_id', 'talla_id', 'color_id') }
+                ctrl  = @{ n = 'catalogo_publico/router.py'
+                           ops = @('ficha_de_producto', 'disponibilidad_por_sucursal') }
+            }
+        )
+    },
+
+    @{
+        actor  = 'Cliente'
+        ciclo  = '#2'
+        cu     = 'CU-22'
+        nombre = '3.2 Diagrama de Navegacion - CU-22 Crear reserva de prendas'
+        guarda = '[sesion + CLIENTE]'
+        nota   = 'Navegacion de CU-22, POR CASO DE USO. Extension UWE (no es UML 2.5). El recorrido empieza en la ficha ---publica--- y cruza a la zona con sesion al confirmar: ese cruce es el que obliga a iniciar sesion a mitad del camino. El <redirect> del controlador lleva a `Mis reservas`, no de vuelta a la ficha, porque lo que el cliente quiere ver despues es el codigo de su reserva.'
+        menu   = @{ n = 'mis-reservas.ts'; ruta = '/mi-cuenta/reservas'
+                    carpeta = 'features/cliente/reservas'
+                    ops = @() }
+        areas = @(
+            @{
+                k = 'nueva'; cu = 'CU-22'
+                vista = @{ n = 'reserva-formulario.ts'; ruta = '/reservas/nueva'
+                           carpeta = 'features/tienda/reservas'
+                           attrs = @('sucursal_id', 'fecha', 'franja') }
+                form  = @{ n = 'reserva-formulario.html'
+                           carpeta = 'features/tienda/reservas'
+                           attrs = @('variantes', 'sucursal_id', 'franja_inicio') }
+                ctrl  = @{ n = 'reservas/router.py'
+                           ops = @('franjas_disponibles', 'crear_reserva') }
+            },
+            @{
+                k = 'mias'; cu = 'CU-23'
+                vista = @{ n = 'mis-reservas.ts'; ruta = '/mi-cuenta/reservas'
+                           carpeta = 'features/cliente/reservas'
+                           attrs = @('estado', 'pagina') }
+                ctrl  = @{ n = 'reservas/router.py'
+                           ops = @('mis_reservas', 'obtener_reserva', 'cancelar_reserva') }
             }
         )
     }
