@@ -304,13 +304,60 @@ class _TarjetaPrenda extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    producto.precioRotulado,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: ColoresVB.malvaOscuro,
+                  // Con promoción vigente se muestran los DOS precios: el de
+                  // lista tachado y el que se paga. Solo el rebajado sería
+                  // correcto pero no se leería como una oferta, que es lo
+                  // que la promoción existe para comunicar.
+                  if (producto.descuento case final d?) ...[
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            producto.precioRotulado,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              decoration: TextDecoration.lineThrough,
+                              color: Color(0xFF9A8A92),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: ColoresVB.malva,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            '-${d.porcentajeRotulado}%',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
+                    Text(
+                      'Bs ${d.precioFinal}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: ColoresVB.malvaOscuro,
+                      ),
+                    ),
+                  ] else
+                    Text(
+                      producto.precioRotulado,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: ColoresVB.malvaOscuro,
+                      ),
+                    ),
                   if (producto.colores.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Row(

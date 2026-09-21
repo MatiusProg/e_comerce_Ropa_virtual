@@ -272,6 +272,14 @@ export const routes: Routes = [
   // ANTES de 'mi-cuenta' a proposito: esa ruta no declara hijos, asi que si
   // quedara primero consumiria el prefijo y esta no se resolveria nunca. Mismo
   // caso que 'sucursal/...' mas abajo.
+  // CU-34 · el asistente conversacional (RF25). Bajo '/tienda' porque es
+  // del cliente y habla del catálogo, igual que 'para-vos' de CU-33.
+  {
+    path: 'tienda/asistente',
+    title: 'Asistente · Violet Boutique',
+    loadComponent: () =>
+      import('./features/tienda/asistente/asistente').then((m) => m.Asistente),
+  },
   {
     path: 'mi-cuenta/reservas',
     title: 'Mis reservas · Violet Boutique',
