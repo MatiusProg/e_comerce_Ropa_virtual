@@ -1,4 +1,4 @@
-param(
+﻿param(
     # Borra el paquete 'Ciclo 3' del CAP. 1 y lo vuelve a generar.
     [switch]$Rehacer
 )
