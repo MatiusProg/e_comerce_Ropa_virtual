@@ -949,6 +949,293 @@ $CASOS = @(
     @{ t='fin' }
   )
 }
+,
+
+# ================= CICLO 3 =================================
+#
+# Los seis del ciclo, sobre los mismos CU que llevan estado, tiempo y
+# navegacion. Dependian del 2.3 del Ciclo 3, que entro el 20/09 con el PR
+# de Karen: sin esas clases el generador no puede enlazar las lineas de
+# vida y se planta con «Falta la clase de 2.3».
+
+# ---------------------------------------------------------------- CU-21 --
+@{
+  nombre = '3.2 CU-21 Utilizar vestidor virtual (RA)'
+  lineas = @(
+    @{ k = 'act'; actor = 'Cliente';                w = 110 },
+    @{ k = 'ves'; clase = 'PantallaVestidor';       w = 200 },
+    @{ k = 'gve'; clase = 'GestorVestidor';         w = 190 },
+    @{ k = 'med'; clase = 'MedidaCliente';          w = 180 },
+    @{ k = 'img'; clase = 'ImagenProducto';         w = 180 },
+    @{ k = 'var'; clase = 'VarianteProducto';       w = 190 }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nProbarse una prenda" },
+    @{ t='msg'; o='act'; d='ves'; n='1.1: abrirVestidor(producto_id)' },
+    @{ t='msg'; o='ves'; d='gve'; n='1.2: GET /tienda/productos?solo_vestidor=true' },
+    @{ t='msg'; o='gve'; d='img'; n='1.3: SELECT ruta FROM imagen_producto WHERE es_transparente' },
+    @{ t='msg'; o='img'; d='gve'; n='1.3.1: list[ImagenProducto]'; ret=$true },
+    @{ t='msg'; o='gve'; d='var'; n='1.4: SELECT id, talla_id, color_id FROM variante_producto WHERE activa' },
+    @{ t='msg'; o='var'; d='gve'; n='1.4.1: list[VarianteProducto]'; ret=$true },
+    @{ t='msg'; o='gve'; d='ves'; n='1.4.2: FichaVestidorOut'; ret=$true },
+    @{ t='msg'; o='ves'; d='ves'; n='1.5: detectarPose(fotograma)  {en el telefono}' },
+    @{ t='msg'; o='ves'; d='ves'; n='1.6: dibujarPrenda(hombros, cadera)' },
+    @{ t='msg'; o='ves'; d='act'; n='1.7: mostrarPrendaSuperpuesta()' },
+    @{ t='nota'; txt = "FLUJO 2`nSaber que talla le queda" },
+    @{ t='msg'; o='act'; d='ves'; n='2.1: consultarAjuste()' },
+    @{ t='msg'; o='ves'; d='gve'; n='2.2: GET /clientes/me/medidas' },
+    @{ t='msg'; o='gve'; d='med'; n='2.3: SELECT busto_cm, cintura_cm, cadera_cm FROM medida_cliente' },
+    @{ t='msg'; o='med'; d='gve'; n='2.3.1: MedidaCliente | None'; ret=$true },
+    @{ t='alt' },
+    @{ t='op'; g='tiene medidas cargadas' },
+    @{ t='msg'; o='gve'; d='gve'; n='2.4a: compararConMedidaTalla(medidas)' },
+    @{ t='msg'; o='gve'; d='ves'; n='2.4a.1: AjusteOut(talla, holgura)'; ret=$true },
+    @{ t='op'; g='no las cargo todavia' },
+    @{ t='msg'; o='gve'; d='ves'; n='2.4b: sinMedidas()' },
+    @{ t='msg'; o='ves'; d='act'; n='2.5b: ofrecerCargarMedidas()' },
+    @{ t='fin' },
+    @{ t='nota'; txt = "FLUJO 3`nCapturar y derivar" },
+    @{ t='msg'; o='act'; d='ves'; n='3.1: capturar()' },
+    @{ t='msg'; o='ves'; d='ves'; n='3.2: guardarEnElTelefono(imagen)  {no viaja al servidor}' },
+    @{ t='msg'; o='act'; d='ves'; n='3.3: agregarAlCarrito(variante_id)' },
+    @{ t='msg'; o='ves'; d='gve'; n='3.4: POST /tienda/carrito/items  {CU-26}' },
+    @{ t='msg'; o='gve'; d='ves'; n='3.4.1: CarritoOut'; ret=$true }
+  )
+},
+
+# ---------------------------------------------------------------- CU-27 --
+@{
+  nombre = '3.2 CU-27 Realizar pedido y pagar en línea'
+  lineas = @(
+    @{ k = 'act'; actor = 'Cliente';            w = 110 },
+    @{ k = 'chk'; clase = 'PantallaCheckout';   w = 190 },
+    @{ k = 'gpe'; clase = 'GestorPedidos';      w = 180 },
+    @{ k = 'gin'; clase = 'GestorInventario';   w = 190 },
+    @{ k = 'ven'; clase = 'Venta';              w = 140 },
+    @{ k = 'det'; clase = 'DetalleVenta';       w = 170 },
+    @{ k = 'exi'; clase = 'Existencia';         w = 160 },
+    @{ k = 'pas'; actor = 'Pasarela de Pago';   w = 160 }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nPaso 1: que puedo pedir" },
+    @{ t='msg'; o='act'; d='chk'; n='1.1: abrirCheckout()' },
+    @{ t='msg'; o='chk'; d='gpe'; n='1.2: GET /tienda/pedidos/opciones' },
+    @{ t='msg'; o='gpe'; d='exi'; n='1.3: SELECT sucursal_id, SUM(cantidad_disponible) FROM existencia GROUP BY sucursal_id' },
+    @{ t='msg'; o='exi'; d='gpe'; n='1.3.1: dict[sucursal, faltantes]'; ret=$true },
+    @{ t='msg'; o='gpe'; d='chk'; n='1.3.2: OpcionesDePedidoOut'; ret=$true },
+    @{ t='nota'; txt = "FLUJO 2`nPaso 2: confirmar y apartar" },
+    @{ t='msg'; o='act'; d='chk'; n='2.1: confirmar(modalidad, sucursal, total_visto)' },
+    @{ t='msg'; o='chk'; d='gpe'; n='2.2: POST /tienda/pedidos' },
+    @{ t='msg'; o='gpe'; d='gpe'; n='2.3: bloquear_cliente(cliente_id)  {FOR UPDATE sobre cliente}' },
+    @{ t='msg'; o='gpe'; d='ven'; n='2.4: SELECT id FROM venta WHERE cliente_id AND estado = ''PENDIENTE_PAGO''' },
+    @{ t='msg'; o='ven'; d='gpe'; n='2.4.1: Venta | None'; ret=$true },
+    @{ t='msg'; o='gpe'; d='gpe'; n='2.5: recalcularTotal(carrito)' },
+    @{ t='alt' },
+    @{ t='op'; g='sin pendiente y el total coincide' },
+    @{ t='msg'; o='gpe'; d='gin'; n='2.6a: apartar_para_reserva(variantes, sucursal)' },
+    @{ t='msg'; o='gin'; d='exi'; n='2.7a: SELECT ... FROM existencia WHERE variante_id FOR UPDATE' },
+    @{ t='msg'; o='exi'; d='gin'; n='2.7a.1: Existencia'; ret=$true },
+    @{ t='msg'; o='gin'; d='exi'; n='2.8a: UPDATE existencia SET disponible = disponible - :n, reservada = reservada + :n' },
+    @{ t='msg'; o='gin'; d='gpe'; n='2.8a.1: confirmación'; ret=$true },
+    @{ t='msg'; o='gpe'; d='ven'; n='2.9a: INSERT INTO venta (codigo, estado, sucursal_id, total)' },
+    @{ t='msg'; o='ven'; d='gpe'; n='2.9a.1: Venta (id, codigo)'; ret=$true },
+    @{ t='msg'; o='gpe'; d='det'; n='2.10a: INSERT INTO detalle_venta (precio_unitario CONGELADO)' },
+    @{ t='msg'; o='gpe'; d='pas'; n='2.11a: crearSesionDeCobro(total, codigo)' },
+    @{ t='msg'; o='pas'; d='gpe'; n='2.11a.1: url_de_pago'; ret=$true },
+    @{ t='msg'; o='gpe'; d='chk'; n='2.12a: PedidoCreadoOut(codigo, url)'; ret=$true },
+    @{ t='msg'; o='chk'; d='act'; n='2.13a: redirigirAPasarela(url)' },
+    @{ t='op'; g='ya hay pendiente o el total cambio' },
+    @{ t='msg'; o='gpe'; d='gpe'; n='2.6b: revertirTransaccion()' },
+    @{ t='msg'; o='gpe'; d='chk'; n='2.7b: conflicto(409, carrito_actual)' },
+    @{ t='fin' },
+    @{ t='nota'; txt = "FLUJO 3`nCancelar antes de pagar" },
+    @{ t='msg'; o='act'; d='chk'; n='3.1: cancelarPedido(codigo)' },
+    @{ t='msg'; o='chk'; d='gpe'; n='3.2: POST /tienda/pedidos/:codigo/cancelar' },
+    @{ t='msg'; o='gpe'; d='gin'; n='3.3: liberar(variantes, sucursal)' },
+    @{ t='msg'; o='gin'; d='exi'; n='3.4: UPDATE existencia SET reservada = reservada - :n, disponible = disponible + :n' },
+    @{ t='msg'; o='gpe'; d='ven'; n='3.5: UPDATE venta SET estado = ''CANCELADA''' },
+    @{ t='msg'; o='gpe'; d='chk'; n='3.5.1: confirmación'; ret=$true }
+  )
+},
+
+# ---------------------------------------------------------------- CU-28 --
+@{
+  nombre = '3.2 CU-28 Confirmar pago del pedido'
+  lineas = @(
+    @{ k = 'pas'; actor = 'Pasarela de Pago';      w = 160 },
+    @{ k = 'whk'; clase = 'WebhookPasarela';       w = 190 },
+    @{ k = 'gpa'; clase = 'GestorPagos';           w = 170 },
+    @{ k = 'trx'; clase = 'TransaccionPasarela';   w = 210 },
+    @{ k = 'pag'; clase = 'Pago';                  w = 130 },
+    @{ k = 'ven'; clase = 'Venta';                 w = 140 },
+    @{ k = 'gin'; clase = 'GestorInventario';      w = 190 },
+    @{ k = 'exi'; clase = 'Existencia';            w = 160 }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nEl cobro entro" },
+    @{ t='msg'; o='pas'; d='whk'; n='1.1: POST /pagos/webhook (evento_id, firma)' },
+    @{ t='msg'; o='whk'; d='gpa'; n='1.2: confirmar_pago(cuerpo, firma)' },
+    @{ t='msg'; o='gpa'; d='gpa'; n='1.3: verificarFirma(cuerpo, firma)  {ANTES de leer}' },
+    @{ t='msg'; o='gpa'; d='trx'; n='1.4: SELECT id, procesado_en FROM transaccion_pasarela WHERE evento_id = :evento' },
+    @{ t='msg'; o='trx'; d='gpa'; n='1.4.1: TransaccionPasarela | None'; ret=$true },
+    @{ t='alt' },
+    @{ t='op'; g='firma válida y aviso nuevo' },
+    @{ t='msg'; o='gpa'; d='trx'; n='1.5a: INSERT INTO transaccion_pasarela (evento_id UNICO, carga_util)' },
+    @{ t='msg'; o='gpa'; d='pag'; n='1.6a: UPDATE pago SET estado = ''APROBADO'', referencia_externa' },
+    @{ t='msg'; o='gpa'; d='ven'; n='1.7a: UPDATE venta SET estado = ''PAGADA''' },
+    @{ t='msg'; o='gpa'; d='gin'; n='1.8a: confirmar_salida(venta)' },
+    @{ t='msg'; o='gin'; d='exi'; n='1.9a: UPDATE existencia SET reservada = reservada - :n' },
+    @{ t='msg'; o='gin'; d='gin'; n='1.10a: registrarMovimiento(SALIDA, referencia)' },
+    @{ t='msg'; o='gin'; d='gpa'; n='1.10a.1: confirmación'; ret=$true },
+    @{ t='msg'; o='gpa'; d='gpa'; n='1.11a: emitirComprobante(venta)' },
+    @{ t='msg'; o='gpa'; d='whk'; n='1.11a.1: db.commit() -> 200'; ret=$true },
+    @{ t='op'; g='reintento: el aviso ya se aplico' },
+    @{ t='msg'; o='gpa'; d='whk'; n='1.5b: 200 sin volver a aplicar  {idempotente}' },
+    @{ t='op'; g='firma inválida' },
+    @{ t='msg'; o='gpa'; d='trx'; n='1.5c: INSERT INTO transaccion_pasarela (firma_valida = false)' },
+    @{ t='msg'; o='gpa'; d='whk'; n='1.6c: descartar(400)' },
+    @{ t='fin' },
+    @{ t='msg'; o='whk'; d='pas'; n='1.12: responder()  [para que deje de reintentar]' }
+  )
+},
+
+# ---------------------------------------------------------------- CU-31 --
+@{
+  nombre = '3.2 CU-31 Registrar venta presencial'
+  lineas = @(
+    @{ k = 'act'; actor = 'Cajero';              w = 110 },
+    @{ k = 'pnt'; clase = 'PantallaVenta';       w = 170 },
+    @{ k = 'gmo'; clase = 'GestorMostrador';     w = 190 },
+    @{ k = 'gca'; clase = 'GestorCaja';          w = 160 },
+    @{ k = 'gpr'; clase = 'GestorPromociones';   w = 200 },
+    @{ k = 'ven'; clase = 'Venta';               w = 140 },
+    @{ k = 'gin'; clase = 'GestorInventario';    w = 190 },
+    @{ k = 'exi'; clase = 'Existencia';          w = 160 }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nCobrar en el mostrador" },
+    @{ t='msg'; o='act'; d='pnt'; n='1.1: abrirMostrador()' },
+    @{ t='msg'; o='pnt'; d='gca'; n='1.2: GET /caja/turnos/mio' },
+    @{ t='msg'; o='gca'; d='pnt'; n='1.2.1: TurnoCaja | None'; ret=$true },
+    @{ t='alt' },
+    @{ t='op'; g='hay turno abierto' },
+    @{ t='msg'; o='act'; d='pnt'; n='1.3a: buscarPrenda(texto)' },
+    @{ t='msg'; o='pnt'; d='gmo'; n='1.4a: GET /pos/prendas?busqueda' },
+    @{ t='msg'; o='gmo'; d='exi'; n='1.5a: SELECT v.* FROM existencia e JOIN variante_producto v WHERE e.sucursal_id = :suya' },
+    @{ t='msg'; o='exi'; d='gmo'; n='1.5a.1: list[VarianteProducto]'; ret=$true },
+    @{ t='msg'; o='act'; d='pnt'; n='1.6a: registrarVenta(detalle, medio_pago)' },
+    @{ t='msg'; o='pnt'; d='gmo'; n='1.7a: POST /pos/ventas' },
+    @{ t='msg'; o='gmo'; d='gpr'; n='1.8a: descuentos_por_variante(precios)' },
+    @{ t='msg'; o='gpr'; d='gmo'; n='1.8a.1: dict[variante, Descuento]'; ret=$true },
+    @{ t='msg'; o='gmo'; d='gin'; n='1.9a: descontar(variantes, sucursal)' },
+    @{ t='msg'; o='gin'; d='exi'; n='1.10a: SELECT ... FROM existencia WHERE variante_id FOR UPDATE' },
+    @{ t='msg'; o='gin'; d='exi'; n='1.11a: UPDATE existencia SET cantidad_disponible = disponible - :n' },
+    @{ t='msg'; o='gin'; d='gmo'; n='1.11a.1: confirmación'; ret=$true },
+    @{ t='msg'; o='gmo'; d='ven'; n='1.12a: INSERT INTO venta (canal = ''PRESENCIAL'', turno_caja_id)' },
+    @{ t='msg'; o='ven'; d='gmo'; n='1.12a.1: Venta (codigo)'; ret=$true },
+    @{ t='msg'; o='gmo'; d='gmo'; n='1.13a: emitirComprobante(venta)' },
+    @{ t='msg'; o='gmo'; d='pnt'; n='1.13a.1: db.commit() -> VentaOut'; ret=$true },
+    @{ t='op'; g='sin turno abierto' },
+    @{ t='msg'; o='pnt'; d='act'; n='1.3b: llevarAAbrirCaja()  {CU-30}' },
+    @{ t='fin' },
+    @{ t='nota'; txt = "FLUJO 2`nCobrar una reserva atendida" },
+    @{ t='msg'; o='act'; d='pnt'; n='2.1: verReservasPorCobrar()' },
+    @{ t='msg'; o='pnt'; d='gmo'; n='2.2: GET /pos/reservas' },
+    @{ t='msg'; o='gmo'; d='pnt'; n='2.2.1: list[ReservaPorCobrar]'; ret=$true },
+    @{ t='msg'; o='act'; d='pnt'; n='2.3: cargarReserva(reserva_id)' },
+    @{ t='msg'; o='pnt'; d='gmo'; n='2.4: POST /pos/ventas (reserva_id)' },
+    @{ t='msg'; o='gmo'; d='gin'; n='2.5: convertirReservaEnSalida(reserva)  [ya estaba apartado]' },
+    @{ t='msg'; o='gmo'; d='ven'; n='2.6: INSERT INTO venta (reserva_id UNICO)' },
+    @{ t='msg'; o='gmo'; d='pnt'; n='2.6.1: VentaOut'; ret=$true }
+  )
+},
+
+# ---------------------------------------------------------------- CU-33 --
+@{
+  nombre = '3.2 CU-33 Recibir recomendaciones de prendas'
+  lineas = @(
+    @{ k = 'act'; actor = 'Cliente';                w = 110 },
+    @{ k = 'pnt'; clase = 'PantallaParaVos';        w = 180 },
+    @{ k = 'gre'; clase = 'GestorRecomendaciones';  w = 220 },
+    @{ k = 'fav'; clase = 'Favorito';               w = 140 },
+    @{ k = 'var'; clase = 'VarianteProducto';       w = 190 },
+    @{ k = 'gin'; clase = 'GestorInventario';       w = 190 },
+    @{ k = 'rec'; clase = 'Recomendacion';          w = 180 },
+    @{ k = 'ia';  actor = 'Servicio de IA';         w = 150 }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nSugerir prendas" },
+    @{ t='msg'; o='act'; d='pnt'; n='1.1: abrirParaVos()' },
+    @{ t='msg'; o='pnt'; d='gre'; n='1.2: GET /tienda/recomendaciones' },
+    @{ t='msg'; o='gre'; d='fav'; n='1.3: SELECT producto_id FROM favorito WHERE cliente_id = :cliente' },
+    @{ t='msg'; o='fav'; d='gre'; n='1.3.1: list[Favorito]'; ret=$true },
+    @{ t='msg'; o='gre'; d='var'; n='1.4: SELECT p.id, p.nombre FROM producto p WHERE p.activo' },
+    @{ t='msg'; o='var'; d='gre'; n='1.4.1: list[Producto]'; ret=$true },
+    @{ t='msg'; o='gre'; d='gre'; n='1.5: armarContexto(senal, catalogo)  {id -> nombre}' },
+    @{ t='msg'; o='gre'; d='ia';  n='1.6: generar(prompt)' },
+    @{ t='msg'; o='ia';  d='gre'; n='1.6.1: sugerencias (3 a 25 s)'; ret=$true },
+    @{ t='msg'; o='gre'; d='gin'; n='1.7: productos_con_stock(ids)  {costura C1}' },
+    @{ t='msg'; o='gin'; d='gre'; n='1.7.1: set[producto_id]'; ret=$true },
+    @{ t='msg'; o='gre'; d='gre'; n='1.8: validarContraCatalogo(sugerencias)' },
+    @{ t='alt' },
+    @{ t='op'; g='sobreviven al menos tres' },
+    @{ t='msg'; o='gre'; d='rec'; n='1.9a: INSERT INTO recomendacion (motor, sugerencias JSONB)' },
+    @{ t='msg'; o='rec'; d='gre'; n='1.9a.1: Recomendacion'; ret=$true },
+    @{ t='msg'; o='gre'; d='pnt'; n='1.10a: RecomendacionesOut'; ret=$true },
+    @{ t='msg'; o='pnt'; d='act'; n='1.11a: mostrarPrendasConMotivo()' },
+    @{ t='op'; g='quedan menos de MINIMO_UTIL' },
+    @{ t='msg'; o='gre'; d='ia';  n='1.9b: generar(prompt)  [se vuelve a pedir]' },
+    @{ t='op'; g='no hay proveedor de IA' },
+    @{ t='msg'; o='gre'; d='pnt'; n='1.9c: noDisponible()' },
+    @{ t='msg'; o='pnt'; d='act'; n='1.10c: ofrecerElCatalogo()' },
+    @{ t='fin' }
+  )
+},
+
+# ---------------------------------------------------------------- CU-34 --
+@{
+  nombre = '3.2 CU-34 Conversar con el asistente virtual'
+  lineas = @(
+    @{ k = 'act'; actor = 'Cliente';           w = 110 },
+    @{ k = 'pnt'; clase = 'PantallaAsistente'; w = 190 },
+    @{ k = 'gas'; clase = 'GestorAsistente';   w = 180 },
+    @{ k = 'var'; clase = 'VarianteProducto';  w = 190 },
+    @{ k = 'gpr'; clase = 'GestorPromociones'; w = 200 },
+    @{ k = 'ven'; clase = 'Venta';             w = 140 },
+    @{ k = 'med'; clase = 'MedidaCliente';     w = 180 },
+    @{ k = 'ia';  actor = 'Servicio de IA';    w = 150 }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nPreguntar" },
+    @{ t='msg'; o='act'; d='pnt'; n='1.1: abrirAsistente()' },
+    @{ t='msg'; o='pnt'; d='gas'; n='1.2: GET /asistente/disponible' },
+    @{ t='msg'; o='gas'; d='pnt'; n='1.2.1: EstadoOut(disponible, ejemplos)'; ret=$true },
+    @{ t='msg'; o='act'; d='pnt'; n='1.3: preguntar(texto, historial)' },
+    @{ t='msg'; o='pnt'; d='gas'; n='1.4: POST /asistente' },
+    @{ t='msg'; o='gas'; d='var'; n='1.5: SELECT p.id, p.nombre, v.precio, t.codigo, c.nombre FROM producto p JOIN variante_producto v' },
+    @{ t='msg'; o='var'; d='gas'; n='1.5.1: list[LineaDeCatalogo]'; ret=$true },
+    @{ t='msg'; o='gas'; d='gpr'; n='1.6: descuentos_por_producto(precios)  {costura CU-12}' },
+    @{ t='msg'; o='gpr'; d='gas'; n='1.6.1: dict[producto, Descuento]'; ret=$true },
+    @{ t='msg'; o='gas'; d='ven'; n='1.7: SELECT codigo, estado, total FROM venta WHERE cliente_id = :cliente' },
+    @{ t='msg'; o='ven'; d='gas'; n='1.7.1: list[Venta]  [SOLO las suyas]'; ret=$true },
+    @{ t='msg'; o='gas'; d='med'; n='1.8: SELECT busto_cm, cintura_cm, cadera_cm FROM medida_cliente' },
+    @{ t='msg'; o='med'; d='gas'; n='1.8.1: MedidaCliente | None'; ret=$true },
+    @{ t='msg'; o='gas'; d='gas'; n='1.9: armarContexto(catalogo, ofertas, tallas, pedidos, medidas)' },
+    @{ t='msg'; o='gas'; d='ia';  n='1.10: responder(pregunta, contexto, historial)  {UNA sola llamada}' },
+    @{ t='msg'; o='ia';  d='gas'; n='1.10.1: texto con codigos [#12] (3 a 25 s)'; ret=$true },
+    @{ t='alt' },
+    @{ t='op'; g='el modelo contesto' },
+    @{ t='msg'; o='gas'; d='gas'; n='1.11a: validarCodigos(texto, catalogo)  [descarta los inventados]' },
+    @{ t='msg'; o='gas'; d='pnt'; n='1.11a.1: RespuestaOut(texto, productos)'; ret=$true },
+    @{ t='msg'; o='pnt'; d='pnt'; n='1.12a: guardarTurnoEnMemoria()  {NO va a la base}' },
+    @{ t='msg'; o='pnt'; d='act'; n='1.13a: mostrarRespuestaConEnlaces()' },
+    @{ t='op'; g='el modelo se saturo' },
+    @{ t='msg'; o='gas'; d='ia';  n='1.11b: responder(...)  [modelo de respaldo]' },
+    @{ t='op'; g='no hay proveedor de IA' },
+    @{ t='msg'; o='gas'; d='pnt'; n='1.11c: noDisponible()' },
+    @{ t='fin' }
+  )
+}
 )
 
 # =========================================================================
