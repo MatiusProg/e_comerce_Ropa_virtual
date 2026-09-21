@@ -148,12 +148,35 @@ tiene usuario pero no perfil de compra, y contestarle sería hablar de nadie.
 al lado de CU-33 porque son la misma idea desde dos lados — una sugiere sin
 que se le pida y la otra contesta lo que se le pregunta.
 
+### Las promociones, por la costura de CU-12
+
+Agregado el 20/09, después de probarlo: preguntarle «¿qué ofertas hay?» no
+tenía respuesta, y el asistente contestaba que consultara en la tienda.
+
+El contexto lleva ahora **las promociones vigentes hoy** de dos formas:
+
+- marcadas en la línea de cada prenda rebajada — `| EN OFERTA -20%, queda en
+  Bs 552.00` —, para que «¿cuánto sale?» conteste el precio que se paga;
+- y **en una sección aparte con la lista**. No es redundancia: «¿qué ofertas
+  hay?» es una pregunta por el conjunto, y obligar al modelo a recorrer
+  sesenta líneas buscando cuáles tienen descuento es justo lo que hace mal.
+
+**Si hoy no hay ninguna, el prompt lo dice con todas las letras.** La sección
+vacía se omitiría con `_seccion`, y ahí la ausencia *es* el dato: sin la
+línea, el modelo no distingue «no hay ofertas» de «no me pasaron las
+ofertas», y ante la duda manda a preguntar en la tienda. Es la misma razón
+por la que las medidas dicen «no las cargó todavía».
+
+El descuento **no se recalcula acá**: se pide por
+`promociones_service.descuentos_por_producto`, la misma costura que usa la
+vitrina. Reescribir la elección entre los tres alcances serviría para que el
+asistente prometa un 20 % mientras la vitrina cobra un 15 %, que es peor que
+no saber de ofertas.
+
 ## 10. Límites conocidos
 
 - **Sesenta prendas.** Si el catálogo creciera mucho habría que elegir cuáles
   entran, y eso reintroduce el paso de clasificación que se evitó.
-- **No sabe de promociones.** El catálogo que ve lleva el precio de lista; los
-  descuentos de CU-12 no están en el contexto.
 - **No puede hacer nada**, solo contestar. No reserva, no agrega al carrito,
   no cancela. Una acción disparada por un modelo necesita una confirmación
   explícita, y eso es otro caso de uso.

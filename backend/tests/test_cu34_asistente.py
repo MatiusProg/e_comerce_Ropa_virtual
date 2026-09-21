@@ -39,6 +39,7 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
+from app.core import tiempo
 from app.integrations import asistente
 from app.integrations.asistente import (
     AsistenteNoConfigurado,
@@ -320,3 +321,127 @@ def test_una_pregunta_larguisima_se_rechaza(
         ASISTENTE, headers=cabeceras_cliente, json={"pregunta": "a" * 501}
     )
     assert r.status_code == 422
+
+
+# --- Las promociones (el hueco que cerró el 20/09) -------------------------
+
+
+def test_SIN_PROMOCIONES_SE_DICE_QUE_NO_HAY_no_se_calla() -> None:
+    """La ausencia de ofertas ES un dato, y el prompt la nombra.
+
+    `_seccion` omite las secciones vacías, y con las ofertas eso estaba mal:
+    sin la línea, el modelo no distingue «hoy no hay ofertas» de «no me
+    pasaron las ofertas», y ante la duda manda a preguntar en la tienda —
+    que es la respuesta inútil que este caso de uso existe para evitar.
+    """
+    from app.integrations.asistente.gemini import _ofertas
+
+    texto = _ofertas(())
+    assert "PROMOCIONES VIGENTES HOY" in texto
+    assert "no hay ninguna" in texto
+
+
+def test_el_prompt_lleva_las_ofertas_a_la_vista() -> None:
+    """Aparte del catálogo, y no es redundancia: «¿qué ofertas hay?» es una
+    pregunta por la lista, y recorrer sesenta líneas buscando cuáles tienen
+    descuento es justo lo que un modelo hace mal."""
+    from app.integrations.asistente.gemini import _INSTRUCCION, _ofertas
+
+    armado = _INSTRUCCION.format(
+        nombre="Ana",
+        catalogo="#7 Blusa | Bs 100",
+        ofertas=_ofertas(("#7 Blusa | Fin de temporada | -20% | de Bs 100 a Bs 80",)),
+        tallas="",
+        pedidos="",
+        reservas="",
+        medidas="",
+        datos="",
+        historial="",
+        pregunta="¿qué ofertas hay?",
+    )
+    assert "Fin de temporada" in armado
+    assert "PROMOCIONES VIGENTES HOY" in armado
+
+
+def test_UNA_PROMOCION_VIGENTE_LLEGA_AL_CONTEXTO(
+    api: TestClient,
+    cabeceras_admin: dict[str, str],
+    cabeceras_cliente: dict[str, str],
+    monkeypatch,
+) -> None:
+    """De punta a punta: el Administrador la carga y el asistente la sabe.
+
+    El descuento se pide por la costura de CU-12 y no con una consulta
+    propia. Si se recalculara acá, el asistente podría prometer un 20 %
+    mientras la vitrina cobra otra cosa — que es peor que no saber de
+    ofertas.
+
+    La prenda se siembra acá y no se toma del catálogo que haya: apoyarse en
+    lo sembrado dejaba la prueba saltándose sola cuando no había productos,
+    que es justo cuando hace falta que corra.
+    """
+    catalogo = "/api/v1/catalogo"
+    categoria = api.post(
+        f"{catalogo}/categorias",
+        headers=cabeceras_admin,
+        json={"nombre": "Abrigos CU-34", "orden": 0, "activa": True},
+    )
+    assert categoria.status_code == 201, categoria.text
+
+    producto = api.post(
+        f"{catalogo}/productos",
+        headers=cabeceras_admin,
+        json={
+            "codigo": "CU34-OFERTA",
+            "nombre": "Abrigo de prueba del asistente",
+            "categoria_id": categoria.json()["id"],
+            "temporada_id": None,
+            "precio_base": "500.00",
+            "activo": True,
+        },
+    )
+    assert producto.status_code == 201, producto.text
+    producto_id = producto.json()["id"]
+
+    talla = api.post(
+        f"{catalogo}/tallas",
+        headers=cabeceras_admin,
+        json={"tipo_prenda": "Superior", "codigo": "U", "orden": 0, "activa": True},
+    )
+    color = api.post(
+        f"{catalogo}/colores",
+        headers=cabeceras_admin,
+        json={"nombre": "Gris CU-34", "hexadecimal": "#808080", "activo": True},
+    )
+    generadas = api.post(
+        f"{catalogo}/productos/{producto_id}/variantes/generar",
+        headers=cabeceras_admin,
+        json={"tallas": [talla.json()["id"]], "colores": [color.json()["id"]]},
+    )
+    assert generadas.status_code == 201, generadas.text
+
+    alta = api.post(
+        f"{catalogo}/promociones",
+        headers=cabeceras_admin,
+        json={
+            "nombre": "Liquidación de prueba",
+            "alcance": "PRODUCTO",
+            "objetivo_id": producto_id,
+            "porcentaje": "20.00",
+            "desde": tiempo.hoy().isoformat(),
+            "hasta": None,
+            "activa": True,
+        },
+    )
+    assert alta.status_code in (200, 201), alta.text
+
+    falso = _sustituir(monkeypatch, _AsistenteFalso())
+    _preguntar(api, cabeceras_cliente, "¿qué ofertas hay?")
+    ctx = falso.ultimo_contexto
+
+    assert any("Liquidación de prueba" in o for o in ctx.ofertas), ctx.ofertas
+    # Y también marcada en su línea del catálogo, para que «¿cuánto sale?»
+    # conteste el precio que se paga y no el de lista.
+    suya = next(l for l in ctx.catalogo if l.startswith(f"#{producto_id} "))
+    assert "EN OFERTA -20%" in suya, suya
+    assert "Bs 400.00" in suya, suya

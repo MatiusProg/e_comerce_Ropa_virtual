@@ -78,6 +78,16 @@ SOBRE TALLAS Y CENTÍMETROS
   —busto, cintura y cadera— o contale que las puede cargar en el vestidor
   virtual de la app. No adivines a partir de la talla habitual.
 
+SOBRE OFERTAS Y PROMOCIONES
+- La sección de abajo tiene **las promociones que están vigentes hoy**, ya
+  calculadas. Si te preguntan qué hay en oferta, contestá con esa lista y
+  nombrá las prendas con su código.
+- Si la sección dice que hoy no hay ninguna, **decilo derecho**: «hoy no
+  tenemos promociones activas». No ofrezcas un descuento que no figure ahí
+  ni digas que «puede haber»; quien lea eso va a venir a pedirlo.
+- En el catálogo, una prenda rebajada lleva su precio de oferta al final de
+  la línea. Ese es el precio que paga, y es el que tenés que decir.
+
 SOBRE COLORES
 - Cada prenda del catálogo lista **los colores que hay de verdad**. Si te
   preguntan por un color, mirá esa lista.
@@ -89,7 +99,7 @@ SOBRE COLORES
 EL CATÁLOGO
 {catalogo}
 
-{tallas}{pedidos}
+{ofertas}{tallas}{pedidos}
 {reservas}
 {medidas}
 {datos}
@@ -124,6 +134,7 @@ class AsistenteGemini:
         instruccion = _INSTRUCCION.format(
             nombre=contexto.nombre,
             catalogo="\n".join(contexto.catalogo) or "(el catálogo está vacío)",
+            ofertas=_ofertas(contexto.ofertas),
             pedidos=_seccion("SUS PEDIDOS", contexto.pedidos),
             reservas=_seccion("SUS RESERVAS", contexto.reservas),
             medidas=(
@@ -184,6 +195,21 @@ class AsistenteGemini:
             raise ErrorDelAsistente("El servicio respondió sin texto.")
 
         return _leer(texto, contexto)
+
+
+def _ofertas(lineas: tuple[str, ...]) -> str:
+    """Las promociones de hoy, y si no hay ninguna tambien se dice.
+
+    No usa `_seccion` justamente por eso: `_seccion` omite la seccion
+    vacia, y aca la ausencia ES el dato. Sin la aclaracion el modelo no
+    distingue «no hay ofertas» de «no me pasaron las ofertas», y ante la
+    duda contesta que consulte en la tienda --- que es la respuesta
+    inutil que este caso de uso existe para evitar. Es la misma razon
+    por la que las medidas dicen «no las cargó todavía».
+    """
+    titulo = "PROMOCIONES VIGENTES HOY"
+    cuerpo = "\n".join(lineas) if lineas else "(hoy no hay ninguna activa)"
+    return titulo + "\n" + cuerpo + "\n\n"
 
 
 def _seccion(titulo: str, lineas: tuple[str, ...]) -> str:

@@ -113,17 +113,70 @@ class _EstadoPantallaFicha extends ConsumerState<PantallaFicha> {
                 ),
               ),
               const SizedBox(height: 6),
-              Text(
-                // Con variante elegida se muestra su precio propio; sin ella,
-                // el rango del producto. La variante es la que tiene precio.
-                variante != null
-                    ? 'Bs ${variante.precio}'
-                    : prenda.precioRotulado,
-                style: const TextStyle(
-                  fontSize: 19,
-                  fontWeight: FontWeight.w600,
+              // El descuento SIGUE A LA VARIANTE ELEGIDA, no al producto.
+              //
+              // El del producto está calculado sobre el precio «desde»: si se
+              // usara con una variante elegida, la talla más cara anunciaría
+              // una rebaja que no le corresponde y el carrito cobraría otra
+              // cosa. Es la misma regla que aplica la ficha de la web.
+              if ((variante?.descuento ?? prenda.descuento) case final d?) ...[
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      'Bs ${d.precioFinal}',
+                      style: const TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w700,
+                        color: ColoresVB.malvaOscuro,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      variante != null
+                          ? 'Bs ${variante.precio}'
+                          : prenda.precioRotulado,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        decoration: TextDecoration.lineThrough,
+                        color: Color(0xFF9A8A92),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
+                const SizedBox(height: 4),
+                // El NOMBRE de la promoción y no solo el porcentaje: quien ve
+                // «−16 %» sin saber de qué se pregunta si es un error.
+                Row(
+                  children: [
+                    const Icon(Icons.sell_outlined,
+                        size: 15, color: ColoresVB.malva),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        '${d.nombre} · -${d.porcentajeRotulado}%',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: ColoresVB.malva,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ] else
+                Text(
+                  // Con variante elegida se muestra su precio propio; sin
+                  // ella, el rango del producto. La variante tiene precio.
+                  variante != null
+                      ? 'Bs ${variante.precio}'
+                      : prenda.precioRotulado,
+                  style: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               if (prenda.descripcion != null) ...[
                 const SizedBox(height: 12),
                 Text(

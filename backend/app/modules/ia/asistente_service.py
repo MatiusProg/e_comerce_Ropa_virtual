@@ -17,13 +17,15 @@ acceso.
 
 QUE VE EL ASISTENTE, EXACTAMENTE
 ---------------------------------
-- El **catalogo publico**: lo mismo que cualquiera ve en la vitrina.
+- El **catalogo publico**: lo mismo que cualquiera ve en la vitrina,
+  **con las promociones vigentes hoy ya aplicadas** ---y por la costura
+  de CU-12, no recalculadas aca---.
 - **Los pedidos y las reservas DE QUIEN PREGUNTA.** El filtro va en el
   `WHERE`, no en la instruccion.
 - **Sus medidas**, si las cargo, para poder hablar de tallas.
 - Las sucursales y sus horarios.
 
-No ve: precios base, proveedores, margenes, datos de otros clientes, ni nada
+No ve: proveedores, margenes, datos de otros clientes, ni nada
 del panel de administracion.
 
 EL HISTORIAL LO GUARDA LA PANTALLA, NO LA BASE
@@ -49,6 +51,7 @@ from sqlalchemy.orm import Session
 from app.core import tiempo
 from app.integrations import asistente
 from app.integrations.asistente import Contexto
+from app.modules.catalogo import promociones_service as promociones
 from app.modules.ia import asistente_repository as repo
 from app.modules.ia import repository as repo_ia
 from app.modules.inventario import service as inventario
@@ -99,6 +102,21 @@ def armar_contexto(db: Session, cliente, nombre: str) -> Contexto:
     tallas = repo.tallas_de(db, ids)
     colores = repo.colores_de(db, ids)
 
+    # Las promociones POR LA COSTURA DE CU-12, no con una consulta propia.
+    #
+    # Es la unica de las fuentes del contexto que no se consulta aca, y a
+    # proposito: el descuento que gana sale de tres alcances que se pisan
+    # ---prenda, categoria, categoria padre--- y de una jerarquia recursiva
+    # de categorias. Reescribir esa eleccion aca serviria para que el
+    # asistente prometa un 20% mientras la vitrina cobra un 15%, que es
+    # peor que no saber de ofertas.
+    #
+    # Se le pasa el precio MINIMO de cada prenda, que es el que la grilla
+    # muestra y sobre el que el cliente compara.
+    precios = {f[0]: f[3] for f in filas if f[3] is not None}
+    descuentos = promociones.descuentos_por_producto(db, precios)
+
+    ofertas = []
     catalogo = []
     for producto_id, nombre_prenda, categoria, desde, hasta in filas:
         precio = (
@@ -109,9 +127,24 @@ def armar_contexto(db: Session, cliente, nombre: str) -> Contexto:
         cuales = ", ".join(tallas.get(producto_id, [])) or "sin tallas cargadas"
         tonos = ", ".join(colores.get(producto_id, [])) or "sin color cargado"
         hay = "hay stock" if producto_id in con_stock else "AGOTADA"
+
+        rebaja = descuentos.get(producto_id)
+        marca = ""
+        if rebaja is not None:
+            # Por `float` y no `:g` sobre el Decimal: `:g` respeta los
+            # ceros de un Decimal y escribia «-20.00%», que en un rotulo
+            # son dos caracteres de ruido.
+            porcentaje = f"{float(rebaja.porcentaje):g}"
+            final = _importe(rebaja.precio_final)
+            marca = f" | EN OFERTA -{porcentaje}%, queda en Bs {final}"
+            ofertas.append(
+                f"#{producto_id} {nombre_prenda} | {rebaja.nombre} | "
+                f"-{porcentaje}% | de Bs {_importe(desde)} a Bs {final}"
+            )
+
         catalogo.append(
             f"#{producto_id} {nombre_prenda} | {categoria} | {precio} "
-            f"| tallas: {cuales} | colores: {tonos} | {hay}"
+            f"| tallas: {cuales} | colores: {tonos} | {hay}{marca}"
         )
 
     pedidos = []
@@ -144,6 +177,7 @@ def armar_contexto(db: Session, cliente, nombre: str) -> Contexto:
     return Contexto(
         nombre=nombre,
         catalogo=tuple(catalogo),
+        ofertas=tuple(ofertas),
         tallas=tuple(tabla),
         pedidos=tuple(pedidos),
         reservas=tuple(reservas),
@@ -245,6 +279,7 @@ def responder(
 EJEMPLOS = (
     "¿Tienen vestidos en talla M?",
     "¿Cuánto sale la campera de jean?",
+    "¿Qué ofertas hay ahora?",
     "¿Ya llegó mi pedido?",
     "¿Cuándo tengo que ir a buscar mi reserva?",
     "¿Qué talla me quedaría según mis medidas?",

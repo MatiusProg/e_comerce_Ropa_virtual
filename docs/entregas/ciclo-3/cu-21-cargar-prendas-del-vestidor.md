@@ -7,6 +7,12 @@ catálogo se pueda probar en el vestidor, y por qué cada paso es como es.
 > mostraba eran siluetas planas generadas por el *seed*, y que 10 de las 32
 > prendas probables no aparecían nunca en la pantalla.
 
+> ⚠️ **Antes de dibujar los diagramas de CU-21**, leer
+> [`cu-21-alcance-real-para-los-diagramas.md`](cu-21-alcance-real-para-los-diagramas.md).
+> En una línea: **CU-21 no tiene ayuda por foto** —ni para medir el cuerpo ni
+> para amoldar la prenda—, y ninguna de las dos debe aparecer en los
+> diagramas.
+
 ---
 
 ## 1. Las dos reglas que no se deducen mirando el PNG
