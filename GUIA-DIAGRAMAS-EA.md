@@ -17,7 +17,7 @@ Trial en Windows, escribiendo sobre archivos `.eapx` reales.
 
 1. [Qué hace falta antes de empezar](#1-qué-hace-falta-antes-de-empezar)
 2. [La forma de la solución: dos pasadas](#2-la-forma-de-la-solución-dos-pasadas)
-3. [Las diez reglas de oro](#3-las-diez-reglas-de-oro)
+3. [Las doce reglas de oro](#3-las-doce-reglas-de-oro)
 4. [Plantilla de un generador](#4-plantilla-de-un-generador)
 5. [Recetario de la API COM](#5-recetario-de-la-api-com)
 6. [Recetario de la segunda pasada (OLEDB)](#6-recetario-de-la-segunda-pasada-oledb)
@@ -97,7 +97,7 @@ EA cachea, la segunda pasada por OLEDB es más segura.
 
 ---
 
-## 3. Las diez reglas de oro
+## 3. Las doce reglas de oro
 
 ### 1. Los generadores son **aditivos**
 
@@ -239,6 +239,52 @@ que es el que importa `app.routes.ts` y donde vive la clase, y el `.html` va en 
 > Si algún día se quisiera unificar, **renombrar en EA es barato**: los diagramas referencian los
 > elementos por `Object_ID`, así que un renombre se propaga solo a todos los diagramas donde
 > aparezca, sin regenerar ninguno.
+
+### 11. El `.ps1` se guarda en **UTF-8 con BOM**
+
+Sin BOM, PowerShell 5.1 lee el archivo como **ANSI (Windows-1252)**, no como UTF-8. Cada acento
+entra al modelo como los dos bytes de su UTF-8 leídos por separado: `Organización` queda
+`OrganizaciÃ³n`, `·` queda `Â·`, `—` queda `â€"`. **No da ningún error** —el script corre y escribe
+basura— y no se ve hasta que alguien abre el diagrama.
+
+Es la misma clase de defecto que la regla 9, pero por el otro extremo: la 9 es el texto que sale
+del script hacia ACE, y esta es el texto que entra al script desde el disco.
+
+```bash
+head -c 3 scripts/ea-loquesea.ps1 | xxd -p     # tiene que dar efbbbf
+```
+
+Costó dos veces el 20/09/2026: `ea-paquetes-2-4-ciclo3.ps1` y
+`ea-paquetes-2-4-ciclo2-notas.ps1` se guardaron sin BOM y los once paquetes del 2.4 y las dos
+notas de cohesión y acoplamiento entraron rotos al modelo.
+
+**Cuidado también con los backticks dentro de una cadena de comillas dobles.** Ahí `` `n `` es un
+salto de línea, así que un `` `no_disponible` `` escrito como cita se convierte en un salto de
+línea seguido de `o_disponible`, y `` `forzar` `` en un avance de página. En las cadenas de
+comillas **simples** el backtick es literal y no pasa nada. Para citar, «guillemets».
+
+### 12. Un objeto colocado en **`l=0` no se coloca**
+
+EA descarta el rectángulo entero si la izquierda es cero, y el objeto queda en `(0,0)`. En el 4.3
+eso apila la primera pantalla, sus endpoints y las primeras tablas en el origen, unos encima de
+otros. **No da error.**
+
+Todo generador arranca en un **margen** (`$MARGEN_X = 20`), nunca en `0`.
+
+Es especialmente traicionero porque **se tapa solo**: al abrir el diagrama, EA lo remaqueta y
+reparte los objetos, así que el que lo mira en EA no ve nada raro. Se comprueba contra la base,
+que es donde está la verdad:
+
+```sql
+SELECT COUNT(*) FROM t_diagramobjects
+WHERE Diagram_ID = <n> AND RectLeft = 0 AND RectTop = 0 AND RectRight = 0
+```
+
+> Y el margen **no se llama `$X0`**, aunque sea el nombre obvio: dentro del bucle hay un `$x0` —la
+> izquierda del grupo que se está dibujando— y por la **regla 7** son la misma variable. La
+> constante se va acumulando en cada grupo; el Subsistema 7 salió de 11660 px de ancho en vez de
+> 2840. Tampoco da error. La regla 7 no es solo para los mapas de una letra: vale para **cualquier
+> constante que se parezca a una variable de bucle**.
 
 ---
 
@@ -1048,6 +1094,28 @@ mano o borrarlo y volver a generarlo.
 porque así lo pide el índice de la ingeniera; el nombre del diagrama conserva el sufijo
 `- CICLO #N`.
 
+**El del Ciclo 3 son los once paquetes y ocho capas**, no seis y cinco: el sistema completo se
+dibuja porque los cinco paquetes nuevos se apoyan en todos los anteriores, y sin P1 a P6 en el
+lienzo las flechas de P7 y P11 apuntarían a la nada.
+
+**EN UN DIAGRAMA DE PAQUETES NO VAN ACTORES.** La primera versión del Ciclo 3 dibujaba tres —la
+pasarela, el modelo de IA y el servicio de RA— con el argumento de que dos paquetes existen
+precisamente para aislarlos. El argumento es bueno y el dibujo estaba mal: la sección 2.4 es la
+descomposición **interna** del sistema, y un actor ahí dentro mezcla dos modelos. Los servicios
+externos ya están donde les corresponde, en los casos de uso y en el 3.1.2 de despliegue. Lo que
+justifica que P8 y P10 existan **se dice con palabras**, en la nota de acoplamiento, que es donde
+se lee.
+
+**El guardia «si ya existe, no se toca» esconde los arreglos.** El generador agrega las dos notas
+al final, así que un diagrama que se generó antes de que esa parte existiera no las recibe nunca.
+Pasó con el del Ciclo 2 —quedó sin las dos notas, que es literalmente de lo que trata el punto
+2.4— y se detectó comparando cuántos objetos tenía cada uno: 3, 6 y 16. Los generadores por ciclo
+llevan `-Rehacer`, que vacía el subpaquete del ciclo por OLEDB —regla 6: `Package.Elements` no
+devuelve los `Package`— y lo regenera.
+
+**Las notas del Ciclo 3 son el doble de largas y la caja tuvo que crecer** de 440 × 300 a
+540 × 460: EA **recorta** lo que no entra en la caja de una `Note`, sin avisar.
+
 ---
 
 ### 7.6 Capas 3.1.1
@@ -1430,7 +1498,11 @@ Tres cosas en las que conviene apartarse del ejemplo:
 **Tipo:** `Component` · **Script:** `ea-componentes-4-3.ps1`
 
 Uno por paquete, con el nombre codificando la trazabilidad: *Subsistema N = paquete PN del análisis
-2.1*. Tres bandas horizontales, **todas de elementos `Component`**, diferenciadas solo por el
+2.1*. **Son once, uno por paquete**: los seis primeros se generaron en el Ciclo 2 y los cinco
+últimos —P7 Ventas y Punto de Venta, P8 Pagos, P9 Vestidor Virtual, P10 Inteligencia Artificial y
+P11 Reportes y Tablero— el 21/09/2026.
+
+Tres bandas horizontales, **todas de elementos `Component`**, diferenciadas solo por el
 estereotipo:
 
 ```
@@ -1461,7 +1533,7 @@ $cx     = $x0 + ([math]::Floor($i / 2) * $COL_STEP)
 $cy     = if ($i % 2 -eq 0) { $Y_CLS_A } else { $Y_CLS_B }
 ```
 
-Color: verde, implementado; azul, tabla que pertenece a **otro** subsistema. Y una validación que
+Color: verde, implementado; azul, lo que pertenece a **otro** subsistema. Y una validación que
 vale oro:
 
 ```powershell
@@ -1469,6 +1541,44 @@ if (-not $elTabla.ContainsKey($t)) {
     throw "En '$($sub.nombre)' el endpoint $k apunta a la tabla $t, que no está en la banda"
 }
 ```
+
+**Tres cosas más que agregaron los cinco subsistemas del Ciclo 3.**
+
+4. **El azul también vale para un `«CLASS»`**, no solo para una tabla. La pantalla de retorno de
+   P8 llama a `ver_pedido`, que es de P7; la del vestidor de P9 llama a `listar_prendas_probables`,
+   que es de P5. Pintarlos verdes diría que el subsistema los implementa. Campo `ajena = $true` en
+   la clase.
+
+5. **La banda `«TABLA»` también va en dos filas** cuando pasa de doce. P7 tiene dieciocho tablas y
+   P10 diecisiete: en una sola fila el diagrama pasaba de los 3600 px. Los seis del Ciclo 2 tienen
+   ocho o menos, así que no cambian. Mismo criterio que la banda `«CLASS»`.
+
+6. **La leyenda se coloca a la derecha de lo más ancho de las tres bandas**, no solo de la de
+   `«CLASS»`. En P8 la banda de tablas es el triple de ancha que la de endpoints —cuatro
+   componentes contra ocho tablas— y con el cálculo viejo la nota caía justo encima de ella.
+
+**Qué tablas entran en la banda.** No todas las que el SQL toca: las que el subsistema lee o
+escribe **como dato de negocio**. `producto`, `talla` y `color` se unen a `variante_producto` en
+casi todas las consultas solo para poner un nombre legible en pantalla, y meterlas en cada banda la
+duplicaría sin decir nada. Es el criterio que ya seguían S4, S5 y S6.
+
+**`-Solo`, que es lo que hay que usar casi siempre.** `-Rehacer` borra el paquete 4.3 **entero** y
+regenera los once, y se lleva por delante el acomodo que EA le haya dado a los viejos.
+`-Solo 'Subsistema 7'` borra y regenera uno.
+
+```powershell
+.\ea-componentes-4-3.ps1 -Solo 'Subsistema 7'
+```
+
+El borrado va por OLEDB, porque los once diagramas comparten el paquete y hay que borrar los
+elementos **de ese diagrama**. Se puede porque los elementos **no se comparten**: cada diagrama
+crea los suyos con `AddNew`, y por eso `usuario` o `venta` aparecen repetidos en varios
+subsistemas. El orden importa —conectores y objetos de lienzo antes que los elementos— o las
+subconsultas ya no encuentran a quién borrar (regla 5).
+
+> **Los seis del Ciclo 2 quedaron con el alcance del Ciclo 2.** Les falta CU-41 y CU-42 en S1,
+> CU-12 y CU-38 en S3, CU-39 en S4 y CU-20 en S5. Para ponerlos al día: agregar esos endpoints a su
+> bloque de `$SUBSISTEMAS` y correr con `-Solo`.
 
 ### 7.12 Estado 3.2
 
@@ -1790,6 +1900,9 @@ $visibles = ($d.DiagramLinks | Where-Object { -not $_.IsHidden }).Count
 | El `Path` de un mensaje **no se escribe**: el `UPDATE` afecta 0 filas | `t_diagramlinks` no tiene fila hasta que EA dibuja el diagrama, y `DiagramLinks.AddNew` por COM no persiste | abrir y guardar el diagrama con `EA.App` **antes** de escribir el `Path` (§7.3) |
 | `EA.App` tira **«no contiene ningún método llamado 'Exit'»** | `Exit()` es de `Repository`, no de `App` | `$rep.Exit()` |
 | Un `GetDiagramByID` que funcionaba **tira «Internal application error»** tras regenerar | los `Diagram_ID` cambian con cada `-Rehacer` | resolver el diagrama por nombre o por GUID, nunca cablear el id |
+| La primera pantalla, sus endpoints y las primeras tablas salen **apilados en una esquina**, unos encima de otros | se colocaron con `l=0` y EA **descarta el rectángulo entero** (regla 12). Al abrir el diagrama EA lo remaqueta y el síntoma desaparece sin que se haya arreglado nada | arrancar en un margen (`$MARGEN_X = 20`). Se comprueba con `SELECT COUNT(*) FROM t_diagramobjects WHERE Diagram_ID=<n> AND RectLeft=0 AND RectTop=0 AND RectRight=0` |
+| El diagrama sale **cuatro veces más ancho** de lo que dicen las cuentas, sin ningún error | una constante se llama como la variable del bucle salvo por las mayúsculas —`$X0` y `$x0`— y se va acumulando en cada vuelta (regla 7) | renombrar la constante a algo que no se parezca (`$MARGEN_X`) |
+| Un `DELETE` sobre `t_diagramlinks` falla con **«faltan valores para algunos de los parámetros requeridos»** | esa tabla lleva `DiagramID` **sin guion bajo**, al revés que todas las demás. ACE toma `Diagram_ID` por un parámetro en vez de avisar que la columna no existe | escribir `DiagramID`. Vale para cualquier nombre de columna mal escrito: el mensaje nunca dice cuál es |
 
 ---
 
@@ -1866,7 +1979,7 @@ Después de correr un generador, **antes** de exportar:
    ea-componentes-4-3.ps1  independiente
    ```
 
-6. **Respetar las diez reglas de oro.** Son las que costaron el tiempo.
+6. **Respetar las doce reglas de oro.** Son las que costaron el tiempo.
 
 ---
 
