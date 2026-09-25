@@ -301,6 +301,64 @@ $CASOS = @(
     },
 
     @{
+        cu = 'CU-32'; ciclo = '#3'; titulo = 'Registrar devolucion o cambio'
+        nota = 'Flujo transaccional de CU-32, con SUS DOS CAMINOS. La guarda de entrada son DOS: el turno de caja abierto (igual que CU-31) y el PLAZO --- dos dias desde el cobro, contados en horas ---. La bifurcacion no esta al principio sino despues de ver que queda por devolver: el cliente elige con la prenda ya sobre el mostrador. Rutas sin el prefijo /api/v1.'
+        estados = @(
+            @{ n = 'Abrir devoluciones'; col = 'auth'; fila = 1
+               nota = 'Exige rol CAJERO o ENCARGADO y sucursal asignada.' },
+            @{ n = 'Verificar turno abierto'; col = 'vali'; fila = 0
+               nota = 'GET /caja/turnos/mio. Sin turno no hay cajon al que imputar la plata.' },
+            @{ n = 'Buscar la venta'; col = 'menu'; fila = 1.5
+               nota = 'GET /pos/devoluciones/ventas/:codigo. Solo PAGADA o ENTREGADA, y solo de SU sucursal.' },
+            @{ n = 'Verificar el plazo'; col = 'vali'; fila = 1.5
+               nota = 'venta.creado_en + DEVOLUCION_PLAZO_DIAS. Una venta vencida SE MUESTRA igual: el cajero necesita el dato para explicarselo al cliente.' },
+            @{ n = 'Marcar lo que vuelve'; col = 'menu'; fila = 2.5
+               nota = 'El tope de cada linea es lo que QUEDA por devolver, no lo vendido.' },
+            @{ n = 'Reingresar y reintegrar'; col = 'oper'; fila = 1
+               nota = 'POST /pos/devoluciones. La prenda vuelve SIEMPRE; la plata sale del cajon solo si la venta se cobro en efectivo.' },
+            @{ n = 'Elegir la prenda nueva'; col = 'menu'; fila = 3.5
+               nota = 'GET /pos/prendas: precio y promociones de HOY, no los de la venta original.' },
+            @{ n = 'Calcular la diferencia'; col = 'oper'; fila = 2.5
+               nota = 'total de lo nuevo menos valor de lo devuelto, CON SIGNO. Positiva la pone el cliente, negativa la tienda.' },
+            @{ n = 'Cambiar la prenda'; col = 'oper'; fila = 3.5
+               nota = 'POST /pos/devoluciones/cambios. PRIMERO entra lo viejo y DESPUES sale lo nuevo: es lo unico que deja cambiar una prenda fallada por otra identica cuando era la ultima.' },
+            @{ n = 'Informar error'; col = 'vali'; fila = 4.5
+               nota = 'Sin turno, fuera de plazo, se devuelve de mas, falta el metodo de la diferencia o no hay stock de la prenda nueva.' },
+            @{ n = 'Transaccion completada'; col = 'fin'; fila = 2.5
+               nota = 'La devolucion queda colgada del turno. En un cambio ademas nace una venta con metodo_pago = CAMBIO, que el arqueo NO cuenta como efectivo.' }
+        )
+        transiciones = @(
+            @{ d = '(inicial)'; h = 'Abrir devoluciones'; e = '' },
+            @{ d = 'Abrir devoluciones'; h = 'Verificar turno abierto'; e = '{GET /caja/turnos/mio}' },
+            @{ d = 'Verificar turno abierto'; h = 'Buscar la venta'; e = '[hay turno abierto]' },
+            @{ d = 'Verificar turno abierto'; h = 'Informar error'
+               e = '[sin turno]  {lleva a abrir caja, CU-30}' },
+            @{ d = 'Buscar la venta'; h = 'Verificar el plazo'; e = '[la venta existe y es de su sucursal]' },
+            @{ d = 'Buscar la venta'; h = 'Informar error'; e = '[no existe o es de otra sucursal]  {404}' },
+            @{ d = 'Verificar el plazo'; h = 'Marcar lo que vuelve'; e = '[dentro de plazo]' },
+            @{ d = 'Verificar el plazo'; h = 'Informar error'
+               e = '[vencido]  {409, pero la venta se sigue viendo}' },
+            @{ d = 'Marcar lo que vuelve'; h = 'Reingresar y reintegrar'
+               e = 'devolver()  {POST /pos/devoluciones}' },
+            @{ d = 'Marcar lo que vuelve'; h = 'Elegir la prenda nueva'
+               e = 'cambiar()  [el cliente elige acá, no antes]' },
+            @{ d = 'Elegir la prenda nueva'; h = 'Calcular la diferencia'; e = '[precio y promocion de hoy]' },
+            @{ d = 'Calcular la diferencia'; h = 'Cambiar la prenda'
+               e = '[parejo, o con el metodo dicho]  {POST /pos/devoluciones/cambios}' },
+            @{ d = 'Calcular la diferencia'; h = 'Informar error'
+               e = '[hay diferencia y falta el metodo]  {422}' },
+            @{ d = 'Reingresar y reintegrar'; h = 'Informar error'
+               e = '[se devuelve mas de lo que queda]  {409}' },
+            @{ d = 'Cambiar la prenda'; h = 'Informar error'
+               e = '[sin stock de la nueva]  {409, no queda la vieja reingresada}' },
+            @{ d = 'Reingresar y reintegrar'; h = 'Transaccion completada'; e = '{db.commit() -> 201}' },
+            @{ d = 'Cambiar la prenda'; h = 'Transaccion completada'; e = '{db.commit() -> 201}' },
+            @{ d = 'Informar error'; h = 'Buscar la venta'; e = 'reintentar()' },
+            @{ d = 'Transaccion completada'; h = '(final)'; e = '' }
+        )
+    },
+
+    @{
         cu = 'CU-33'; ciclo = '#3'; titulo = 'Recibir recomendaciones de prendas'
         nota = 'Flujo de CU-33. NO ESCRIBE EN LA BASE: es una consulta asistida. Lo que lo distingue es `Validar contra el catalogo`, que descarta lo que el modelo invente, y el reintento cuando sobreviven menos de tres. Rutas sin el prefijo /api/v1.'
         estados = @(

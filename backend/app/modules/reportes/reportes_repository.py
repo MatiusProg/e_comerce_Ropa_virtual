@@ -1,7 +1,9 @@
 """
 P11 - Reportes / CU-37  |  capa: repositorio (consultas, sin logica ni commit)
 
-Las seis consultas que pide el RF36. Cada una devuelve filas planas, listas
+Las seis consultas que pide el RF36, mas la de devoluciones y cambios
+(24/09/2026), que el RF36 no pedia y sin la cual el dinero devuelto no
+aparecia en ningun lado. Cada una devuelve filas planas, listas
 para el exportador: nada de objetos con relaciones, porque el exportador no
 sabe navegarlas y cargarlas perezosamente aca seria una consulta por fila.
 """
@@ -25,7 +27,14 @@ from app.modules.inventario.models import Existencia, MovimientoInventario
 from app.modules.organizacion.models import Proveedor, Sucursal
 from app.modules.reservas.models import Reserva
 from app.modules.seguridad.models import Cliente, Usuario
-from app.modules.ventas.models import DetalleVenta, Venta
+from app.modules.ventas.models import (
+    Caja,
+    DetalleDevolucion,
+    DetalleVenta,
+    Devolucion,
+    TurnoCaja,
+    Venta,
+)
 
 #: Los estados que cuentan como venta consumada. Una PENDIENTE_PAGO todavia no
 #: vendio nada y una CANCELADA no vendio nunca: meterlas infla los reportes y
@@ -302,6 +311,96 @@ def compras(
     )
     consulta = _acotar_sucursal(consulta, Existencia.sucursal_id, sucursal_id)
     consulta = _si(consulta, MovimientoInventario.proveedor_id, proveedor_id)
+    return [tuple(f) for f in db.execute(consulta).all()]
+
+
+# --- 7. Devoluciones y cambios ----------------------------------------------
+
+
+def devoluciones(
+    db: Session,
+    *,
+    desde: datetime,
+    hasta: datetime,
+    sucursal_id: int | None,
+    tipo: str | None = None,
+) -> list[tuple]:
+    """Lo que volvio al local, EN DINERO, prenda por prenda.
+
+    POR QUE ESTE REPORTE TIENE QUE EXISTIR
+    ---------------------------------------
+    Hasta el 24/09/2026 el dinero devuelto no aparecia en NINGUN reporte ni en
+    el tablero. Lo unico rastreable era la mercaderia, en el reporte de
+    movimientos filtrado por `DEVOLUCION`, y en unidades: nadie podia decir
+    cuanto valia lo que volvio, ni que prenda vuelve mas, ni en que caja.
+
+    UNA FILA POR LINEA DEVUELTA, Y NO POR DEVOLUCION
+    -------------------------------------------------
+    Es lo que permite las dos lecturas que hacen falta: **por producto** ---que
+    prenda se devuelve mas, que es donde se ve una talla mal rotulada o una
+    falla de confeccion--- y **por cajero**, que es quien la recibio.
+
+    Agrupar por devolucion daria el flujo de caja y perderia las dos.
+
+    EL VALOR SALE DEL PRECIO CONGELADO DE LA VENTA, NO DEL DE HOY
+    --------------------------------------------------------------
+    Por eso el `join` con `detalle_venta` por (venta, variante): lo que volvio
+    vale lo que el cliente pago por ello. Si se leyera
+    `variante_producto.precio`, una prenda que cambio de precio despues
+    reescribiria hacia atras cuanto se devolvio el mes pasado.
+
+    **Este valor no esta guardado en ninguna columna, y es a proposito.**
+    `devolucion.monto` es otra cosa ---lo que sale del CAJON, cero con tarjeta,
+    con QR y en todo cambio---. Guardar el valor seria un dato derivado que
+    puede contradecir a los tres de los que sale.
+
+    LA SUCURSAL SALE DEL TURNO, NO DE LA VENTA
+    --------------------------------------------
+    Una devolucion se recibe donde se recibe. Que la venta original sea de otra
+    sucursal no cambia donde volvio la prenda ni de que inventario forma parte
+    ahora.
+    """
+    valor = DetalleDevolucion.cantidad * (
+        DetalleVenta.precio_unitario - DetalleVenta.descuento_unitario
+    )
+    consulta = (
+        select(
+            Devolucion.creado_en,
+            Sucursal.nombre,
+            Devolucion.tipo,
+            Venta.codigo,
+            func.coalesce(Usuario.correo, "—"),
+            Producto.nombre,
+            Talla.codigo,
+            Color.nombre,
+            DetalleDevolucion.cantidad,
+            valor.label("valor"),
+        )
+        .join(DetalleDevolucion, DetalleDevolucion.devolucion_id == Devolucion.id)
+        .join(Venta, Venta.id == Devolucion.venta_id)
+        # El precio CONGELADO de esa prenda en esa venta. Es un join por DOS
+        # columnas: la misma variante en otra venta se pago otro precio.
+        .join(
+            DetalleVenta,
+            (DetalleVenta.venta_id == Devolucion.venta_id)
+            & (DetalleVenta.variante_id == DetalleDevolucion.variante_id),
+        )
+        .join(VarianteProducto, VarianteProducto.id == DetalleDevolucion.variante_id)
+        .join(Producto, Producto.id == VarianteProducto.producto_id)
+        .join(Talla, Talla.id == VarianteProducto.talla_id)
+        .join(Color, Color.id == VarianteProducto.color_id)
+        .join(TurnoCaja, TurnoCaja.id == Devolucion.turno_caja_id)
+        .join(Caja, Caja.id == TurnoCaja.caja_id)
+        .join(Sucursal, Sucursal.id == Caja.sucursal_id)
+        .join(Usuario, Usuario.id == TurnoCaja.usuario_id, isouter=True)
+        .where(
+            Devolucion.creado_en >= desde,
+            Devolucion.creado_en < hasta,
+        )
+        .order_by(Devolucion.creado_en.desc())
+    )
+    consulta = _acotar_sucursal(consulta, Caja.sucursal_id, sucursal_id)
+    consulta = _si(consulta, Devolucion.tipo, tipo)
     return [tuple(f) for f in db.execute(consulta).all()]
 
 

@@ -59,6 +59,9 @@ class EstadoDelTurno:
     sucursal_nombre: str
     efectivo: Decimal
     devoluciones: Decimal
+    #: Lo que los cambios de CU-32 movieron en el cajon, CON SIGNO. Positivo:
+    #: los clientes pusieron diferencia. Negativo: la tienda la devolvio.
+    cambios: Decimal
     esperado: Decimal
     por_metodo: list[LineaDeArqueo]
 
@@ -66,16 +69,33 @@ class EstadoDelTurno:
     diferencia: Decimal | None = None
 
 
-def _esperado(db: Session, turno: TurnoCaja) -> tuple[Decimal, Decimal, Decimal]:
+def _esperado(
+    db: Session, turno: TurnoCaja
+) -> tuple[Decimal, Decimal, Decimal, Decimal]:
+    """Los tres sumandos del arqueo y el total.
+
+        esperado = apertura + efectivo cobrado - devoluciones + cambios
+
+    `cambios` **suma** aunque represente una salida de plata, porque ya viene
+    con signo desde el repositorio. Restarlo seria invertir el caso mas comun
+    ---el cliente se lleva algo mas caro y pone la diferencia--- y el error no
+    se veria hasta que un turno con cambios cerrara al reves.
+    """
     efectivo = repository.efectivo_cobrado(db, turno.id)
     devoluciones = repository.devoluciones_del_turno(db, turno.id)
-    return efectivo, devoluciones, turno.monto_apertura + efectivo - devoluciones
+    cambios = repository.diferencias_de_cambios(db, turno.id)
+    return (
+        efectivo,
+        devoluciones,
+        cambios,
+        turno.monto_apertura + efectivo - devoluciones + cambios,
+    )
 
 
 def _armar(
     db: Session, turno: TurnoCaja, diferencia: Decimal | None = None
 ) -> EstadoDelTurno:
-    efectivo, devoluciones, esperado = _esperado(db, turno)
+    efectivo, devoluciones, cambios, esperado = _esperado(db, turno)
     caja = repository.caja_por_id(db, turno.caja_id)
     sucursal = repository.sucursal_activa(db, caja.sucursal_id) if caja else None
     return EstadoDelTurno(
@@ -84,6 +104,7 @@ def _armar(
         sucursal_nombre=sucursal.nombre if sucursal else "—",
         efectivo=efectivo,
         devoluciones=devoluciones,
+        cambios=cambios,
         esperado=esperado,
         por_metodo=[
             LineaDeArqueo(metodo=m or "—", ventas=n, total=t)
@@ -170,7 +191,7 @@ def cerrar(
     if turno.cerrado_en is not None:
         raise ErrorDeCaja("Ese turno ya está cerrado.")
 
-    _, _, esperado = _esperado(db, turno)
+    *_, esperado = _esperado(db, turno)
 
     turno.monto_esperado = esperado
     turno.monto_cierre = monto_cierre

@@ -64,6 +64,35 @@ ESTADOS_VENTA = ("PENDIENTE_PAGO", "PAGADA", "ENTREGADA", "CANCELADA")
 #: dentro de EFECTIVO descuadraria el turno por cada uno.
 METODOS_PAGO = ("EFECTIVO", "TARJETA", "QR")
 
+#: Lo que `venta.metodo_pago` puede contener, que no es lo mismo (0020).
+#:
+#: `CAMBIO` no es una forma de cobrar y por eso NO esta en `METODOS_PAGO`: el
+#: cajero no puede elegirlo, no aparece en la pantalla de venta y nunca vale
+#: para `devolucion.metodo_diferencia`. Lo escribe solo CU-32 en la venta que
+#: nace de un cambio de prenda.
+#:
+#: POR QUE ESA VENTA NECESITA UN METODO PROPIO
+#: -------------------------------------------
+#: La venta de un cambio vale la prenda que sale ---Bs 250---, no lo que entro
+#: al cajon ---Bs 50---. Si llevara `EFECTIVO`, el arqueo de CU-30 la sumaria
+#: entera y el turno cerraria con un sobrante de 200 que nadie puede contar.
+#:
+#: Con un metodo propio, el filtro que ya existia ---`metodo_pago = EFECTIVO`---
+#: la deja fuera sin que haga falta ninguna condicion nueva, y el desglose del
+#: cierre la muestra en su propia linea en vez de esconderla. Lo que si entro
+#: al cajon se cuenta aparte: `devolucion.diferencia`.
+METODOS_VENTA = METODOS_PAGO + ("CAMBIO",)
+
+#: Los dos flujos de CU-32 (0020).
+#:
+#: `DEVOLUCION` la prenda vuelve y la plata se reintegra.
+#: `CAMBIO`     la prenda vuelve, otra sale, y solo se mueve la diferencia.
+#:
+#: Es una columna y no dos tablas porque las dos escriben exactamente lo mismo
+#: --- una cabecera, sus lineas y un reingreso al inventario --- y el cambio
+#: **ademas** apunta a una venta. Ver la 0020.
+TIPOS_DEVOLUCION = ("DEVOLUCION", "CAMBIO")
+
 # Solo aplica al canal DIGITAL. En PRESENCIAL el cliente ya se lleva la prenda.
 MODALIDADES_ENTREGA = ("RETIRO", "ENVIO")
 
@@ -178,7 +207,7 @@ class Venta(Base):
         CheckConstraint("total = subtotal - descuento", name="total_coherente"),
         CheckConstraint(
             "metodo_pago IS NULL OR metodo_pago IN ('"
-            + "', '".join(METODOS_PAGO)
+            + "', '".join(METODOS_VENTA)
             + "')",
             name="metodo_pago",
         ),
@@ -374,10 +403,48 @@ class Devolucion(Base):
 
     Cuelga de un `turno_caja` porque el dinero sale de una caja concreta, y sin
     eso el arqueo de CU-30 no cerraria: `monto_esperado` resta justamente esto.
+
+    LOS DOS FLUJOS VIVEN EN ESTA MISMA TABLA (0020)
+    ------------------------------------------------
+    Un CAMBIO es esto mismo y ademas una venta: la prenda vieja vuelve por
+    `detalle_devolucion` y la nueva sale por la `venta` a la que apunta
+    `venta_cambio_id`. Lo unico que lo distingue de una devolucion pura es
+    **por donde se mueve la plata**, y eso son dos columnas, no dos tablas.
     """
 
     __tablename__ = "devolucion"
-    __table_args__ = (CheckConstraint("monto >= 0", name="monto_no_negativo"),)
+    __table_args__ = (
+        CheckConstraint("monto >= 0", name="monto_no_negativo"),
+        CheckConstraint(
+            "tipo IN ('" + "', '".join(TIPOS_DEVOLUCION) + "')", name="tipo"
+        ),
+        # Un cambio sin venta nueva no es un cambio; una devolucion con venta
+        # nueva es un cambio mal etiquetado.
+        CheckConstraint(
+            "(tipo = 'CAMBIO') = (venta_cambio_id IS NOT NULL)",
+            name="cambio_tiene_venta",
+        ),
+        # En un cambio el valor de la prenda vieja se ACREDITA contra la nueva:
+        # no sale un billete del cajon por ella. Si `monto` pudiera valer algo,
+        # el arqueo lo restaria ademas de la diferencia y contaria dos veces.
+        CheckConstraint(
+            "tipo = 'DEVOLUCION' OR monto = 0", name="cambio_no_saca_del_cajon"
+        ),
+        CheckConstraint(
+            "tipo = 'CAMBIO' OR (diferencia = 0 AND metodo_diferencia IS NULL)",
+            name="devolucion_sin_diferencia",
+        ),
+        CheckConstraint(
+            "(diferencia <> 0) = (metodo_diferencia IS NOT NULL)",
+            name="metodo_si_hay_diferencia",
+        ),
+        CheckConstraint(
+            "metodo_diferencia IS NULL OR metodo_diferencia IN ('"
+            + "', '".join(METODOS_PAGO)
+            + "')",
+            name="metodo_diferencia",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     venta_id: Mapped[int] = mapped_column(
@@ -387,8 +454,24 @@ class Devolucion(Base):
     turno_caja_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("turno_caja.id"), index=True
     )
+    #: DEVOLUCION o CAMBIO. Ver `TIPOS_DEVOLUCION`.
+    tipo: Mapped[str] = mapped_column(String(12), server_default="DEVOLUCION")
+    #: La venta que se llevo el cliente a cambio. Solo en los CAMBIO.
+    #:
+    #: UNICA a proposito: dos devoluciones que reclamaran la misma venta nueva
+    #: harian que el arqueo la excluyera dos veces. El indice que trae de
+    #: regalo es el que usa ese `NOT EXISTS`.
+    venta_cambio_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("venta.id"), unique=True
+    )
     motivo: Mapped[str] = mapped_column(String(200))
+    #: Lo que sale del cajon por la prenda devuelta. Cero en todo CAMBIO.
     monto: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    #: `total de lo nuevo - valor de lo devuelto`, CON SIGNO. Cero fuera de un
+    #: cambio. Positiva: paga el cliente. Negativa: devuelve la tienda.
+    diferencia: Mapped[Decimal] = mapped_column(Numeric(10, 2), server_default="0")
+    #: Como se salda la diferencia. NULL si no hay diferencia que saldar.
+    metodo_diferencia: Mapped[str | None] = mapped_column(String(20))
     creado_en: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), index=True
     )

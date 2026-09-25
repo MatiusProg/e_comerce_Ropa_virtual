@@ -103,6 +103,23 @@ export interface IndicadoresVentas {
   monto_periodo: string | null;
   cantidad_periodo: number | null;
   ticket_promedio: string | null;
+
+  /**
+   * Neto de devoluciones (CU-32).
+   *
+   * `monto_periodo` sigue siendo lo VENDIDO en bruto y no cambió de
+   * significado: una devolución no corrige la venta. Lo que faltaba era poder
+   * restarle lo que volvió a la percha, que hasta el 24/09/2026 no figuraba en
+   * ningún lado —el tablero informaba como vendido algo que estaba de vuelta—.
+   *
+   * Hacen falta los tres y no sólo el neto: «vendimos 10.000 y devolvieron
+   * 200» y «vendimos 10.000 y devolvieron 4.000» dan el mismo neto y no son la
+   * misma situación.
+   */
+  devuelto_hoy: string | null;
+  devuelto_periodo: string | null;
+  neto_periodo: string | null;
+  neto_hoy: string | null;
   mas_vendidas: PrendaRankeada[];
   /** Por qué no hay datos, en una frase. Nulo cuando `disponible` es true. */
   motivo: string | null;

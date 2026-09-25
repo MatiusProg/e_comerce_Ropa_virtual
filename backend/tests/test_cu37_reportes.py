@@ -6,7 +6,7 @@ pantalla y ahí terminaba.
 
 Lo que más importa cubrir
 -------------------------
-- **Que las seis consultas CORRAN.** Es lo primero y lo más valioso: son seis
+- **Que TODAS las consultas CORRAN.** Es lo primero y lo más valioso: son
   consultas con entre tres y siete JOIN, y un nombre de columna equivocado no
   se nota hasta que alguien pide ese reporte. Escribiéndolas ya aparecieron
   dos: `Reserva` no tiene `codigo`, y `DetalleVenta` no guarda `subtotal`.
@@ -32,8 +32,18 @@ CATALOGO = f"{REPORTES}/catalogo"
 EMPLEADOS = "/api/v1/organizacion/empleados"
 SUCURSALES = "/api/v1/organizacion/sucursales"
 
-#: Los seis del RF36. Si alguien agrega uno, esta lista lo obliga a probarlo.
-TIPOS = ("ventas", "inventario", "movimientos", "reservas", "rendimiento", "compras")
+#: Los del RF36 más el de devoluciones y cambios, que el RF36 no pedía y que se
+#: agregó el 24/09/2026 porque el dinero devuelto no figuraba en ningún lado.
+#: Si alguien agrega uno, esta lista lo obliga a probarlo.
+TIPOS = (
+    "ventas",
+    "devoluciones",
+    "inventario",
+    "movimientos",
+    "reservas",
+    "rendimiento",
+    "compras",
+)
 
 
 @pytest.fixture
@@ -186,7 +196,7 @@ def test_una_fecha_inicial_posterior_a_la_final_se_rechaza(
 # --- El catálogo ------------------------------------------------------------
 
 
-def test_el_catalogo_lista_los_seis(
+def test_el_catalogo_los_lista_a_todos(
     api: TestClient, cabeceras_admin: dict[str, str]
 ) -> None:
     """Existe para que la pantalla no tenga la lista escrita a mano."""

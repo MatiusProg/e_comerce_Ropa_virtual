@@ -608,7 +608,7 @@ $casos = @(
      act=@(@{a='Cajero'; d='PantallaTurno'; r='OPERA_DESDE'}) },
   @{ n='2.3 CU-31 Registrar venta presencial';         f='PantallaVenta';         c=@('GestorMostrador','GestorCaja','GestorInventario','GestorPromociones','GestorHistorial');    e=@('Venta','DetalleVenta','Comprobante','Existencia');
      act=@(@{a='Cajero'; d='PantallaVenta'; r='OPERA_DESDE'}) },
-  @{ n='2.3 CU-32 Registrar devolución';               f='PantallaDevolucion';    c=@('GestorDevoluciones','GestorCaja','GestorInventario');                                       e=@('Devolucion','DetalleDevolucion','Venta','DetalleVenta');
+  @{ n='2.3 CU-32 Registrar devolución o cambio';      f='PantallaDevolucion';    c=@('GestorDevoluciones','GestorCaja','GestorInventario','GestorPromociones');                   e=@('Devolucion','DetalleDevolucion','Venta','DetalleVenta','Existencia');
      act=@(@{a='Cajero'; d='PantallaDevolucion'; r='OPERA_DESDE'}) },
   @{ n='2.3 CU-33 Recibir recomendaciones de prendas'; f='PantallaParaVos';       c=@('GestorRecomendaciones','GestorVitrina','GestorFavoritos','GestorAutenticacion');            e=@('Recomendacion','VarianteProducto','Favorito');
      act=@(@{a='Cliente'; d='PantallaParaVos'; r='OPERA_DESDE'}, @{a='Servicio de IA'; d='GestorRecomendaciones'; r='RESUELVE_PARA'}) },

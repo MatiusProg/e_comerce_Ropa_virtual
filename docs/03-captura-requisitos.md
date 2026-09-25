@@ -75,7 +75,7 @@ disponibilidad); el ciclo de órdenes de compra queda fuera del alcance —ver �
 | CU-29 | Consultar historial de compras | Permite al Cliente consultar sus pedidos anteriores, su estado actual y descargar el comprobante digital de cada uno. |
 | CU-30 | Abrir y cerrar caja | Permite al Cajero abrir su turno con un monto inicial y cerrarlo registrando el arqueo, obteniendo el resumen de las ventas del turno. |
 | CU-31 | Registrar venta presencial | Permite al Cajero registrar una venta en sucursal buscando las variantes o cargando una reserva ya atendida, cobrar en efectivo o tarjeta, emitir el comprobante y descontar el inventario. |
-| CU-32 | Registrar devolución | Permite al Cajero registrar la devolución de una prenda vendida, reingresándola al inventario de la sucursal con su movimiento correspondiente. |
+| CU-32 | Registrar devolución o cambio | Permite al Cajero registrar la devolución de una prenda vendida, reingresándola al inventario de la sucursal con su movimiento correspondiente, o **cambiarla por otra** dentro del plazo que fija la tienda, cobrando o entregando la diferencia de precio. |
 | CU-33 | Recibir recomendaciones de prendas | El Sistema, apoyado en el Servicio de IA, sugiere al Cliente prendas acordes a su historial de navegación y compra, su talla habitual, la temporada vigente, la categoría consultada y la disponibilidad real. |
 | CU-34 | Conversar con el asistente virtual | Permite al Cliente formular consultas en lenguaje natural sobre el catálogo, la disponibilidad y el estado de sus pedidos y reservas; el asistente responde consultando los datos reales del sistema. |
 | CU-35 | Generar reporte por comando de voz | Permite al Administrador solicitar un reporte en lenguaje natural mediante comando de voz; el sistema interpreta la solicitud, consulta los datos y devuelve el reporte generado, con opción de descarga. |
@@ -144,7 +144,7 @@ casos de uso; **Media** = necesaria para completar la funcionalidad exigida pero
 | CU-29 | Consultar historial de compras | Media | 3 | Ventas |
 | CU-30 | Abrir y cerrar caja | Media | 3 | Punto de Venta |
 | CU-31 | Registrar venta presencial | Alta | 3 | Punto de Venta |
-| CU-32 | Registrar devolución | Baja | 3 | Punto de Venta |
+| CU-32 | Registrar devolución o cambio | Baja | 3 | Punto de Venta |
 | CU-33 | Recibir recomendaciones de prendas | Alta | 3 | Inteligencia Artificial |
 | CU-34 | Conversar con el asistente virtual | Media | 3 | Inteligencia Artificial |
 | CU-35 | Generar reporte por comando de voz | Media | 3 | Inteligencia Artificial |
@@ -267,6 +267,7 @@ adicionales numerados a continuación de los originales.
 | **RF37** | El proveedor deberá poder registrar la información de los productos que abastece y asociarlos a una temporada y una colección. | CU-38 | El enunciado (§4) le da al Proveedor tres responsabilidades y ningún RF las recoge. Sin esto, A5 es un actor principal que no inicia nada. |
 | **RF38** | El proveedor deberá poder informar la disponibilidad y el plazo de abastecimiento de sus productos, alimentando el estado *próximo a ingresar* del inventario consolidado. | CU-39 | El enunciado exige distinguir la mercadería «próxima a ingresar» y ningún caso de uso la produce: el CU-13 registra lo que **ya llegó**. Sin esto, ese estado es inalcanzable. |
 | **RF39** | El sistema deberá permitir a un usuario recuperar el acceso a su cuenta mediante un enlace de un solo uso enviado a su correo. | CU-41 | El RF01 permite autorregistrarse; nada permite volver a entrar tras olvidar la contraseña, salvo pedírselo al Administrador. |
+| **RF40** | El cajero deberá poder cambiar una prenda vendida por otra dentro de un plazo, cobrando o entregando la diferencia de precio. | CU-32 | El RF34 sólo deshace la venta. Una tienda de ropa cambia talla y color mucho más seguido de lo que devuelve, y sin esto el cajero tenía que hacerlo como una devolución seguida de una venta: dos operaciones que pueden cortarse por la mitad y que dejan el desglose del cajón diciendo que se movieron billetes que nadie movió. |
 
 ## 3.4 Requisitos no funcionales
 

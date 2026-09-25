@@ -267,6 +267,50 @@ $ACTORES = @(
     },
 
     @{
+        actor  = 'Cajero'
+        ciclo  = '#3'
+        cu     = 'CU-32'
+        nombre = '3.2 Diagrama de Navegacion - CU-32 Registrar devolucion o cambio'
+        guarda = '[sesion + CAJERO]'
+        nota   = 'Navegacion de CU-32, POR CASO DE USO. Extension UWE (no es UML 2.5). UNA SOLA VISTA para los dos flujos, y es una decision: el cliente elige entre devolver y cambiar DESPUES de que el cajero busco la venta y vio que queda por devolver. Dos pantallas obligarian a elegir antes de tener esa informacion y a volver atras cuando cambia de idea. El buscador de la prenda nueva reusa el de CU-31.'
+        menu   = @{ n = 'caja.ts'; ruta = '/caja'
+                    carpeta = 'features/caja/turno'
+                    ops = @() }
+        areas = @(
+            @{
+                k = 'devolucion'; cu = 'CU-32'
+                vista = @{ n = 'devolucion.ts'; ruta = '/caja/devoluciones'
+                           carpeta = 'features/caja/devolucion'
+                           attrs = @('codigo', 'venta', 'lineas', 'dentro_de_plazo') }
+                form  = @{ n = 'devolucion-formulario.ts'
+                           carpeta = 'features/caja/devolucion'
+                           attrs = @('motivo', 'lineas') }
+                ctrl  = @{ n = 'pos/devolucion_router.py'
+                           ops = @('venta_a_devolver', 'registrar_devolucion') }
+            },
+            @{
+                k = 'cambio'; cu = 'CU-32'
+                vista = @{ n = 'cambio-prendas.ts'; ruta = '/caja/devoluciones'
+                           carpeta = 'features/caja/devolucion'
+                           attrs = @('busqueda', 'llevadas', 'diferencia', 'a_favor_de') }
+                form  = @{ n = 'cambio-formulario.ts'
+                           carpeta = 'features/caja/devolucion'
+                           attrs = @('devueltas', 'llevadas', 'metodo_diferencia', 'diferencia_esperada') }
+                ctrl  = @{ n = 'pos/devolucion_router.py'
+                           ops = @('registrar_cambio') }
+            },
+            @{
+                k = 'prendas'; cu = 'CU-31'
+                vista = @{ n = 'mostrador.ts'; ruta = '/caja/venta'
+                           carpeta = 'features/caja/mostrador'
+                           attrs = @('busqueda', 'sucursal_id') }
+                ctrl  = @{ n = 'pos/router.py'
+                           ops = @('prendas_del_mostrador') }
+            }
+        )
+    },
+
+    @{
         actor  = 'Cliente'
         ciclo  = '#3'
         cu     = 'CU-21'

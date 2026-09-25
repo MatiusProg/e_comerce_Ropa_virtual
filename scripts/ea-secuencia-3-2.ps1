@@ -1150,6 +1150,92 @@ $CASOS = @(
   )
 },
 
+# ---------------------------------------------------------------- CU-32 --
+#
+# DOS FLUJOS, UN CASO DE USO. El cliente elige entre devolver y cambiar CON LA
+# PRENDA YA SOBRE EL MOSTRADOR, despues de que el cajero busco la venta: es el
+# mismo tramite. Comparten actor, precondicion --venta cobrada en esta sucursal
+# y dentro del plazo-- y la mitad del recorrido.
+#
+# LOS TRES `loop` QUE ESTE DIAGRAMA NECESITA van a mano: el generador solo crea
+# `alt`. Estan documentados en docs/diagramas/loops-3-2.md, seccion 2.7.
+@{
+  nombre = '3.2 CU-32 Registrar devolución o cambio'
+  lineas = @(
+    @{ k = 'act'; actor = 'Cajero';                w = 110 },
+    @{ k = 'pnt'; clase = 'PantallaDevolucion';    w = 210 },
+    @{ k = 'gde'; clase = 'GestorDevoluciones';    w = 210 },
+    @{ k = 'gca'; clase = 'GestorCaja';            w = 160 },
+    @{ k = 'gpr'; clase = 'GestorPromociones';     w = 200 },
+    @{ k = 'ven'; clase = 'Venta';                 w = 140 },
+    @{ k = 'dev'; clase = 'Devolucion';            w = 170 },
+    @{ k = 'gin'; clase = 'GestorInventario';      w = 190 },
+    @{ k = 'exi'; clase = 'Existencia';            w = 160 }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nDevolver la prenda" },
+    @{ t='msg'; o='act'; d='pnt'; n='1.1: buscarVenta(codigo)' },
+    @{ t='msg'; o='pnt'; d='gde'; n='1.2: GET /pos/devoluciones/ventas/:codigo' },
+    @{ t='msg'; o='gde'; d='gca'; n='1.3: turno_abierto_de_usuario(usuario_id)' },
+    @{ t='msg'; o='gca'; d='gde'; n='1.3.1: TurnoCaja | None'; ret=$true },
+    @{ t='msg'; o='gde'; d='ven'; n='1.4: SELECT * FROM venta WHERE codigo AND sucursal_id = :suya AND estado IN (''PAGADA'', ''ENTREGADA'')' },
+    @{ t='msg'; o='ven'; d='gde'; n='1.4.1: Venta | None'; ret=$true },
+    @{ t='msg'; o='gde'; d='ven'; n='1.5: SELECT variante_id, cantidad, precio_unitario FROM detalle_venta WHERE venta_id' },
+    @{ t='msg'; o='ven'; d='gde'; n='1.5.1: list[DetalleVenta]  [precio CONGELADO]'; ret=$true },
+    @{ t='msg'; o='gde'; d='dev'; n='1.6: SELECT SUM(cantidad) FROM detalle_devolucion JOIN devolucion WHERE venta_id GROUP BY variante_id' },
+    @{ t='msg'; o='dev'; d='gde'; n='1.6.1: dict[variante, ya_devuelto]'; ret=$true },
+    @{ t='msg'; o='gde'; d='pnt'; n='1.7: VentaDevolvibleOut(lineas, plazo_dias, vence_en, dentro_de_plazo)'; ret=$true },
+    @{ t='alt' },
+    @{ t='op'; g='dentro de plazo' },
+    @{ t='msg'; o='act'; d='pnt'; n='1.8a: registrarDevolucion(motivo, lineas)' },
+    @{ t='msg'; o='pnt'; d='gde'; n='1.9a: POST /pos/devoluciones' },
+    @{ t='msg'; o='gde'; d='ven'; n='1.10a: SELECT ... FROM venta WHERE id FOR UPDATE  {serializa las devoluciones}' },
+    @{ t='msg'; o='gde'; d='dev'; n='1.11a: INSERT INTO devolucion (tipo = ''DEVOLUCION'', turno_caja_id, motivo, monto)' },
+    @{ t='msg'; o='dev'; d='gde'; n='1.11a.1: Devolucion (id)'; ret=$true },
+    @{ t='msg'; o='gde'; d='dev'; n='1.12a: INSERT INTO detalle_devolucion (variante_id, cantidad)' },
+    @{ t='msg'; o='gde'; d='gin'; n='1.13a: reingresar_por_devolucion(variante, sucursal, cantidad)' },
+    @{ t='msg'; o='gin'; d='exi'; n='1.14a: UPDATE existencia SET cantidad_disponible = disponible + :n' },
+    @{ t='msg'; o='gin'; d='gde'; n='1.14a.1: MovimientoInventario (DEVOLUCION)'; ret=$true },
+    @{ t='msg'; o='gde'; d='pnt'; n='1.15a: db.commit() -> DevolucionOut(valor_devuelto, monto, sale_del_cajon)'; ret=$true },
+    @{ t='msg'; o='pnt'; d='act'; n='1.16a: decirSiSaleDelCajon()  [cero si se cobro con tarjeta o QR]' },
+    @{ t='op'; g='fuera de plazo' },
+    @{ t='msg'; o='gde'; d='pnt'; n='1.8b: fueraDePlazo(vence_en) -> 409  [la venta se sigue viendo]' },
+    @{ t='fin' },
+    @{ t='nota'; txt = "FLUJO 2`nCambiar por otra prenda" },
+    @{ t='msg'; o='act'; d='pnt'; n='2.1: elegirCambio()' },
+    @{ t='msg'; o='pnt'; d='gde'; n='2.2: GET /pos/prendas?busqueda  {reusa CU-31}' },
+    @{ t='msg'; o='gde'; d='exi'; n='2.3: SELECT v.*, e.cantidad_disponible FROM variante_producto v JOIN existencia e WHERE e.sucursal_id = :suya' },
+    @{ t='msg'; o='exi'; d='gde'; n='2.3.1: list[VarianteProducto]'; ret=$true },
+    @{ t='msg'; o='act'; d='pnt'; n='2.4: registrarCambio(devueltas, llevadas, metodo_diferencia)' },
+    @{ t='msg'; o='pnt'; d='gde'; n='2.5: POST /pos/devoluciones/cambios' },
+    @{ t='msg'; o='gde'; d='ven'; n='2.6: SELECT ... FROM venta WHERE id FOR UPDATE' },
+    @{ t='msg'; o='gde'; d='gpr'; n='2.7: descuentos_por_variante(precios)  {UNA sola para todo el cambio}' },
+    @{ t='msg'; o='gpr'; d='gde'; n='2.7.1: dict[variante, Descuento]'; ret=$true },
+    @{ t='msg'; o='gde'; d='gde'; n='2.8: diferencia = total_llevado - valor_devuelto  {CON SIGNO}' },
+    @{ t='alt' },
+    @{ t='op'; g='la diferencia se puede saldar' },
+    @{ t='msg'; o='gde'; d='ven'; n='2.9a: INSERT INTO venta (metodo_pago = ''CAMBIO'', total = lo nuevo)' },
+    @{ t='msg'; o='ven'; d='gde'; n='2.9a.1: Venta (codigo)'; ret=$true },
+    @{ t='msg'; o='gde'; d='ven'; n='2.10a: INSERT INTO detalle_venta (precio_unitario CONGELADO)' },
+    @{ t='msg'; o='gde'; d='dev'; n='2.11a: INSERT INTO devolucion (tipo = ''CAMBIO'', venta_cambio_id, monto = 0, diferencia)' },
+    @{ t='msg'; o='gde'; d='dev'; n='2.12a: INSERT INTO detalle_devolucion (variante_id, cantidad)' },
+    @{ t='msg'; o='gde'; d='gin'; n='2.13a: reingresar_por_devolucion(...)  [1ro ENTRA lo viejo]' },
+    @{ t='msg'; o='gin'; d='exi'; n='2.14a: UPDATE existencia SET cantidad_disponible = disponible + :n' },
+    @{ t='msg'; o='gde'; d='gin'; n='2.15a: descontar_por_venta(...)  [2do SALE lo nuevo]' },
+    @{ t='msg'; o='gin'; d='exi'; n='2.16a: SELECT ... FROM existencia WHERE variante_id FOR UPDATE' },
+    @{ t='msg'; o='gin'; d='exi'; n='2.17a: UPDATE existencia SET cantidad_disponible = disponible - :n' },
+    @{ t='msg'; o='gin'; d='gde'; n='2.17a.1: confirmación'; ret=$true },
+    @{ t='msg'; o='gde'; d='pnt'; n='2.18a: db.commit() -> CambioOut(diferencia, a_favor_de, venta_nueva_codigo)'; ret=$true },
+    @{ t='msg'; o='pnt'; d='act'; n='2.19a: decirSiCobrarOEntregar()  [CLIENTE, TIENDA o NADIE]' },
+    @{ t='op'; g='hay diferencia y no se dijo como se salda' },
+    @{ t='msg'; o='gde'; d='pnt'; n='2.9b: cambioSinMetodo(diferencia) -> 422' },
+    @{ t='op'; g='sin stock de la prenda nueva' },
+    @{ t='msg'; o='gde'; d='gde'; n='2.9c: revertirTransaccion()  [no queda la vieja reingresada]' },
+    @{ t='msg'; o='gde'; d='pnt'; n='2.10c: sinStock(prenda, disponible) -> 409' },
+    @{ t='fin' }
+  )
+},
+
 # ---------------------------------------------------------------- CU-33 --
 @{
   nombre = '3.2 CU-33 Recibir recomendaciones de prendas'

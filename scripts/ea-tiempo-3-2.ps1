@@ -216,6 +216,38 @@ $CASOS = @(
     },
 
     @{
+        cu = 'CU-32'; ciclo = '#3'; escenario = 'Cambiar una prenda por otra'
+        nota = "Escenario: el cliente trae una prenda y se lleva otra. Lo que hay que mirar son las lineas 2 y 3: la prenda que VUELVE pasa a disponible ANTES de que la que SALE pase a vendida. No es un detalle de dibujo --- es el orden del mostrador, y es lo unico que deja cambiar una prenda fallada por otra identica cuando era la ultima: al reves, el descuento no encontraria stock de una prenda que el cliente tiene en la mano. La guarda de la linea 1 son DOS: turno abierto y dentro del plazo. $LEYENDA"
+        lineas = @(
+            (LineaTransaccion 'POST /pos/devoluciones/cambios' 'turno abierto y dentro del plazo' 'INSERT devolucion + venta + 2 movimientos' '201' '2 dias'),
+            @{
+                k = 'vuelve'; n = 'Prenda que vuelve'; clasificador = 'Existencia'
+                estados = @('vendida', 'disponible')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'vendida';    ev = 'vendida en su dia  ';        tc = '' },
+                    @{ t = 54;        s = 'disponible'; ev = 'DEVOLUCION +n  {1ro}';       tc = 'RNF10' }
+                )
+            },
+            @{
+                k = 'sale'; n = 'Prenda que se lleva'; clasificador = 'Existencia'
+                estados = @('disponible', 'vendida')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'disponible'; ev = '';                           tc = '' },
+                    @{ t = 62;        s = 'vendida';    ev = 'SALIDA -n  {2do}';           tc = 'RNF11' }
+                )
+            },
+            @{
+                k = 'turno'; n = 'Turno de caja'; clasificador = 'TurnoCaja'
+                estados = @('Abierto', 'Cerrado')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Abierto'; ev = 'abierto por CU-30  ';           tc = '' },
+                    @{ t = 84;        s = 'Cerrado'; ev = 'arqueo: solo la diferencia  ';  tc = '1 turno' }
+                )
+            }
+        )
+    },
+
+    @{
         cu = 'CU-33'; ciclo = '#3'; escenario = 'Recibir recomendaciones de prendas'
         nota = "Escenario: el cliente abre `Para vos`. ESTE NO USA LA LINEA DE TRANSACCION porque no escribe nada: es una consulta asistida. Lo que hay que mirar es el ancho del tramo `Esperando al modelo`, que es casi todo el tiempo de la peticion --medido entre 3 y 25 segundos--, y el lazo de reintento cuando la validacion deja menos de tres prendas en pie. $LEYENDA"
         lineas = @(
