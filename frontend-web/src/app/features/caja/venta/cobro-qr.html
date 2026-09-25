@@ -1,0 +1,107 @@
+<h2 mat-dialog-title class="titulo">
+  <mat-icon>qr_code_2</mat-icon>
+  Cobro con QR
+</h2>
+
+<mat-dialog-content>
+  <p class="monto">{{ datos.total | currency: 'BOB' : 'symbol-narrow' }}</p>
+
+  <div class="marco" [class.apagado]="estado() === 'vencido' || estado() === 'rechazado'">
+    <svg
+      class="codigo"
+      [attr.viewBox]="'0 0 ' + qr().size + ' ' + qr().size"
+      shape-rendering="crispEdges"
+      role="img"
+      [attr.aria-label]="'Código QR para pagar ' + datos.total + ' bolivianos'"
+    >
+      <rect [attr.width]="qr().size" [attr.height]="qr().size" fill="#fff" />
+      <path [attr.d]="qr().d" fill="#1d1a24" />
+    </svg>
+
+    @switch (estado()) {
+      @case ('confirmando') {
+        <div class="velo">
+          <mat-spinner diameter="44" />
+          <span>Esperando la respuesta del banco…</span>
+        </div>
+      }
+      @case ('aprobado') {
+        <div class="velo ok">
+          <mat-icon>check_circle</mat-icon>
+          <span>Pago aprobado</span>
+        </div>
+      }
+    }
+  </div>
+
+  <p class="referencia">Ref. {{ referencia() }} · {{ datos.caja }}</p>
+
+  @switch (estado()) {
+    @case ('esperando') {
+      <div class="reloj">
+        <span>Esperando que el cliente pague · vence en <strong>{{ reloj() }}</strong></span>
+        <mat-progress-bar mode="determinate" [value]="porcentaje()" />
+      </div>
+    }
+    @case ('rechazado') {
+      <div class="aviso" role="alert">
+        <mat-icon>block</mat-icon>
+        <div>
+          <strong>El banco rechazó el pago.</strong> {{ motivo() }}
+          <br />No se registró ninguna venta.
+        </div>
+      </div>
+    }
+    @case ('vencido') {
+      <div class="aviso" role="alert">
+        <mat-icon>timer_off</mat-icon>
+        <div>
+          <strong>El código venció sin que llegara el pago.</strong>
+          <br />No se registró ninguna venta. Puede generar uno nuevo.
+        </div>
+      </div>
+    }
+    @case ('aprobado') {
+      <p class="listo">Registrando la venta…</p>
+    }
+  }
+
+  @if (estado() === 'esperando') {
+    <section class="simulador" aria-label="Simulación del banco">
+      <p>
+        <mat-icon>science</mat-icon>
+        <span><strong>Simulación.</strong> No hay un banco conectado: estos botones hacen
+        lo que haría su respuesta.</span>
+      </p>
+      <div class="botones">
+        <button matButton="tonal" type="button" (click)="simularPago()">
+          <mat-icon>verified</mat-icon>
+          El cliente pagó
+        </button>
+        <button matButton type="button" (click)="simularRechazo()">
+          <mat-icon>credit_card_off</mat-icon>
+          El banco rechazó
+        </button>
+      </div>
+    </section>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (estado() === 'rechazado' || estado() === 'vencido') {
+    <button matButton type="button" (click)="desistir()">Cambiar método de pago</button>
+    <button matButton="filled" type="button" class="vb-boton-marca" (click)="reintentar()">
+      <mat-icon>refresh</mat-icon>
+      Generar otro QR
+    </button>
+  } @else {
+    <button
+      matButton
+      type="button"
+      (click)="desistir()"
+      [disabled]="estado() === 'confirmando' || estado() === 'aprobado'"
+    >
+      Cancelar cobro
+    </button>
+  }
+</mat-dialog-actions>

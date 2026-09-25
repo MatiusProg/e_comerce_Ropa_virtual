@@ -4,6 +4,7 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
 
 import { Venta } from './venta';
@@ -35,6 +36,7 @@ function prenda(id: number, precio: string, disponible = 10): PrendaEnMostrador 
     color: 'Negro',
     precio,
     disponible,
+    descuento: null, // sin promoción de CU-12: se cobra el precio de lista
   };
 }
 
@@ -48,14 +50,20 @@ const RESERVA: ReservaPorCobrar = {
 
 describe('Venta presencial (CU-31)', () => {
   let componente: any;
+  let pos: any;
+  /** Lo que «contesta el banco» al cerrar el diálogo del QR. */
+  let respuestaQr: string | null;
+  let dialogo: { open: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
-    const pos = {
+    respuestaQr = null;
+    pos = {
       prendas: () => of({ total: 0, pagina: 1, tamano: 40, items: [] }),
       reservasPorCobrar: () => of([]),
-      cobrar: () => of(null),
+      cobrar: vi.fn(() => of(null)),
       comprobante: () => of(new Blob()),
     };
+    dialogo = { open: vi.fn(() => ({ afterClosed: () => of(respuestaQr) })) };
     // Hay turno abierto: si devolviera `null`, la pantalla entraría por la cara
     // de «abra su caja» y no habría ticket que armar.
     const caja = {
@@ -70,6 +78,7 @@ describe('Venta presencial (CU-31)', () => {
         provideHttpClient(),
         { provide: PosService, useValue: pos },
         { provide: CajaService, useValue: caja },
+        { provide: MatDialog, useValue: dialogo },
       ],
     }).compileComponents();
 
@@ -167,5 +176,45 @@ describe('Venta presencial (CU-31)', () => {
 
     expect(componente.lineas().length).toBe(0);
     expect(componente.total()).toBe('480.00');
+  });
+
+  // --- Cobro con QR ---------------------------------------------------------
+
+  it('con QR registra la venta solo después de que el banco aprueba', () => {
+    componente.agregar(prenda(1, '250.00'));
+    componente.elegirMetodo('QR');
+    respuestaQr = 'QR-ABCD2345';
+
+    componente.cobrar();
+
+    expect(dialogo.open).toHaveBeenCalledTimes(1);
+    expect(dialogo.open.mock.calls[0][1].data.total).toBe('250.00');
+    expect(pos.cobrar).toHaveBeenCalledTimes(1);
+    expect(pos.cobrar.mock.calls[0][0].metodo_pago).toBe('QR');
+    expect(componente.referenciaQr()).toBe('QR-ABCD2345');
+  });
+
+  it('con QR rechazado o vencido no registra ninguna venta', () => {
+    // Si se registrara igual, el stock quedaría descontado y el turno con un
+    // cobro por plata que nunca entró.
+    componente.agregar(prenda(1, '250.00'));
+    componente.elegirMetodo('QR');
+    respuestaQr = null;
+
+    componente.cobrar();
+
+    expect(dialogo.open).toHaveBeenCalledTimes(1);
+    expect(pos.cobrar).not.toHaveBeenCalled();
+    expect(componente.lineas().length).toBe(1); // el ticket sigue armado
+    expect(componente.cobrando()).toBe(false);
+  });
+
+  it('con efectivo cobra directo, sin abrir el QR', () => {
+    componente.agregar(prenda(1, '250.00'));
+
+    componente.cobrar();
+
+    expect(dialogo.open).not.toHaveBeenCalled();
+    expect(pos.cobrar).toHaveBeenCalledTimes(1);
   });
 });

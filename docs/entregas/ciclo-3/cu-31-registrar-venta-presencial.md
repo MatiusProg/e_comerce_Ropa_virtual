@@ -236,7 +236,68 @@ ver las que están en cero porque al depositero le importa; en el mostrador no:
 ofrecer una prenda agotada lleva al cajero a armar un ticket que va a fallar
 con el cliente delante.
 
+### 7.1 El cobro con QR — una simulación del circuito bancario *(24/09)*
+
+Hasta el 24/09 elegir «QR» registraba la venta en el acto, igual que la
+tarjeta: no se veía ningún código ni ninguna respuesta del banco. Ahora el
+cobro recorre los mismos pasos que un QR bancario de verdad:
+
+1. **La caja genera un QR dinámico.** Lleva el monto, la moneda y una
+   **referencia única** por cobro (`QR-` y ocho caracteres al azar). Vence a
+   los **2 minutos**.
+2. **El cliente lo escanea y paga** desde la aplicación de su banco.
+3. **El banco devuelve aprobación o rechazo** a la caja, con la referencia.
+4. **Recién con la aprobación se registra la venta.** La referencia queda
+   impresa en el ticket en pantalla.
+
+| Desenlace | ¿Se registra la venta? | ¿Se descuenta stock? | Qué ve el cajero |
+|---|---|---|---|
+| Aprobado | **sí** | sí | el ticket, con la «Referencia del banco» |
+| Rechazado | no | no | el motivo (fondos insuficientes, el cliente canceló, límite diario) y «Generar otro QR» |
+| Vencido | no | no | «el código venció» y «Generar otro QR» |
+| Cancelado por el cajero | no | no | el ticket sigue armado, para cambiar de método |
+
+**Qué es real y qué es simulado.** El código es real: sigue el formato
+**EMVCo** de QR para comercios —campos etiquetados, moneda `068` (boliviano,
+ISO 4217), rubro `5651` (tiendas de ropa), monto, referencia y un **CRC-16**
+al final para que la aplicación bancaria descarte un código mal leído—.
+Cualquier lector de QR lo decodifica, y se comprobó leyéndolo desde una
+captura de la pantalla. **Lo simulado es el banco:** en su lugar, el diálogo
+ofrece dos botones, «el cliente pagó» y «el banco rechazó», dentro de un
+recuadro rotulado *Simulación*. Conectar un banco real exige un convenio
+comercial, por lo mismo que Libélula quedó fuera (ver
+`docs/06-decisiones-tecnicas.md`).
+
+**Por qué la venta va DESPUÉS de la aprobación y no antes.** Si se registrara
+al generar el QR, un rechazo dejaría el stock descontado y el turno con un
+cobro por plata que nunca entró. Por eso el diálogo no llama al servidor:
+solo devuelve la referencia, y la pantalla registra la venta cuando la recibe.
+
+**El caso incómodo, cubierto.** Si el banco aprueba pero la venta no entra
+—se agotó la prenda o cambió el precio en esos dos minutos—, el cajero ve un
+aviso que no se cierra solo, con la referencia: *«El QR … quedó APROBADO pero
+la venta no se registró. Anule ese cobro antes de volver a intentar»*.
+
+| Archivo | Qué hace |
+|---|---|
+| `frontend-web/src/app/features/caja/venta/qr-emv.ts` | arma el contenido EMVCo y calcula el CRC |
+| `frontend-web/src/app/features/caja/venta/cobro-qr.ts` | el diálogo: QR, reloj y respuesta del banco |
+| `frontend-web/src/app/features/caja/venta/venta.ts` | con QR, abre el diálogo antes de registrar |
+
+Pruebas: `qr-emv.spec.ts` (7: el CRC contra su vector de referencia, los
+campos y los largos), `cobro-qr.spec.ts` (6: cada desenlace y el vencimiento)
+y 3 más en `venta.spec.ts` (con QR rechazado **no** se llama al servidor).
+No hubo que tocar el backend: `QR` ya era un método de pago válido y el
+arqueo ya lo listaba aparte (sección 6).
+
 ## 8. Lo que queda pendiente
+
+- **La referencia del banco no se guarda en la base.** Se ve en el ticket en
+  pantalla, pero no en el comprobante PDF ni en el historial. Guardarla pide
+  una columna en `venta` y una migración: con un banco de verdad sería lo
+  primero, porque es lo que se concilia contra el extracto.
+- **El 3.2 de CU-31 no muestra el paso por el banco.** Si se rehace, el `alt`
+  del método de pago lleva un operando `[QR]` con la espera de la respuesta.
 
 - **Fusionar atender y cobrar en un solo acto.** Es lo que cerraría de verdad
   el puente de D2 —ver la sección 2—. No es una deuda de CU-31: es un rediseño

@@ -6,6 +6,7 @@ import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -23,6 +24,7 @@ import type {
   ReservaPorCobrar,
   Ticket,
 } from '../../../core/models/pos.models';
+import { CobroQr, type DatosCobroQrDialogo, type ResultadoCobroQr } from './cobro-qr';
 
 /** Los tres estados de la pantalla. No hay dos a la vez. */
 type Cara = 'armando' | 'cobrado';
@@ -45,6 +47,11 @@ type Cara = 'armando' | 'cobrado';
  *
  * **3. El vuelto se muestra mientras se escribe.** Un cajero con billetes en la
  * mano no puede estar esperando a que el servidor le diga cuánto devolver.
+ *
+ * **4. Con QR, primero el banco y después la venta.** «Cobrar» abre el diálogo
+ * del QR (`cobro-qr.ts`, una simulación del circuito bancario) y la venta se
+ * registra solo si vuelve aprobado. Rechazado o vencido, no queda nada: ni
+ * venta, ni stock descontado, ni movimiento en el turno.
  *
  * EL DINERO NO SE CONVIERTE A `number` PARA GUARDARLO
  * ----------------------------------------------------
@@ -75,6 +82,7 @@ export class Venta implements OnInit {
   private readonly api = inject(PosService);
   private readonly caja = inject(CajaService);
   private readonly aviso = inject(MatSnackBar);
+  private readonly dialogo = inject(MatDialog);
 
   protected readonly cara = signal<Cara>('armando');
   protected readonly cargando = signal(true);
@@ -105,6 +113,8 @@ export class Venta implements OnInit {
    */
   protected readonly metodos: readonly MetodoDePago[] = ['EFECTIVO', 'TARJETA', 'QR'];
   protected readonly ticket = signal<Ticket | null>(null);
+  /** La referencia que devolvió el banco, si la venta se cobró con QR. */
+  protected readonly referenciaQr = signal<string | null>(null);
 
   protected readonly busqueda = new FormControl('', { nonNullable: true });
   protected readonly recibido = new FormControl('', {
@@ -301,6 +311,58 @@ export class Venta implements OnInit {
     if (!this.hayQueCobrar() || this.cobrando() || this.recibido.invalid) return;
     if (this.vuelto() !== null && this.vuelto()! < 0) return;
 
+    if (this.metodo() === 'QR') {
+      this.cobrarConQr();
+      return;
+    }
+    this.registrar(null);
+  }
+
+  /**
+   * Abre el QR y espera la respuesta del banco. Mientras el diálogo está
+   * abierto `cobrando` queda en alto: un segundo clic en «Cobrar» no abre un
+   * segundo QR por la misma venta.
+   */
+  private cobrarConQr(): void {
+    const turno = this.turno();
+    this.cobrando.set(true);
+    this.dialogo
+      .open<CobroQr, DatosCobroQrDialogo, ResultadoCobroQr>(CobroQr, {
+        data: {
+          total: this.total(),
+          sucursal: turno?.sucursal_nombre ?? '',
+          caja: turno?.caja_nombre ?? '',
+        },
+        // Un clic fuera del diálogo no puede tirar un cobro que el cliente
+        // quizá ya está pagando desde su teléfono.
+        disableClose: true,
+        autoFocus: false,
+        // Ancho fijo: el contenido cambia con cada estado y, sin esto, el
+        // diálogo se achica y se agranda delante del cliente. Alcanza para que
+        // el QR se lea desde un teléfono al otro lado del mostrador.
+        width: '26rem',
+        maxWidth: '95vw',
+      })
+      .afterClosed()
+      .subscribe((referencia) => {
+        this.cobrando.set(false);
+        if (!referencia) {
+          this.aviso.open(
+            'El cobro con QR no se completó. No se registró ninguna venta.',
+            'Entendido',
+            { duration: 6000 },
+          );
+          return;
+        }
+        this.registrar(referencia);
+      });
+  }
+
+  /**
+   * Registra la venta en el servidor. `referenciaQr` viene solo si se cobró
+   * con QR y el banco ya aprobó.
+   */
+  private registrar(referenciaQr: string | null): void {
     this.cobrando.set(true);
     this.error.set(null);
 
@@ -327,6 +389,7 @@ export class Venta implements OnInit {
         next: (ticket) => {
           this.cobrando.set(false);
           this.ticket.set(ticket);
+          this.referenciaQr.set(referenciaQr);
           this.cara.set('cobrado');
           this.lineas.set([]);
           this.reserva.set(null);
@@ -337,7 +400,19 @@ export class Venta implements OnInit {
         },
         error: (e: ErrorPos) => {
           this.cobrando.set(false);
-          this.manejar(e);
+          if (referenciaQr) {
+            // El caso incómodo: el banco ya cobró y la venta no entró (se
+            // acabó el stock, cambió un precio). El cajero tiene que saberlo
+            // con la referencia en la mano, para anular ese cobro y no dejar
+            // al cliente pagando por una prenda que no se lleva.
+            this.aviso.open(
+              `El QR ${referenciaQr} quedó APROBADO pero la venta no se registró: ` +
+                `${e.mensaje} Anule ese cobro antes de volver a intentar.`,
+              'Entendido',
+            );
+          } else {
+            this.manejar(e);
+          }
           // Si el precio cambió o se acabó el stock, la lista quedó vieja: se
           // vuelve a pedir en vez de dejarla mintiendo.
           if (e.tipo === 'precio-cambio' || e.tipo === 'sin-stock') {
@@ -353,6 +428,7 @@ export class Venta implements OnInit {
 
   protected nuevaVenta(): void {
     this.ticket.set(null);
+    this.referenciaQr.set(null);
     this.cara.set('armando');
     this.metodo.set('EFECTIVO');
     this.cargarPrendas(this.busqueda.value);
