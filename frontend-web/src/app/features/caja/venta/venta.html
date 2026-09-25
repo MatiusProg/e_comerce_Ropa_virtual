@@ -74,6 +74,10 @@
         <dd class="fuerte">{{ t.total | currency: 'BOB' : 'symbol-narrow' }}</dd>
         <dt>Cobrado con</dt>
         <dd>{{ t.metodo_pago }}</dd>
+        @if (referenciaQr(); as ref) {
+          <dt>Referencia del banco</dt>
+          <dd class="referencia">{{ ref }}</dd>
+        }
         @if (t.monto_recibido) {
           <dt>Recibido</dt>
           <dd>{{ t.monto_recibido | currency: 'BOB' : 'symbol-narrow' }}</dd>
@@ -363,6 +367,12 @@
             exacto y <strong>no entra al cajón</strong>: el arqueo del turno no lo
             cuenta como efectivo, pero sí lo lista aparte.
           </p>
+          @if (metodo() === 'QR') {
+            <p class="nota">
+              Al cobrar se muestra el código para que el cliente lo escanee. La venta
+              se registra <strong>cuando el banco confirma el pago</strong>, no antes.
+            </p>
+          }
         }
 
         <div class="acciones">
@@ -373,8 +383,8 @@
             [disabled]="!hayQueCobrar() || cobrando() || recibido.invalid || (vuelto() !== null && vuelto()! < 0)"
             (click)="cobrar()"
           >
-            <mat-icon>point_of_sale</mat-icon>
-            {{ cobrando() ? 'Cobrando…' : 'Cobrar' }}
+            <mat-icon>{{ metodo() === 'QR' ? 'qr_code_2' : 'point_of_sale' }}</mat-icon>
+            {{ cobrando() ? 'Cobrando…' : metodo() === 'QR' ? 'Generar QR' : 'Cobrar' }}
           </button>
           @if (hayQueCobrar()) {
             <button matButton type="button" (click)="vaciar()">Vaciar</button>

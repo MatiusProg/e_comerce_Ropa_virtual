@@ -83,6 +83,11 @@ def efectivo_cobrado(db: Session, turno_id: int) -> Decimal:
     Tarjeta y QR no entran al cajon: sumarlos haria que el turno apareciera
     descuadrado por cada pago que no fue en billetes. Y una venta cancelada no
     se cobro, aunque quede colgada del turno.
+
+    LAS VENTAS DE UN CAMBIO QUEDAN FUERA SOLAS, y ese es el motivo por el que
+    `CAMBIO` es un `metodo_pago` propio y no un `EFECTIVO` con una marca al
+    lado: esta consulta no tuvo que cambiar. Lo que si entro al cajon por un
+    cambio es la diferencia, y la cuenta `diferencias_de_cambios`.
     """
     total = db.scalar(
         select(func.coalesce(func.sum(Venta.total), 0)).where(
@@ -97,10 +102,13 @@ def efectivo_cobrado(db: Session, turno_id: int) -> Decimal:
 def devoluciones_del_turno(db: Session, turno_id: int) -> Decimal:
     """Lo que salio del cajon por devoluciones (CU-32).
 
-    Hoy da siempre cero porque CU-32 no esta construido. Se consulta igual, y
-    no se deja para despues: cuando la devolucion exista, el arqueo tiene que
-    contarla **sin que nadie se acuerde de volver aca**. Es una consulta
-    barata contra una tabla vacia.
+    Suma `monto`, que es exactamente «lo que sale del cajon» y no «lo que vale
+    lo devuelto»: con tarjeta o QR vale cero, porque esa plata nunca entro.
+
+    LOS CAMBIOS NO APARECEN ACA, Y NO HACE FALTA FILTRARLOS. El CHECK
+    `ck_devolucion_cambio_no_saca_del_cajon` de la 0020 los obliga a llevar
+    `monto = 0`: en un cambio la prenda vieja no se paga, se acredita. Lo que
+    si se mueve es la diferencia, y esa la cuenta `diferencias_de_cambios`.
     """
     total = db.scalar(
         select(func.coalesce(func.sum(Devolucion.monto), 0)).where(
@@ -110,8 +118,35 @@ def devoluciones_del_turno(db: Session, turno_id: int) -> Decimal:
     return Decimal(total or 0)
 
 
+def diferencias_de_cambios(db: Session, turno_id: int) -> Decimal:
+    """Lo que el cajon gano o perdio por los cambios del turno (CU-32).
+
+    **Viene con signo, y es la unica cifra del arqueo que puede ser negativa:**
+    positiva cuando la prenda nueva costaba mas y el cliente puso la
+    diferencia, negativa cuando costaba menos y la tienda se la devolvio.
+
+    SOLO LOS SALDADOS EN EFECTIVO. Una diferencia cobrada con tarjeta o con QR
+    no toca el cajon, igual que no lo toca una venta con esos metodos. El
+    filtro es por `metodo_diferencia` y no por el metodo de la venta original:
+    lo que importa es como se salda HOY, no como se pago aquel dia.
+    """
+    total = db.scalar(
+        select(func.coalesce(func.sum(Devolucion.diferencia), 0)).where(
+            Devolucion.turno_caja_id == turno_id,
+            Devolucion.metodo_diferencia == "EFECTIVO",
+        )
+    )
+    return Decimal(total or 0)
+
+
 def ventas_del_turno(db: Session, turno_id: int) -> list[tuple[str, int, Decimal]]:
-    """Cuantas ventas y cuanto, por metodo de pago. Para el detalle del cierre."""
+    """Cuantas ventas y cuanto, por metodo de pago. Para el detalle del cierre.
+
+    Las ventas de un cambio aparecen, en su propia linea `CAMBIO`. No se
+    esconden: la mercaderia salio del local y el cajero la movio. Lo que la
+    linea NO dice es plata que haya entrado al cajon --- para eso esta el
+    renglon de cambios del arqueo, que lleva la diferencia ---.
+    """
     return [
         (fila[0], int(fila[1]), Decimal(fila[2] or 0))
         for fila in db.execute(

@@ -74,3 +74,58 @@ export function rolGuard(...roles: Rol[]): CanActivateFn {
     );
   };
 }
+
+/**
+ * La raíz del sitio: la vitrina para el visitante, el área propia para quien
+ * ya tiene sesión.
+ *
+ * Hasta el 25/09 la raíz mandaba siempre al login, y el catálogo —público a
+ * propósito, RF07— no tenía ninguna puerta: había que escribir `/tienda` a
+ * mano. Una tienda que recibe con un formulario de contraseña es al revés de
+ * como se comporta una tienda. Quien trabaja en el sistema no pierde nada:
+ * con la sesión abierta sigue cayendo en su área, como antes.
+ */
+export const inicioGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+
+  const aLaTienda = () => router.createUrlTree(['/tienda']);
+  const aSuArea = () => router.createUrlTree([auth.inicioDelRol()]);
+
+  if (auth.autenticado()) {
+    return aSuArea();
+  }
+
+  if (!auth.token) {
+    return aLaTienda();
+  }
+
+  return auth.restaurarSesion().pipe(map((usuario) => (usuario ? aSuArea() : aLaTienda())));
+};
+
+/**
+ * A dónde ir después de iniciar sesión.
+ *
+ * Flujo alternativo 6a de CU-02 y 8a de CU-01: se vuelve a donde se estaba.
+ * Con dos excepciones:
+ *
+ * - **La vitrina, solo para el Cliente.** El botón «Ingresar» del catálogo es
+ *   la puerta de todos: por ahí entra también el cajero que abrió el sitio
+ *   por la raíz. Devolverlo a la tienda lo dejaría en una pantalla que no es
+ *   la suya; va a su área.
+ * - **Solo rutas internas.** Un `destino` que no empieza con una sola barra
+ *   —`https://…`, `//otro-sitio`— se descarta: el parámetro viaja en la URL y
+ *   cualquiera puede escribirlo.
+ */
+export function destinoTrasLogin(destino: string | null, rol: Rol, inicioDelRol: string): string {
+  if (!destino || !destino.startsWith('/') || destino.startsWith('//')) {
+    return inicioDelRol;
+  }
+  if (destino.startsWith('/login') || destino.startsWith('/registro')) {
+    return inicioDelRol;
+  }
+  if (destino.startsWith('/tienda') && rol !== 'CLIENTE') {
+    return inicioDelRol;
+  }
+  return destino;
+}

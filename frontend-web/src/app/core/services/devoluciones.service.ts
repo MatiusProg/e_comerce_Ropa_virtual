@@ -5,6 +5,8 @@ import { catchError } from 'rxjs/operators';
 
 import { environment } from '../../../environments/environment';
 import {
+  Cambio,
+  ComprobanteCambio,
   ComprobanteDevolucion,
   Devolucion,
   VentaDevolvible,
@@ -14,6 +16,10 @@ export type ErrorDevolucion =
   | { tipo: 'sin-turno'; mensaje: string }
   | { tipo: 'no-existe'; mensaje: string }
   | { tipo: 'se-pasa'; mensaje: string }
+  /** La venta es más vieja que el plazo que la tienda da para volver. */
+  | { tipo: 'fuera-de-plazo'; mensaje: string }
+  /** La diferencia que calculó la pantalla ya no es la del servidor. */
+  | { tipo: 'diferencia-movida'; mensaje: string }
   | { tipo: 'rechazado'; mensaje: string }
   | { tipo: 'sin-permiso'; mensaje: string }
   | { tipo: 'sistema'; mensaje: string };
@@ -36,15 +42,31 @@ export class DevolucionesService {
       .pipe(catchError((e) => throwError(() => this.traducir(e))));
   }
 
+  /** Cambia una prenda por otra: las dos puntas en una sola operación. */
+  registrarCambio(datos: Cambio): Observable<ComprobanteCambio> {
+    return this.http
+      .post<ComprobanteCambio>(`${this.base}/cambios`, datos)
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
+
   private traducir(error: HttpErrorResponse): ErrorDevolucion {
     const detalle: unknown = error.error?.detail;
     const texto = typeof detalle === 'string' ? detalle : '';
 
     if (error.status === 409) {
-      // El servidor manda dos cosas con 409: «no tiene turno» y «se pasa de lo
-      // devolvible». Se separan por lo que la pantalla hace con cada una.
-      if (texto.toLowerCase().includes('turno')) {
+      // El servidor manda cuatro cosas con 409, y la pantalla hace algo
+      // distinto con cada una: sin turno manda a abrir caja, fuera de plazo
+      // apaga los botones, la diferencia movida obliga a recalcular, y «se
+      // pasa» recarga la ficha porque alguien devolvió en el medio.
+      const minusculas = texto.toLowerCase();
+      if (minusculas.includes('turno')) {
         return { tipo: 'sin-turno', mensaje: texto };
+      }
+      if (minusculas.includes('plazo')) {
+        return { tipo: 'fuera-de-plazo', mensaje: texto };
+      }
+      if (minusculas.includes('diferencia cambió')) {
+        return { tipo: 'diferencia-movida', mensaje: texto };
       }
       return { tipo: 'se-pasa', mensaje: texto || 'Eso ya se devolvió.' };
     }

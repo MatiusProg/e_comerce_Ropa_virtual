@@ -23,9 +23,10 @@
 @if (hayTurno()) {
   <header class="encabezado">
     <div>
-      <h1 class="vb-titulo">Devoluciones</h1>
+      <h1 class="vb-titulo">Devoluciones y cambios</h1>
       <p class="bajada">
-        Busque la venta por su código y marque qué prendas vuelven.
+        Busque la venta por su código, marque qué prendas vuelven y elija si se
+        devuelven o se cambian por otras.
       </p>
     </div>
   </header>
@@ -101,8 +102,113 @@
     </mat-card>
   }
 
+  <!-- ===================== EL CAMBIO, YA REGISTRADO ===================== -->
+  @if (comprobanteCambio(); as c) {
+    <mat-card class="tarjeta comprobante vb-filete-superior" appearance="outlined">
+      <mat-card-content>
+        <header class="cabecera">
+          <mat-icon class="icono">swap_horiz</mat-icon>
+          <div>
+            <h2>Cambio registrado</h2>
+            <p class="sub">
+              De la venta {{ c.venta_codigo }} · {{ c.caja_nombre }} ·
+              {{ c.creado_en | date: 'dd/MM HH:mm' }}
+            </p>
+          </div>
+        </header>
+
+        <div class="dos-columnas">
+          <section>
+            <h3 class="rotulo">Volvió</h3>
+            <ul class="lista">
+              @for (linea of c.devueltas; track linea.variante_id) {
+                <li>
+                  <span>
+                    {{ linea.cantidad }} × {{ linea.producto }}
+                    <span class="detalle">{{ linea.talla }} · {{ linea.color }}</span>
+                  </span>
+                  <span class="numero">
+                    {{ linea.subtotal | currency: 'BOB' : 'symbol-narrow' }}
+                  </span>
+                </li>
+              }
+            </ul>
+            <p class="total">
+              <span>Valor devuelto</span>
+              <strong>{{ c.valor_devuelto | currency: 'BOB' : 'symbol-narrow' }}</strong>
+            </p>
+          </section>
+
+          <section>
+            <h3 class="rotulo">Se llevó</h3>
+            <ul class="lista">
+              @for (linea of c.llevadas; track linea.variante_id) {
+                <li>
+                  <span>
+                    {{ linea.cantidad }} × {{ linea.producto }}
+                    <span class="detalle">{{ linea.talla }} · {{ linea.color }}</span>
+                  </span>
+                  <span class="numero">
+                    {{ linea.subtotal | currency: 'BOB' : 'symbol-narrow' }}
+                  </span>
+                </li>
+              }
+            </ul>
+            <p class="total">
+              <span>Total de lo nuevo</span>
+              <strong>{{ c.total_llevado | currency: 'BOB' : 'symbol-narrow' }}</strong>
+            </p>
+          </section>
+        </div>
+
+        <p class="motivo-dicho"><strong>Motivo:</strong> {{ c.motivo }}</p>
+
+        <!--
+          «Cobrar» y «entregar» no se pueden confundir, así que el texto sale de
+          `a_favor_de` y no de leerle el signo a un número con el cliente
+          esperando del otro lado del mostrador.
+        -->
+        <p class="plata" [class.no-sale]="!c.toca_el_cajon">
+          <mat-icon>
+            {{ c.toca_el_cajon ? 'payments' : (c.a_favor_de === 'NADIE' ? 'check' : 'credit_card') }}
+          </mat-icon>
+          @switch (c.a_favor_de) {
+            @case ('CLIENTE') {
+              <span>
+                Cobre
+                <strong>{{ c.diferencia | currency: 'BOB' : 'symbol-narrow' }}</strong>
+                de diferencia @if (c.metodo_diferencia) { por {{ c.metodo_diferencia }} }.
+              </span>
+            }
+            @case ('TIENDA') {
+              <span>
+                Entregue
+                <strong>{{ -(+c.diferencia) | currency: 'BOB' : 'symbol-narrow' }}</strong>
+                de diferencia @if (c.metodo_diferencia) { por {{ c.metodo_diferencia }} }.
+              </span>
+            }
+            @default {
+              <span>Las dos prendas valían lo mismo: no hubo nada que cobrar.</span>
+            }
+          }
+        </p>
+
+        <p class="nota">
+          La prenda que se llevó salió como la venta
+          <strong>{{ c.venta_nueva_codigo }}</strong>, comprobante
+          {{ c.comprobante_numero }}.
+        </p>
+
+        <button matButton="filled" type="button" class="vb-boton-marca" (click)="otra()">
+          <mat-icon>search</mat-icon>
+          Otro trámite
+        </button>
+      </mat-card-content>
+    </mat-card>
+  }
+
   <!-- ===================== BUSCAR LA VENTA ===================== -->
-  @if (!comprobante()) {
+  @if (!comprobante() && !comprobanteCambio()) {
     <mat-card class="tarjeta vb-filete-superior" appearance="outlined">
       <mat-card-content>
         <div class="buscador">
@@ -160,6 +266,29 @@
               </span>
             }
           </header>
+
+          <!--
+            El plazo se muestra SIEMPRE, no sólo cuando venció: el cajero tiene
+            que poder decirle al cliente hasta cuándo le queda antes de que se
+            vaya, no sólo cuando ya es tarde.
+          -->
+          <p class="plazo" [class.vencido]="!v.dentro_de_plazo">
+            <mat-icon>{{ v.dentro_de_plazo ? 'schedule' : 'event_busy' }}</mat-icon>
+            @if (v.dentro_de_plazo) {
+              <span>
+                Se puede devolver o cambiar hasta el
+                <strong>{{ v.vence_en | date: 'dd/MM/yyyy HH:mm' }}</strong>
+                ({{ v.plazo_dias }} días desde la compra).
+              </span>
+            } @else {
+              <span>
+                <strong>Fuera de plazo.</strong> El plazo era de
+                {{ v.plazo_dias }} días desde la compra y venció el
+                {{ v.vence_en | date: 'dd/MM/yyyy HH:mm' }}. No se puede
+                devolver ni cambiar.
+              </span>
+            }
+          </p>
 
           @if (!algoDevolvible()) {
             <p class="nota vacio">
@@ -233,7 +362,196 @@
               <strong>{{ enBs(valorCentavos()) | currency: 'BOB' : 'symbol-narrow' }}</strong>
             </p>
 
-            @if (hayQueDevolver() && !v.sale_del_cajon) {
+            <!-- ============ DEVOLVER O CAMBIAR ============ -->
+            <!--
+              La elección va DESPUÉS de marcar qué vuelve, y no antes: es el
+              orden del mostrador. El cliente decide mirando lo que trajo y
+              cuánto vale, no antes de que el cajero busque la venta.
+            -->
+            <div class="eleccion">
+              <mat-button-toggle-group
+                [value]="modo()"
+                (change)="elegirModo($event.value)"
+                [disabled]="!dentroDePlazo()"
+                aria-label="Qué se hace con lo que vuelve"
+              >
+                <mat-button-toggle value="DEVOLUCION">
+                  <mat-icon>assignment_return</mat-icon>
+                  Devolver
+                </mat-button-toggle>
+                <mat-button-toggle value="CAMBIO">
+                  <mat-icon>swap_horiz</mat-icon>
+                  Cambiar por otra
+                </mat-button-toggle>
+              </mat-button-toggle-group>
+            </div>
+
+            @if (modo() === 'CAMBIO') {
+              <section class="cambio">
+                <h3 class="rotulo">Qué se lleva</h3>
+
+                <mat-form-field appearance="outline" class="campo">
+                  <mat-label>Buscar la prenda que se lleva</mat-label>
+                  <mat-icon matIconPrefix>search</mat-icon>
+                  <input
+                    matInput
+                    [formControl]="busqueda"
+                    placeholder="Nombre, código o SKU"
+                  />
+                  <mat-hint>
+                    Sólo aparece lo que hay en su sucursal, con el precio de hoy.
+                  </mat-hint>
+                </mat-form-field>
+
+                @if (buscandoPrendas()) {
+                  <mat-progress-bar mode="indeterminate" />
+                }
+
+                @if (resultados().length) {
+                  <ul class="resultados">
+                    @for (prenda of resultados(); track prenda.variante_id) {
+                      <li>
+                        <span>
+                          {{ prenda.producto }}
+                          <span class="detalle">
+                            {{ prenda.talla }} · {{ prenda.color }} ·
+                            quedan {{ prenda.disponible }}
+                          </span>
+                        </span>
+                        <span class="precio">
+                          @if (prenda.descuento) {
+                            <s>{{ prenda.precio | currency: 'BOB' : 'symbol-narrow' }}</s>
+                            <strong>
+                              {{ prenda.descuento.precio_final | currency: 'BOB' : 'symbol-narrow' }}
+                            </strong>
+                          } @else {
+                            <strong>{{ prenda.precio | currency: 'BOB' : 'symbol-narrow' }}</strong>
+                          }
+                        </span>
+                        <button
+                          matButton
+                          type="button"
+                          [disabled]="prenda.disponible === 0"
+                          (click)="agregar(prenda)"
+                        >
+                          <mat-icon>add</mat-icon>
+                          Agregar
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                }
+
+                @if (llevadas().length) {
+                  <table class="tabla">
+                    <thead>
+                      <tr>
+                        <th scope="col">Se lleva</th>
+                        <th scope="col" class="centro">Cant.</th>
+                        <th scope="col" class="numero">Subtotal</th>
+                        <th scope="col"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (prenda of llevadas(); track prenda.variante_id) {
+                        <tr>
+                          <td>
+                            {{ prenda.producto }}
+                            <span class="detalle">
+                              {{ prenda.talla }} · {{ prenda.color }}
+                            </span>
+                          </td>
+                          <td class="centro">
+                            <span class="cantidad">
+                              <button
+                                matIconButton
+                                type="button"
+                                (click)="cantidadLlevada(prenda, prenda.cantidad - 1)"
+                                [attr.aria-label]="'Quitar una de ' + prenda.producto"
+                              >
+                                <mat-icon>remove</mat-icon>
+                              </button>
+                              <span class="numero">{{ prenda.cantidad }}</span>
+                              <button
+                                matIconButton
+                                type="button"
+                                [disabled]="prenda.cantidad >= prenda.disponible"
+                                (click)="cantidadLlevada(prenda, prenda.cantidad + 1)"
+                                [attr.aria-label]="'Sumar una de ' + prenda.producto"
+                              >
+                                <mat-icon>add</mat-icon>
+                              </button>
+                            </span>
+                          </td>
+                          <td class="numero">
+                            {{ subtotalLlevado(prenda) | currency: 'BOB' : 'symbol-narrow' }}
+                          </td>
+                          <td>
+                            <button
+                              matIconButton
+                              type="button"
+                              (click)="quitar(prenda)"
+                              [attr.aria-label]="'Sacar ' + prenda.producto"
+                            >
+                              <mat-icon>close</mat-icon>
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+
+                  <p class="total">
+                    <span>Total de lo nuevo</span>
+                    <strong>
+                      {{ enBs(totalLlevadoCentavos()) | currency: 'BOB' : 'symbol-narrow' }}
+                    </strong>
+                  </p>
+
+                  <!--
+                    La diferencia se dice en palabras además del número. Con el
+                    cliente esperando, «cobrar» y «entregar» no se pueden
+                    confundir, y un signo menos sí se lee mal.
+                  -->
+                  <p class="diferencia" [class.a-favor-tienda]="aFavorDe() === 'TIENDA'">
+                    @switch (aFavorDe()) {
+                      @case ('CLIENTE') {
+                        <span>Hay que <strong>cobrar</strong></span>
+                        <strong class="cifra">
+                          {{ enBs(diferenciaCentavos()) | currency: 'BOB' : 'symbol-narrow' }}
+                        </strong>
+                      }
+                      @case ('TIENDA') {
+                        <span>Hay que <strong>entregar</strong></span>
+                        <strong class="cifra">
+                          {{ enBs(-diferenciaCentavos()) | currency: 'BOB' : 'symbol-narrow' }}
+                        </strong>
+                      }
+                      @default {
+                        <span>El cambio sale parejo: no hay nada que cobrar.</span>
+                      }
+                    }
+                  </p>
+
+                  @if (aFavorDe() !== 'NADIE') {
+                    <mat-form-field appearance="outline" class="campo">
+                      <mat-label>Cómo se salda la diferencia</mat-label>
+                      <mat-select [formControl]="metodoDiferencia">
+                        <mat-option value="EFECTIVO">Efectivo</mat-option>
+                        <mat-option value="TARJETA">Tarjeta</mat-option>
+                        <mat-option value="QR">QR</mat-option>
+                      </mat-select>
+                      <mat-hint>
+                        Sólo el efectivo mueve el cajón: tarjeta y QR no entran
+                        al arqueo del turno.
+                      </mat-hint>
+                    </mat-form-field>
+                  }
+                }
+              </section>
+            }
+
+            @if (modo() === 'DEVOLUCION' && hayQueDevolver() && !v.sale_del_cajon) {
               <p class="plata no-sale">
                 <mat-icon>credit_card</mat-icon>
                 <span>
@@ -263,11 +581,19 @@
                 matButton="filled"
                 type="button"
                 class="vb-boton-marca"
-                [disabled]="!hayQueDevolver() || guardando()"
+                [disabled]="!sePuedeConfirmar() || guardando()"
                 (click)="registrar()"
               >
-                <mat-icon>assignment_return</mat-icon>
-                {{ guardando() ? 'Registrando…' : 'Registrar devolución' }}
+                <mat-icon>
+                  {{ modo() === 'CAMBIO' ? 'swap_horiz' : 'assignment_return' }}
+                </mat-icon>
+                @if (guardando()) {
+                  Registrando…
+                } @else if (modo() === 'CAMBIO') {
+                  Registrar cambio
+                } @else {
+                  Registrar devolución
+                }
               </button>
             </div>
           }
