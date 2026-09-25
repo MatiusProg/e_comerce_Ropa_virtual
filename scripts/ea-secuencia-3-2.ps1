@@ -29,20 +29,25 @@
 # directo sobre el .eapx, con la misma forma exacta que tiene el archivo de
 # catedra.
 #
-# ---- SOLO SE USA 'alt' ----
-# El unico operador cuyo codigo interno esta verificado contra el archivo de
-# catedra es 'alt' (t_object.NType = 0). Donde el codigo tiene un bucle, un
-# opcional o una seccion critica, el mensaje lleva la guarda en el nombre y
-# queda anotado en docs/diagramas/secuencia-y-codigo.md, que explica cual
-# operador corresponde y como cambiarlo desde la interfaz de EA.
+# ---- 'alt' Y 'loop' ----
+# 'alt' (t_object.NType = 0) esta verificado contra el archivo de catedra.
+# 'loop' (NType = 4) se agrego el 24/09 para los bucles que analiza
+# docs/diagramas/loops-3-2.md: la caja abarca solo las lineas de vida que
+# tocan los mensajes que encierra, y se puede anidar dentro de un operando
+# de un 'alt'. Un 'loop' tiene un solo operando, cuyo nombre es la guarda.
 #
 # ADITIVO: abre el modelo y solo agrega los diagramas que faltan.
+# Con -Fragmentos, ademas, sobre los diagramas que YA existen y cuyo guion
+# tiene algun 'loop': recalcula la altura de mensajes, notas y cajas, crea
+# los 'loop' que falten y completa los operandos. No borra nada.
 # =========================================================================
 
 param(
     # Borra el paquete 3.2 entero y lo vuelve a generar. Sin este modificador
     # el script es aditivo y respeta los diagramas que ya existen.
-    [switch]$Rehacer
+    [switch]$Rehacer,
+    # Remaqueta los diagramas existentes cuyo guion tiene 'loop'.
+    [switch]$Fragmentos
 )
 
 $ErrorActionPreference = 'Stop'
@@ -82,6 +87,7 @@ $NOTA_W    = 160
 # guion  : se lee de arriba hacia abajo y es el orden vertical del diagrama.
 #          t='nota' separador | t='msg' mensaje | t='alt' abre fragmento
 #          t='op' operando con su guarda | t='fin' cierra el fragmento
+#          t='loop' + g='guarda' abre un bucle; su 'fin' lo cierra (anidable)
 #          ret=$true marca el mensaje como retorno (linea punteada)
 # =========================================================================
 
@@ -978,8 +984,10 @@ $CASOS = @(
     @{ t='msg'; o='gve'; d='var'; n='1.4: SELECT id, talla_id, color_id FROM variante_producto WHERE activa' },
     @{ t='msg'; o='var'; d='gve'; n='1.4.1: list[VarianteProducto]'; ret=$true },
     @{ t='msg'; o='gve'; d='ves'; n='1.4.2: FichaVestidorOut'; ret=$true },
+    @{ t='loop'; g='por cada fotograma de la cámara' },
     @{ t='msg'; o='ves'; d='ves'; n='1.5: detectarPose(fotograma)  {en el telefono}' },
     @{ t='msg'; o='ves'; d='ves'; n='1.6: dibujarPrenda(hombros, cadera)' },
+    @{ t='fin' },
     @{ t='msg'; o='ves'; d='act'; n='1.7: mostrarPrendaSuperpuesta()' },
     @{ t='nota'; txt = "FLUJO 2`nSaber que talla le queda" },
     @{ t='msg'; o='act'; d='ves'; n='2.1: consultarAjuste()' },
@@ -988,7 +996,9 @@ $CASOS = @(
     @{ t='msg'; o='med'; d='gve'; n='2.3.1: MedidaCliente | None'; ret=$true },
     @{ t='alt' },
     @{ t='op'; g='tiene medidas cargadas' },
+    @{ t='loop'; g='por cada talla de la tabla' },
     @{ t='msg'; o='gve'; d='gve'; n='2.4a: compararConMedidaTalla(medidas)' },
+    @{ t='fin' },
     @{ t='msg'; o='gve'; d='ves'; n='2.4a.1: AjusteOut(talla, holgura)'; ret=$true },
     @{ t='op'; g='no las cargo todavia' },
     @{ t='msg'; o='gve'; d='ves'; n='2.4b: sinMedidas()' },
@@ -1020,8 +1030,10 @@ $CASOS = @(
     @{ t='nota'; txt = "FLUJO 1`nPaso 1: que puedo pedir" },
     @{ t='msg'; o='act'; d='chk'; n='1.1: abrirCheckout()' },
     @{ t='msg'; o='chk'; d='gpe'; n='1.2: GET /tienda/pedidos/opciones' },
+    @{ t='loop'; g='por cada sucursal activa' },
     @{ t='msg'; o='gpe'; d='exi'; n='1.3: SELECT sucursal_id, SUM(cantidad_disponible) FROM existencia GROUP BY sucursal_id' },
     @{ t='msg'; o='exi'; d='gpe'; n='1.3.1: dict[sucursal, faltantes]'; ret=$true },
+    @{ t='fin' },
     @{ t='msg'; o='gpe'; d='chk'; n='1.3.2: OpcionesDePedidoOut'; ret=$true },
     @{ t='nota'; txt = "FLUJO 2`nPaso 2: confirmar y apartar" },
     @{ t='msg'; o='act'; d='chk'; n='2.1: confirmar(modalidad, sucursal, total_visto)' },
@@ -1032,14 +1044,18 @@ $CASOS = @(
     @{ t='msg'; o='gpe'; d='gpe'; n='2.5: recalcularTotal(carrito)' },
     @{ t='alt' },
     @{ t='op'; g='sin pendiente y el total coincide' },
+    @{ t='loop'; g='por cada línea del carrito' },
     @{ t='msg'; o='gpe'; d='gin'; n='2.6a: apartar_para_reserva(variantes, sucursal)' },
     @{ t='msg'; o='gin'; d='exi'; n='2.7a: SELECT ... FROM existencia WHERE variante_id FOR UPDATE' },
     @{ t='msg'; o='exi'; d='gin'; n='2.7a.1: Existencia'; ret=$true },
     @{ t='msg'; o='gin'; d='exi'; n='2.8a: UPDATE existencia SET disponible = disponible - :n, reservada = reservada + :n' },
     @{ t='msg'; o='gin'; d='gpe'; n='2.8a.1: confirmación'; ret=$true },
+    @{ t='fin' },
     @{ t='msg'; o='gpe'; d='ven'; n='2.9a: INSERT INTO venta (codigo, estado, sucursal_id, total)' },
     @{ t='msg'; o='ven'; d='gpe'; n='2.9a.1: Venta (id, codigo)'; ret=$true },
+    @{ t='loop'; g='por cada línea del carrito' },
     @{ t='msg'; o='gpe'; d='det'; n='2.10a: INSERT INTO detalle_venta (precio_unitario CONGELADO)' },
+    @{ t='fin' },
     @{ t='msg'; o='gpe'; d='pas'; n='2.11a: crearSesionDeCobro(total, codigo)' },
     @{ t='msg'; o='pas'; d='gpe'; n='2.11a.1: url_de_pago'; ret=$true },
     @{ t='msg'; o='gpe'; d='chk'; n='2.12a: PedidoCreadoOut(codigo, url)'; ret=$true },
@@ -1051,8 +1067,10 @@ $CASOS = @(
     @{ t='nota'; txt = "FLUJO 3`nCancelar antes de pagar" },
     @{ t='msg'; o='act'; d='chk'; n='3.1: cancelarPedido(codigo)' },
     @{ t='msg'; o='chk'; d='gpe'; n='3.2: POST /tienda/pedidos/:codigo/cancelar' },
+    @{ t='loop'; g='por cada línea del pedido' },
     @{ t='msg'; o='gpe'; d='gin'; n='3.3: liberar(variantes, sucursal)' },
     @{ t='msg'; o='gin'; d='exi'; n='3.4: UPDATE existencia SET reservada = reservada - :n, disponible = disponible + :n' },
+    @{ t='fin' },
     @{ t='msg'; o='gpe'; d='ven'; n='3.5: UPDATE venta SET estado = ''CANCELADA''' },
     @{ t='msg'; o='gpe'; d='chk'; n='3.5.1: confirmación'; ret=$true }
   )
@@ -1083,10 +1101,12 @@ $CASOS = @(
     @{ t='msg'; o='gpa'; d='trx'; n='1.5a: INSERT INTO transaccion_pasarela (evento_id UNICO, carga_util)' },
     @{ t='msg'; o='gpa'; d='pag'; n='1.6a: UPDATE pago SET estado = ''APROBADO'', referencia_externa' },
     @{ t='msg'; o='gpa'; d='ven'; n='1.7a: UPDATE venta SET estado = ''PAGADA''' },
+    @{ t='loop'; g='por cada línea del pedido' },
     @{ t='msg'; o='gpa'; d='gin'; n='1.8a: confirmar_salida(venta)' },
     @{ t='msg'; o='gin'; d='exi'; n='1.9a: UPDATE existencia SET reservada = reservada - :n' },
     @{ t='msg'; o='gin'; d='gin'; n='1.10a: registrarMovimiento(SALIDA, referencia)' },
     @{ t='msg'; o='gin'; d='gpa'; n='1.10a.1: confirmación'; ret=$true },
+    @{ t='fin' },
     @{ t='msg'; o='gpa'; d='gpa'; n='1.11a: emitirComprobante(venta)' },
     @{ t='msg'; o='gpa'; d='whk'; n='1.11a.1: db.commit() -> 200'; ret=$true },
     @{ t='op'; g='reintento: el aviso ya se aplico' },
@@ -1127,10 +1147,12 @@ $CASOS = @(
     @{ t='msg'; o='pnt'; d='gmo'; n='1.7a: POST /pos/ventas' },
     @{ t='msg'; o='gmo'; d='gpr'; n='1.8a: descuentos_por_variante(precios)' },
     @{ t='msg'; o='gpr'; d='gmo'; n='1.8a.1: dict[variante, Descuento]'; ret=$true },
+    @{ t='loop'; g='por cada prenda del ticket' },
     @{ t='msg'; o='gmo'; d='gin'; n='1.9a: descontar(variantes, sucursal)' },
     @{ t='msg'; o='gin'; d='exi'; n='1.10a: SELECT ... FROM existencia WHERE variante_id FOR UPDATE' },
     @{ t='msg'; o='gin'; d='exi'; n='1.11a: UPDATE existencia SET cantidad_disponible = disponible - :n' },
     @{ t='msg'; o='gin'; d='gmo'; n='1.11a.1: confirmación'; ret=$true },
+    @{ t='fin' },
     @{ t='msg'; o='gmo'; d='ven'; n='1.12a: INSERT INTO venta (canal = ''PRESENCIAL'', turno_caja_id)' },
     @{ t='msg'; o='ven'; d='gmo'; n='1.12a.1: Venta (codigo)'; ret=$true },
     @{ t='msg'; o='gmo'; d='gmo'; n='1.13a: emitirComprobante(venta)' },
@@ -1192,10 +1214,12 @@ $CASOS = @(
     @{ t='msg'; o='gde'; d='ven'; n='1.10a: SELECT ... FROM venta WHERE id FOR UPDATE  {serializa las devoluciones}' },
     @{ t='msg'; o='gde'; d='dev'; n='1.11a: INSERT INTO devolucion (tipo = ''DEVOLUCION'', turno_caja_id, motivo, monto)' },
     @{ t='msg'; o='dev'; d='gde'; n='1.11a.1: Devolucion (id)'; ret=$true },
+    @{ t='loop'; g='por cada prenda que vuelve' },
     @{ t='msg'; o='gde'; d='dev'; n='1.12a: INSERT INTO detalle_devolucion (variante_id, cantidad)' },
     @{ t='msg'; o='gde'; d='gin'; n='1.13a: reingresar_por_devolucion(variante, sucursal, cantidad)' },
     @{ t='msg'; o='gin'; d='exi'; n='1.14a: UPDATE existencia SET cantidad_disponible = disponible + :n' },
     @{ t='msg'; o='gin'; d='gde'; n='1.14a.1: MovimientoInventario (DEVOLUCION)'; ret=$true },
+    @{ t='fin' },
     @{ t='msg'; o='gde'; d='pnt'; n='1.15a: db.commit() -> DevolucionOut(valor_devuelto, monto, sale_del_cajon)'; ret=$true },
     @{ t='msg'; o='pnt'; d='act'; n='1.16a: decirSiSaleDelCajon()  [cero si se cobro con tarjeta o QR]' },
     @{ t='op'; g='fuera de plazo' },
@@ -1216,15 +1240,21 @@ $CASOS = @(
     @{ t='op'; g='la diferencia se puede saldar' },
     @{ t='msg'; o='gde'; d='ven'; n='2.9a: INSERT INTO venta (metodo_pago = ''CAMBIO'', total = lo nuevo)' },
     @{ t='msg'; o='ven'; d='gde'; n='2.9a.1: Venta (codigo)'; ret=$true },
+    @{ t='loop'; g='por cada prenda que se lleva' },
     @{ t='msg'; o='gde'; d='ven'; n='2.10a: INSERT INTO detalle_venta (precio_unitario CONGELADO)' },
+    @{ t='fin' },
     @{ t='msg'; o='gde'; d='dev'; n='2.11a: INSERT INTO devolucion (tipo = ''CAMBIO'', venta_cambio_id, monto = 0, diferencia)' },
+    @{ t='loop'; g='por cada prenda que vuelve' },
     @{ t='msg'; o='gde'; d='dev'; n='2.12a: INSERT INTO detalle_devolucion (variante_id, cantidad)' },
     @{ t='msg'; o='gde'; d='gin'; n='2.13a: reingresar_por_devolucion(...)  [1ro ENTRA lo viejo]' },
     @{ t='msg'; o='gin'; d='exi'; n='2.14a: UPDATE existencia SET cantidad_disponible = disponible + :n' },
+    @{ t='fin' },
+    @{ t='loop'; g='por cada prenda que se lleva' },
     @{ t='msg'; o='gde'; d='gin'; n='2.15a: descontar_por_venta(...)  [2do SALE lo nuevo]' },
     @{ t='msg'; o='gin'; d='exi'; n='2.16a: SELECT ... FROM existencia WHERE variante_id FOR UPDATE' },
     @{ t='msg'; o='gin'; d='exi'; n='2.17a: UPDATE existencia SET cantidad_disponible = disponible - :n' },
     @{ t='msg'; o='gin'; d='gde'; n='2.17a.1: confirmación'; ret=$true },
+    @{ t='fin' },
     @{ t='msg'; o='gde'; d='pnt'; n='2.18a: db.commit() -> CambioOut(diferencia, a_favor_de, venta_nueva_codigo)'; ret=$true },
     @{ t='msg'; o='pnt'; d='act'; n='2.19a: decirSiCobrarOEntregar()  [CLIENTE, TIENDA o NADIE]' },
     @{ t='op'; g='hay diferencia y no se dijo como se salda' },
@@ -1257,12 +1287,16 @@ $CASOS = @(
     @{ t='msg'; o='fav'; d='gre'; n='1.3.1: list[Favorito]'; ret=$true },
     @{ t='msg'; o='gre'; d='var'; n='1.4: SELECT p.id, p.nombre FROM producto p WHERE p.activo' },
     @{ t='msg'; o='var'; d='gre'; n='1.4.1: list[Producto]'; ret=$true },
+    @{ t='loop'; g='por cada producto candidato' },
     @{ t='msg'; o='gre'; d='gre'; n='1.5: armarContexto(senal, catalogo)  {id -> nombre}' },
+    @{ t='fin' },
     @{ t='msg'; o='gre'; d='ia';  n='1.6: generar(prompt)' },
     @{ t='msg'; o='ia';  d='gre'; n='1.6.1: sugerencias (3 a 25 s)'; ret=$true },
     @{ t='msg'; o='gre'; d='gin'; n='1.7: productos_con_stock(ids)  {costura C1}' },
     @{ t='msg'; o='gin'; d='gre'; n='1.7.1: set[producto_id]'; ret=$true },
+    @{ t='loop'; g='por cada sugerencia del modelo' },
     @{ t='msg'; o='gre'; d='gre'; n='1.8: validarContraCatalogo(sugerencias)' },
+    @{ t='fin' },
     @{ t='alt' },
     @{ t='op'; g='sobreviven al menos tres' },
     @{ t='msg'; o='gre'; d='rec'; n='1.9a: INSERT INTO recomendacion (motor, sugerencias JSONB)' },
@@ -1306,7 +1340,9 @@ $CASOS = @(
     @{ t='msg'; o='ven'; d='gas'; n='1.7.1: list[Venta]  [SOLO las suyas]'; ret=$true },
     @{ t='msg'; o='gas'; d='med'; n='1.8: SELECT busto_cm, cintura_cm, cadera_cm FROM medida_cliente' },
     @{ t='msg'; o='med'; d='gas'; n='1.8.1: MedidaCliente | None'; ret=$true },
+    @{ t='loop'; g='por cada fila del contexto' },
     @{ t='msg'; o='gas'; d='gas'; n='1.9: armarContexto(catalogo, ofertas, tallas, pedidos, medidas)' },
+    @{ t='fin' },
     @{ t='msg'; o='gas'; d='ia';  n='1.10: responder(pregunta, contexto, historial)  {UNA sola llamada}' },
     @{ t='msg'; o='ia';  d='gas'; n='1.10.1: texto con codigos [#12] (3 a 25 s)'; ret=$true },
     @{ t='alt' },
@@ -1328,7 +1364,9 @@ $CASOS = @(
 # PARTE 1 - Enterprise Architect por COM
 # =========================================================================
 
-$ea = New-Object -ComObject EA.Repository
+# Si quien llama ya tiene una conexion (se lo invoca con '.' despues de
+# arrancar EA.exe en el mismo proceso), se usa esa.
+if (-not $ea) { $ea = New-Object -ComObject EA.Repository }
 if (-not $ea.OpenFile($modelo)) { throw "No se pudo abrir $modelo" }
 
 function Get-OCrearPaquete($padre, $nombre) {
@@ -1354,6 +1392,99 @@ function Poner($dia, $el, $l, $t, $ancho, $alto) {
     $do = $dia.DiagramObjects.AddNew("l=$l;r=$($l + $ancho);t=$t;b=$($t - $alto);", '')
     $do.ElementID = $el.ElementID
     [void]$do.Update()
+}
+
+# Recorre el guion y asigna alturas.
+#
+# LO QUE EA HACE DE VERDAD, medido el 24/09 sobre el JPG de CU-01: al abrir
+# el diagrama pone el mensaje numero k en Y_PRIMERO - PASO*(k-1), parejo, SIN
+# huecos por notas ni por fragmentos, e ignora la altura que uno le escriba.
+# Lo unico que respeta es la caja del fragmento. Por eso aca las cajas se
+# calculan sobre esa grilla: arrancan entre el mensaje anterior y el primero
+# que encierran, y terminan entre el ultimo y el siguiente.
+# (La version anterior suponia huecos que EA no deja: todas las cajas 'alt'
+# generadas hasta el 24/09 quedaban corridas hacia abajo.)
+#
+# Los fragmentos se apilan: 'fin' cierra el ultimo abierto, asi un 'loop'
+# puede ir dentro de un operando de un 'alt'. $posX da el borde izquierdo y
+# el ancho de cada linea de vida, para el ancho de las cajas.
+function Maquetar($cu, $posX) {
+    $k = 0
+    $msgs = @(); $notas = @(); $frames = @()
+    $pila = New-Object System.Collections.ArrayList
+    function Yde($i) { return $Y_PRIMERO - $PASO * $i }
+    foreach ($p in $cu.guion) {
+        switch ($p.t) {
+            'nota' {
+                $notas += @{ txt = $p.txt; y = (Yde $k) + 10 }
+            }
+            'msg' {
+                $esRet = $false
+                if ($p.ContainsKey('ret')) { $esRet = [bool]$p.ret }
+                $msgs += @{ o = $p.o; d = $p.d; n = $p.n; ret = $esRet; y = (Yde $k) }
+                foreach ($f in $pila) { $f.lv[$p.o] = $true; $f.lv[$p.d] = $true }
+                $k++
+            }
+            'alt' {
+                [void]$pila.Add(@{ tipo = 0; desde = $k; hondo = $pila.Count; cortes = @(); ops = @(); lv = @{} })
+            }
+            'loop' {
+                [void]$pila.Add(@{ tipo = 4; desde = $k; hondo = $pila.Count; cortes = @(); ops = @($p.g); lv = @{} })
+            }
+            'op' {
+                $actual = $pila[$pila.Count - 1]
+                # El corte va a mitad de camino entre dos mensajes.
+                if ($actual.ops.Count -gt 0) { $actual.cortes += (Yde $k) + [int]($PASO / 2) }
+                $actual.ops += $p.g
+            }
+            'fin' {
+                $actual = $pila[$pila.Count - 1]
+                $pila.RemoveAt($pila.Count - 1)
+                if ($k -eq $actual.desde) { throw "$($cu.nombre): fragmento vacio" }
+                # Un fragmento anidado queda un poco adentro del que lo contiene,
+                # para que no se pisen la cabecera ni el borde de abajo.
+                $actual.top = (Yde $actual.desde) + 26 - 7 * $actual.hondo
+                $actual.bot = (Yde ($k - 1)) - 12 + 4 * $actual.hondo
+                $frames += $actual
+            }
+        }
+    }
+
+    $derecha = 0
+    foreach ($key in $posX.Keys) { $derecha = [math]::Max($derecha, $posX[$key].l + $posX[$key].w) }
+    foreach ($f in $frames) {
+        if ($f.tipo -eq 0) {
+            # El 'alt' cruza el diagrama entero, como el de catedra.
+            $f.l = $X0 - 60 + 8 * $f.hondo
+            $f.w = $derecha - $X0 + 100 - 16 * $f.hondo
+        } else {
+            # El 'loop' solo abarca las lineas de vida que tocan sus mensajes.
+            $izq = [int]::MaxValue; $der = 0
+            foreach ($key in $f.lv.Keys) {
+                $izq = [math]::Min($izq, $posX[$key].l)
+                $der = [math]::Max($der, $posX[$key].l + $posX[$key].w)
+            }
+            if ($f.lv.Count -eq 1) { $der += 60 }   # lugar para el auto-mensaje
+            $f.l = $izq - 15
+            $f.w = $der - $izq + 30
+        }
+        # Los cortes entre operandos dan el alto de cada uno. La suma tiene que
+        # ser exactamente el alto del fragmento o EA reparte mal las lineas.
+        # EA lee la lista de ABAJO hacia ARRIBA: por eso se escribe al reves.
+        $limites = @($f.top) + $f.cortes + @($f.bot)
+        $partes = @()
+        for ($i = 0; $i -lt $f.ops.Count; $i++) {
+            $tam = $limites[$i] - $limites[$i + 1]
+            $g = '{' + [guid]::NewGuid().ToString().ToUpper() + '}'
+            $partes += "@PAR;Name=$($f.ops[$i]);Size=$tam;GUID=$g;@ENDPAR;"
+        }
+        [array]::Reverse($partes)
+        $f.par = $partes -join ''
+    }
+    # De arriba hacia abajo, que es el orden en que se emparejan con las cajas
+    # que ya existen en el diagrama.
+    $frames = @($frames | Sort-Object { $_.top } -Descending)
+    return @{ msgs = $msgs; notas = $notas; frames = $frames; BOT = (Yde $k) - 30 }
 }
 
 $root = $ea.Models.GetAt(0)
@@ -1382,8 +1513,78 @@ $pendientes = @()
 
 foreach ($cu in $CASOS) {
 
-    if (BuscarDiagrama $p32 $cu.nombre) {
-        Write-Output "  $($cu.nombre) ya existe, no se toca"
+    $existente = BuscarDiagrama $p32 $cu.nombre
+    if ($existente) {
+        $tieneLoop = @($cu.guion | Where-Object { $_.t -eq 'loop' }).Count -gt 0
+        if (-not ($Fragmentos -and $tieneLoop)) {
+            Write-Output "  $($cu.nombre) ya existe, no se toca"
+            continue
+        }
+
+        # ---- -Fragmentos: remaquetar un diagrama que ya existe ----
+        $dia = $existente
+        $claveDe = @{}
+        foreach ($def in $cu.lineas) {
+            if ($def.ContainsKey('actor')) { $claveDe["A:$($def.actor)"] = $def.k }
+            else { $claveDe["C:$($def.clase)"] = $def.k }
+        }
+        $doLv = @{}; $doNotas = @(); $doFrag = @()
+        foreach ($do in $dia.DiagramObjects) {
+            $el = $ea.GetElementByID($do.ElementID)
+            switch ($el.Type) {
+                'Actor'    { $doLv[$claveDe["A:$($el.Name)"]] = $do }
+                'Sequence' { $doLv[$claveDe["C:$($ea.GetElementByID($el.ClassifierID).Name)"]] = $do }
+                'Note'     { $doNotas += $do }
+                'InteractionFragment' { $doFrag += @{ do = $do; el = $el } }
+            }
+        }
+        foreach ($def in $cu.lineas) {
+            if (-not $doLv[$def.k]) { throw "$($cu.nombre): no encuentro la linea de vida $($def.k)" }
+        }
+        $posX = @{}
+        foreach ($def in $cu.lineas) { $posX[$def.k] = @{ l = $doLv[$def.k].left; w = $doLv[$def.k].right - $doLv[$def.k].left } }
+
+        $m = Maquetar $cu $posX
+
+        foreach ($def in $cu.lineas) { $d = $doLv[$def.k]; $d.bottom = $m.BOT; [void]$d.Update() }
+
+        $doNotas = @($doNotas | Sort-Object { $_.top } -Descending)
+        if ($doNotas.Count -ne $m.notas.Count) { throw "$($cu.nombre): $($doNotas.Count) notas en EA y $($m.notas.Count) en el guion" }
+        for ($i = 0; $i -lt $doNotas.Count; $i++) {
+            $doNotas[$i].top = $m.notas[$i].y; $doNotas[$i].bottom = $m.notas[$i].y - 56; [void]$doNotas[$i].Update()
+        }
+
+        # Las cajas que ya estan se emparejan por tipo y de arriba hacia abajo;
+        # los 'loop' que falten se crean.
+        $hay = @{ 0 = @(); 4 = @() }
+        foreach ($x in @($doFrag | Sort-Object { $_.do.top } -Descending)) {
+            $nt = [int](([xml]$ea.SQLQuery("SELECT NType FROM t_object WHERE Object_ID = $($x.el.ElementID)")).EADATA.Dataset_0.Data.Row.NType)
+            $hay[$nt] += $x
+        }
+        $usado = @{ 0 = 0; 4 = 0 }
+        $fragsCreados = @()
+        foreach ($f in $m.frames) {
+            $t = $f.tipo
+            if ($usado[$t] -lt $hay[$t].Count) {
+                $x = $hay[$t][$usado[$t]]
+                $d = $x.do; $guid = $x.el.ElementGUID
+            } elseif ($t -eq 4) {
+                $frag = $p32.Elements.AddNew('', 'InteractionFragment'); [void]$frag.Update()
+                $d = $dia.DiagramObjects.AddNew("l=0;r=10;t=0;b=-10;", ''); $d.ElementID = $frag.ElementID
+                $guid = $frag.ElementGUID
+            } else { throw "$($cu.nombre): el guion tiene mas 'alt' que el diagrama" }
+            $usado[$t]++
+            $d.left = $f.l; $d.right = $f.l + $f.w; $d.top = $f.top; $d.bottom = $f.bot
+            [void]$d.Update()
+            $fragsCreados += @{ g = $guid; par = $f.par; tipo = $t }
+        }
+        $p32.Elements.Refresh()
+
+        $geo = @(); $seq = 1
+        foreach ($mm in $m.msgs) { $geo += [pscustomobject]@{ g = $null; seq = $seq; y = $mm.y; ret = $mm.ret; n = $mm.n }; $seq++ }
+        $pendientes += [pscustomobject]@{ dia = $cu.nombre; diaId = $dia.DiagramID; geo = $geo; frags = $fragsCreados }
+        $nLoop = @($m.frames | Where-Object { $_.tipo -eq 4 }).Count
+        Write-Output "  $($cu.nombre) : remaquetado, $($m.msgs.Count) mensajes, $nLoop loop"
         continue
     }
 
@@ -1407,45 +1608,8 @@ foreach ($cu in $CASOS) {
         $x += $def.w + $GAP
     }
     $p32.Elements.Refresh()
-    $anchoTotal = $x - $GAP
 
-    # ---- Recorrer el guion y asignar alturas ----
-    $y = $Y_PRIMERO
-    $msgs = @()
-    $notas = @()
-    $frames = @()
-    $actual = $null
-
-    foreach ($p in $cu.guion) {
-        switch ($p.t) {
-            'nota' {
-                $notas += @{ txt = $p.txt; y = $y + 8 }
-                $y -= $ALTO_NOTA
-            }
-            'msg' {
-                $esRet = $false
-                if ($p.ContainsKey('ret')) { $esRet = [bool]$p.ret }
-                $msgs += @{ o = $p.o; d = $p.d; n = $p.n; ret = $esRet; y = $y }
-                $y -= $PASO
-            }
-            'alt' {
-                $actual = @{ top = $y + 24; cortes = @(); ops = @() }
-                $y -= $ALTO_ALT
-            }
-            'op' {
-                if ($actual.ops.Count -gt 0) { $actual.cortes += ($y + 22) }
-                $actual.ops += $p.g
-                $y -= $ALTO_OP
-            }
-            'fin' {
-                $actual.bot = $y + 24
-                $frames += $actual
-                $actual = $null
-                $y -= 18
-            }
-        }
-    }
-    $BOT = $y - 30
+    $m = Maquetar $cu $posX
 
     # ---- Crear el diagrama y colocar todo ----
     $dia = $p32.Diagrams.AddNew($cu.nombre, 'Sequence')
@@ -1453,10 +1617,10 @@ foreach ($cu in $CASOS) {
 
     foreach ($def in $cu.lineas) {
         $pos = $posX[$def.k]
-        Poner $dia $lv[$def.k] $pos.l $TOP_LV $pos.w ($TOP_LV - $BOT)
+        Poner $dia $lv[$def.k] $pos.l $TOP_LV $pos.w ($TOP_LV - $m.BOT)
     }
 
-    foreach ($n in $notas) {
+    foreach ($n in $m.notas) {
         $nota = $p32.Elements.AddNew('', 'Note')
         $nota.Notes = $n.txt
         [void]$nota.Update()
@@ -1464,44 +1628,34 @@ foreach ($cu in $CASOS) {
     }
 
     $fragsCreados = @()
-    foreach ($f in $frames) {
+    foreach ($f in $m.frames) {
         $frag = $p32.Elements.AddNew('', 'InteractionFragment')
         [void]$frag.Update()
-        Poner $dia $frag ($X0 - 60) $f.top ($anchoTotal - $X0 + 100) ($f.top - $f.bot)
-
-        # Los cortes entre operandos dan el alto de cada uno. La suma tiene que
-        # ser exactamente el alto del fragmento o EA reparte mal las lineas.
-        $limites = @($f.top) + $f.cortes + @($f.bot)
-        $partes = @()
-        for ($i = 0; $i -lt $f.ops.Count; $i++) {
-            $tam = $limites[$i] - $limites[$i + 1]
-            $g = '{' + [guid]::NewGuid().ToString().ToUpper() + '}'
-            $partes += "@PAR;Name=$($f.ops[$i]);Size=$tam;GUID=$g;@ENDPAR;"
-        }
-        $fragsCreados += @{ g = $frag.ElementGUID; par = ($partes -join '') }
+        Poner $dia $frag $f.l $f.top $f.w ($f.top - $f.bot)
+        $fragsCreados += @{ g = $frag.ElementGUID; par = $f.par; tipo = $f.tipo }
     }
     $p32.Elements.Refresh()
 
     # ---- Los mensajes ----
     $geo = @()
     $seq = 1
-    foreach ($m in $msgs) {
-        $src = $lv[$m.o]
-        $dst = $lv[$m.d]
-        $c = $src.Connectors.AddNew($m.n, 'Sequence')
+    foreach ($mm in $m.msgs) {
+        $src = $lv[$mm.o]
+        $dst = $lv[$mm.d]
+        $c = $src.Connectors.AddNew($mm.n, 'Sequence')
         $c.SupplierID = $dst.ElementID
         $c.Direction = 'Source -> Destination'
         $c.DiagramID = $dia.DiagramID
         $c.SequenceNo = $seq
         [void]$c.Update()
-        $geo += [pscustomobject]@{ g = $c.ConnectorGUID; seq = $seq; y = $m.y; ret = $m.ret }
+        $geo += [pscustomobject]@{ g = $c.ConnectorGUID; seq = $seq; y = $mm.y; ret = $mm.ret; n = $mm.n }
         $src.Connectors.Refresh()
         $seq++
     }
 
     $dia.DiagramObjects.Refresh(); $dia.DiagramLinks.Refresh()
-    $pendientes += [pscustomobject]@{ dia = $cu.nombre; geo = $geo; frags = $fragsCreados }
-    Write-Output "  $($cu.nombre) : $($dia.DiagramObjects.Count) elementos, $($msgs.Count) mensajes, $($frames.Count) fragmento(s) alt"
+    $pendientes += [pscustomobject]@{ dia = $cu.nombre; diaId = $dia.DiagramID; geo = $geo; frags = $fragsCreados }
+    Write-Output "  $($cu.nombre) : $($dia.DiagramObjects.Count) elementos, $($m.msgs.Count) mensajes, $($m.frames.Count) fragmento(s)"
 }
 
 $ea.CloseFile(); $ea.Exit()
@@ -1524,26 +1678,32 @@ foreach ($pend in $pendientes) {
 
     # Centro horizontal de cada linea de vida de ESTE diagrama.
     $cx = @{}
-    $nombreSql = $pend.dia -replace "'", "''"
     $c = $cn.CreateCommand()
-    $c.CommandText = "SELECT Object_ID, (RectLeft + RectRight) / 2 FROM t_diagramobjects WHERE Diagram_ID = (SELECT Diagram_ID FROM t_diagram WHERE Name = '$nombreSql')"
+    $c.CommandText = "SELECT Object_ID, (RectLeft + RectRight) / 2 FROM t_diagramobjects WHERE Diagram_ID = $($pend.diaId)"
     $r = $c.ExecuteReader()
     while ($r.Read()) { $cx[[int]$r[0]] = [int]$r[1] }
     $r.Close()
 
     foreach ($x in $pend.geo) {
-        $sid = [int](Scalar "SELECT Start_Object_ID FROM t_connector WHERE ea_guid = '$($x.g)'")
-        $eid = [int](Scalar "SELECT End_Object_ID FROM t_connector WHERE ea_guid = '$($x.g)'")
+        # Un diagrama recien creado se busca por GUID; uno que ya existia
+        # (-Fragmentos), por su numero de orden, y se confirma el nombre.
+        $donde = if ($x.g) { "ea_guid = '$($x.g)'" } else { "DiagramID = $($pend.diaId) AND SeqNo = $($x.seq)" }
+        if (-not $x.g) {
+            $nombreEA = [string](Scalar "SELECT Name FROM t_connector WHERE $donde")
+            if ($nombreEA -ne $x.n) { throw "$($pend.dia): el mensaje $($x.seq) es '$nombreEA' y el guion dice '$($x.n)'" }
+        }
+        $sid = [int](Scalar "SELECT Start_Object_ID FROM t_connector WHERE $donde")
+        $eid = [int](Scalar "SELECT End_Object_ID FROM t_connector WHERE $donde")
         $sx = $cx[$sid]
         $ex = $cx[$eid]
         $tipo = if ($x.ret) { 'Return' } else { 'Call' }
         $flags = if ($x.seq -eq 1) { 'Activation=0;Initiate=1;ForceActivation=0;ExtendActivationUp=0;' } else { 'Activation=0;' }
-        [void](Exec "UPDATE t_connector SET SeqNo = $($x.seq), PtStartX = $sx, PtStartY = $($x.y), PtEndX = $ex, PtEndY = $($x.y), PDATA1 = 'Synchronous', PDATA2 = 'retval=void;', PDATA3 = '$tipo', StateFlags = '$flags' WHERE ea_guid = '$($x.g)'")
+        [void](Exec "UPDATE t_connector SET SeqNo = $($x.seq), PtStartX = $sx, PtStartY = $($x.y), PtEndX = $ex, PtEndY = $($x.y), PDATA1 = 'Synchronous', PDATA2 = 'retval=void;', PDATA3 = '$tipo', StateFlags = '$flags' WHERE $donde")
     }
 
     foreach ($f in $pend.frags) {
-        # NType 0 = alt, PDATA1 = 6, igual que en el archivo de catedra.
-        [void](Exec "UPDATE t_object SET NType = 0, PDATA1 = '6' WHERE ea_guid = '$($f.g)'")
+        # NType 0 = alt, 4 = loop. PDATA1 = 6, igual que en el archivo de catedra.
+        [void](Exec "UPDATE t_object SET NType = $($f.tipo), PDATA1 = '6' WHERE ea_guid = '$($f.g)'")
 
         # Los acentos van por parametro, no interpolados en el SQL: por
         # concatenacion el proveedor ACE los manda en la codificacion ANSI del
