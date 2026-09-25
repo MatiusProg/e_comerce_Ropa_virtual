@@ -9,4 +9,11 @@
   .pie-secundario {
     margin-top: 0.4rem;
   }
+
+  // Fuera de la tarjeta a propósito: no es parte del formulario, es la otra
+  // puerta del sitio.
+  .al-catalogo {
+    display: flex;
+    margin: 1rem auto 0;
+  }
 }
