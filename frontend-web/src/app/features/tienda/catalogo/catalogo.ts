@@ -81,6 +81,11 @@ export class Catalogo implements OnInit {
   /** Solo el Cliente tiene favoritos. Un Administrador mirando la tienda no ve
    *  corazones, y así el endpoint no se llama para recibir un 403. */
   protected readonly puedeMarcar = computed(() => this.auth.rol() === 'CLIENTE');
+
+  /** La URL actual, con los filtros: a donde volver después de ingresar. */
+  protected get aqui(): string {
+    return this.router.url;
+  }
   protected readonly favoritos = signal<Set<number>>(new Set());
 
   // --- CU-26 · Carrito ---------------------------------------------------

@@ -15,7 +15,9 @@
     a un visitante anonimo hay que ofrecerle entrar, no un menu de cliente.
   -->
   @if (!puedeMarcar()) {
-    <a matButton routerLink="/login" class="acceso">
+    <!-- Con `destino`: quien entra mirando el catálogo vuelve al catálogo,
+         con sus filtros, y no a «Mi cuenta» (flujo 6a de CU-02). -->
+    <a matButton routerLink="/login" [queryParams]="{ destino: aqui }" class="acceso">
       <mat-icon>person</mat-icon>
       Ingresar
     </a>

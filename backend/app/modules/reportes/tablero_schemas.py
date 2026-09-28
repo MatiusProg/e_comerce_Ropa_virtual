@@ -178,6 +178,26 @@ class VentasOut(BaseModel):
     cantidad_periodo: int | None = None
     ticket_promedio: Decimal | None = None
 
+    # --- Neto de devoluciones (CU-32, 24/09/2026) -----------------------
+    #
+    # LOS TRES NUMEROS VIAJAN, Y NO SOLO EL NETO. `monto_periodo` sigue siendo
+    # lo VENDIDO en bruto y no cambia de significado: un tablero donde el
+    # mismo campo pasa a querer decir otra cosa rompe en silencio a quien ya lo
+    # estaba leyendo. El neto se agrega al lado.
+    #
+    # Y hacen falta los tres: «vendimos 10.000 y nos devolvieron 200» y
+    # «vendimos 10.000 y nos devolvieron 4.000» dan el mismo neto y no son la
+    # misma situacion ni de lejos.
+    #
+    # EL TICKET PROMEDIO SIGUE SALIENDO DEL BRUTO, a proposito: es cuanto
+    # gasta quien compra, y una devolucion posterior no cambia lo que esa
+    # persona gasto ese dia.
+    devuelto_hoy: Decimal | None = None
+    devuelto_periodo: Decimal | None = None
+    #: `monto_periodo - devuelto_periodo`. Lo que de verdad quedo.
+    neto_periodo: Decimal | None = None
+    neto_hoy: Decimal | None = None
+
     #: Las mas vendidas del periodo. Lista vacia mientras no haya ventas.
     mas_vendidas: list[PrendaReservadaOut] = []
 

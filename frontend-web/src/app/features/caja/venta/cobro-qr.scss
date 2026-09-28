@@ -1,0 +1,154 @@
+:host {
+  display: block;
+}
+
+.titulo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--vb-malva-oscuro);
+}
+
+mat-dialog-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.monto {
+  margin: 0.25rem 0 0.75rem;
+  font-size: 2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--vb-tinta);
+}
+
+.marco {
+  position: relative;
+  width: 15rem;
+  max-width: 100%;
+  aspect-ratio: 1;
+  padding: 0.5rem;
+  border-radius: var(--vb-radio-chico);
+  background: #fff;
+  box-shadow: var(--vb-sombra-suave);
+  transition: opacity 0.2s;
+
+  &.apagado .codigo {
+    // Un QR vencido o rechazado no se tiene que poder volver a escanear.
+    opacity: 0.12;
+  }
+}
+
+.codigo {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.velo {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  border-radius: var(--vb-radio-chico);
+  background: rgb(255 255 255 / 0.88);
+  font-weight: 600;
+  color: var(--vb-malva-oscuro);
+
+  &.ok {
+    color: #2e7d55;
+
+    mat-icon {
+      font-size: 3.5rem;
+      width: 3.5rem;
+      height: 3.5rem;
+    }
+  }
+}
+
+.referencia {
+  margin: 0.6rem 0 0.9rem;
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.reloj {
+  width: 100%;
+  font-size: 0.9rem;
+
+  span {
+    display: block;
+    margin-bottom: 0.4rem;
+  }
+
+  strong {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.listo {
+  margin: 0;
+  font-weight: 600;
+  color: #2e7d55;
+}
+
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border-radius: var(--vb-radio-chico);
+  text-align: left;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+
+  mat-icon {
+    flex: none;
+  }
+}
+
+// El panel que hace de banco. Separado y rayado, para que en la demostración
+// nadie lo confunda con una parte del sistema de verdad.
+.simulador {
+  width: 100%;
+  margin-top: 1.1rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px dashed var(--vb-malva);
+  border-radius: var(--vb-radio-chico);
+  background: var(--vb-rosa-palido);
+
+  p {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.45rem;
+    margin: 0 0 0.65rem;
+    text-align: left;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    color: var(--vb-tinta);
+
+    mat-icon {
+      flex: none;
+      font-size: 1.15rem;
+      width: 1.15rem;
+      height: 1.15rem;
+      color: var(--vb-malva);
+    }
+  }
+
+  .botones {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+}

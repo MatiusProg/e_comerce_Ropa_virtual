@@ -105,13 +105,28 @@ def agregar_devolucion(
     turno_caja_id: int,
     motivo: str,
     monto: Decimal,
+    tipo: str = "DEVOLUCION",
+    venta_cambio_id: int | None = None,
+    diferencia: Decimal = Decimal("0.00"),
+    metodo_diferencia: str | None = None,
 ) -> Devolucion:
-    """Crea la cabecera. **Sin commit.**"""
+    """Crea la cabecera, de una devolucion o de un cambio. **Sin commit.**
+
+    Los cuatro parametros del cambio tienen el valor de la devolucion pura
+    como defecto, asi que quien registra una devolucion no los nombra y no
+    puede equivocarse con ellos. Las combinaciones invalidas ---un cambio sin
+    venta, una devolucion con diferencia--- las rechaza la base con los CHECK
+    de la 0020; esto no las repite.
+    """
     devolucion = Devolucion(
         venta_id=venta_id,
         turno_caja_id=turno_caja_id,
         motivo=motivo,
         monto=monto,
+        tipo=tipo,
+        venta_cambio_id=venta_cambio_id,
+        diferencia=diferencia,
+        metodo_diferencia=metodo_diferencia,
     )
     db.add(devolucion)
     db.flush()

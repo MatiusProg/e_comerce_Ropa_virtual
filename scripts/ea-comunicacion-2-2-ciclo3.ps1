@@ -436,11 +436,11 @@ $casos = @(
        @{g=4;d='GestorMostrador';a='PantallaVenta';m='ConflictoDePrecio(esperado, actual)'}
      )}
 
-  @{ n='2.2 CU-32 Registrar devolución'
+  @{ n='2.2 CU-32 Registrar devolución o cambio'
      actores=@('Cajero'); boundary='PantallaDevolucion'
-     controles=@('GestorDevoluciones','GestorCaja','GestorInventario')
+     controles=@('GestorDevoluciones','GestorCaja','GestorInventario','GestorPromociones')
      entidades=@('Venta','DetalleVenta','Devolucion','DetalleDevolucion','Existencia')
-     grupos='Grupo 1: buscar la venta y ver lo que QUEDA por devolver (pasos 1 y 2).   Grupo 2: registrarla (pasos 3 a 7). El bloqueo de la VENTA serializa: sin el, dos devoluciones simultaneas devuelven las dos la ultima unidad.   Grupo 3: flujo alternativo 2a, cobrada con tarjeta --- la prenda vuelve igual pero el monto va en CERO, porque esa plata nunca entro al cajon.   Grupo 4: excepciones E1 a E5.'
+     grupos='Grupo 1: buscar la venta y ver lo que QUEDA por devolver, con el PLAZO (pasos 1 y 2).   Grupo 2: devolverla (pasos 3 a 7). El bloqueo de la VENTA serializa: sin el, dos devoluciones simultaneas devuelven las dos la ultima unidad.   Grupo 3: SEGUNDO FLUJO, cambiar por otra prenda --- la vieja vuelve, la nueva sale a precio de HOY, y lo unico que mueve plata es la diferencia. El orden importa: PRIMERO entra lo viejo y DESPUES sale lo nuevo.   Grupo 4: flujo alternativo, cobrada con tarjeta --- la prenda vuelve igual pero el monto va en CERO, porque esa plata nunca entro al cajon.   Grupo 5: excepciones.'
      msj=@(
        @{g=1;d='A:Cajero';a='PantallaDevolucion';m='buscarVenta(codigo)'},
        @{g=1;d='PantallaDevolucion';a='GestorDevoluciones';m='buscar_venta(usuario_id, codigo)'},
@@ -455,9 +455,20 @@ $casos = @(
        @{g=2;d='GestorDevoluciones';a='DetalleDevolucion';m='agregar_detalle(devolucion_id, variante_id, cantidad)'},
        @{g=2;d='GestorDevoluciones';a='GestorInventario';m='reingresar_por_devolucion(variante_id, sucursal_id, cantidad)'},
        @{g=2;d='GestorInventario';a='Existencia';m='_aplicar_movimiento(existencia, DEVOLUCION, +cantidad)'},
-       @{g=3;d='GestorDevoluciones';a='GestorDevoluciones';m='_sale_del_cajon(venta) -> False'},
-       @{g=4;d='GestorDevoluciones';a='PantallaDevolucion';m='VentaNoDevolvible(codigo)'},
-       @{g=4;d='GestorDevoluciones';a='PantallaDevolucion';m='DevuelveDeMas(prenda, devolvibles, solicitado)'}
+       @{g=3;d='A:Cajero';a='PantallaDevolucion';m='registrarCambio(devueltas, llevadas, metodo_diferencia)'},
+       @{g=3;d='PantallaDevolucion';a='GestorDevoluciones';m='registrar_cambio(usuario_id, datos)'},
+       @{g=3;d='GestorDevoluciones';a='Existencia';m='prendas_por_id(variante_ids, sucursal_id)'},
+       @{g=3;d='GestorDevoluciones';a='GestorPromociones';m='descuentos_por_variante(precios)'},
+       @{g=3;d='GestorDevoluciones';a='GestorDevoluciones';m='diferencia = total_llevado - valor_devuelto'},
+       @{g=3;d='GestorDevoluciones';a='Venta';m='agregar_venta_presencial(metodo_pago = CAMBIO, total)'},
+       @{g=3;d='GestorDevoluciones';a='DetalleVenta';m='agregar_detalle(venta_id, variante_id, precio_unitario)'},
+       @{g=3;d='GestorDevoluciones';a='GestorInventario';m='descontar_por_venta(variante_id, sucursal_id, cantidad)'},
+       @{g=4;d='GestorDevoluciones';a='GestorDevoluciones';m='_sale_del_cajon(venta) -> False'},
+       @{g=5;d='GestorDevoluciones';a='PantallaDevolucion';m='VentaNoDevolvible(codigo)'},
+       @{g=5;d='GestorDevoluciones';a='PantallaDevolucion';m='DevuelveDeMas(prenda, devolvibles, solicitado)'},
+       @{g=5;d='GestorDevoluciones';a='PantallaDevolucion';m='FueraDePlazo(vence_en, plazo_dias)'},
+       @{g=5;d='GestorDevoluciones';a='PantallaDevolucion';m='CambioSinMetodo(diferencia)'},
+       @{g=5;d='GestorDevoluciones';a='PantallaDevolucion';m='DiferenciaCambiada(esperada, real)'}
      )}
 
   @{ n='2.2 CU-33 Recibir recomendaciones de prendas'

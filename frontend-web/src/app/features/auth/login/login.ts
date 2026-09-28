@@ -10,6 +10,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 import { AuthLayout } from '../auth-layout/auth-layout';
 import { AuthService, type ErrorLogin } from '../../../core/services/auth.service';
+import { destinoTrasLogin } from '../../../core/guards/auth.guard';
 
 /**
  * CU-02 · Iniciar sesión — «boundary» FormularioLogin.
@@ -70,7 +71,9 @@ export class Login {
         // Flujo alternativo 6a: si se llegó acá por intentar abrir otra ruta,
         // se vuelve a ella; si no, al área que corresponde al rol.
         const destino = this.ruta.snapshot.queryParamMap.get('destino');
-        this.router.navigateByUrl(destino || this.auth.inicioDelRol());
+        this.router.navigateByUrl(
+          destinoTrasLogin(destino, this.auth.rol()!, this.auth.inicioDelRol()),
+        );
       },
       error: (e: ErrorLogin) => {
         this.enviando.set(false);

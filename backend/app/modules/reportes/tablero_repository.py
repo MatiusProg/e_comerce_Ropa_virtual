@@ -51,7 +51,12 @@ from app.modules.inventario.models import Existencia
 from app.modules.organizacion.models import Sucursal
 from app.modules.reservas.models import DetalleReserva, Reserva
 from app.core import tiempo
-from app.modules.ventas.models import DetalleVenta, Venta
+from app.modules.ventas.models import (
+    DetalleDevolucion,
+    DetalleVenta,
+    Devolucion,
+    Venta,
+)
 
 
 # --- Ayudas comunes ------------------------------------------------------
@@ -310,6 +315,69 @@ def monto_vendido_hoy(db: Session, *, sucursal_id: int | None) -> Decimal:
             _venta_del_periodo(inicio, fin, sucursal_id)
         )
     ) or Decimal("0")
+
+
+def valor_devuelto(
+    db: Session, *, desde: datetime, hasta: datetime, sucursal_id: int | None
+) -> Decimal:
+    """Cuanto valia lo que volvio al local en el periodo (CU-32).
+
+    POR QUE EL TABLERO LA NECESITA
+    -------------------------------
+    `resumen_de_ventas` suma `venta.total` y no resta nada, asi que hasta el
+    24/09/2026 el tablero informaba como vendido algo que estaba de vuelta en
+    la percha. El Administrador leia un numero que ninguna caja podia cuadrar.
+
+    EL CAMBIO DE PRENDA LO HACE MAS VISIBLE, y por eso aparecio ahora. En un
+    cambio la venta original sigue contada Y ADEMAS nace una venta nueva por la
+    prenda que sale: vender un cinturon de 100 y cambiarlo por un trench de 940
+    hacia decir 1040 cuando a la tienda entraron 940. Sobra exactamente el
+    valor de lo devuelto, que es lo que esta consulta resta.
+
+    SE CORTA POR CUANDO SE DEVOLVIO, no por cuando se vendio. La pregunta que
+    el tablero responde es «como nos fue en este periodo», y una devolucion de
+    hoy contra una venta del mes pasado es plata que se va HOY.
+
+    SUMA `DEVOLUCION` Y `CAMBIO` POR IGUAL. En los dos casos la prenda volvio
+    al inventario y dejo de estar vendida; lo que cambia es a donde fue su
+    valor ---al cajon o a otra prenda---, y eso ya lo cuenta el arqueo de
+    CU-30, no el tablero.
+
+    EL VALOR SALE DEL PRECIO CONGELADO de `detalle_venta`, no del vigente: se
+    resta lo que esa venta habia sumado, no lo que la prenda cuesta hoy. Si se
+    leyera el precio actual, un cambio de lista reescribiria hacia atras el
+    monto de un periodo ya cerrado.
+    """
+    valor = DetalleDevolucion.cantidad * (
+        DetalleVenta.precio_unitario - DetalleVenta.descuento_unitario
+    )
+    condiciones = [Devolucion.creado_en >= desde, Devolucion.creado_en < hasta]
+    if sucursal_id is not None:
+        # Por la sucursal de la VENTA, que es la misma columna contra la que se
+        # netea. No hay ambiguedad: CU-32 solo deja devolver en la sucursal
+        # donde se vendio --- `venta_devolvible` lo exige ---.
+        condiciones.append(Venta.sucursal_id == sucursal_id)
+
+    return db.scalar(
+        select(func.coalesce(func.sum(valor), 0))
+        .select_from(Devolucion)
+        .join(DetalleDevolucion, DetalleDevolucion.devolucion_id == Devolucion.id)
+        .join(Venta, Venta.id == Devolucion.venta_id)
+        .join(
+            DetalleVenta,
+            (DetalleVenta.venta_id == Devolucion.venta_id)
+            & (DetalleVenta.variante_id == DetalleDevolucion.variante_id),
+        )
+        .where(*condiciones)
+    ) or Decimal("0")
+
+
+def valor_devuelto_hoy(db: Session, *, sucursal_id: int | None) -> Decimal:
+    """Lo devuelto en el dia de hoy. Ignora el periodo, igual que `monto_vendido_hoy`."""
+    inicio = tiempo.inicio_del_dia()
+    return valor_devuelto(
+        db, desde=inicio, hasta=inicio + timedelta(days=1), sucursal_id=sucursal_id
+    )
 
 
 def top_variantes_vendidas(

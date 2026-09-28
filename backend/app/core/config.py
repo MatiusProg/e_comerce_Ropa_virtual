@@ -141,6 +141,24 @@ class Settings(BaseSettings):
     # produccion es la URL publica de la web en Railway.
     WEB_BASE_URL: str = "http://localhost:4200"
 
+    # --- Devoluciones y cambios (CU-32, ciclo 3) -------------------------
+    #
+    # Cuantos dias despues de la venta se acepta que la prenda vuelva, sea para
+    # devolverla o para cambiarla. Los dos flujos usan el mismo numero: son la
+    # misma politica comercial vista de dos maneras, y un plazo mas largo para
+    # el cambio que para la devolucion se convertiria en la forma de devolver
+    # fuera de plazo --- cambiar por algo y devolver eso ---.
+    #
+    # ES UNA CONFIGURACION Y NO UNA CONSTANTE porque es una decision de la
+    # tienda, no del sistema: la temporada de fin de ano suele estirarlo. Y no
+    # se guarda en cada devolucion --- ver el encabezado de la 0020 ---.
+    #
+    # El plazo corre contra `venta.creado_en`, en horas: dos dias son 48 horas
+    # desde el cobro, no «pasado manana a cualquier hora». Contar por fecha
+    # calendario le daria casi tres dias a quien compro un lunes a las 23:50 y
+    # poco mas de dos a quien compro el mismo lunes a las 08:00.
+    DEVOLUCION_PLAZO_DIAS: int = 2
+
     # --- Datos iniciales (app/db/seed.py) --------------------------------
     ADMIN_EMAIL: str = "admin@violetboutique.bo"
     ADMIN_PASSWORD: str = ""      # sin valor por defecto: ver seed.py

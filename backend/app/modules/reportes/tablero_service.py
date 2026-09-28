@@ -269,14 +269,33 @@ def _ventas(
         db, desde=desde, hasta=hasta, sucursal_id=sucursal_id, limite=TOPE_RANKING
     )
 
+    # Lo que volvio al local en el periodo. Sin esto el tablero informaba como
+    # vendido algo que estaba de vuelta en la percha --- y el cambio de prenda
+    # lo hacia mas visible todavia ---. Ver `repository.valor_devuelto`.
+    devuelto = _dinero(
+        repository.valor_devuelto(
+            db, desde=desde, hasta=hasta, sucursal_id=sucursal_id
+        )
+    )
+    monto_hoy = _dinero(repository.monto_vendido_hoy(db, sucursal_id=sucursal_id))
+    devuelto_hoy = _dinero(
+        repository.valor_devuelto_hoy(db, sucursal_id=sucursal_id)
+    )
+
     return VentasOut(
         disponible=True,
         # «Vendido hoy» es SIEMPRE hoy, aunque se este mirando otro periodo:
         # es el pulso del negocio. Ver `monto_vendido_hoy`.
-        monto_hoy=_dinero(repository.monto_vendido_hoy(db, sucursal_id=sucursal_id)),
+        monto_hoy=monto_hoy,
         monto_periodo=monto,
         cantidad_periodo=cantidad,
+        # Del BRUTO, a proposito: es cuanto gasta quien compra, y una
+        # devolucion posterior no cambia lo que esa persona gasto ese dia.
         ticket_promedio=_dinero(monto / cantidad) if cantidad else None,
+        devuelto_hoy=devuelto_hoy,
+        devuelto_periodo=devuelto,
+        neto_periodo=monto - devuelto,
+        neto_hoy=monto_hoy - devuelto_hoy,
         mas_vendidas=[_prenda(fila) for fila in ranking],
         motivo=None,
     )

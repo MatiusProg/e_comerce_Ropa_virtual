@@ -327,8 +327,14 @@ def ver_reserva(db: Session, usuario_id: int, reserva_id: int) -> ReservaPorCobr
 # Paso 2: cobrar
 # =====================================================================
 
-def _generar_codigo(db: Session) -> str:
+def generar_codigo_de_venta(db: Session) -> str:
     """Un codigo legible y unico, de la forma `VP-20260920-A3F2`.
+
+    SIN GUION BAJO desde la 0020: el cambio de prenda de CU-32 tambien crea
+    una venta presencial y necesita un codigo con el mismo formato. Dejarlo
+    privado obligaria a que `devolucion_service` importara un `_nombre` ajeno
+    o a copiar el generador, y dos generadores de codigos unicos es
+    exactamente la forma de que dejen de ser unicos.
 
     `VP` y no `VB`: las ventas de mostrador y los pedidos web comparten la misma
     columna unica, y el prefijo distinto deja saber de un vistazo ---en el
@@ -485,7 +491,7 @@ def registrar_venta(
             raise PagoInsuficiente(recibido, total)
         vuelto = recibido - total
 
-    codigo = _generar_codigo(db)
+    codigo = generar_codigo_de_venta(db)
 
     venta = repository.agregar_venta_presencial(
         db,

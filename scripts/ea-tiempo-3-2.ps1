@@ -121,205 +121,333 @@ $LEYENDA = 'LEYENDA: {8 h} = ACCESS_TOKEN_EXPIRE_MINUTES (core/config.py:32), la
 # =========================================================================
 $CASOS = @(
 
-    # ================= CICLO 1 =================================
+    # Los bloques de los Ciclos 1 y 2 se quitaron el 20/09 junto con los
+    # diagramas que producian. Los cuatro que vuelven, elegidos con el
+    # criterio del auxiliar, estan al final.
+
+    # ================= CICLO 3 =================================
+    #
+    # PILOTO DEL 20/09. Un solo caso de uso, para revisar el patron antes de
+    # escribir los demas.
+    #
+    # CU-27 es el que mejor justifica un diagrama de tiempo del ciclo: es el
+    # UNICO donde una entidad cambia de estado SIN que nadie la toque. El
+    # pedido nace apartando stock y, si el pago no llega, la barrida lo
+    # expira sola. Eso ---cuanto tarda un estado en cambiar--- es justo lo
+    # que este diagrama existe para mostrar, y no se ve en el de estados.
+    #
+    # Por eso la linea del pedido y la de la existencia NO terminan en el
+    # commit como en los CU de gestion: siguen hasta la resolucion.
 
     @{
-        cu = 'CU-01'; ciclo = '#1'; escenario = 'Registrar un cliente'
-        nota = "Escenario: un visitante crea su cuenta. No hay fase de autenticacion previa: la vitrina es publica, asi que `Autenticando` es solo la recepcion de la peticion. La segunda linea muestra la fila de usuario apareciendo en el instante del commit. $LEYENDA"
+        cu = 'CU-27'; ciclo = '#3'; escenario = 'Realizar pedido y pagar en linea'
+        nota = "Escenario: el cliente confirma el carrito y el pedido queda esperando el pago. La transaccion cierra en el commit, pero LA VENTA NO: queda PENDIENTE_PAGO hasta que la pasarela confirme (CU-28) o venza el plazo y la barrida devuelva el stock. Las dos ultimas marcas de las lineas 2 y 3 son ese desenlace, fuera de la peticion. $LEYENDA"
         lineas = @(
-            (LineaTransaccion 'POST /auth/registro' 'correo y documento libres' 'INSERT usuario + cliente' '201' ''),
+            (LineaTransaccion 'POST /tienda/pedidos' 'total coincide y sin otro pendiente' 'INSERT venta + detalle_venta' '201' '8 h'),
             @{
-                k = 'usuario'; n = 'Usuario'; clasificador = 'Usuario'
-                estados = @('Inexistente', 'Activo')
+                k = 'venta'; n = 'Pedido'; clasificador = 'Venta'
+                estados = @('Inexistente', 'PENDIENTE_PAGO', 'PAGADA', 'EXPIRADA')
                 marcas = @(
-                    @{ t = $T.inicio; s = 'Inexistente'; ev = '';                          tc = '' },
-                    @{ t = $T.commit; s = 'Activo';      ev = 'la fila existe y puede iniciar sesion'; tc = '' }
+                    @{ t = $T.inicio; s = 'Inexistente';    ev = '';                                  tc = '' },
+                    @{ t = $T.commit; s = 'PENDIENTE_PAGO'; ev = 'db.commit()  ';                     tc = 'RNF11' },
+                    @{ t = 76;        s = 'PAGADA';         ev = 'webhook firmado  {CU-28}';          tc = '' },
+                    @{ t = 84;        s = 'EXPIRADA';       ev = 'nadie pago  {expirar-vencidos}';    tc = '' }
+                )
+            },
+            @{
+                k = 'existencia'; n = 'Existencia'; clasificador = 'Existencia'
+                estados = @('disponible', 'reservada', 'vendida')
+                marcas = @(
+                    @{ t = $T.inicio;  s = 'disponible'; ev = '';                              tc = '' },
+                    @{ t = $T.escribe; s = 'reservada';  ev = 'apartar_para_reserva()  ';      tc = 'RNF10' },
+                    @{ t = 76;         s = 'vendida';    ev = 'salida definitiva  {CU-28}';    tc = 'RNF10' },
+                    @{ t = 84;         s = 'disponible'; ev = 'devuelta por la barrida  ';     tc = 'RNF10' }
                 )
             }
         )
     },
 
     @{
-        cu = 'CU-02'; ciclo = '#1'; escenario = 'Iniciar sesion'
-        nota = "Escenario: un usuario se autentica y recibe su token. Es el CU donde nace el reloj de todo el sistema: la restriccion {8 h} de la segunda linea es la que despues aparece en CU-03 y CU-06 como el plazo que la revocacion se adelanta. $LEYENDA"
+        cu = 'CU-28'; ciclo = '#3'; escenario = 'Confirmar el pago del pedido'
+        nota = "Escenario: la pasarela avisa que el cobro entro. La linea 1 no arranca autenticando por token sino VALIDANDO LA FIRMA: el que llama es una maquina. Las lineas 2 y 3 muestran el pedido cerrandose y el stock apartado volviendose salida definitiva, las dos en el mismo commit. $LEYENDA"
+        lineas = @(
+            (LineaTransaccion 'POST /pagos/webhook' 'firma valida y aviso no aplicado' 'UPDATE venta + movimiento_inventario' '200' ''),
+            @{
+                k = 'venta'; n = 'Pedido'; clasificador = 'Venta'
+                estados = @('PENDIENTE_PAGO', 'PAGADA')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'PENDIENTE_PAGO'; ev = 'creado por CU-27  '; tc = '' },
+                    @{ t = $T.commit; s = 'PAGADA';         ev = 'db.commit()  ';      tc = 'RNF11' }
+                )
+            },
+            @{
+                k = 'existencia'; n = 'Existencia'; clasificador = 'Existencia'
+                estados = @('reservada', 'vendida')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'reservada'; ev = 'apartada por CU-27  '; tc = '' },
+                    @{ t = $T.commit; s = 'vendida';   ev = 'SALIDA registrada  ';   tc = 'RNF10' }
+                )
+            }
+        )
+    },
+
+    @{
+        cu = 'CU-31'; ciclo = '#3'; escenario = 'Registrar una venta presencial'
+        nota = "Escenario: el cajero cobra en el mostrador. La guarda de la linea 1 no es un rol sino el TURNO ABIERTO. La linea 3 es lo que justifica CU-30: el dinero entra a un turno concreto, y por eso al cierre se puede cuadrar. $LEYENDA"
+        lineas = @(
+            (LineaTransaccion 'POST /pos/ventas' 'turno abierto y existencia suficiente' 'INSERT venta + movimiento_inventario' '201' '8 h'),
+            @{
+                k = 'existencia'; n = 'Existencia'; clasificador = 'Existencia'
+                estados = @('disponible', 'vendida')
+                marcas = @(
+                    @{ t = $T.inicio;  s = 'disponible'; ev = '';                     tc = '' },
+                    @{ t = $T.escribe; s = 'vendida';    ev = 'SALIDA registrada  '; tc = 'RNF10' }
+                )
+            },
+            @{
+                k = 'turno'; n = 'Turno de caja'; clasificador = 'TurnoCaja'
+                estados = @('Abierto', 'Cerrado')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Abierto'; ev = 'abierto por CU-30  '; tc = '' },
+                    @{ t = 84;        s = 'Cerrado'; ev = 'arqueo del turno  ';  tc = '1 turno' }
+                )
+            }
+        )
+    },
+
+    @{
+        cu = 'CU-32'; ciclo = '#3'; escenario = 'Cambiar una prenda por otra'
+        nota = "Escenario: el cliente trae una prenda y se lleva otra. Lo que hay que mirar son las lineas 2 y 3: la prenda que VUELVE pasa a disponible ANTES de que la que SALE pase a vendida. No es un detalle de dibujo --- es el orden del mostrador, y es lo unico que deja cambiar una prenda fallada por otra identica cuando era la ultima: al reves, el descuento no encontraria stock de una prenda que el cliente tiene en la mano. La guarda de la linea 1 son DOS: turno abierto y dentro del plazo. $LEYENDA"
+        lineas = @(
+            (LineaTransaccion 'POST /pos/devoluciones/cambios' 'turno abierto y dentro del plazo' 'INSERT devolucion + venta + 2 movimientos' '201' '2 dias'),
+            @{
+                k = 'vuelve'; n = 'Prenda que vuelve'; clasificador = 'Existencia'
+                estados = @('vendida', 'disponible')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'vendida';    ev = 'vendida en su dia  ';        tc = '' },
+                    @{ t = 54;        s = 'disponible'; ev = 'DEVOLUCION +n  {1ro}';       tc = 'RNF10' }
+                )
+            },
+            @{
+                k = 'sale'; n = 'Prenda que se lleva'; clasificador = 'Existencia'
+                estados = @('disponible', 'vendida')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'disponible'; ev = '';                           tc = '' },
+                    @{ t = 62;        s = 'vendida';    ev = 'SALIDA -n  {2do}';           tc = 'RNF11' }
+                )
+            },
+            @{
+                k = 'turno'; n = 'Turno de caja'; clasificador = 'TurnoCaja'
+                estados = @('Abierto', 'Cerrado')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Abierto'; ev = 'abierto por CU-30  ';           tc = '' },
+                    @{ t = 84;        s = 'Cerrado'; ev = 'arqueo: solo la diferencia  ';  tc = '1 turno' }
+                )
+            }
+        )
+    },
+
+    @{
+        cu = 'CU-33'; ciclo = '#3'; escenario = 'Recibir recomendaciones de prendas'
+        nota = "Escenario: el cliente abre `Para vos`. ESTE NO USA LA LINEA DE TRANSACCION porque no escribe nada: es una consulta asistida. Lo que hay que mirar es el ancho del tramo `Esperando al modelo`, que es casi todo el tiempo de la peticion --medido entre 3 y 25 segundos--, y el lazo de reintento cuando la validacion deja menos de tres prendas en pie. $LEYENDA"
+        lineas = @(
+            @{
+                k = 'peticion'; n = 'Peticion'; clasificador = ''
+                estados = @('Inactiva', 'Reuniendo la senal', 'Esperando al modelo', 'Validando', 'Respondida')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Inactiva';           ev = '';                             tc = '' },
+                    @{ t = 8;         s = 'Reuniendo la senal'; ev = 'GET /tienda/recomendaciones';  tc = '' },
+                    @{ t = 20;        s = 'Esperando al modelo'; ev = 'contexto armado  ';           tc = '3-25 s' },
+                    @{ t = 70;        s = 'Validando';          ev = 'el modelo contesta  ';         tc = '' },
+                    @{ t = 80;        s = 'Respondida';         ev = 'solo prendas reales  ';        tc = 'RNF02' }
+                )
+            },
+            @{
+                k = 'modelo'; n = 'Proveedor de IA'; clasificador = 'ProveedorRecomendador'
+                estados = @('Ocioso', 'Generando', 'Saturado')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Ocioso';    ev = '';                          tc = '' },
+                    @{ t = 20;        s = 'Generando'; ev = 'prompt enviado  ';          tc = '22 s' },
+                    @{ t = 62;        s = 'Saturado';  ev = 'sin respuesta a tiempo  ';  tc = 'respaldo' },
+                    @{ t = 70;        s = 'Ocioso';    ev = 'contesta el de respaldo  '; tc = '' }
+                )
+            },
+            @{
+                k = 'sugerencias'; n = 'Sugerencias'; clasificador = ''
+                estados = @('Ninguna', 'Sin validar', 'Utiles')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Ninguna';     ev = '';                                tc = '' },
+                    @{ t = 70;        s = 'Sin validar'; ev = 'lo que dijo el modelo  ';          tc = '' },
+                    @{ t = 80;        s = 'Utiles';      ev = 'activas y con stock  ';            tc = 'min 3' }
+                )
+            }
+        )
+    },
+
+    @{
+        cu = 'CU-34'; ciclo = '#3'; escenario = 'Conversar con el asistente virtual'
+        nota = "Escenario: el cliente hace una pregunta. Es el caso que el auxiliar uso de ejemplo para este diagrama, y aca con los tiempos MEDIDOS del sistema: armar el contexto es barato --tres consultas-- y esperar al modelo es casi toda la espera. La linea 3 muestra lo que define a este caso de uso: la conversacion NUNCA llega a la base. $LEYENDA"
+        lineas = @(
+            @{
+                k = 'peticion'; n = 'Peticion'; clasificador = ''
+                estados = @('Inactiva', 'Armando el contexto', 'Esperando al modelo', 'Validando codigos', 'Respondida')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Inactiva';            ev = '';                        tc = '' },
+                    @{ t = 8;         s = 'Armando el contexto'; ev = 'POST /asistente';         tc = '' },
+                    @{ t = 22;        s = 'Esperando al modelo'; ev = 'una sola llamada  ';      tc = '3-25 s' },
+                    @{ t = 72;        s = 'Validando codigos';   ev = 'el modelo contesta  ';    tc = '' },
+                    @{ t = 82;        s = 'Respondida';          ev = 'solo prendas del catalogo  '; tc = 'RNF02' }
+                )
+            },
+            @{
+                k = 'modelo'; n = 'Proveedor de IA'; clasificador = 'ProveedorAsistente'
+                estados = @('Ocioso', 'Generando', 'Saturado')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Ocioso';    ev = '';                           tc = '' },
+                    @{ t = 22;        s = 'Generando'; ev = 'contexto e historial  ';     tc = '22 s' },
+                    @{ t = 64;        s = 'Saturado';  ev = 'se agota el tiempo  ';       tc = 'respaldo' },
+                    @{ t = 72;        s = 'Ocioso';    ev = 'contesta el de respaldo  ';  tc = '' }
+                )
+            },
+            @{
+                k = 'conversacion'; n = 'Conversacion'; clasificador = ''
+                estados = @('En la pantalla', 'Perdida')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'En la pantalla'; ev = 'turnos anteriores  ';         tc = '6 turnos' },
+                    @{ t = 82;        s = 'En la pantalla'; ev = 'se agrega el turno nuevo  ';  tc = '' },
+                    @{ t = 84;        s = 'Perdida';        ev = 'al recargar  {NO va a la base}'; tc = '' }
+                )
+            }
+        )
+    },
+
+    @{
+        cu = 'CU-21'; ciclo = '#3'; escenario = 'Probarse una prenda en el vestidor'
+        nota = "Escenario: el cliente se prueba una prenda. NO HAY LINEA DE TRANSACCION ni commit: todo ocurre en el telefono y nada se escribe, salvo lo que despues se derive al carrito. La escala aca NO es la de una peticion: es el ciclo de UN FOTOGRAMA, y lo que hay que mirar es que la deteccion y el dibujo entren dentro del cuadro para sostener los 12-20 fps medidos en el prototipo. $LEYENDA"
+        lineas = @(
+            @{
+                k = 'camara'; n = 'Camara frontal'; clasificador = ''
+                estados = @('Apagada', 'Pidiendo permiso', 'Transmitiendo')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Apagada';          ev = '';                       tc = '' },
+                    @{ t = 10;        s = 'Pidiendo permiso'; ev = 'abrir el vestidor  ';    tc = '' },
+                    @{ t = 24;        s = 'Transmitiendo';    ev = 'permiso concedido  ';    tc = '12-20 fps' }
+                )
+            },
+            @{
+                k = 'pose'; n = 'Deteccion de pose'; clasificador = 'PoseDetector'
+                estados = @('Ociosa', 'Analizando', 'Con pose')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Ociosa';     ev = '';                        tc = '' },
+                    @{ t = 30;        s = 'Analizando'; ev = 'fotograma recibido  ';    tc = 'en el telefono' },
+                    @{ t = 52;        s = 'Con pose';   ev = 'hombros y cadera  ';      tc = '' },
+                    @{ t = 80;        s = 'Analizando'; ev = 'siguiente fotograma  ';   tc = '' }
+                )
+            },
+            @{
+                k = 'prenda'; n = 'Prenda superpuesta'; clasificador = ''
+                estados = @('Sin dibujar', 'Dibujada', 'Capturada')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Sin dibujar'; ev = '';                          tc = '' },
+                    @{ t = 58;        s = 'Dibujada';    ev = 'escalada y rotada  ';       tc = 'PNG alfa' },
+                    @{ t = 74;        s = 'Capturada';   ev = 'capturar()  {al telefono}'; tc = '' },
+                    @{ t = 84;        s = 'Dibujada';    ev = 'sigue probandose  ';        tc = '' }
+                )
+            }
+        )
+    },
+
+    # ============ CICLO 1 y 2, rehechos con el patron nuevo ==============
+    #
+    # Cuatro, no dieciocho. Un diagrama de tiempo contesta «cuanto tarda un
+    # estado en cambiar», y en un alta-baja-modificacion la respuesta es
+    # siempre la misma: lo que dura la peticion. Estos cuatro son los del
+    # Ciclo 1 y 2 donde el tiempo dice algo que no se ve en otro diagrama.
+
+    @{
+        cu = 'CU-02'; ciclo = '#1'; escenario = 'Iniciar sesion y que el token caduque'
+        nota = "Escenario: el usuario entra. Lo que justifica el diagrama es la linea 2: el token se emite en el commit y se apaga OCHO HORAS DESPUES sin que nadie haga nada. Es el unico plazo del Ciclo 1 que corre solo, y la escala del dibujo no es la de la peticion sino la de esas ocho horas. $LEYENDA"
         lineas = @(
             (LineaTransaccion 'POST /auth/sesion' 'verify_password y cuenta activa' 'INSERT sesion_token' '200' ''),
             @{
-                k = 'token'; n = 'SesionToken'; clasificador = 'SesionToken'
-                estados = @('Inexistente', 'Vigente')
+                k = 'token'; n = 'Token de acceso'; clasificador = 'SesionToken'
+                estados = @('Inexistente', 'Vigente', 'Revocado', 'Vencido')
                 marcas = @(
-                    @{ t = $T.inicio; s = 'Inexistente'; ev = '';              tc = '' },
-                    @{ t = $T.commit; s = 'Vigente';     ev = 'emitir()  ';    tc = '8 h' }
+                    @{ t = $T.inicio; s = 'Inexistente'; ev = '';                          tc = '' },
+                    @{ t = $T.commit; s = 'Vigente';     ev = 'emitir()  ';                tc = '8 h' },
+                    @{ t = 78;        s = 'Revocado';    ev = 'cerrar sesion  {CU-02}';    tc = '' },
+                    @{ t = 84;        s = 'Vencido';     ev = 'se cumplen las 8 h  ';      tc = 'nadie actua' }
                 )
-            }
-        )
-    },
-
-    @{
-        cu = 'CU-03'; ciclo = '#1'; escenario = 'Desactivar una cuenta'
-        nota = "Escenario: el Administrador desactiva una cuenta. Se elige este y no el alta porque es el unico del CU donde el reloj es requisito: sin revocar las sesiones, el token del desactivado seguiria valiendo hasta 8 h. Las dos lineas escalonan en el MISMO instante, y eso es lo que el diagrama tiene que hacer ver. $LEYENDA"
-        lineas = @(
-            (LineaTransaccion 'PATCH /usuarios/:id/estado' 'requiere_roles(ADMINISTRADOR)' 'revocar_sesiones_de_usuario()' '200' '8 h'),
+            },
             @{
-                k = 'token'; n = 'SesionToken'; clasificador = 'SesionToken'
-                estados = @('Vigente', 'Revocado')
+                k = 'acceso'; n = 'Acceso a lo privado'; clasificador = ''
+                estados = @('Denegado', 'Permitido')
                 marcas = @(
-                    @{ t = $T.inicio; s = 'Vigente';  ev = 'emitir()  {CU-02}';              tc = '' },
-                    @{ t = $T.commit; s = 'Revocado'; ev = 'revocar_sesiones_de_usuario()  '; tc = '8 h' }
+                    @{ t = $T.inicio; s = 'Denegado';  ev = '';                         tc = '' },
+                    @{ t = $T.commit; s = 'Permitido'; ev = 'segun el rol del token  '; tc = 'RNF01' },
+                    @{ t = 78;        s = 'Denegado';  ev = 'el token deja de valer  '; tc = '' }
                 )
             }
         )
     },
 
     @{
-        cu = 'CU-04'; ciclo = '#1'; escenario = 'Cambiar la contrasena'
-        nota = "Escenario: el Cliente cambia su contrasena. De las cinco ramas del CU es la unica con algo que medir: la comprobacion de la contrasena actual es bcrypt, que por diseno es LENTO, y por eso `Validando` es el tramo mas largo de la transaccion. $LEYENDA"
+        cu = 'CU-17'; ciclo = '#2'; escenario = 'Consultar el catalogo'
+        nota = "Escenario: un visitante navega la vitrina. Es el unico del capitulo donde lo que se mide NO es una transaccion sino un TIEMPO DE RESPUESTA: el RNF02 pide que el catalogo responda rapido, y esta es la unica consulta del sistema que lo compromete. Por eso la linea 1 no tiene fase de escritura ni de commit. $LEYENDA"
         lineas = @(
-            (LineaTransaccion 'POST /perfil/contrasena' 'verify_password(actual)' 'UPDATE usuario.hash_contrasena' '204' '8 h')
-        )
-    },
-
-    @{
-        cu = 'CU-05'; ciclo = '#1'; escenario = 'Crear una sucursal'
-        nota = "Escenario: el Administrador da de alta una sucursal. Una sola linea de vida: ninguna entidad del dominio cambia de estado, solo aparece una fila. $LEYENDA"
-        lineas = @(
-            (LineaTransaccion 'POST /organizacion/sucursales' 'nombre libre y horario valido' 'INSERT sucursal' '201' '8 h')
-        )
-    },
-
-    @{
-        cu = 'CU-06'; ciclo = '#1'; escenario = 'Dar de baja un empleado'
-        nota = "Escenario: el Administrador da de baja a un empleado. Mismo efecto de reloj que CU-03: la baja revoca las sesiones vigentes del empleado en el instante del commit, en vez de esperar a que el token venza. $LEYENDA"
-        lineas = @(
-            (LineaTransaccion 'POST /organizacion/empleados/:id/baja' 'no estaba de baja y fecha valida' 'UPDATE empleado + revocar sesiones' '200' '8 h'),
             @{
-                k = 'token'; n = 'SesionToken'; clasificador = 'SesionToken'
-                estados = @('Vigente', 'Revocado')
+                k = 'consulta'; n = 'Consulta'; clasificador = ''
+                estados = @('Inactiva', 'Filtrando', 'Paginando', 'Respondida')
                 marcas = @(
-                    @{ t = $T.inicio; s = 'Vigente';  ev = 'emitir()  {CU-02}';              tc = '' },
-                    @{ t = $T.commit; s = 'Revocado'; ev = 'revocar_sesiones_de_usuario()  '; tc = '8 h' }
+                    @{ t = $T.inicio; s = 'Inactiva';   ev = '';                            tc = '' },
+                    @{ t = 14;        s = 'Filtrando';  ev = 'GET /tienda/productos';       tc = '' },
+                    @{ t = 44;        s = 'Paginando';  ev = 'categoria, talla, color  ';   tc = 'indices' },
+                    @{ t = 70;        s = 'Respondida'; ev = 'una pagina, nunca todo  ';    tc = 'RNF02' }
                 )
-            }
-        )
-    },
-
-    @{
-        cu = 'CU-07'; ciclo = '#1'; escenario = 'Habilitar el acceso de un proveedor'
-        nota = "Escenario: el Administrador le crea al proveedor su usuario con rol PROVEEDOR. Dos filas en la misma transaccion: el usuario y el vinculo con la ficha. $LEYENDA"
-        lineas = @(
-            (LineaTransaccion 'POST /organizacion/proveedores/:id/acceso' 'sin acceso previo y correo libre' 'INSERT usuario + UPDATE proveedor' '200' '8 h')
-        )
-    },
-
-    @{
-        cu = 'CU-08'; ciclo = '#1'; escenario = 'Crear una categoria'
-        nota = "Escenario: el Administrador agrega una categoria al arbol. `Validando` incluye la consulta recursiva que comprueba que el padre elegido no sea descendiente: el bucle corre en el motor, no en Python. $LEYENDA"
-        lineas = @(
-            (LineaTransaccion 'POST /catalogo/categorias' 'nombre libre y sin ciclo' 'INSERT categoria' '201' '8 h')
-        )
-    },
-
-    @{
-        cu = 'CU-09'; ciclo = '#1'; escenario = 'Crear una temporada'
-        nota = "Escenario: el Administrador da de alta una temporada. `Validando` comprueba que el rango de fechas no se cruce con otra temporada activa; es la unica validacion del Ciclo 1 que mira el calendario. $LEYENDA"
-        lineas = @(
-            (LineaTransaccion 'POST /catalogo/temporadas' 'rango valido y sin solapamiento' 'INSERT temporada' '201' '8 h')
-        )
-    },
-
-    # ================= CICLO 2 =================================
-
-    @{
-        cu = 'CU-10'; ciclo = '#2'; escenario = 'Generar las variantes de un producto'
-        nota = "Escenario: el Administrador genera el producto cartesiano de tallas por colores. Es la escritura mas grande del Ciclo 2 en una sola transaccion --un producto de 6 tallas por 5 colores son 30 filas-- y por eso `Escribiendo` es el tramo largo. $LEYENDA"
-        lineas = @(
-            (LineaTransaccion 'POST /catalogo/productos/:id/variantes/generar' 'maestros existentes y SKU valido' 'INSERT variante_producto x N' '201' '8 h')
-        )
-    },
-
-    @{
-        cu = 'CU-11'; ciclo = '#2'; escenario = 'Subir una imagen de producto'
-        nota = "Escenario: el Administrador sube una imagen. UNICO caso de uso con dos destinos en la misma operacion: el archivo va al almacen de objetos y la fila a la base. `Escribiendo` incluye la subida del archivo, que es lo que lo hace el tramo mas largo de todos. $LEYENDA"
-        lineas = @(
-            (LineaTransaccion 'POST /catalogo/productos/:id/imagenes' 'formato valido y producto existente' 'subir al almacen + INSERT imagen' '201' '8 h')
-        )
-    },
-
-    @{
-        cu = 'CU-13'; ciclo = '#2'; escenario = 'Registrar un ingreso de mercaderia'
-        nota = "Escenario: el Encargado registra un ingreso. La segunda linea es la existencia de la sucursal, que pasa de estar bajo el minimo a tener stock en el instante del commit. El bloqueo de fila de RNF11 dura todo el tramo `Escribiendo`. $LEYENDA"
-        lineas = @(
-            (LineaTransaccion 'POST /inventario/ingresos' 'proveedor activo y variantes validas' '_aplicar_movimiento() x N' '201' '8 h'),
+            },
             @{
-                k = 'existencia'; n = 'Existencia'; clasificador = 'Existencia'
-                estados = @('bajo minimo', 'con stock')
+                k = 'precio'; n = 'Precio mostrado'; clasificador = ''
+                estados = @('Sin resolver', 'De lista', 'Con descuento')
                 marcas = @(
-                    @{ t = $T.inicio; s = 'bajo minimo'; ev = '';                      tc = '' },
-                    @{ t = $T.commit; s = 'con stock';   ev = 'INGRESO aplicado  ';    tc = 'RNF10' }
+                    @{ t = $T.inicio; s = 'Sin resolver';  ev = '';                              tc = '' },
+                    @{ t = 50;        s = 'De lista';      ev = 'minimo de sus variantes  ';     tc = '' },
+                    @{ t = 62;        s = 'Con descuento'; ev = 'promocion vigente hoy  {CU-12}'; tc = '' }
                 )
-            }
-        )
-    },
-
-    @{
-        cu = 'CU-15'; ciclo = '#2'; escenario = 'Registrar una transferencia'
-        nota = "Escenario: el Encargado transfiere unidades entre sucursales. Son DOS movimientos --una salida y una entrada-- en una sola transaccion, con las dos filas de existencia bloqueadas a la vez: es el caso donde RNF11 mas se nota. $LEYENDA"
-        lineas = @(
-            (LineaTransaccion 'POST /inventario/movimientos/transferencia' 'hay stock en el origen' 'dos movimientos, una transaccion' '201' '8 h')
-        )
-    },
-
-    @{
-        cu = 'CU-16'; ciclo = '#2'; escenario = 'Fijar el stock minimo'
-        nota = "Escenario: el Encargado fija el minimo de una existencia de su sucursal. El ambito sale del token, no del pedido: por eso `Autenticando` es aqui mas que un tramite. $LEYENDA"
-        lineas = @(
-            (LineaTransaccion 'PATCH /inventario/existencias/:id/stock-minimo' 'la existencia es de su sucursal' 'UPDATE existencia.stock_minimo' '200' '8 h')
-        )
-    },
-
-    @{
-        cu = 'CU-22'; ciclo = '#2'; escenario = 'Crear una reserva'
-        nota = "Escenario: el Cliente reserva prendas. La segunda linea muestra el precio de la reserva: la existencia queda RETENIDA desde el commit, y no vuelve a estar disponible hasta CU-23 o CU-25. Aqui empieza el reloj de 24 h. $LEYENDA"
-        lineas = @(
-            (LineaTransaccion 'POST /reservas' 'franja valida y vestidor libre' 'INSERT reserva + apartar()' '201' '8 h'),
+            },
             @{
-                k = 'existencia'; n = 'Existencia'; clasificador = 'Existencia'
-                estados = @('disponible', 'reservada')
+                k = 'imagen'; n = 'Imagen'; clasificador = 'ImagenProducto'
+                estados = @('Sin cargar', 'Servida')
                 marcas = @(
-                    @{ t = $T.inicio; s = 'disponible'; ev = '';                       tc = '' },
-                    @{ t = $T.commit; s = 'reservada';  ev = 'apartar_para_reserva()  '; tc = '24 h' }
+                    @{ t = $T.inicio; s = 'Sin cargar'; ev = '';                          tc = '' },
+                    @{ t = 70;        s = 'Servida';    ev = 'fuera de la aplicacion  ';  tc = 'RNF02' }
                 )
             }
         )
     },
 
     @{
-        cu = 'CU-23'; ciclo = '#2'; escenario = 'Cancelar una reserva'
-        nota = "Escenario: el Cliente cancela. Es el reverso exacto de CU-22: la existencia vuelve a estar disponible en el instante del commit, con un movimiento LIBERACION que deja rastro (RNF10). $LEYENDA"
+        cu = 'CU-22'; ciclo = '#2'; escenario = 'Crear una reserva y que venza'
+        nota = "Escenario: el cliente reserva y no va. Es el antecedente directo de CU-27: el stock se aparta en el commit y vuelve solo cuando la barrida corre. Las lineas 2 y 3 siguen mucho despues de que la peticion termino, que es justo lo que este diagrama muestra y el de estados no. $LEYENDA"
         lineas = @(
-            (LineaTransaccion 'POST /reservas/:id/cancelacion' 'es su reserva y sigue viva' 'liberar_de_reserva()' '200' '8 h'),
-            @{
-                k = 'existencia'; n = 'Existencia'; clasificador = 'Existencia'
-                estados = @('reservada', 'disponible')
-                marcas = @(
-                    @{ t = $T.inicio; s = 'reservada';  ev = 'apartar()  {CU-22}';        tc = '' },
-                    @{ t = $T.commit; s = 'disponible'; ev = 'LIBERACION registrada  ';   tc = 'RNF10' }
-                )
-            }
-        )
-    },
-
-    @{
-        cu = 'CU-24'; ciclo = '#2'; escenario = 'Atender una reserva'
-        nota = "Escenario: el cliente llega y el Encargado registra el resultado de cada prenda. Aqui la reserva se cierra por un EVENTO --que el cliente aparezca--, no por un plazo; el plazo es el de CU-25. $LEYENDA"
-        lineas = @(
-            (LineaTransaccion 'POST /sucursal/reservas/:id/atencion' 'viva y todas las prendas marcadas' 'UPDATE reserva + detalles' '200' '8 h'),
+            (LineaTransaccion 'POST /reservas' 'franja futura y hay existencia' 'INSERT reserva + reserva_detalle' '201' '8 h'),
             @{
                 k = 'reserva'; n = 'Reserva'; clasificador = 'Reserva'
-                estados = @('PENDIENTE', 'ATENDIDA')
+                estados = @('Inexistente', 'PENDIENTE', 'ATENDIDA', 'EXPIRADA')
                 marcas = @(
-                    @{ t = $T.inicio; s = 'PENDIENTE'; ev = 'crearReserva()  {CU-22}';   tc = '' },
-                    @{ t = $T.commit; s = 'ATENDIDA';  ev = 'atenderReserva()  ';        tc = '24 h' }
+                    @{ t = $T.inicio; s = 'Inexistente'; ev = '';                            tc = '' },
+                    @{ t = $T.commit; s = 'PENDIENTE';   ev = 'db.commit()  ';               tc = '24 h' },
+                    @{ t = 76;        s = 'ATENDIDA';    ev = 'el encargado la atiende  {CU-24}'; tc = '' },
+                    @{ t = 84;        s = 'EXPIRADA';    ev = 'vence la franja  {CU-25}';    tc = 'nadie actua' }
+                )
+            },
+            @{
+                k = 'existencia'; n = 'Existencia'; clasificador = 'Existencia'
+                estados = @('disponible', 'reservada', 'vendida')
+                marcas = @(
+                    @{ t = $T.inicio;  s = 'disponible'; ev = '';                            tc = '' },
+                    @{ t = $T.escribe; s = 'reservada';  ev = 'apartar_para_reserva()  ';    tc = 'RNF10' },
+                    @{ t = 76;         s = 'vendida';    ev = 'se cobra en caja  {CU-31}';   tc = '' },
+                    @{ t = 84;         s = 'disponible'; ev = 'liberada por la barrida  ';   tc = 'RNF10' }
                 )
             }
         )
@@ -327,33 +455,24 @@ $CASOS = @(
 
     @{
         cu = 'CU-25'; ciclo = '#2'; escenario = 'Expirar una reserva vencida'
-        nota = "EL DIAGRAMA DE TIEMPO DEL SISTEMA. Es el unico sitio donde la duracion es un REQUISITO y no un adorno: la reserva vence a las RESERVA_VIGENCIA_HORAS (24 h) de franja_fin, y hasta ese instante la existencia queda retenida sin vender. La regla va aqui en ESCALA DE HORAS, no de milisegundos: 0 es la creacion de la reserva y 68 el corte. La tarea programada solo actua al final, y por eso su linea esta plana casi todo el diagrama. $LEYENDA"
+        nota = "Escenario: nadie fue a buscar la reserva. ES EL CASO MAS PURO DEL CAPITULO: el unico donde NINGUN actor interviene ---ni siquiera para disparar la peticion, que la lanza el planificador--- y donde el estado cambia solo porque paso el tiempo. La linea 3 es el reloj, y esta para que se vea que la transicion la dispara el, no una persona. $LEYENDA"
         lineas = @(
-            @{
-                k = 'transaccion'; n = 'Transaccion'; clasificador = ''
-                estados = @('Inactiva', 'Validando', 'Escribiendo', 'Confirmada')
-                marcas = @(
-                    @{ t = 0;  s = 'Inactiva';    ev = '';                          tc = '' },
-                    @{ t = 56; s = 'Validando';   ev = 'buscar vencidas  ';          tc = '24 h' },
-                    @{ t = 62; s = 'Escribiendo'; ev = 'liberar_de_reserva()';       tc = '' },
-                    @{ t = 68; s = 'Confirmada';  ev = 'db.commit()  ';              tc = 'RNF11' },
-                    @{ t = 80; s = 'Inactiva';    ev = 'tarea terminada';            tc = '' }
-                )
-            },
+            (LineaTransaccion 'POST /mantenimiento/reservas/expiracion' 'franja_fin mas la vigencia ya paso' 'UPDATE reserva + movimiento' '200' ''),
             @{
                 k = 'reserva'; n = 'Reserva'; clasificador = 'Reserva'
                 estados = @('PENDIENTE', 'EXPIRADA')
                 marcas = @(
-                    @{ t = 0;  s = 'PENDIENTE'; ev = 'crearReserva()  {CU-22}'; tc = '' },
-                    @{ t = 68; s = 'EXPIRADA';  ev = 'expirar()  {CU-25}  ';    tc = '24 h' }
+                    @{ t = $T.inicio; s = 'PENDIENTE'; ev = 'creada por CU-22  '; tc = '24 h' },
+                    @{ t = $T.commit; s = 'EXPIRADA';  ev = 'db.commit()  ';      tc = 'RNF11' }
                 )
             },
             @{
-                k = 'existencia'; n = 'Existencia'; clasificador = 'Existencia'
-                estados = @('reservada', 'disponible')
+                k = 'reloj'; n = 'Reloj'; clasificador = ''
+                estados = @('Dentro de la franja', 'Vencida')
                 marcas = @(
-                    @{ t = 0;  s = 'reservada';  ev = 'apartar()  {CU-22}';      tc = '' },
-                    @{ t = 68; s = 'disponible'; ev = 'LIBERACION registrada  '; tc = 'RNF10' }
+                    @{ t = $T.inicio; s = 'Dentro de la franja'; ev = '';                          tc = '' },
+                    @{ t = 10;        s = 'Vencida';             ev = 'hora boliviana  ';          tc = 'no UTC' },
+                    @{ t = 84;        s = 'Vencida';             ev = 'sigue corriendo  ';         tc = '' }
                 )
             }
         )

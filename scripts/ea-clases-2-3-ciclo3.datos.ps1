@@ -16,7 +16,7 @@ $ATTRS = @{
   'Comprobante' = @(@{n='id';t='BIGSERIAL'}; @{n='venta_id';t='BIGINT'}; @{n='tipo';t='VARCHAR(10)'}; @{n='numero';t='VARCHAR(20)'}; @{n='nit_ci';t='VARCHAR(20)'}; @{n='razon_social';t='VARCHAR(120)'}; @{n='emitido_en';t='TIMESTAMPTZ'})
   'Caja' = @(@{n='id';t='SERIAL'}; @{n='sucursal_id';t='INTEGER'}; @{n='nombre';t='VARCHAR(50)'}; @{n='activa';t='BOOLEAN'})
   'TurnoCaja' = @(@{n='id';t='BIGSERIAL'}; @{n='caja_id';t='INTEGER'}; @{n='usuario_id';t='BIGINT'}; @{n='abierto_en';t='TIMESTAMPTZ'}; @{n='cerrado_en';t='TIMESTAMPTZ'}; @{n='monto_apertura';t='NUMERIC(10,2)'}; @{n='monto_cierre';t='NUMERIC(10,2)'}; @{n='monto_esperado';t='NUMERIC(10,2)'})
-  'Devolucion' = @(@{n='id';t='BIGSERIAL'}; @{n='venta_id';t='BIGINT'}; @{n='turno_caja_id';t='BIGINT'}; @{n='motivo';t='VARCHAR(200)'}; @{n='monto';t='NUMERIC(10,2)'}; @{n='creado_en';t='TIMESTAMPTZ'})
+  'Devolucion' = @(@{n='id';t='BIGSERIAL'}; @{n='venta_id';t='BIGINT'}; @{n='turno_caja_id';t='BIGINT'}; @{n='tipo';t='VARCHAR(12)'}; @{n='venta_cambio_id';t='BIGINT'}; @{n='motivo';t='VARCHAR(200)'}; @{n='monto';t='NUMERIC(10,2)'}; @{n='diferencia';t='NUMERIC(10,2)'}; @{n='metodo_diferencia';t='VARCHAR(20)'}; @{n='creado_en';t='TIMESTAMPTZ'})
   'DetalleDevolucion' = @(@{n='id';t='BIGSERIAL'}; @{n='devolucion_id';t='BIGINT'}; @{n='variante_id';t='BIGINT'}; @{n='cantidad';t='INTEGER'}; @{n='creado_en';t='TIMESTAMPTZ'})
   'Recomendacion' = @(@{n='id';t='BIGSERIAL'}; @{n='cliente_id';t='BIGINT'}; @{n='generada_en';t='TIMESTAMPTZ'}; @{n='motor';t='VARCHAR(30)'}; @{n='sugerencias';t='JSONB'}; @{n='creado_en';t='TIMESTAMPTZ'}; @{n='actualizado_en';t='TIMESTAMPTZ'})
   'Abastecimiento' = @(@{n='id';t='BIGSERIAL'}; @{n='proveedor_id';t='BIGINT'}; @{n='variante_id';t='BIGINT'}; @{n='cantidad';t='INTEGER'}; @{n='dias_plazo';t='INTEGER'}; @{n='observacion';t='VARCHAR(200)'}; @{n='estado';t='VARCHAR(20)'}; @{n='cantidad_recibida';t='INTEGER'}; @{n='recibido_en';t='TIMESTAMPTZ'}; @{n='creado_en';t='TIMESTAMPTZ'}; @{n='actualizado_en';t='TIMESTAMPTZ'})
@@ -204,7 +204,8 @@ $CTRL = @{
   )
   'GestorDevoluciones' = @(
     @{n='buscar_venta'; r='VentaDevolvibleOut'; p=@(@{n='db';t='Session'}; @{n='usuario_id';t='int'}; @{n='codigo';t='str'})},
-    @{n='registrar'; r='DevolucionOut'; p=@(@{n='db';t='Session'}; @{n='usuario_id';t='int'}; @{n='datos';t='DevolucionIn'})}
+    @{n='registrar'; r='DevolucionOut'; p=@(@{n='db';t='Session'}; @{n='usuario_id';t='int'}; @{n='datos';t='DevolucionIn'})},
+    @{n='registrar_cambio'; r='CambioOut'; p=@(@{n='db';t='Session'}; @{n='usuario_id';t='int'}; @{n='datos';t='CambioIn'})}
   )
   'GestorRecomendaciones' = @(
     @{n='recomendaciones'; r='Recomendaciones | None'; p=@(@{n='db';t='Session'}; @{n='usuario_id';t='int'})},
@@ -342,7 +343,9 @@ $FRONT = @{
     @{n='buscarVenta'; r='Observable<VentaDevolvible>'; p=@(@{n='codigo';t='string'})},
     @{n='registrar'; r='Observable<ComprobanteDevolucion>'; p=@(@{n='datos';t='Devolucion'})},
     @{n='venta_a_devolver'; r='None'; p=@(@{n='codigo';t='Annotated[str, Path(min_length=3, max_length=20)]'}; @{n='db';t='DbSession'}; @{n='usuario';t='Usuario'})},
-    @{n='registrar_devolucion'; r='None'; p=@(@{n='datos';t='DevolucionIn'}; @{n='db';t='DbSession'}; @{n='usuario';t='Usuario'})}
+    @{n='registrar_devolucion'; r='None'; p=@(@{n='datos';t='DevolucionIn'}; @{n='db';t='DbSession'}; @{n='usuario';t='Usuario'})},
+    @{n='registrarCambio'; r='Observable<ComprobanteCambio>'; p=@(@{n='datos';t='Cambio'})},
+    @{n='registrar_cambio'; r='None'; p=@(@{n='datos';t='CambioIn'}; @{n='db';t='DbSession'}; @{n='usuario';t='Usuario'})}
   )
   'PantallaParaVos' = @(
     @{n='mis_recomendaciones'; r='None'; p=@(@{n='db';t='DbSession'}; @{n='usuario';t='Usuario'}; @{n='forzar';t='Annotated[bool, Query(description=Vuelve a generar aunque la guardada siga vigente. Es para la demostración: sin esto, mostrar el efecto de cambiar las preferencias obligaría a esperar doce horas.)]'})}

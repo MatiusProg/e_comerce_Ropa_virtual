@@ -48,6 +48,7 @@ def _salida(estado: service.EstadoDelTurno) -> TurnoOut:
         monto_apertura=turno.monto_apertura,
         efectivo_cobrado=estado.efectivo,
         devoluciones=estado.devoluciones,
+        cambios=estado.cambios,
         monto_esperado=estado.esperado,
         monto_cierre=turno.monto_cierre,
         diferencia=estado.diferencia,

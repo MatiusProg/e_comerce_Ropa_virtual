@@ -97,6 +97,37 @@ REPORTES: dict[str, Definicion] = {
                     ("EFECTIVO", "Efectivo"),
                     ("TARJETA", "Tarjeta"),
                     ("QR", "QR"),
+                    # No se cobro: la pago una prenda devuelta (CU-32). Figura
+                    # porque si no, filtrar por los otros tres dejaria fuera
+                    # ventas reales sin decir que las dejo fuera.
+                    ("CAMBIO", "Cambio de prenda"),
+                ),
+            ),
+        ),
+    ),
+    "devoluciones": Definicion(
+        titulo="Reporte de devoluciones y cambios",
+        encabezados=[
+            "Fecha", "Sucursal", "Tipo", "Venta", "Cajero",
+            "Prenda", "Talla", "Color", "Cantidad", "Valor devuelto",
+        ],
+        consulta=repo.devoluciones,
+        # Se suman las dos: cuantas unidades volvieron y cuanto valian. La
+        # segunda es la que faltaba --- hasta ahora el dinero devuelto no
+        # figuraba en ningun reporte ni en el tablero ---.
+        sumar=(8, 9),
+        filtros=(
+            _SUCURSAL,
+            # Los dos flujos de CU-32 separados, porque significan cosas
+            # distintas para quien lee: una DEVOLUCION es plata que se fue; un
+            # CAMBIO es plata que se quedo en otra prenda.
+            Filtro(
+                campo="tipo",
+                etiqueta="Tipo",
+                origen="opciones",
+                opciones=(
+                    ("DEVOLUCION", "Devolución"),
+                    ("CAMBIO", "Cambio de prenda"),
                 ),
             ),
         ),

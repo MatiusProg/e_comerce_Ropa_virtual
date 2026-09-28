@@ -224,6 +224,12 @@
         <article class="kpi">
           <p class="rotulo">Vendido hoy</p>
           <p class="cifra">{{ d.ventas.monto_hoy | currency: 'BOB' : 'symbol-narrow' }}</p>
+          @if (hayImporte(d.ventas.devuelto_hoy)) {
+            <p class="pie devuelto">
+              −{{ d.ventas.devuelto_hoy | currency: 'BOB' : 'symbol-narrow' }} devueltos
+              · neto {{ d.ventas.neto_hoy | currency: 'BOB' : 'symbol-narrow' }}
+            </p>
+          }
         </article>
         <article class="kpi">
           <p class="rotulo">Vendido en el período</p>
@@ -231,6 +237,26 @@
             {{ d.ventas.monto_periodo | currency: 'BOB' : 'symbol-narrow' }}
           </p>
           <p class="pie">{{ d.ventas.cantidad_periodo }} ventas</p>
+        </article>
+        <!--
+          El neto va al lado del bruto y NO lo reemplaza. Un tablero donde
+          «vendido» pasa a querer decir otra cosa rompe en silencio a quien ya
+          lo estaba leyendo, y además los dos números juntos dicen algo que el
+          neto solo no dice: cuánto se está devolviendo.
+        -->
+        <article class="kpi" [class.hay-devoluciones]="hayImporte(d.ventas.devuelto_periodo)">
+          <p class="rotulo">Neto del período</p>
+          <p class="cifra">
+            {{ d.ventas.neto_periodo | currency: 'BOB' : 'symbol-narrow' }}
+          </p>
+          @if (hayImporte(d.ventas.devuelto_periodo)) {
+            <p class="pie devuelto">
+              −{{ d.ventas.devuelto_periodo | currency: 'BOB' : 'symbol-narrow' }}
+              devueltos o cambiados
+            </p>
+          } @else {
+            <p class="pie">No hubo devoluciones en el período</p>
+          }
         </article>
         <article class="kpi">
           <p class="rotulo">Ticket promedio</p>

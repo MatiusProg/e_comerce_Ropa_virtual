@@ -51,9 +51,14 @@ class TurnoOut(BaseModel):
 
     #: Lo que entro al cajon en efectivo durante el turno.
     efectivo_cobrado: Decimal
-    #: Lo que salio por devoluciones (CU-32). Cero mientras no exista.
+    #: Lo que salio del cajon por devoluciones (CU-32).
     devoluciones: Decimal
-    #: `apertura + efectivo - devoluciones`. Lo que el sistema dice que hay.
+    #: Lo que los cambios de CU-32 movieron, CON SIGNO: positivo si los
+    #: clientes pusieron diferencia, negativo si la tienda la devolvio. Es el
+    #: unico numero del arqueo que puede venir en negativo.
+    cambios: Decimal = Decimal("0.00")
+    #: `apertura + efectivo - devoluciones + cambios`. Lo que el sistema dice
+    #: que tiene que haber en el cajon.
     monto_esperado: Decimal
 
     #: Lo que la persona conto. Nulo mientras el turno sigue abierto.

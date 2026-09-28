@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-import { rolGuard, sesionGuard } from './core/guards/auth.guard';
+import { inicioGuard, rolGuard, sesionGuard } from './core/guards/auth.guard';
 
 /**
  * Mapa de rutas de la aplicación web.
@@ -434,6 +434,9 @@ export const routes: Routes = [
     ],
   },
 
-  { path: '', pathMatch: 'full', redirectTo: 'login' },
-  { path: '**', redirectTo: 'login' },
+  // La raíz decide: la vitrina para el visitante, su área para quien tiene
+  // sesión (ver `inicioGuard`). `children: []` es la forma de tener una ruta
+  // que solo existe para que corra la guarda y redirija.
+  { path: '', pathMatch: 'full', canActivate: [inicioGuard], children: [] },
+  { path: '**', redirectTo: '' },
 ];

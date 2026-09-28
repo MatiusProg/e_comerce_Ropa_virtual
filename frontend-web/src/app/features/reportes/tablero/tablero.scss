@@ -323,3 +323,21 @@
   font-weight: 600;
   color: var(--vb-malva-oscuro);
 }
+
+// --- El neto de devoluciones (CU-32) --------------------------------------
+//
+// La cifra devuelta se dice en el pie de la tarjeta y no como un KPI aparte:
+// sola no significa nada, y al lado del bruto sí.
+
+.kpi {
+  .pie.devuelto {
+    color: #8c2f24;
+    font-variant-numeric: tabular-nums;
+  }
+
+  // Solo se destaca cuando HAY algo que destacar. Un borde permanente
+  // convierte en ruido al indicador que quiere llamar la atención.
+  &.hay-devoluciones {
+    border-left: 3px solid #8c2f24;
+  }
+}

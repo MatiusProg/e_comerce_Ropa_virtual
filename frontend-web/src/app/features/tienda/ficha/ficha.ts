@@ -8,7 +8,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { TiendaService, type ErrorTienda } from '../../../core/services/tienda.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -64,6 +64,15 @@ import type { Reserva } from '../../../core/models/reservas.models';
 export class Ficha implements OnInit {
   private readonly api = inject(TiendaService);
   private readonly ruta = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
+  /**
+   * Esta prenda, como destino de «Ingresá para comprar»: quien se identifica
+   * para comprarla vuelve a ella, no a «Mi cuenta» (flujo 8a de CU-01).
+   */
+  protected get aqui(): string {
+    return this.router.url;
+  }
   private readonly auth = inject(AuthService);
   private readonly carrito = inject(CarritoService);
   private readonly aviso = inject(MatSnackBar);
