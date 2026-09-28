@@ -36,6 +36,7 @@ from app.integrations.pasarela_pago import (
     SolicitudDePago,
 )
 from app.modules.inventario import service as inventario
+from app.modules.notificaciones import service as notificaciones
 from app.modules.pagos import repository
 from app.modules.ventas import carrito_repository
 from app.modules.ventas import historial_service
@@ -364,6 +365,17 @@ def _aplicar_cobro(db: Session, pago) -> None:
     # a llamarla al descargar para cubrir las ventas que se pagaron ANTES de
     # que este paso existiera.
     historial_service.asegurar_comprobante(db, venta)
+
+    # CU-40: el cliente se entera de que su pedido quedo pagado.
+    #
+    # Sale de ACA y no de la pantalla de retorno porque este es el unico lugar
+    # que sabe que el pago se aprobo de verdad: es la decision D5 --- el estado
+    # lo mueve la pasarela con un evento firmado ---. El cliente vuelve de la
+    # pasarela antes de que el evento llegue, y a veces no vuelve nunca.
+    #
+    # Sin commit, como todo lo demas de esta funcion: el aviso viaja en la
+    # misma transaccion que el pago.
+    notificaciones.avisar_pedido_pagado(db, venta)
 
     _vaciar_carrito(db, venta.cliente_id)
 

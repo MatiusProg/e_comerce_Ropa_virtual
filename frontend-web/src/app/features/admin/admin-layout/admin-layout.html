@@ -12,6 +12,10 @@
         <span class="rol">Administrador</span>
       </span>
     </span>
+    <!-- CU-40: el Administrador no recibe ninguno de los cuatro avisos, pero
+         desde acá llega a la pantalla, que es donde está el despacho de los
+         correos pendientes. -->
+    <app-campanita />
     <button matIconButton type="button" (click)="salir()" aria-label="Cerrar sesión">
       <mat-icon>logout</mat-icon>
     </button>

@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { AuthService } from '../../../core/services/auth.service';
+import { Campanita } from '../../../shared/campanita/campanita';
 
 /**
  * Cáscara del área de administración.
@@ -23,6 +24,7 @@ import { AuthService } from '../../../core/services/auth.service';
     MatButtonModule,
     MatIconModule,
     MatToolbarModule,
+    Campanita,
   ],
   templateUrl: './admin-layout.html',
   styleUrl: './admin-layout.scss',

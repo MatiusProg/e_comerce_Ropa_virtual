@@ -128,6 +128,23 @@ class Settings(BaseSettings):
     CORREO_REMITENTE: str = "no-responder@violetboutique.bo"
     CORREO_REMITENTE_NOMBRE: str = "Violet Boutique"
 
+    # Solo los usa el proveedor `smtp`. Los valores por defecto son los de
+    # Gmail: es la unica via que no obliga a dar de alta una cuenta en un
+    # servicio de terceros, y desde ella se le puede escribir a cualquier
+    # direccion --- que es lo que los planes gratuitos de los servicios
+    # transaccionales NO permiten sin un dominio propio.
+    #
+    # `CORREO_API_KEY` es, con este proveedor, la contrasena de aplicacion.
+    CORREO_SMTP_HOST: str = "smtp.gmail.com"
+    CORREO_SMTP_PUERTO: int = 587
+    #: Vacio = se usa CORREO_REMITENTE. Con Gmail los dos tienen que coincidir:
+    #: el servidor reescribe el remitente al de la cuenta que se autentica.
+    CORREO_SMTP_USUARIO: str = ""
+    #: Corto a proposito. Si la plataforma bloquea el puerto 587 esto se nota
+    #: como un tiempo de espera agotado, y una espera larga dejaria colgado al
+    #: despachador de CU-40 en cada notificacion.
+    CORREO_SMTP_ESPERA_SEGUNDOS: int = 15
+
     # --- Recuperacion de contrasena (CU-41, RF39) ------------------------
     #
     # Cuanto vale el enlace. Corto a proposito: el enlace ES la credencial

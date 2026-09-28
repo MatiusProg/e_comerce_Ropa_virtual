@@ -1,0 +1,173 @@
+// CU-40 · Mis avisos.
+
+.avisos {
+  max-width: 900px;
+  margin: 0 auto;
+  // 16px de aire a los lados: la pantalla se mira también en 390 px.
+  padding: 24px 16px 48px;
+}
+
+.encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+
+  h1 {
+    margin: 0 0 4px;
+  }
+
+  .bajada {
+    margin: 0;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  .acciones {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+}
+
+.mantenimiento {
+  margin-bottom: 24px;
+
+  mat-card-content {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .texto {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    // Deja que el bloque se encoja antes que los botones, y que envuelva en
+    // pantalla angosta en vez de empujarlos fuera.
+    flex: 1 1 260px;
+
+    span {
+      font-size: 13px;
+      color: rgba(0, 0, 0, 0.6);
+    }
+  }
+
+  .botones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+.estado {
+  padding: 48px 0;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fila {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  background: #fff;
+  padding-right: 4px;
+
+  // Sin leer: barra a la izquierda, no negrita. Sobre dos líneas de texto
+  // chico la negrita se lee como ruido.
+  &.sin-leer {
+    border-left: 4px solid var(--vb-primario, #6b2d5c);
+  }
+}
+
+.tarjeta {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  // Se ve como una tarjeta pero es un botón: hay que apagarle el aspecto de
+  // botón del navegador.
+  background: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  padding: 14px 8px 14px 16px;
+  cursor: pointer;
+  border-radius: 10px;
+
+  &:hover,
+  &:focus-visible {
+    background: rgba(0, 0, 0, 0.03);
+  }
+
+  .tipo {
+    color: var(--vb-primario, #6b2d5c);
+    flex: none;
+
+    &.alerta {
+      color: #b3261e;
+    }
+  }
+
+  .cuerpo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .linea-superior {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .asunto {
+    font-weight: 500;
+  }
+
+  .fecha {
+    flex: none;
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.5);
+  }
+
+  .detalle {
+    font-size: 13px;
+    color: rgba(0, 0, 0, 0.65);
+    line-height: 1.4;
+  }
+
+  .fallo {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #b3261e;
+  }
+}
+
+@media (max-width: 480px) {
+  .tarjeta .linea-superior {
+    flex-direction: column;
+    gap: 2px;
+  }
+}

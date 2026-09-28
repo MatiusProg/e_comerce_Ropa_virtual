@@ -43,6 +43,7 @@ from app.modules.medidas import models as _medidas_models  # noqa: F401
 # from app.modules.vestidor_virtual import models as _vestidor_models  # noqa: F401
 from app.modules.ia import models as _ia_models  # noqa: F401
 from app.modules.bitacora import models as _bitacora_models  # noqa: F401
+from app.modules.notificaciones import models as _notificaciones_models  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", _normalizar_url(settings.DATABASE_URL))

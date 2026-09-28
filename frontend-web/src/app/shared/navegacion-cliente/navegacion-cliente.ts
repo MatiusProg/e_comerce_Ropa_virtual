@@ -7,6 +7,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { AuthService } from '../../core/services/auth.service';
 import { CarritoService } from '../../core/services/carrito.service';
+import { Campanita } from '../campanita/campanita';
 
 /**
  * La barra de navegación del Cliente, compartida por todas sus pantallas.
@@ -39,6 +40,7 @@ import { CarritoService } from '../../core/services/carrito.service';
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
+    Campanita,
   ],
   templateUrl: './navegacion-cliente.html',
   styleUrl: './navegacion-cliente.scss',

@@ -34,6 +34,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.modules.inventario import service as inventario
+from app.modules.notificaciones import service as notificaciones
 from app.modules.reservas import repository
 from app.modules.reservas.repository import ESTADOS_VIVOS
 from app.modules.reservas.schemas import (
@@ -373,6 +374,13 @@ def crear_reserva(
         db.rollback()
         raise
 
+    # CU-40 / RF11: el Encargado se entera de la reserva dirigida a SU local.
+    # Va ANTES del commit a proposito: el aviso tiene que nacer con la reserva.
+    # Si algo deshiciera la transaccion, el aviso se deshace con ella --- lo
+    # contrario seria avisar de una reserva que no existe. El correo sale
+    # despues, desde el despachador de P13.
+    notificaciones.avisar_reserva_en_sucursal(db, reserva)
+
     db.commit()
     return _armar_reserva(db, reserva.id)
 
@@ -482,6 +490,11 @@ def preparar_reserva(
         raise ReservaNoAtendible(reserva.estado)
 
     reserva.estado = "PREPARADA"
+
+    # CU-40: al cliente le avisan que puede pasar a retirarla. Misma regla que
+    # arriba --- dentro de la transaccion, el correo despues ---.
+    notificaciones.avisar_reserva_preparada(db, reserva)
+
     db.commit()
     return _armar_reserva(db, reserva.id)
 
