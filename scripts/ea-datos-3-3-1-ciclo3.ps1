@@ -7,7 +7,7 @@
 # CAP. 3 - 3.3.1 Diseno de Datos Logico. CICLO 3: EL SISTEMA ENTERO.
 #
 # A diferencia del Ciclo 2 ---que dibujaba sus ocho tablas nuevas mas las de
-# apoyo a las que apuntaban--- este lleva LAS 43 TABLAS. Es el modelo de datos
+# apoyo a las que apuntaban--- este lleva LAS 44 TABLAS. Es el modelo de datos
 # completo al cerrar el proyecto, que es lo que pidio Karen.
 #
 # EL CONTENIDO NO SE TRANSCRIBE A MANO. Las columnas, sus tipos y los
@@ -159,7 +159,7 @@ if ((BuscarDiagrama $p331 $nombre) -and -not $Rehacer) {
     $p331.Diagrams.Refresh()
 
     $d = $p331.Diagrams.AddNew($nombre, 'Logical')
-    $d.Notes = 'Modelo de dominio al cerrar el Ciclo 3: las 43 tablas del sistema, con sus tipos, sus claves y las cardinalidades que la base obliga.'
+    $d.Notes = 'Modelo de dominio al cerrar el Ciclo 3: las 44 tablas del sistema, con sus tipos, sus claves y las cardinalidades que la base obliga.'
     [void]$d.Update(); $p331.Diagrams.Refresh()
 
     # Columnas agrupadas por paquete de analisis, de izquierda a derecha, en el
@@ -175,7 +175,7 @@ if ((BuscarDiagrama $p331 $nombre) -and -not $Rehacer) {
         @{ x=1840; tablas=@('RESERVA','RESERVA_DETALLE','RECOMENDACION') },
         @{ x=2200; tablas=@('CARRITO','CARRITO_DETALLE','VENTA','DETALLE_VENTA','PAGO','TRANSACCION_PASARELA','COMPROBANTE') },
         @{ x=2560; tablas=@('CAJA','TURNO_CAJA','DEVOLUCION','DETALLE_DEVOLUCION') },
-        @{ x=2920; tablas=@('BITACORA') }
+        @{ x=2920; tablas=@('BITACORA','NOTIFICACION') }
     )
     $ANCHO = 300
 
@@ -207,7 +207,7 @@ if ((BuscarDiagrama $p331 $nombre) -and -not $Rehacer) {
     $nota.Notes = @"
 MODELO DE DOMINIO — CICLO 3 · EL SISTEMA COMPLETO
 
-Las 43 tablas del esquema, agrupadas por paquete de análisis de izquierda a derecha. El tipo de cada columna y los estereotipos «PK» y «FK» salen de information_schema, no de una transcripción.
+Las 44 tablas del esquema, agrupadas por paquete de análisis de izquierda a derecha. El tipo de cada columna y los estereotipos «PK» y «FK» salen de information_schema, no de una transcripción.
 
 Las cardinalidades son las que la base OBLIGA, no las de la prosa: un extremo es 1 cuando la columna es NOT NULL y 0..1 cuando admite nulo; el otro es 0..1 cuando la columna es UNIQUE y 0..* cuando no.
 
@@ -217,7 +217,7 @@ Cuatro que conviene mirar en la defensa:
 · EXISTENCIA lleva disponible y reservada POR SEPARADO. Reservar traslada unidades entre las dos y el total físico no cambia (decisión D3), y MOVIMIENTO_INVENTARIO es el historial inmutable que lo explica (invariante D4).
 · El estado de PAGO solo lo mueve TRANSACCION_PASARELA, que guarda el identificador del evento firmado (decisión D5). Es lo que hace que una notificación repetida no descuente el inventario dos veces.
 
-No figura ninguna tabla de notificaciones: CU-40 no está construido.
+NOTIFICACION entra con el Ciclo 3 cerrado (CU-40, migración 0021). Guarda el aviso y el resultado de haberlo mandado por correo en las mismas columnas: con un solo canal además del de la aplicación, una tabla de envíos tendría exactamente una fila por notificación.
 "@
     [void]$nota.Update()
     Poner $d $nota 40 ($fondo - 60) 1200 320

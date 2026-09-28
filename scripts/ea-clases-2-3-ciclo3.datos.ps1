@@ -23,6 +23,7 @@ $ATTRS = @{
   'Bitacora' = @(@{n='id';t='BIGSERIAL'}; @{n='ocurrido_en';t='TIMESTAMPTZ'}; @{n='usuario_id';t='BIGINT'}; @{n='actor';t='VARCHAR(160)'}; @{n='rol';t='VARCHAR(40)'}; @{n='accion';t='VARCHAR(40)'}; @{n='entidad';t='VARCHAR(60)'}; @{n='entidad_id';t='VARCHAR(60)'}; @{n='metodo';t='VARCHAR(10)'}; @{n='ruta';t='VARCHAR(300)'}; @{n='estado_http';t='INTEGER'}; @{n='exito';t='BOOLEAN'}; @{n='ip';t='VARCHAR(60)'}; @{n='agente';t='VARCHAR(200)'}; @{n='detalle';t='JSONB'})
   'TokenRecuperacion' = @(@{n='id';t='BIGSERIAL'}; @{n='usuario_id';t='BIGINT'}; @{n='hash_token';t='VARCHAR(64)'}; @{n='solicitado_en';t='TIMESTAMPTZ'}; @{n='expira_en';t='TIMESTAMPTZ'}; @{n='usado_en';t='TIMESTAMPTZ'})
   'MedidaCliente' = @(@{n='id';t='BIGSERIAL'}; @{n='cliente_id';t='BIGINT'}; @{n='busto_cm';t='NUMERIC(5,1)'}; @{n='cintura_cm';t='NUMERIC(5,1)'}; @{n='cadera_cm';t='NUMERIC(5,1)'}; @{n='altura_cm';t='NUMERIC(5,1)'}; @{n='creado_en';t='TIMESTAMPTZ'}; @{n='actualizado_en';t='TIMESTAMPTZ'})
+  'Notificacion' = @(@{n='id';t='BIGSERIAL'}; @{n='destinatario_id';t='BIGINT'}; @{n='tipo';t='VARCHAR(40)'}; @{n='titulo';t='VARCHAR(160)'}; @{n='cuerpo';t='TEXT'}; @{n='enlace';t='VARCHAR(300)'}; @{n='entidad';t='VARCHAR(60)'}; @{n='entidad_id';t='BIGINT'}; @{n='creada_en';t='TIMESTAMPTZ'}; @{n='leida_en';t='TIMESTAMPTZ'}; @{n='correo_estado';t='VARCHAR(20)'}; @{n='correo_enviado_en';t='TIMESTAMPTZ'}; @{n='correo_error';t='VARCHAR(300)'})
 }
 
 $OPS = @{
@@ -204,8 +205,7 @@ $CTRL = @{
   )
   'GestorDevoluciones' = @(
     @{n='buscar_venta'; r='VentaDevolvibleOut'; p=@(@{n='db';t='Session'}; @{n='usuario_id';t='int'}; @{n='codigo';t='str'})},
-    @{n='registrar'; r='DevolucionOut'; p=@(@{n='db';t='Session'}; @{n='usuario_id';t='int'}; @{n='datos';t='DevolucionIn'})},
-    @{n='registrar_cambio'; r='CambioOut'; p=@(@{n='db';t='Session'}; @{n='usuario_id';t='int'}; @{n='datos';t='CambioIn'})}
+    @{n='registrar'; r='DevolucionOut'; p=@(@{n='db';t='Session'}; @{n='usuario_id';t='int'}; @{n='datos';t='DevolucionIn'})}
   )
   'GestorRecomendaciones' = @(
     @{n='recomendaciones'; r='Recomendaciones | None'; p=@(@{n='db';t='Session'}; @{n='usuario_id';t='int'})},
@@ -268,6 +268,19 @@ $CTRL = @{
     @{n='esta_disponible'; r='bool'; p=@()},
     @{n='interpretar'; r='Pedido | None'; p=@(@{n='texto';t='str'}; @{n='reportes';t='list[ReporteConocido]'}; @{n='hoy';t='date'})},
     @{n='obtener_proveedor'; r='ProveedorInterprete'; p=@()}
+  )
+  'GestorNotificaciones' = @(
+    @{n='notificar'; r='Notificacion'; p=@(@{n='db';t='Session'})},
+    @{n='avisar_reserva_en_sucursal'; r='list[Notificacion]'; p=@(@{n='db';t='Session'}; @{n='reserva';t=''})},
+    @{n='avisar_reserva_preparada'; r='Notificacion | None'; p=@(@{n='db';t='Session'}; @{n='reserva';t=''})},
+    @{n='avisar_pedido_pagado'; r='Notificacion | None'; p=@(@{n='db';t='Session'}; @{n='venta';t=''})},
+    @{n='avisar_stock_bajo'; r='list[Notificacion]'; p=@(@{n='db';t='Session'}; @{n='existencia';t=''})},
+    @{n='despachar_pendientes'; r='DespachoOut'; p=@(@{n='db';t='Session'})},
+    @{n='reintentar_fallidas'; r='int'; p=@(@{n='db';t='Session'})},
+    @{n='listar_mias'; r='PaginaNotificacionesOut'; p=@(@{n='db';t='Session'}; @{n='usuario_id';t='int'})},
+    @{n='resumen'; r='ResumenNotificacionesOut'; p=@(@{n='db';t='Session'}; @{n='usuario_id';t='int'})},
+    @{n='marcar_leida'; r='bool'; p=@(@{n='db';t='Session'}; @{n='usuario_id';t='int'}; @{n='notificacion_id';t='int'})},
+    @{n='marcar_todas_leidas'; r='MarcadasOut'; p=@(@{n='db';t='Session'}; @{n='usuario_id';t='int'})}
   )
 }
 
@@ -342,9 +355,9 @@ $FRONT = @{
   'PantallaDevolucion' = @(
     @{n='buscarVenta'; r='Observable<VentaDevolvible>'; p=@(@{n='codigo';t='string'})},
     @{n='registrar'; r='Observable<ComprobanteDevolucion>'; p=@(@{n='datos';t='Devolucion'})},
+    @{n='registrarCambio'; r='Observable<ComprobanteCambio>'; p=@(@{n='datos';t='Cambio'})},
     @{n='venta_a_devolver'; r='None'; p=@(@{n='codigo';t='Annotated[str, Path(min_length=3, max_length=20)]'}; @{n='db';t='DbSession'}; @{n='usuario';t='Usuario'})},
     @{n='registrar_devolucion'; r='None'; p=@(@{n='datos';t='DevolucionIn'}; @{n='db';t='DbSession'}; @{n='usuario';t='Usuario'})},
-    @{n='registrarCambio'; r='Observable<ComprobanteCambio>'; p=@(@{n='datos';t='Cambio'})},
     @{n='registrar_cambio'; r='None'; p=@(@{n='datos';t='CambioIn'}; @{n='db';t='DbSession'}; @{n='usuario';t='Usuario'})}
   )
   'PantallaParaVos' = @(

@@ -1,7 +1,7 @@
 """Genera el fragmento de datos del 3.3.1 del Ciclo 3: EL SISTEMA ENTERO.
 
 A diferencia del Ciclo 2 ---que dibujaba sus ocho tablas nuevas mas las de
-apoyo a las que apuntaban---, este lleva **las 43 tablas**. Es el modelo de
+apoyo a las que apuntaban---, este lleva **las 44 tablas**. Es el modelo de
 datos completo al cerrar el proyecto, y por eso no hay lista de «nuevas» y
 «de apoyo»: se leen todas las tablas base del esquema.
 
@@ -129,6 +129,7 @@ VERBOS = {
     ("usuario", "empleado"): "ES_EMPLEADO",
     ("usuario", "proveedor"): "PUEDE_SER",
     ("usuario", "bitacora"): "SE_AUDITA_EN",
+    ("usuario", "notificacion"): "RECIBE",
     ("usuario", "movimiento_inventario"): "ORIGINA",
     ("usuario", "turno_caja"): "ABRE",
     ("cliente", "direccion_cliente"): "REGISTRA",
@@ -211,7 +212,7 @@ for destino, origen, col in fks:
 
 lineas = [
     "# GENERADO por scripts/gen-dominio-3-3-1-ciclo3.py --- NO editar a mano.",
-    "# El sistema ENTERO: las 43 tablas. Las columnas, sus tipos y los",
+    "# El sistema ENTERO: las 44 tablas. Las columnas, sus tipos y los",
     "# estereotipos PK/FK salen de information_schema de la base de pruebas, que",
     "# `alembic upgrade head` deja al dia. Las cardinalidades salen de lo que la",
     "# base OBLIGA --- NOT NULL y UNIQUE ---, no de la prosa.",

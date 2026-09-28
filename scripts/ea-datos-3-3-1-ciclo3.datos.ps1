@@ -1,5 +1,5 @@
 ﻿# GENERADO por scripts/gen-dominio-3-3-1-ciclo3.py --- NO editar a mano.
-# El sistema ENTERO: las 43 tablas. Las columnas, sus tipos y los
+# El sistema ENTERO: las 44 tablas. Las columnas, sus tipos y los
 # estereotipos PK/FK salen de information_schema de la base de pruebas, que
 # `alembic upgrade head` deja al dia. Las cardinalidades salen de lo que la
 # base OBLIGA --- NOT NULL y UNIQUE ---, no de la prosa.
@@ -146,8 +146,12 @@ $TABLAS_C3 = @(
        @{n='id'; t='BIGSERIAL'; k='PK'},
        @{n='venta_id'; t='BIGINT'; k='FK'},
        @{n='turno_caja_id'; t='BIGINT'; k='FK'},
+       @{n='tipo'; t='VARCHAR(12)'},
+       @{n='venta_cambio_id'; t='BIGINT'; k='FK'},
        @{n='motivo'; t='VARCHAR(200)'},
        @{n='monto'; t='NUMERIC(10,2)'},
+       @{n='diferencia'; t='NUMERIC(10,2)'},
+       @{n='metodo_diferencia'; t='VARCHAR(20)'},
        @{n='creado_en'; t='TIMESTAMPTZ'}
      ) },
   @{ n='DIRECCION_CLIENTE'
@@ -239,6 +243,22 @@ $TABLAS_C3 = @(
        @{n='referencia'; t='VARCHAR(40)'},
        @{n='usuario_id'; t='BIGINT'; k='FK'},
        @{n='creado_en'; t='TIMESTAMPTZ'}
+     ) },
+  @{ n='NOTIFICACION'
+     cols=@(
+       @{n='id'; t='BIGSERIAL'; k='PK'},
+       @{n='destinatario_id'; t='BIGINT'; k='FK'},
+       @{n='tipo'; t='VARCHAR(40)'},
+       @{n='titulo'; t='VARCHAR(160)'},
+       @{n='cuerpo'; t='TEXT'},
+       @{n='enlace'; t='VARCHAR(300)'},
+       @{n='entidad'; t='VARCHAR(60)'},
+       @{n='entidad_id'; t='BIGINT'},
+       @{n='creada_en'; t='TIMESTAMPTZ'},
+       @{n='leida_en'; t='TIMESTAMPTZ'},
+       @{n='correo_estado'; t='VARCHAR(20)'},
+       @{n='correo_enviado_en'; t='TIMESTAMPTZ'},
+       @{n='correo_error'; t='VARCHAR(300)'}
      ) },
   @{ n='PAGO'
      cols=@(
@@ -515,6 +535,7 @@ $RELACIONES_C3 = @(
   @{ o='USUARIO'; v='ES'; d='CLIENTE'; co='1'; cd='0..1' },
   @{ o='USUARIO'; v='ES_EMPLEADO'; d='EMPLEADO'; co='1'; cd='0..1' },
   @{ o='USUARIO'; v='ORIGINA'; d='MOVIMIENTO_INVENTARIO'; co='0..1'; cd='0..*' },
+  @{ o='USUARIO'; v='RECIBE'; d='NOTIFICACION'; co='1'; cd='0..*' },
   @{ o='USUARIO'; v='PUEDE_SER'; d='PROVEEDOR'; co='0..1'; cd='0..1' },
   @{ o='USUARIO'; v='INICIA_SESION_EN'; d='SESION_TOKEN'; co='1'; cd='0..*' },
   @{ o='USUARIO'; v='RECUPERA_CON'; d='TOKEN_RECUPERACION'; co='1'; cd='0..*' },
@@ -529,5 +550,6 @@ $RELACIONES_C3 = @(
   @{ o='VENTA'; v='SE_ACREDITA_CON'; d='COMPROBANTE'; co='1'; cd='0..1' },
   @{ o='VENTA'; v='SE_DETALLA_EN'; d='DETALLE_VENTA'; co='1'; cd='0..*' },
   @{ o='VENTA'; v='SE_REVIERTE_EN'; d='DEVOLUCION'; co='1'; cd='0..*' },
+  @{ o='VENTA'; v='SE_REVIERTE_EN'; d='DEVOLUCION'; co='0..1'; cd='0..1' },
   @{ o='VENTA'; v='SE_SALDA_CON'; d='PAGO'; co='1'; cd='0..1' }
 )

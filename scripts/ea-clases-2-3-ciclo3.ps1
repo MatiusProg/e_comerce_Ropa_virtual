@@ -28,7 +28,8 @@
 # abrir en el repositorio.
 #
 # ---- LO QUE TODAVIA NO EXISTE SE DIBUJA VACIO ----------------------------
-# CU-34 (asistente virtual) y CU-40 (notificaciones) no estan construidos.
+# CU-34 (asistente virtual, 20/09) y CU-40 (notificaciones, 28/09) ya estan
+# construidos: ninguna clase del Ciclo 3 queda vacia.
 # Sus clases van al diagrama sin operaciones y con una nota que lo dice. Es
 # deliberado: inventarles una lista de metodos haria que el diagrama mienta
 # justo donde hay que defender que falta, y dejarlos fuera escondria dos
@@ -266,7 +267,7 @@ $desc = @{
     'PantallaReportes'        = 'Frontera de CU-37. Frontend: features/admin/reportes con ReportesService; backend: los endpoints de catalogo y descarga de app/modules/reportes/reportes_router.py, que arma el PDF y el Excel.'
     'PantallaMisProductos'    = 'Frontera de CU-38, el panel del Proveedor. Frontend: features/proveedor con ProveedorService; backend: app/modules/catalogo/proveedor_router.py, que solo deja ver y tocar lo propio.'
     'PantallaAbastecimiento'  = 'Frontera de CU-39. Frontend: features/proveedor/abastecimiento con AbastecimientoService; backend: app/modules/abastecimiento/router.py.'
-    'CanalDeAviso'            = 'Frontera de CU-40: el canal por donde sale el aviso, no una pantalla. Hoy solo esta el adaptador de correo (app/integrations/correo), que en desarrollo escribe por consola. El resto del caso de uso no esta construido.'
+    'CanalDeAviso'            = 'Frontera de CU-40: el canal por donde sale el aviso, no una pantalla. Es la costura app/integrations/correo, con dos proveedores --- `consola`, que escribe en el log, y `smtp`, que entrega de verdad ---. Se elige con CORREO_PROVEEDOR y ningun caso de uso se entera. NO es una tabla: los canales no se dan de alta desde la aplicacion.'
     'PantallaRecuperacion'    = 'Frontera de CU-41. Frontend: AuthService con el pedido y el canje; backend: los dos endpoints de recuperacion de app/modules/seguridad/router.py. Es un caso de uso del Ciclo 3 sobre un paquete del Ciclo 1.'
     'PantallaBitacora'        = 'Frontera de CU-42. Frontend: features/admin/bitacora con BitacoraService; backend: app/modules/bitacora/router.py.'
 
@@ -288,7 +289,7 @@ $desc = @{
     'GestorReportes'          = 'app/modules/reportes/reportes_service.py. Arma los seis reportes de gestion y los exporta a PDF y Excel con app/modules/reportes/exportador.py.'
     'GestorCatalogoProveedor' = 'app/modules/catalogo/proveedor_service.py. Lo mismo que GestorProductos pero acotado a lo propio del Proveedor: por la convencion 1, un producto ajeno no da 403 sino 404.'
     'GestorAbastecimiento'    = 'app/modules/abastecimiento/service.py. El Proveedor anuncia cantidad y plazo; el Encargado ve el aviso y lo recibe, y recien ahi entra al inventario por GestorInventario.'
-    'GestorNotificaciones'    = 'Control de CU-40. TODAVIA NO CONSTRUIDO. Lo unico que existe es el adaptador de correo. Se dibuja sin operaciones a proposito.'
+    'GestorNotificaciones'    = 'Control de CU-40. Resuelve a QUIEN le corresponde enterarse de cada uno de los cuatro hechos y registra el aviso DENTRO de la transaccion del hecho ---si la reserva se deshace, el aviso se deshace con ella---. El correo sale DESPUES del commit, en `despachar_pendientes`: mandarlo antes seria avisar de algo que todavia puede no existir, y un correo no se deshace.'
     'GestorRecuperacion'      = 'Las dos operaciones de recuperacion de app/modules/seguridad/service.py. Guarda el HASH del token, no el token, y siempre responde lo mismo pida quien pida: decir "ese correo no existe" seria decirle a cualquiera quien tiene cuenta.'
     'GestorBitacora'          = 'app/modules/bitacora/service.py, alimentado por el middleware. Registra quien hizo que y sobre que, en hora boliviana.'
 
@@ -309,7 +310,7 @@ $desc = @{
     'DetalleDevolucion'       = 'Tabla detalle_devolucion. La linea devuelta. No se puede devolver mas de lo vendido ni dos veces lo mismo.'
     'Recomendacion'           = 'Tabla recomendacion. El resultado guardado para un cliente, con su momento. Se invalida cuando el perfil cambia; sin eso, la seccion "Para vos" se quedaria mostrando lo de la semana pasada.'
     'Abastecimiento'          = 'Tabla abastecimiento. El anuncio del Proveedor: que variante, cuanta cantidad y para que fecha. Anunciar NO toca el inventario; recibir si.'
-    'Notificacion'            = 'Entidad de CU-40. TODAVIA NO EXISTE: no hay tabla `notificacion` en la cadena de migraciones. Se dibuja sin columnas a proposito, para que el pendiente se vea en el modelo en vez de quedar escondido.'
+    'Notificacion'            = 'Entidad de CU-40, tabla `notificacion` (migracion 0021). Guarda el aviso Y el resultado de haberlo mandado por correo en las mismas columnas: con un solo canal ademas del de la aplicacion, una tabla de envios tendria exactamente una fila por notificacion. `leida_en` es del aviso en la aplicacion, no del correo --- un correo entregado no marca nada como leido.'
     'Bitacora'                = 'Tabla bitacora. Quien, que, sobre que entidad y cuando, en hora boliviana. La escribe el middleware, no cada caso de uso.'
     'TokenRecuperacion'       = 'Tabla token_recuperacion. Guarda el HASH del token, no el token. Vence, se usa una sola vez, y pedir uno nuevo invalida los anteriores.'
 }
