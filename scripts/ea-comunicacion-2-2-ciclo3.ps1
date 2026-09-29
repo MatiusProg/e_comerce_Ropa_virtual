@@ -171,7 +171,7 @@ $desc = @{
     'PantallaReportes'       = 'Los seis reportes de gestion, sus filtros y la descarga en PDF y Excel.'
     'PantallaMisProductos'   = 'Area del Proveedor: los productos que abastece, acotados a los suyos.'
     'PantallaAbastecimiento' = 'Area del Proveedor: que puede traer y en que plazo.'
-    'CanalDeAviso'           = 'SIN CONSTRUIR. Frontera de salida de CU-40: el correo y la bandeja dentro del sistema. No la abre una persona --- es el sistema el que escribe en ella.'
+    'CanalDeAviso'           = 'Frontera de salida de CU-40: el correo y la bandeja dentro del sistema. No la abre una persona --- es el sistema el que escribe en ella. Construido el 28/09: la costura app/integrations/correo, con proveedor `smtp` real.'
     'PantallaRecuperacion'   = 'Pedir el enlace y fijar la contrasena nueva. Se usa SIN sesion, que es su razon de ser.'
     'PantallaBitacora'       = 'Consulta de la bitacora del sistema, con sus filtros.'
     # --- control ---
@@ -192,7 +192,7 @@ $desc = @{
     'GestorReportes'         = 'Coordina CU-37. Cada reporte admite sus propios filtros, que no son los mismos para todos.'
     'GestorCatalogoProveedor'= 'Coordina CU-38. Acota al proveedor de la sesion: lo que no es suyo no existe.'
     'GestorAbastecimiento'   = 'Coordina CU-39. Lo anunciado NO suma existencia: alimenta el estado "proximo a ingresar" y nada mas.'
-    'GestorNotificaciones'   = 'SIN CONSTRUIR. Coordinaria CU-40: decide a quien le corresponde enterarse y registra el aviso. Perder el correo no puede significar perder el aviso.'
+    'GestorNotificaciones'   = 'Coordina CU-40: decide a quien le corresponde enterarse y registra el aviso. Perder el correo NO significa perder el aviso --- la fila se guarda en la transaccion del hecho y el envio es un paso aparte que se reintenta.'
     'GestorRecuperacion'     = 'Coordina CU-41. El enlace es de un solo uso y al usarlo revoca las sesiones abiertas.'
     'GestorBitacora'         = 'Coordina CU-42. Escribe cada asiento y nunca lo edita: la bitacora es inmutable.'
     # --- entidad ---
