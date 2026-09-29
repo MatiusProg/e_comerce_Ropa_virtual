@@ -1,5 +1,11 @@
 # Los fragmentos `loop` que faltan en los diagramas de secuencia 3.2
 
+> **Estado al 29/09/2026: los 15 `loop` ya están dibujados y ubicados.**
+> Los crea `ea-secuencia-3-2.ps1 -Fragmentos` y los ubica
+> `ea-fragmentos-3-2.ps1`. Se verificaron con las imágenes de CU-21, CU-27 y
+> CU-32 contra lo que dice este documento. Lo que sigue queda como la
+> justificación de cada uno, para la defensa.
+
 > **Escrito el 24/09/2026, a pedido de Mateo.** Es un documento de **análisis**:
 > no toca ningún diagrama ni el `.eapx`. Dice **dónde va cada `loop`, qué
 > mensajes encierra, qué guarda lleva y de qué línea de código sale**, para

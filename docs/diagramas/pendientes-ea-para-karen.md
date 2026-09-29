@@ -6,9 +6,17 @@
 > CU-01, CU-02, CU-21, CU-27 y CU-32. **No arrastrar cajas ni mensajes en EA**:
 > EA reparte los mensajes de 35 en 35 sin mirar la altura guardada, y deja
 > fijas las cajas y las notas. Mover cualquier cosa corre los mensajes y
-> desarma las cajas de abajo. Lo único que falta dibujar es el `alt` de
-> **CU-17**, que no existe en el modelo. El punto 3 (duplicados de CU-32)
-> también está hecho. Queda exportar (punto 4).
+> desarma las cajas de abajo. **Los 29 diagramas 3.2 de los tres ciclos** se
+> revisaron; 28 quedaron corregidos. **CU-17** se deja como está: su guion
+> tiene un `alt` que el modelo no tiene, y se decidió no agregarlo. El punto 3
+> también está hecho: se borraron los duplicados 351 y 452 de CU-32.
+>
+> **Lo que queda es de Mateo: exportar y pasar al documento (punto 4).** Hay
+> que reexportar **todos los 3.2**, porque cambiaron todos. Además van el 3.2
+> de CU-32, el 2.2 de CU-21, y **el 2.2 y el 2.3 de CU-32 «o cambio»**, que
+> tampoco están exportados. Los JPG `2.2 CU-32 Registrar devolución.jpg` y
+> `2.3 CU-32 Registrar devolución.jpg` son de los diagramas borrados: hay que
+> quitarlos de `comunicacion/`, de `clases/` y del documento.
 
 > **Escrito el 28/09/2026**, la víspera de la defensa. Es la lista de lo que
 > hay que **acomodar a mano en Enterprise Architect** sobre
