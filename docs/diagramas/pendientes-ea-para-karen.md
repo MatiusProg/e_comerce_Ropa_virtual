@@ -1,5 +1,15 @@
 # Lo que queda por hacer en EA — para Karen
 
+> **Actualización del 29/09: los puntos 1 y 2 ya están resueltos por script.**
+> `scripts/ea-fragmentos-3-2.ps1` reubicó las cajas `alt` y `loop` y las notas
+> de los 3.2 y dio vuelta las guardas. Se verificó exportando la imagen de
+> CU-01, CU-02, CU-21, CU-27 y CU-32. **No arrastrar cajas ni mensajes en EA**:
+> EA reparte los mensajes de 35 en 35 sin mirar la altura guardada, y deja
+> fijas las cajas y las notas. Mover cualquier cosa corre los mensajes y
+> desarma las cajas de abajo. Lo único que falta dibujar es el `alt` de
+> **CU-17**, que no existe en el modelo. El punto 3 (duplicados de CU-32)
+> también está hecho. Queda exportar (punto 4).
+
 > **Escrito el 28/09/2026**, la víspera de la defensa. Es la lista de lo que
 > hay que **acomodar a mano en Enterprise Architect** sobre
 > `VioletBoutique.eapx`. El código ya está; esto es sólo dibujo y exportación.
