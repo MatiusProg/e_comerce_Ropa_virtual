@@ -115,8 +115,38 @@ Lo que falta o hay que reexportar:
 
 ## 5. Al terminar
 
-Commit en `KarenCU12` con el `.eapx` y los JPG juntos, y avisar para que nadie
-abra el `.eapx` viejo mientras tanto.
+~~Commit en `KarenCU12`~~ → **commit en `KarenDiagramas`** (actualizado el
+29/09) con los JPG, y avisar para que nadie abra el `.eapx` viejo mientras
+tanto.
+
+`KarenDiagramas` es `main` + los diagramas de `KarenCU12`, **sin** el backend
+de CU-40. Ahí está el `.eapx` más nuevo: el de `KarenCU12` quedó atrás, porque
+todavía tiene los duplicados de CU-32 y las cajas corridas.
+
+---
+
+## 6. Después de la defensa: todo esto sube a `main`
+
+**Instrucción de Karen (29/09): después de la defensa, todos estos cambios se
+suben a `main`.** El orden importa, por el `.eapx`:
+
+1. **Primero `KarenDiagramas` → `main`**, con un PR, incluidos los JPG que
+   exporte Mateo. Trae el `.eapx` bueno, el script `ea-fragmentos-3-2.ps1` y
+   la guía al día. No toca backend ni web, así que no tiene riesgo para
+   producción.
+2. **Después, CU-40 (`KarenCU12`, PR #70)**, cuando se decida subirlo. Al
+   mergear, el `.eapx` va a dar conflicto: **hay que quedarse con el de
+   `main`**. `KarenCU12` trae una versión más vieja y pisaría todo lo de
+   arriba:
+
+       git checkout --ours docs/diagramas/VioletBoutique.eapx   # (parado en main o en la rama que recibe)
+
+   Antes de resolver, medir qué tiene cada lado, como dice la guía
+   (`GUIA-DIAGRAMAS-EA.md`): por ejemplo, que `main` **no** tenga los
+   diagramas 351 y 452.
+3. CU-40 trae la migración `0021`. Al desplegarlo hay que correr Alembic en
+   Railway y poner las variables de correo (SMTP). El puerto 587 en Railway
+   nunca se probó.
 
 > **Ojo:** el PR #70 (`KarenCU12`) también trae el **código de CU-40** con la
 > migración `0021`. Se acordó **no subir CU-40 a producción** antes de la
