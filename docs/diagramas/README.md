@@ -20,6 +20,7 @@ después se acomodan y se exportan a mano desde EA.
 | `ea-capas-3-1-1.ps1` | 3.1.1 diagrama de capas |
 | `ea-despliegue-3-1-2.ps1` | 3.1.2 diagrama de despliegue |
 | `ea-secuencia-3-2.ps1` | 3.2 diagramas de secuencia, uno por caso de uso |
+| `ea-fragmentos-3-2.ps1` | reubica las cajas `alt`/`loop` y las notas de los 3.2 que ya existen (no crea nada) |
 | `ea-componentes-4-2.ps1` | 4.2 diagrama de componentes del sistema |
 | `ea-componentes-4-3.ps1` | 4.3 diagramas de componentes por subsistema |
 
@@ -158,6 +159,12 @@ de dónde sale cada fragmento de interacción (`alt`, `loop`, `critical`, `opt`,
 está en **[`secuencia-y-codigo.md`](secuencia-y-codigo.md)**.
 
 Los genera `scripts/ea-secuencia-3-2.ps1`.
+
+> **No acomodar las cajas a mano (29/09/2026).** EA apila los mensajes de 35 en 35 sin mirar
+> la altura guardada, y deja fijas las cajas y las notas. Arrastrar cualquier cosa corre los
+> mensajes y desarma las cajas de abajo. Si una caja encierra lo que no es, se corre
+> `scripts/ea-fragmentos-3-2.ps1`. Detalle en la §7.8 b) de la
+> [guía](../../GUIA-DIAGRAMAS-EA.md#78-secuencia-32).
 
 ---
 

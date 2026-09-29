@@ -1,5 +1,23 @@
 # Lo que queda por hacer en EA — para Karen
 
+> **Actualización del 29/09: los puntos 1 y 2 ya están resueltos por script.**
+> `scripts/ea-fragmentos-3-2.ps1` reubicó las cajas `alt` y `loop` y las notas
+> de los 3.2 y dio vuelta las guardas. Se verificó exportando la imagen de
+> CU-01, CU-02, CU-21, CU-27 y CU-32. **No arrastrar cajas ni mensajes en EA**:
+> EA reparte los mensajes de 35 en 35 sin mirar la altura guardada, y deja
+> fijas las cajas y las notas. Mover cualquier cosa corre los mensajes y
+> desarma las cajas de abajo. **Los 29 diagramas 3.2 de los tres ciclos** se
+> revisaron; 28 quedaron corregidos. **CU-17** se deja como está: su guion
+> tiene un `alt` que el modelo no tiene, y se decidió no agregarlo. El punto 3
+> también está hecho: se borraron los duplicados 351 y 452 de CU-32.
+>
+> **Lo que queda es de Mateo: exportar y pasar al documento (punto 4).** Hay
+> que reexportar **todos los 3.2**, porque cambiaron todos. Además van el 3.2
+> de CU-32, el 2.2 de CU-21, y **el 2.2 y el 2.3 de CU-32 «o cambio»**, que
+> tampoco están exportados. Los JPG `2.2 CU-32 Registrar devolución.jpg` y
+> `2.3 CU-32 Registrar devolución.jpg` son de los diagramas borrados: hay que
+> quitarlos de `comunicacion/`, de `clases/` y del documento.
+
 > **Escrito el 28/09/2026**, la víspera de la defensa. Es la lista de lo que
 > hay que **acomodar a mano en Enterprise Architect** sobre
 > `VioletBoutique.eapx`. El código ya está; esto es sólo dibujo y exportación.
@@ -97,8 +115,38 @@ Lo que falta o hay que reexportar:
 
 ## 5. Al terminar
 
-Commit en `KarenCU12` con el `.eapx` y los JPG juntos, y avisar para que nadie
-abra el `.eapx` viejo mientras tanto.
+~~Commit en `KarenCU12`~~ → **commit en `KarenDiagramas`** (actualizado el
+29/09) con los JPG, y avisar para que nadie abra el `.eapx` viejo mientras
+tanto.
+
+`KarenDiagramas` es `main` + los diagramas de `KarenCU12`, **sin** el backend
+de CU-40. Ahí está el `.eapx` más nuevo: el de `KarenCU12` quedó atrás, porque
+todavía tiene los duplicados de CU-32 y las cajas corridas.
+
+---
+
+## 6. Después de la defensa: todo esto sube a `main`
+
+**Instrucción de Karen (29/09): después de la defensa, todos estos cambios se
+suben a `main`.** El orden importa, por el `.eapx`:
+
+1. **Primero `KarenDiagramas` → `main`**, con un PR, incluidos los JPG que
+   exporte Mateo. Trae el `.eapx` bueno, el script `ea-fragmentos-3-2.ps1` y
+   la guía al día. No toca backend ni web, así que no tiene riesgo para
+   producción.
+2. **Después, CU-40 (`KarenCU12`, PR #70)**, cuando se decida subirlo. Al
+   mergear, el `.eapx` va a dar conflicto: **hay que quedarse con el de
+   `main`**. `KarenCU12` trae una versión más vieja y pisaría todo lo de
+   arriba:
+
+       git checkout --ours docs/diagramas/VioletBoutique.eapx   # (parado en main o en la rama que recibe)
+
+   Antes de resolver, medir qué tiene cada lado, como dice la guía
+   (`GUIA-DIAGRAMAS-EA.md`): por ejemplo, que `main` **no** tenga los
+   diagramas 351 y 452.
+3. CU-40 trae la migración `0021`. Al desplegarlo hay que correr Alembic en
+   Railway y poner las variables de correo (SMTP). El puerto 587 en Railway
+   nunca se probó.
 
 > **Ojo:** el PR #70 (`KarenCU12`) también trae el **código de CU-40** con la
 > migración `0021`. Se acordó **no subir CU-40 a producción** antes de la
