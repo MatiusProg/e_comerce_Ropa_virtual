@@ -79,6 +79,10 @@ MODULOS = {
     # CU-41 seguridad
     "seg_repo": "seguridad/repository.py",
     "seg_svc": "seguridad/service.py",
+    # CU-40 notificaciones (construido el 28/09)
+    "noti_repo": "notificaciones/repository.py",
+    "noti_svc": "notificaciones/service.py",
+    "noti_rt": "notificaciones/router.py",
     # CU-42 bitacora
     "bit_repo": "bitacora/repository.py",
     "bit_svc": "bitacora/service.py",
@@ -198,6 +202,7 @@ TABLA_DE = {
     "Bitacora": "bitacora",
     "TokenRecuperacion": "token_recuperacion",
     "MedidaCliente": "medida_cliente",
+    "Notificacion": "notificacion",
 }
 
 SQL = """
@@ -344,9 +349,18 @@ CTRL = {
         "cambiar_estado_de_mi_producto", "generar_variantes_de_mi_producto")],
     "GestorReportePorVoz": [("interprete", n) for n in (
         "esta_disponible", "interpretar", "obtener_proveedor")],
-    # GestorNotificaciones (CU-40) no figura: no hay codigo que leer. Se
-    # dibuja vacio, que es la verdad del modelo. CU-34 SI figura desde el
-    # 20/09: Mateo lo entrego en los PR #64 a #67.
+    # CU-40, construido el 28/09. Hasta entonces esta clase se dibujaba VACIA
+    # a proposito ---no habia codigo que leer--- para que el pendiente se viera
+    # en el modelo en vez de quedar escondido. Ya hay codigo.
+    #
+    # Se listan las cuatro `avisar_*` ---que es lo que los otros paquetes le
+    # consumen--- mas el despachador y lo que usa su propio router. `notificar`
+    # va porque es la operacion sobre la que se apoyan las cuatro.
+    "GestorNotificaciones": [("noti_svc", n) for n in (
+        "notificar", "avisar_reserva_en_sucursal", "avisar_reserva_preparada",
+        "avisar_pedido_pagado", "avisar_stock_bajo", "despachar_pendientes",
+        "reintentar_fallidas", "listar_mias", "resumen", "marcar_leida",
+        "marcar_todas_leidas")],
 }
 
 # --- fronteras -> el servicio de Angular y el endpoint del router -------------

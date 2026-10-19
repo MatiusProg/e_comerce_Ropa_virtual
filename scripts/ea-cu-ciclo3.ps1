@@ -44,7 +44,7 @@
 #   - la PASARELA DE PAGO, actor EXTERNO y el unico que inicia un caso de uso
 #     sin ser una persona (CU-28).
 #
-# Y dos casos de uso SIN CONSTRUIR --- CU-34 y CU-40 ---, que se dibujan igual:
+# CU-34 (20/09) y CU-40 (28/09) ya estan construidos; la nota de cada uno lo dice.
 # el modelo del ciclo es el alcance acordado, no el codigo escrito. Quien mire
 # el diagrama y despues el sistema tiene que poder ver la diferencia en la
 # tabla, no descubrirla porque el diagrama los escondio.
@@ -206,7 +206,7 @@ $defU = @(
   @{k='cu38'; n='CU-38 Registrar productos del proveedor';     l=380; t=-1750; h=85;  nt='Permite al Proveedor registrar la informacion de los productos que abastece, con alcance limitado a los suyos. No se publican solos: el Administrador los revisa.'},
   @{k='cu39'; n='CU-39 Informar disponibilidad y plazo';       l=380; t=-1860; h=85;  nt='Permite al Proveedor anunciar que puede abastecer y en que plazo, alimentando el estado "proximo a ingresar". NO suma existencia: lo anunciado no es lo que hay.'},
   @{k='cu28'; n='CU-28 Confirmar pago del pedido';             l=380; t=-1990; h=85;  nt='El sistema recibe la notificacion firmada de la pasarela, la valida, marca el pedido como pagado y descuenta el inventario. Es el UNICO caso de uso que no inicia una persona.'},
-  @{k='cu40'; n='CU-40 Notificar eventos a los usuarios';      l=380; t=-2100; h=85;  nt='SIN EMPEZAR. Avisaria a quien corresponda cuando ocurre un hecho que requiere su atencion. Es la diferencia entre notificar y consultar, que es lo que el RF11 exige de verdad.'},
+  @{k='cu40'; n='CU-40 Notificar eventos a los usuarios';      l=380; t=-2100; h=85;  nt='Avisa a quien corresponda cuando ocurre un hecho que requiere su atencion: reserva dirigida a una sucursal, reserva preparada, pedido pagado y stock bajo. Es la diferencia entre notificar y consultar, que es lo que el RF11 exige de verdad. Construido el 28/09.'},
   @{k='cu41'; n='CU-41 Recuperar contraseña';                  l=380; t=-2210; h=85;  nt='Permite a cualquier usuario recuperar el acceso con un enlace de un solo uso enviado a su correo. Se inicia SIN sesion, y esa es su razon de ser.'},
   @{k='auth'; n='Autenticar usuario';                          l=820; t=-1100; h=85;  nt='Caso de uso de inclusion, ya presente en el Ciclo 1. Verifica el token y el rol antes del primer paso de toda operacion que exige sesion. No es uno de los casos de uso numerados: no produce por si mismo un resultado de valor para un actor.'}
 )
@@ -415,8 +415,8 @@ $dCu33 = New-DiagramaDeCasoDeUso $pCiclo3 'CU-33 Recibir recomendaciones de pren
     @{ el=$U['auth'];    l=800; t=-110; w=280; h=85 }
 ) $null
 
-# --- CU-34 --- sin construir. Se dibuja igual: el modelo del ciclo es el
-# alcance acordado, no el codigo escrito.
+# --- CU-34 --- entregado el 20/09 (PR #64 a #67). El diagrama no cambia: el
+# modelo del ciclo es el alcance acordado, y el alcance no se movio.
 $dCu34 = New-DiagramaDeCasoDeUso $pCiclo3 'CU-34 Conversar con el asistente virtual' @(
     @{ el=$A['cliente']; l=40;  t=-60;  w=170; h=80 },
     @{ el=$A['ia'];      l=40;  t=-220; w=170; h=80 },
@@ -468,8 +468,9 @@ $dCu39 = New-DiagramaDeCasoDeUso $pCiclo3 'CU-39 Informar disponibilidad y plazo
     @{ el=$U['auth'];      l=800; t=-70; w=280; h=85 }
 ) $null
 
-# --- CU-40 --- sin construir, y SIN 'Autenticar usuario': no hay nadie del
-# otro lado. Es el sistema avisando.
+# --- CU-40 --- construido el 28/09, y SIN 'Autenticar usuario': no hay nadie
+# del otro lado. Es el sistema avisando. El diagrama no cambia por eso: el
+# actor sigue siendo A6 y sigue sin haber quien lo inicie a mano.
 $dCu40 = New-DiagramaDeCasoDeUso $pCiclo3 'CU-40 Notificar eventos a los usuarios' @(
     @{ el=$A['sistema']; l=40;  t=-80; w=170; h=80 },
     @{ el=$U['cu40'];    l=360; t=-70; w=300; h=85 }

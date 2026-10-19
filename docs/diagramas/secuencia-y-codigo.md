@@ -221,6 +221,12 @@ diagrama se comprimen, la caja se queda donde estaba y **el `alt` termina envolv
 mensajes que no son**. Por eso `scripts/ea-secuencia-3-2.ps1` usa exactamente la escala de
 EA, y por eso conviene **verificar la cobertura de cada operando después de abrir el modelo**.
 
+> **Corrección del 29/09/2026.** EA no deja un hueco en cada borde de fragmento: apila los
+> mensajes de 35 en 35 y solo baja uno cuando caería sobre la cabecera de una caja. Las cajas
+> y las notas quedan fijas. Mover cualquier cosa en EA desarma las cajas de abajo, así que
+> **no se acomodan a mano**: se corre `scripts/ea-fragmentos-3-2.ps1`, que las ubica según el
+> guion. Detalle en la §7.8 b) de `GUIA-DIAGRAMAS-EA.md`.
+
 ### 6.2 Los operandos no se pueden crear por la API COM
 
 El operador del fragmento y sus operandos viven en `t_object.NType` y en una fila
@@ -233,6 +239,10 @@ El operador del fragmento y sus operandos viven en `t_object.NType` y en una fil
 **La suma de los `Size` tiene que ser exactamente el alto de la caja**, o EA reparte mal las
 bandas. El script los escribe por OLEDB en una segunda pasada, después de cerrar EA.
 
+**Y la lista va de abajo hacia arriba:** el último `@PAR` es el operando de arriba. Los 3.2
+de los Ciclos 1 y 2 la tenían al derecho, y por eso cada guarda rotulaba el tramo contrario.
+Quedó corregido el 29/09.
+
 ---
 
 ## 7. Cómo se regenera
@@ -243,6 +253,9 @@ powershell -ExecutionPolicy Bypass -File scripts\ea-secuencia-3-2.ps1
 
 # borra el paquete 3.2 entero y lo rehace
 powershell -ExecutionPolicy Bypass -File scripts\ea-secuencia-3-2.ps1 -Rehacer
+
+# reubica cajas alt/loop y notas de los que ya existen, sin crear ni borrar nada
+powershell -ExecutionPolicy Bypass -File scripts\ea-fragmentos-3-2.ps1 -Modelo docs\diagramas\VioletBoutique.eapx
 ```
 
 **Enterprise Architect tiene que estar cerrado.** El script abre el modelo por COM y después
