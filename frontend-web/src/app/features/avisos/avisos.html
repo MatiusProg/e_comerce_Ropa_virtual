@@ -1,0 +1,123 @@
+<app-navegacion-cliente />
+
+<section class="avisos">
+  <header class="encabezado">
+    <div>
+      <h1 class="vb-titulo">Mis avisos</h1>
+      <p class="bajada">
+        El sistema le avisa acá cuando ocurre algo que necesita su atención.
+      </p>
+    </div>
+
+    <div class="acciones">
+      <mat-slide-toggle
+        [checked]="soloNoLeidas()"
+        (change)="cambiarFiltro($event.checked)"
+      >
+        Solo sin leer
+      </mat-slide-toggle>
+
+      @if (noLeidas()) {
+        <button matButton type="button" (click)="marcarTodas()">
+          <mat-icon>done_all</mat-icon>
+          Marcar todas como leídas
+        </button>
+      }
+    </div>
+  </header>
+
+  <!-- CU-40 · el despacho de correos. Solo Administrador: el servidor exige el
+       rol en los dos endpoints, acá se esconde para no ofrecer un botón que va
+       a responder 403. -->
+  @if (esAdministrador()) {
+    <mat-card class="mantenimiento" appearance="outlined">
+      <mat-card-content>
+        <div class="texto">
+          <strong>Despacho de correos</strong>
+          <span>
+            El aviso dentro de la aplicación aparece al instante; el correo sale
+            cuando se despacha. Es idempotente: correrlo dos veces no manda nada
+            dos veces.
+          </span>
+        </div>
+        <div class="botones">
+          <button
+            matButton="filled"
+            type="button"
+            [disabled]="despachando()"
+            (click)="despachar()"
+          >
+            <mat-icon>outgoing_mail</mat-icon>
+            {{ despachando() ? 'Enviando…' : 'Enviar pendientes' }}
+          </button>
+          <button matButton type="button" (click)="reintentar()">
+            <mat-icon>refresh</mat-icon>
+            Reintentar los fallidos
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  @if (cargando()) {
+    <p class="estado">Cargando avisos…</p>
+  } @else if (items().length === 0) {
+    <p class="estado">
+      @if (soloNoLeidas()) {
+        No le queda ningún aviso sin leer.
+      } @else {
+        Todavía no tiene avisos.
+      }
+    </p>
+  } @else {
+    <ul class="lista">
+      @for (a of items(); track a.id) {
+        <!-- El botón de «marcar» va FUERA del de la tarjeta y no adentro:
+             un <button> dentro de otro <button> es HTML inválido y el
+             navegador reacomoda el árbol por su cuenta. -->
+        <li class="fila" [class.sin-leer]="!a.leida_en">
+          <button type="button" class="tarjeta" (click)="entrar(a)">
+            <mat-icon class="tipo" [class.alerta]="a.tipo === 'STOCK_BAJO'">
+              {{ icono(a.tipo) }}
+            </mat-icon>
+
+            <span class="cuerpo">
+              <span class="linea-superior">
+                <span class="asunto">{{ a.titulo }}</span>
+                <span class="fecha">{{ a.creada_en | date: 'dd/MM HH:mm' : '-0400' }}</span>
+              </span>
+              <span class="detalle">{{ a.cuerpo }}</span>
+
+              @if (esAdministrador() && a.correo_estado === 'FALLIDO') {
+                <span class="fallo">
+                  <mat-icon inline>error_outline</mat-icon>
+                  El correo no salió
+                </span>
+              }
+            </span>
+          </button>
+
+          @if (!a.leida_en) {
+            <button
+              matIconButton
+              type="button"
+              class="marcar"
+              aria-label="Marcar como leído"
+              (click)="marcarLeida(a, $event)"
+            >
+              <mat-icon>done</mat-icon>
+            </button>
+          }
+        </li>
+      }
+    </ul>
+
+    <mat-paginator
+      [length]="total()"
+      [pageIndex]="indicePagina()"
+      [pageSize]="tamano()"
+      [pageSizeOptions]="[10, 20, 50]"
+      (page)="cambiarPagina($event)"
+    />
+  }
+</section>

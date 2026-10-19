@@ -34,6 +34,7 @@ from app.modules.abastecimiento import service as abastecimiento
 from app.modules.inventario import repository
 from app.modules.catalogo.models import VarianteProducto
 from app.modules.inventario.models import Existencia
+from app.modules.notificaciones import service as notificaciones
 from app.modules.inventario.schemas import (
     AjusteIn,
     AjusteOut,
@@ -163,6 +164,40 @@ class ConteoMenorQueLoReservado(ErrorDeInventario):
 
 # --- El unico camino por el que cambia una cantidad ----------------------
 
+def cruzo_el_umbral(*, antes: int, ahora: int, stock_minimo: int) -> bool:
+    """Si el saldo acaba de CAER al punto de reposicion (CU-40).
+
+    Publica y aparte del movimiento para poder probarla sola: es una decision
+    de tres enteros, y comprobarla montando un producto, una variante, una
+    sucursal y un ingreso probaria sobre todo el armado.
+
+    `stock_minimo == 0` significa «sin alerta» ---ver el modelo--- y nunca
+    cruza: sin esta condicion toda existencia que llegue a cero avisaria,
+    incluidas las que nadie pidio vigilar.
+    """
+    if stock_minimo <= 0:
+        return False
+    return antes > stock_minimo >= ahora
+
+
+def _etiqueta_de_variante(db: Session, variante_id: int) -> str:
+    """Como se nombra la prenda en el aviso de stock bajo.
+
+    Se resuelve ACA y no en P13 para que el paquete de notificaciones no tenga
+    que conocer el catalogo. Se llama solo cuando el saldo cruza el umbral ---
+    no en cada movimiento --- asi que la consulta de mas no esta en el camino
+    caliente.
+
+    Cae al SKU si el producto no se puede leer: un aviso con el codigo es feo
+    pero util, y uno que falla por no poder armar el titulo no le sirve a nadie.
+    """
+    variante = db.get(VarianteProducto, variante_id)
+    if variante is None:
+        return f"variante {variante_id}"
+    nombre = getattr(getattr(variante, "producto", None), "nombre", None)
+    return f"{nombre} ({variante.sku})" if nombre else variante.sku
+
+
 def _aplicar_movimiento(
     db: Session,
     existencia: Existencia,
@@ -235,9 +270,33 @@ def _aplicar_movimiento(
         # es un error de programa y no del usuario: se frena antes de escribir.
         raise ReservadaNegativa(existencia.cantidad_reservada, reservada_delta)
 
+    # CU-40: se avisa cuando la prenda CRUZA el punto de reposicion, no cada
+    # vez que queda por debajo.
+    #
+    # La diferencia importa. Una prenda en alerta recibe decenas de movimientos
+    # mientras sigue baja ---se vende de a una, se reserva, se libera--- y
+    # avisar en cada uno llenaria la campanita del Encargado con el mismo aviso
+    # repetido hasta volverla inservible. Mirando el cruce, el aviso sale UNA
+    # vez: la que el saldo bajo del umbral. Vuelve a salir cuando se repone y
+    # se cae otra vez, que es justo cuando vuelve a ser noticia.
+    #
+    # `stock_minimo > 0` porque cero significa «sin alerta» (ver el modelo), y
+    # sin esta condicion toda existencia que llegue a cero avisaria, incluidas
+    # las que nadie pidio vigilar.
+    antes = existencia.cantidad_disponible
+
     existencia.cantidad_disponible += cantidad
     existencia.cantidad_reservada += reservada_delta
     db.flush()
+
+    if cruzo_el_umbral(
+        antes=antes,
+        ahora=existencia.cantidad_disponible,
+        stock_minimo=existencia.stock_minimo,
+    ):
+        notificaciones.avisar_stock_bajo(
+            db, existencia, etiqueta=_etiqueta_de_variante(db, existencia.variante_id)
+        )
 
     return repository.agregar_movimiento(
         db,

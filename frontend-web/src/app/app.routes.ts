@@ -265,6 +265,15 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/seguridad/bitacora/bitacora').then((m) => m.Bitacora),
       },
+      {
+        // CU-40 · la misma pantalla que /avisos, colgada de esta cáscara para
+        // que quien entra desde su campanita no pierda su navegación. El
+        // ámbito no lo decide la ruta: el servidor devuelve los avisos del
+        // usuario del token.
+        path: 'avisos',
+        title: 'Mis avisos · Violet Boutique',
+        loadComponent: () => import('./features/avisos/avisos').then((m) => m.Avisos),
+      },
     ],
   },
   // --- Ciclo 2 · P6 Reservas del Cliente (CU-22, CU-23) ---
@@ -354,6 +363,15 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/admin/inventario/inventario').then((m) => m.Inventario),
       },
+      {
+        // CU-40 · la misma pantalla que /avisos, colgada de esta cáscara para
+        // que quien entra desde su campanita no pierda su navegación. El
+        // ámbito no lo decide la ruta: el servidor devuelve los avisos del
+        // usuario del token.
+        path: 'avisos',
+        title: 'Mis avisos · Violet Boutique',
+        loadComponent: () => import('./features/avisos/avisos').then((m) => m.Avisos),
+      },
     ],
   },
   // --- Ciclo 3 · CU-30 · El area de Caja --------------------------------
@@ -432,6 +450,20 @@ export const routes: Routes = [
           ),
       },
     ],
+  },
+
+  // --- Ciclo 3 · CU-40, los avisos -------------------------------------
+  //
+  // Una sola ruta para todos los roles y NO una por área. El contenido es el
+  // mismo y el ámbito no lo decide la pantalla: el servidor devuelve los avisos
+  // del usuario del token. Por eso lleva `sesionGuard` y ningún `rolGuard` ---
+  // los cuatro hechos de CU-40 le llegan al Encargado y al Cliente, y exigir un
+  // rol dejaría a la mitad sin poder leer lo suyo.
+  {
+    path: 'avisos',
+    title: 'Mis avisos · Violet Boutique',
+    canActivate: [sesionGuard],
+    loadComponent: () => import('./features/avisos/avisos').then((m) => m.Avisos),
   },
 
   // La raíz decide: la vitrina para el visitante, su área para quien tiene

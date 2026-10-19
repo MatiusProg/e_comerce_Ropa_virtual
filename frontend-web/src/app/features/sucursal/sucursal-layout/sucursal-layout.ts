@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { AuthService } from '../../../core/services/auth.service';
+import { Campanita } from '../../../shared/campanita/campanita';
 
 /**
  * Cáscara del área del Encargado de Sucursal.
@@ -33,6 +34,7 @@ import { AuthService } from '../../../core/services/auth.service';
     MatButtonModule,
     MatIconModule,
     MatToolbarModule,
+    Campanita,
   ],
   templateUrl: './sucursal-layout.html',
   styleUrl: './sucursal-layout.scss',

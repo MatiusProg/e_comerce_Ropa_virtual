@@ -83,6 +83,11 @@ TABLAS_VOLATILES = (
     # huerfanos de una prueba en la siguiente --- y varias cuentan cuantos
     # asientos hay.
     "bitacora",
+    # CU-40: apunta a `usuario` con ON DELETE CASCADE, asi que el CASCADE la
+    # limpiaria por rebote. Se nombra igual, por el mismo motivo que
+    # `empleado`: depender de un detalle del esquema para la limpieza hace que
+    # las pruebas que CUENTAN avisos dependan de el sin decirlo.
+    "notificacion",
     # CU-39: cuelga de proveedor y de variante, que estan mas abajo.
     "abastecimiento",
     # P4 va primero: el movimiento apunta a la existencia, al usuario y al

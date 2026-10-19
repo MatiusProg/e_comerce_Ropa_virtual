@@ -12,6 +12,9 @@
         <span class="rol">Encargado</span>
       </span>
     </span>
+    <!-- CU-40: el Encargado recibe las reservas dirigidas a su local (RF11) y
+         las alertas de stock bajo. -->
+    <app-campanita />
     <button matIconButton type="button" (click)="salir()" aria-label="Cerrar sesión">
       <mat-icon>logout</mat-icon>
     </button>

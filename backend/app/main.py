@@ -94,6 +94,10 @@ from app.modules.ia.asistente_router import router as asistente_router
 from app.modules.ia.router import router as ia_router
 from app.modules.bitacora.middleware import BitacoraMiddleware
 from app.modules.bitacora.router import router as bitacora_router
+from app.modules.notificaciones.router import router as notificaciones_router
+from app.modules.notificaciones.router import (
+    mantenimiento_router as notificaciones_mantenimiento_router,
+)
 from app.modules.reportes.reportes_router import router as reportes_router
 
 
@@ -220,3 +224,5 @@ app.include_router(ia_router, prefix=API)
 app.include_router(asistente_router, prefix=API)
 app.include_router(reportes_router, prefix=API)
 app.include_router(bitacora_router, prefix=API)
+app.include_router(notificaciones_router, prefix=API)
+app.include_router(notificaciones_mantenimiento_router, prefix=API)

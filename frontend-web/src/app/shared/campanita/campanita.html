@@ -1,0 +1,53 @@
+<button
+  matIconButton
+  type="button"
+  [matMenuTriggerFor]="menu"
+  (menuOpened)="abrir()"
+  [attr.aria-label]="
+    globito() ? 'Avisos: ' + globito() + ' sin leer' : 'Avisos: ninguno sin leer'
+  "
+>
+  <mat-icon [matBadge]="globito()" matBadgeColor="warn" matBadgeSize="small">
+    notifications
+  </mat-icon>
+</button>
+
+<mat-menu #menu="matMenu" class="menu-campanita">
+  <div class="cabecera" (click)="$event.stopPropagation()">
+    <span class="titulo">Avisos</span>
+    @if (globito()) {
+      <button matButton type="button" (click)="marcarTodas()">
+        Marcar todas como leídas
+      </button>
+    }
+  </div>
+
+  @if (cargando()) {
+    <p class="vacio">Cargando…</p>
+  } @else if (recientes().length === 0) {
+    <p class="vacio">No tiene avisos todavía.</p>
+  } @else {
+    @for (aviso of recientes(); track aviso.id) {
+      <button
+        mat-menu-item
+        type="button"
+        class="aviso"
+        [class.sin-leer]="!aviso.leida_en"
+        (click)="entrar(aviso)"
+      >
+        <mat-icon [class.alerta]="aviso.tipo === 'STOCK_BAJO'">
+          {{ icono(aviso.tipo) }}
+        </mat-icon>
+        <span class="texto">
+          <span class="asunto">{{ aviso.titulo }}</span>
+          <span class="detalle">{{ aviso.cuerpo }}</span>
+        </span>
+      </button>
+    }
+  }
+
+  <a mat-menu-item [routerLink]="enlaceTodos()" class="ver-todos">
+    <mat-icon>list</mat-icon>
+    Ver todos
+  </a>
+</mat-menu>

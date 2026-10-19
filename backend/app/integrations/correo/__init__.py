@@ -23,6 +23,7 @@ from functools import lru_cache
 from app.core.config import settings
 from app.integrations.correo.base import ErrorDeEnvio, Mensaje, ProveedorCorreo
 from app.integrations.correo.consola import ProveedorConsola
+from app.integrations.correo.smtp import ProveedorSmtp
 
 __all__ = ["ErrorDeEnvio", "Mensaje", "ProveedorCorreo", "enviar", "obtener_proveedor"]
 
@@ -30,6 +31,7 @@ __all__ = ["ErrorDeEnvio", "Mensaje", "ProveedorCorreo", "enviar", "obtener_prov
 #: Proveedores disponibles, por el nombre con el que se los elige.
 _PROVEEDORES: dict[str, type[ProveedorCorreo]] = {
     ProveedorConsola.nombre: ProveedorConsola,
+    ProveedorSmtp.nombre: ProveedorSmtp,
 }
 
 
