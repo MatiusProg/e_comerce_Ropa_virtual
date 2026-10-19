@@ -117,6 +117,9 @@ class Settings(BaseSettings):
     # --- token de un solo uso, dos endpoints y dos pantallas --- sin haber
     # contratado ningun servicio. Cuando se elija uno, se agrega su modulo en
     # app/integrations/correo/ y se cambia esta variable.
+    #
+    # En produccion va `brevo` (API HTTPS): Railway bloquea el SMTP saliente
+    # fuera del plan Pro, asi que `smtp` solo sirve en local. Ver brevo.py.
     CORREO_PROVEEDOR: str = "consola"
     CORREO_API_KEY: str = ""
 
