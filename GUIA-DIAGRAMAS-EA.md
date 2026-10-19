@@ -59,6 +59,7 @@ Ejecución típica:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\ea-secuencia-3-2.ps1
 powershell -ExecutionPolicy Bypass -File scripts\ea-secuencia-3-2.ps1 -Rehacer
+powershell -ExecutionPolicy Bypass -File scripts\ea-fragmentos-3-2.ps1 -Modelo docs\diagramas\VioletBoutique.eapx
 ```
 
 > **`ea-cu-ciclo1.ps1` es la excepción: no es aditivo.** Crea el modelo desde la plantilla
@@ -1259,6 +1260,41 @@ $ALTO_NOTA = 55     # lo que consume una nota separadora de flujo
 
 Aun así: **verificar la cobertura de cada operando después de abrir el modelo.**
 
+> **Corrección del 29/09/2026: la regla de verdad, y por qué la de arriba no alcanzaba.** Se
+> midió exportando la imagen de los 3.2 y comparándola con lo guardado:
+>
+> 1. **EA no usa `PtStartY`.** Apila los mensajes por `SeqNo`, de 35 en 35 desde −135, pase
+>    lo que pase con la altura guardada. La corrección del 17/09 medía bien, pero el
+>    generador seguía **dejando huecos para las notas y las cabeceras**. EA los cerraba, los
+>    mensajes subían, y las cajas quedaban corridas cada vez más hacia abajo del diagrama.
+> 2. **Las cajas y las notas quedan exactamente donde están guardadas.** Por eso EA elige
+>    qué encierra cada caja por la altura del mensaje **dibujado**, no la del guardado.
+> 3. **La cabecera sí empuja, pero solo cuando molesta.** Si un mensaje caería dentro de
+>    los ~27 px de la cabecera de una caja, EA lo baja justo debajo. Si no, no agrega nada.
+>    Lo mismo pasa con la guarda bajo una línea divisoria (~22 px).
+> 4. **En EA, mover cualquier cosa "mueve todo".** Al arrastrar una nota, una caja o un
+>    mensaje, EA recalcula los mensajes y las cajas de abajo dejan de encerrar lo que
+>    encerraban. Karen lo vio en CU-21 y es la razón para **no acomodar las cajas a mano**.
+> 5. **Una nota dentro de una caja queda atada a ella.** Las notas de flujo van en una
+>    columna a la izquierda (x 5..120), fuera de toda caja.
+>
+> **El arreglo es `scripts/ea-fragmentos-3-2.ps1`.** Lee el guion (`$CASOS`) de este
+> generador sin ejecutarlo y simula la regla: calcula dónde va a dibujar EA cada mensaje y
+> pone alrededor la caja, los cortes de los operandos y las notas. Con la caja arrancando 8 px
+> bajo el mensaje anterior, el primero de adentro cae justo al borde de la cabecera y EA no
+> tiene que empujar nada. Solo toca geometría y el texto de los operandos: no crea ni borra
+> elementos, y salta el diagrama que no coincide con su guion.
+>
+> ```powershell
+> # EA cerrado. Primero sobre una copia, y mirar las imagenes (§8).
+> powershell -ExecutionPolicy Bypass -File scripts\ea-fragmentos-3-2.ps1 -Modelo copia.eapx
+> powershell -ExecutionPolicy Bypass -File scripts\ea-fragmentos-3-2.ps1 -Modelo docs\diagramas\VioletBoutique.eapx -Solo 'CU-21','CU-27'
+> ```
+>
+> Se aplicó el 29/09 a **28 de los 29** diagramas 3.2 de los tres ciclos. Se verificó con las
+> imágenes de CU-01, CU-02, CU-21, CU-27 y CU-32. **CU-17** quedó como estaba, porque su
+> guion tiene un `alt` que el modelo no tiene, y se decidió dejarlo así.
+
 #### c) Ni el tipo de mensaje ni los operandos se pueden escribir por COM
 
 Los mensajes son conectores `Sequence`, pero su geometría y su tipo viven en `t_connector`:
@@ -1318,7 +1354,12 @@ for ($i = 0; $i -lt $f.ops.Count; $i++) {
 
 Y se inserta **por parámetro**, por los acentos de las guardas (regla 9).
 
-#### d) Solo se genera `alt`
+#### d) Solo se genera `alt` (y `loop` desde el 24/09)
+
+> **Actualización:** desde el 24/09 el generador también crea `loop` (`NType = 4`, un solo
+> operando cuyo nombre es la guarda). Solo abarca las líneas de vida que tocan sus mensajes y
+> puede ir anidado dentro de un operando de un `alt`. Lo de abajo sigue valiendo para `opt`,
+> `critical` y el resto.
 
 Es el único operador cuyo código interno está verificado (`NType = 0`). Para los demás, el mensaje
 lleva la guarda en el nombre —`2.1a: [si queda predeterminada] UPDATE …`— y se documenta cuál
@@ -1837,6 +1878,14 @@ El tercer parámetro es el formato (`1` = PNG). Se pasa el **`DiagramGUID`**, no
 > $rep.CloseDiagram($idDia); $rep.CloseFile(); $rep.Exit()
 > ```
 >
+> **Actualización del 29/09/2026:** con el repositorio headless (`EA.Repository` +
+> `PutDiagramImageToFile`) los 3.2 **sí** salieron con sus operandos y con los mensajes ya
+> remaquetados, así que sirve para **verificar sin abrir EA**. Se hace sobre una copia del
+> `.eapx` y se mira el PNG, que sale a escala ~1,37. Exportar **no** guarda la remaquetación
+> en el archivo. Para las imágenes definitivas del documento sigue valiendo la exportación
+> desde la interfaz. Y un detalle: en `SQLQuery` sobre `.eapx`, `LIKE '...%'` no trae nada
+> (JET usa `*`), así que conviene buscar por `Diagram_ID`.
+>
 > Dos detalles que cuestan una vuelta: **los `Diagram_ID` cambian con cada `-Rehacer`**, así que se
 > resuelven por nombre o por GUID y nunca se cablean; y `EA.App` **no tiene método `Exit()`** —el
 > que cierra es `$rep.Exit()`—.
@@ -1871,6 +1920,8 @@ $visibles = ($d.DiagramLinks | Where-Object { -not $_.IsHidden }).Count
 | El **ícono redondo no desaparece** al cambiar el estereotipo | quedó `StereotypeEx = "entidad,entity"` | asignar `Stereotype` **y** `StereotypeEx` |
 | El estereotipo `FORM` aparece **en minúscula** | EA lo empareja con su `form` propio, sin distinguir mayúsculas | borrar la fila `Stereotypes` de `t_xref` y forzar `Stereotype` |
 | Las **cardinalidades no se guardan** | se llamó a `ClientEnd.Update()` antes del primer `Update()` del conector | `Update()` del conector → cardinalidades → `Update()` de cada extremo |
+| En un 3.2 las cajas `alt`/`loop` **encierran mensajes que no son**, y en EA **mover una nota o una caja corre todo** | EA apila los mensajes de 35 en 35 ignorando `PtStartY` y deja fijas las cajas y las notas | no arrastrar: correr `ea-fragmentos-3-2.ps1` (§7.8 b) |
+| En un `alt` la **guarda del flujo feliz rotula el tramo del error** | EA lee los `@PAR` de `Partitions` de abajo hacia arriba | escribir la lista al revés; `ea-fragmentos-3-2.ps1` ya lo hace |
 | Los **atributos salen alfabéticos** pese a fijar `Pos` | opción *ordenar características alfabéticamente* de EA | desactivarla en las preferencias |
 | Los mensajes de comunicación se **amontonan en el punto medio** | se numeró a mano dentro del nombre | numerar con `PDATA4` |
 | El fragmento `alt` **envuelve mensajes que no son** | EA remaquetó el diagrama al abrirlo con otra escala | usar `$Y_PRIMERO = -135` y `$PASO = 35` |
