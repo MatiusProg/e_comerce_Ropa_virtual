@@ -138,12 +138,17 @@ def existe_sucursal(db: Session, sucursal_id: int) -> bool:
 ROLES_NO_VINCULABLES = ("CLIENTE", "PROVEEDOR")
 
 
-def _condiciones_de_vinculable():
+def _condiciones_de_vinculable(empresa_id: int):
     """Que hace que una cuenta pueda convertirse en empleado (flujo 3c).
 
     Se comparte entre el listado y la verificacion del alta: si las dos no
     dijeran exactamente lo mismo, la interfaz ofreceria candidatos que el
     servidor despues rechaza.
+
+    2do parcial (CU-10): la cuenta tiene que ser de la MISMA empresa. `usuario`
+    no tiene RLS y `empleado` si: sin esta condicion, el empleado de otra
+    empresa no se ve, `~tiene_empleado` da verdadero, y su cuenta aparece como
+    libre para vincularla aca --- cambiandole el rol en la otra empresa.
     """
     tiene_empleado = exists().where(Empleado.usuario_id == Usuario.id)
     # El CU-07 vincula la ficha de proveedor a una cuenta propia. Sin esta
@@ -156,10 +161,11 @@ def _condiciones_de_vinculable():
         ~tiene_proveedor,
         Usuario.activo.is_(True),
         Rol.nombre.not_in(ROLES_NO_VINCULABLES),
+        Usuario.empresa_id == empresa_id,
     )
 
 
-def listar_usuarios_vinculables(db: Session) -> list[Row]:
+def listar_usuarios_vinculables(db: Session, empresa_id: int) -> list[Row]:
     """Cuentas que pueden convertirse en empleado (flujo alternativo 3c)."""
     return list(
         db.execute(
@@ -171,13 +177,15 @@ def listar_usuarios_vinculables(db: Session) -> list[Row]:
                 Rol.nombre.label("rol"),
             )
             .join(Rol, Rol.id == Usuario.rol_id)
-            .where(*_condiciones_de_vinculable())
+            .where(*_condiciones_de_vinculable(empresa_id))
             .order_by(Usuario.apellidos, Usuario.nombres)
         ).all()
     )
 
 
-def obtener_usuario_vinculable(db: Session, usuario_id: int) -> Usuario | None:
+def obtener_usuario_vinculable(
+    db: Session, usuario_id: int, empresa_id: int
+) -> Usuario | None:
     """El usuario del flujo 3c, solo si sigue cumpliendo las condiciones.
 
     Se vuelve a comprobar aunque la interfaz haya ofrecido una lista ya
@@ -187,7 +195,7 @@ def obtener_usuario_vinculable(db: Session, usuario_id: int) -> Usuario | None:
     return db.scalar(
         select(Usuario)
         .join(Rol, Rol.id == Usuario.rol_id)
-        .where(and_(Usuario.id == usuario_id, *_condiciones_de_vinculable()))
+        .where(and_(Usuario.id == usuario_id, *_condiciones_de_vinculable(empresa_id)))
     )
 
 
@@ -207,8 +215,9 @@ def agregar_usuario(
     nombres: str,
     apellidos: str,
     rol_id: int,
+    empresa_id: int,
 ) -> Usuario:
-    """Crea la cuenta del empleado, sin confirmar."""
+    """Crea la cuenta del empleado, sin confirmar, en la empresa indicada."""
     usuario = Usuario(
         correo=correo,
         hash_contrasena=hash_contrasena,
@@ -216,6 +225,7 @@ def agregar_usuario(
         apellidos=apellidos,
         rol_id=rol_id,
     )
+    usuario.empresa_id = empresa_id
     db.add(usuario)
     db.flush()
     return usuario

@@ -11,7 +11,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.core.dependencies import DbSession, requiere_roles
+from app.core.dependencies import DbSession, Usuario, UsuarioActual, requiere_roles
 from app.modules.organizacion.empleados import service
 from app.modules.organizacion.empleados.schemas import (
     CARGOS,
@@ -35,6 +35,14 @@ router = APIRouter(
         403: {"description": "El usuario no es Administrador."},
     },
 )
+
+
+def _empresa(usuario: UsuarioActual) -> int:
+    """2do parcial: la empresa del administrador. `usuario` no tiene RLS, así
+    que las cuentas que se ofrecen y se crean se acotan con esta empresa."""
+    if usuario.empresa_id is None:
+        raise HTTPException(403, "Esta cuenta no pertenece a ninguna empresa.")
+    return usuario.empresa_id
 
 
 def _traducir(error: service.ErrorDeEmpleados) -> HTTPException:
@@ -112,9 +120,9 @@ def listar_cargos() -> list[str]:
     response_model=list[UsuarioVinculableOut],
     summary="CU-06 Cuentas sin empleado (flujo 3c)",
 )
-def listar_usuarios_vinculables(db: DbSession) -> list[UsuarioVinculableOut]:
-    """Cuentas existentes que todavía no tienen ficha de empleado."""
-    return service.listar_usuarios_vinculables(db)
+def listar_usuarios_vinculables(db: DbSession, usuario: Usuario) -> list[UsuarioVinculableOut]:
+    """Cuentas existentes de la empresa que todavía no tienen ficha de empleado."""
+    return service.listar_usuarios_vinculables(db, _empresa(usuario))
 
 
 @router.post(
@@ -127,14 +135,14 @@ def listar_usuarios_vinculables(db: DbSession) -> list[UsuarioVinculableOut]:
         422: {"description": "Sucursal inexistente o dada de baja (excepción E2)."},
     },
 )
-def crear_empleado(datos: EmpleadoCrearIn, db: DbSession) -> EmpleadoOut:
+def crear_empleado(datos: EmpleadoCrearIn, db: DbSession, usuario: Usuario) -> EmpleadoOut:
     """Pasos 4 a 7, y flujo alternativo 3c si llega `usuario_id`.
 
     La cuenta y la ficha se crean en una sola transacción: si falla cualquiera
     de las dos no queda ninguna (excepción E3).
     """
     try:
-        return service.crear_empleado(db, datos)
+        return service.crear_empleado(db, datos, _empresa(usuario))
     except service.ErrorDeEmpleados as error:
         raise _traducir(error)
 
