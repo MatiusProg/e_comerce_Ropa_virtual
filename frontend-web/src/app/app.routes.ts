@@ -150,6 +150,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./shared/bienvenida/bienvenida').then((m) => m.Bienvenida),
       },
+      // --- 2do parcial · CU-04 Consultar plan y consumo ---
+      {
+        path: 'mi-plan',
+        title: 'Mi plan · Violet Boutique',
+        loadComponent: () => import('./features/admin/mi-plan/mi-plan').then((m) => m.MiPlan),
+      },
       {
         path: 'usuarios',
         title: 'Usuarios · Violet Boutique',
