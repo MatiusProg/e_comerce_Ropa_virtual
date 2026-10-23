@@ -23,6 +23,7 @@ from app.core import tiempo
 
 from app.core.config import settings
 from app.core.security import crear_access_token, hash_password, verify_password
+from app.core.tenencia import EMPRESA_DE_BAJA, ROL_PLATAFORMA, fijar_contexto_de_usuario
 from app.integrations.correo import Mensaje, enviar
 from app.modules.seguridad import repository
 from app.modules.seguridad.models import Cliente
@@ -184,6 +185,11 @@ class CuentaDesactivada(ErrorDeAutenticacion):
     su cuenta fue dada de baja."""
 
 
+class EmpresaDadaDeBaja(ErrorDeAutenticacion):
+    """2do parcial, CU-01 3b: la cuenta esta bien, pero su empresa fue dada de
+    baja por la plataforma. Ninguno de sus usuarios puede entrar."""
+
+
 def autenticar(db: Session, datos: LoginIn) -> TokenOut:
     """Verifica las credenciales y emite un token, registrando la sesion.
 
@@ -205,6 +211,13 @@ def autenticar(db: Session, datos: LoginIn) -> TokenOut:
 
     if not usuario.activo:
         raise CuentaDesactivada(datos.correo)
+
+    # 2do parcial. Antes de buscar la sucursal: `empleado` tiene RLS, y con el
+    # contexto de la tienda el personal de otra empresa saldria sin sucursal.
+    if usuario.empresa_id is not None:
+        if repository.estado_de_empresa(db, usuario.empresa_id) == EMPRESA_DE_BAJA:
+            raise EmpresaDadaDeBaja(datos.correo)
+    fijar_contexto_de_usuario(db, rol=usuario.rol.nombre, empresa_id=usuario.empresa_id)
 
     emitido = crear_access_token(
         usuario_id=usuario.id,
@@ -383,7 +396,8 @@ def crear_usuario(db: Session, datos: UsuarioCrearIn) -> UsuarioResumenOut:
         raise CorreoYaRegistrado(datos.correo)
 
     rol = repository.obtener_rol_por_nombre(db, datos.rol)
-    if rol is None:
+    # 2do parcial: el rol de la plataforma no se asigna desde una empresa (CU-08, 5a).
+    if rol is None or rol.nombre == ROL_PLATAFORMA:
         raise RolInexistente(datos.rol)
 
     _validar_ambito(db, rol.nombre, datos.sucursal_id)
@@ -429,7 +443,7 @@ def editar_usuario(
     db: Session, usuario_id: int, datos: UsuarioEditarIn
 ) -> UsuarioResumenOut:
     """Edición de un usuario (flujo alternativo 3a)."""
-    usuario = repository.obtener_usuario_con_id(db, usuario_id)
+    usuario = repository.obtener_usuario_de_la_empresa(db, usuario_id)
     if usuario is None:
         raise UsuarioInexistente(str(usuario_id))
 
@@ -441,7 +455,7 @@ def editar_usuario(
     rol = usuario.rol
     if datos.rol and datos.rol != usuario.rol.nombre:
         rol = repository.obtener_rol_por_nombre(db, datos.rol)
-        if rol is None:
+        if rol is None or rol.nombre == ROL_PLATAFORMA:
             raise RolInexistente(datos.rol)
 
     empleado = repository.obtener_empleado_de_usuario(db, usuario_id)
@@ -493,7 +507,7 @@ def cambiar_estado(
     postcondicion del caso de uso --"un usuario desactivado no puede iniciar
     sesion"-- se cumpliria solo a medias.
     """
-    usuario = repository.obtener_usuario_con_id(db, usuario_id)
+    usuario = repository.obtener_usuario_de_la_empresa(db, usuario_id)
     if usuario is None:
         raise UsuarioInexistente(str(usuario_id))
 
@@ -520,7 +534,7 @@ def eliminar_usuario(db: Session, usuario_id: int, *, solicitante_id: int) -> No
     uso indica ofrecer desactivar en su lugar, y eso lo resuelve la interfaz
     con el error que devuelve este servicio.
     """
-    usuario = repository.obtener_usuario_con_id(db, usuario_id)
+    usuario = repository.obtener_usuario_de_la_empresa(db, usuario_id)
     if usuario is None:
         raise UsuarioInexistente(str(usuario_id))
 

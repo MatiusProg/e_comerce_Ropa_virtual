@@ -123,6 +123,11 @@ def iniciar_sesion(peticion: Request, datos: LoginIn, db: DbSession) -> TokenOut
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Su cuenta está desactivada. Contacte al administrador.",
         )
+    except service.EmpresaDadaDeBaja:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="La empresa fue dada de baja. Contacte a la plataforma.",
+        )
 
     # QUIEN entro, para la bitacora. Sin esto el asiento de un inicio de
     # sesion sale sin rol y sin usuario ---en ese momento todavia no hay

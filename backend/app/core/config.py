@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     # La empresa de la tienda cuando la peticion no dice cual (encabezado
     # `X-Empresa`). La 1 es la Violet Boutique del 1er parcial.
     EMPRESA_POR_DEFECTO_ID: int = 1
+    # La cuenta del administrador de la plataforma (CU-01). La crea
+    # `python -m app.db.seed_plataforma`; la migracion solo crea el rol.
+    PLATAFORMA_ADMIN_CORREO: str = ""
+    PLATAFORMA_ADMIN_CLAVE: str = ""
 
     # --- Seguridad (RNF01) -----------------------------------------------
     JWT_SECRET_KEY: str = "cambiar-esta-clave-en-produccion"

@@ -39,7 +39,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
-from app.core.tenencia import fijar_empresa
+from app.core.tenencia import fijar_contexto_de_usuario
 from app.db.session import get_db
 from app.modules.bitacora import service
 
@@ -264,8 +264,9 @@ class BitacoraMiddleware(BaseHTTPMiddleware):
         # 2do parcial: el asiento es de la empresa del usuario. Sin usuario (un
         # login fallido, un visitante) queda en la empresa de la tienda, que es
         # el contexto de la peticion.
-        if getattr(usuario, "empresa_id", None) is not None:
-            fijar_empresa(db, usuario.empresa_id)
+        # Lo de la plataforma queda sin empresa: ninguna empresa lo ve.
+        if usuario is not None:
+            fijar_contexto_de_usuario(db, rol=usuario.rol, empresa_id=usuario.empresa_id)
         try:
             service.registrar(
                 db,

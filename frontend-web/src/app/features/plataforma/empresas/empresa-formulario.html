@@ -1,0 +1,129 @@
+@if (guardando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<h2 mat-dialog-title class="vb-titulo">{{ esEdicion ? 'Editar empresa' : 'Nueva empresa' }}</h2>
+
+<mat-dialog-content>
+  @if (error(); as e) {
+    <div class="aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ e }}</span>
+    </div>
+  }
+
+  <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate id="formulario-empresa">
+    <h3 class="seccion">La empresa</h3>
+    <div class="fila">
+      <mat-form-field appearance="outline">
+        <mat-label>Nombre comercial</mat-label>
+        <input matInput formControlName="nombre" />
+        @if (formulario.controls.nombre.hasError('required')) {
+          <mat-error>Ingrese el nombre.</mat-error>
+        }
+      </mat-form-field>
+      @if (!esEdicion) {
+        <mat-form-field appearance="outline">
+          <mat-label>Slug</mat-label>
+          <input matInput formControlName="slug" (input)="tocarSlug()" />
+          <mat-hint>Va en el inicio de sesión. No se cambia después.</mat-hint>
+          @if (formulario.controls.slug.hasError('pattern')) {
+            <mat-error>Solo minúsculas, números y guiones.</mat-error>
+          } @else if (formulario.controls.slug.hasError('repetido')) {
+            <mat-error>Ese slug ya lo usa otra empresa.</mat-error>
+          } @else if (formulario.controls.slug.hasError('required')) {
+            <mat-error>Ingrese el slug.</mat-error>
+          }
+        </mat-form-field>
+      }
+    </div>
+    <div class="fila">
+      <mat-form-field appearance="outline">
+        <mat-label>Razón social</mat-label>
+        <input matInput formControlName="razon_social" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>NIT</mat-label>
+        <input matInput formControlName="nit" />
+      </mat-form-field>
+    </div>
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Correo de contacto</mat-label>
+      <input matInput type="email" formControlName="correo_contacto" />
+    </mat-form-field>
+
+    @if (!esEdicion) {
+      <mat-form-field appearance="outline" class="ancho-completo">
+        <mat-label>Plan</mat-label>
+        <mat-select formControlName="plan_codigo">
+          @for (p of datos.planes; track p.codigo) {
+            <mat-option [value]="p.codigo">
+              {{ p.nombre }} · Bs {{ p.precio_mensual }} por mes
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <h3 class="seccion">Sucursal principal</h3>
+      <div class="fila">
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre</mat-label>
+          <input matInput formControlName="sucursal_nombre" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Ciudad</mat-label>
+          <mat-select formControlName="ciudad_id">
+            @for (c of datos.ciudades; track c.id) {
+              <mat-option [value]="c.id">{{ c.nombre }} · {{ c.departamento }}</mat-option>
+            }
+          </mat-select>
+          @if (formulario.controls.ciudad_id.hasError('required')) {
+            <mat-error>Elija una ciudad.</mat-error>
+          }
+        </mat-form-field>
+      </div>
+      <mat-form-field appearance="outline" class="ancho-completo">
+        <mat-label>Dirección</mat-label>
+        <input matInput formControlName="sucursal_direccion" />
+        @if (formulario.controls.sucursal_direccion.hasError('required')) {
+          <mat-error>Ingrese la dirección.</mat-error>
+        }
+      </mat-form-field>
+
+      <h3 class="seccion">Administrador de la empresa</h3>
+      <div class="fila">
+        <mat-form-field appearance="outline">
+          <mat-label>Nombres</mat-label>
+          <input matInput formControlName="admin_nombres" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Apellidos</mat-label>
+          <input matInput formControlName="admin_apellidos" />
+        </mat-form-field>
+      </div>
+      <mat-form-field appearance="outline" class="ancho-completo">
+        <mat-label>Correo</mat-label>
+        <input matInput type="email" formControlName="admin_correo" />
+        <mat-hint>Le llega el acceso con una contraseña temporal.</mat-hint>
+        @if (formulario.controls.admin_correo.hasError('repetido')) {
+          <mat-error>Ese correo ya tiene una cuenta.</mat-error>
+        } @else if (formulario.controls.admin_correo.invalid) {
+          <mat-error>Ingrese un correo válido.</mat-error>
+        }
+      </mat-form-field>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="ref.close(null)">Cancelar</button>
+  <button
+    matButton="filled"
+    type="submit"
+    form="formulario-empresa"
+    class="vb-boton-marca"
+    [disabled]="guardando()"
+  >
+    {{ esEdicion ? 'Guardar' : 'Registrar empresa' }}
+  </button>
+</mat-dialog-actions>

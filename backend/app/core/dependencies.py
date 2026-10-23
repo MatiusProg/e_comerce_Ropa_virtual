@@ -14,11 +14,12 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.security import decodificar_token
-from app.core.tenencia import fijar_empresa
+from app.core.tenencia import EMPRESA_DE_BAJA, fijar_contexto_de_usuario
 from app.db.session import get_db
 # Se importa con alias a proposito: mas abajo este modulo define
 # `Usuario = Annotated[UsuarioActual, ...]` como atajo para las rutas, y ese
 # nombre pisaria al modelo de SQLAlchemy.
+from app.modules.plataforma.models import Empresa
 from app.modules.seguridad.models import SesionToken
 from app.modules.seguridad.models import Usuario as UsuarioDB
 
@@ -98,14 +99,21 @@ def get_usuario_actual(
         raise _rechazar("Su sesión fue cerrada. Inicie sesión nuevamente.")
 
     fila = db.execute(
-        select(UsuarioDB.activo, UsuarioDB.correo, UsuarioDB.empresa_id).where(
-            UsuarioDB.id == int(datos["sub"])
-        )
+        select(UsuarioDB.activo, UsuarioDB.correo, UsuarioDB.empresa_id, Empresa.estado)
+        .outerjoin(Empresa, Empresa.id == UsuarioDB.empresa_id)
+        .where(UsuarioDB.id == int(datos["sub"]))
     ).first()
     if fila is None or not fila[0]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Su cuenta fue desactivada. Contacte al administrador.",
+        )
+
+    # CU-01, 3b: dar de baja una empresa corta tambien los tokens ya emitidos.
+    if fila[3] == EMPRESA_DE_BAJA:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="La empresa fue dada de baja. Contacte a la plataforma.",
         )
 
     usuario = UsuarioActual(
@@ -121,8 +129,7 @@ def get_usuario_actual(
     # token: si al usuario lo cambian de empresa, el token viejo no se lleva
     # los datos de la anterior. El cliente no tiene empresa y sigue en la de la
     # tienda (ver app/core/tenencia.py).
-    if fila[2] is not None:
-        fijar_empresa(db, fila[2])
+    fijar_contexto_de_usuario(db, rol=usuario.rol, empresa_id=fila[2])
     # Se deja a mano para la bitacora (CU-42). El middleware corre fuera del
     # grafo de dependencias y no puede volver a resolver el token: sin esto,
     # todo asiento saldria sin autor.

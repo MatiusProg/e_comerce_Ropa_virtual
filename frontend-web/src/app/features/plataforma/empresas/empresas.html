@@ -1,0 +1,130 @@
+<!-- CU-01 · Gestionar empresas — «boundary» PantallaEmpresas. -->
+<header class="encabezado">
+  <div>
+    <h1 class="vb-titulo">Empresas</h1>
+    <p class="bajada">Las empresas que contratan la plataforma, con su plan y su estado.</p>
+  </div>
+  <div class="acciones-encabezado">
+    <button matButton="filled" type="button" class="vb-boton-marca" (click)="nueva()">
+      <mat-icon>add_business</mat-icon>
+      Nueva empresa
+    </button>
+  </div>
+</header>
+
+<mat-card class="tarjeta vb-filete-superior" appearance="outlined">
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <div class="filtros">
+    <mat-form-field appearance="outline" class="campo-busqueda">
+      <mat-label>Buscar por nombre o slug</mat-label>
+      <input matInput [formControl]="busqueda" />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+  </div>
+
+  @if (error(); as e) {
+    <div class="vacio estado-error" role="alert">
+      <mat-icon>cloud_off</mat-icon>
+      <p class="titulo-vacio">No se pudo cargar el listado</p>
+      <p class="pista-vacio">{{ e }}</p>
+      <button matButton="filled" type="button" class="vb-boton-marca" (click)="cargar()">
+        <mat-icon>refresh</mat-icon>
+        Reintentar
+      </button>
+    </div>
+  } @else if (empresas().length) {
+    <div class="envoltorio-tabla">
+      <table mat-table [dataSource]="empresas()">
+        <ng-container matColumnDef="empresa">
+          <th mat-header-cell *matHeaderCellDef>Empresa</th>
+          <td mat-cell *matCellDef="let e">
+            <span class="celda-principal">
+              <span class="nombre">{{ e.nombre }}</span>
+              <span class="secundario">{{ e.slug }}{{ e.nit ? ' · NIT ' + e.nit : '' }}</span>
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="plan">
+          <th mat-header-cell *matHeaderCellDef>Plan</th>
+          <td mat-cell *matCellDef="let e">
+            @if (e.suscripcion; as s) {
+              <span class="celda-principal">
+                <span class="nombre">{{ s.plan_nombre }}</span>
+                <span class="secundario">vence el {{ s.vencimiento | date: 'dd/MM/yyyy' }}</span>
+              </span>
+            } @else {
+              <span class="secundario">Sin suscripción vigente</span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="uso">
+          <th mat-header-cell *matHeaderCellDef>Sucursales · usuarios</th>
+          <td mat-cell *matCellDef="let e" class="celda-numero">
+            {{ e.sucursales }} · {{ e.usuarios }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let e">
+            <span
+              class="pastilla"
+              [class.pastilla-activo]="e.estado === 'ACTIVA'"
+              [class.pastilla-inactivo]="e.estado !== 'ACTIVA'"
+            >
+              {{ e.estado === 'ACTIVA' ? 'Activa' : 'De baja' }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef aria-label="Acciones"></th>
+          <td mat-cell *matCellDef="let e" class="celda-acciones">
+            <button
+              matIconButton
+              type="button"
+              [matMenuTriggerFor]="menu"
+              aria-label="Acciones de la empresa"
+            >
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item type="button" (click)="editar(e)">
+                <mat-icon>edit</mat-icon>
+                <span>Editar</span>
+              </button>
+              <button
+                mat-menu-item
+                type="button"
+                [class.accion-peligro]="e.estado === 'ACTIVA'"
+                (click)="cambiarEstado(e)"
+              >
+                <mat-icon>{{ e.estado === 'ACTIVA' ? 'block' : 'check_circle' }}</mat-icon>
+                <span>{{ e.estado === 'ACTIVA' ? 'Dar de baja' : 'Reactivar' }}</span>
+              </button>
+            </mat-menu>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr
+          mat-row
+          *matRowDef="let fila; columns: columnas"
+          [class.fila-inactiva]="fila.estado !== 'ACTIVA'"
+        ></tr>
+      </table>
+    </div>
+  } @else if (!cargando()) {
+    <div class="vacio">
+      <mat-icon>domain</mat-icon>
+      <p class="titulo-vacio">
+        {{ busqueda.value ? 'Ninguna empresa coincide con la búsqueda' : 'Todavía no hay empresas' }}
+      </p>
+    </div>
+  }
+</mat-card>
