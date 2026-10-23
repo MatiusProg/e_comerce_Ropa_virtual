@@ -38,7 +38,7 @@ Mientras tanto, Karen puede adelantar las pantallas y los diagramas.
 El contrato de sincronización (CU-17) es la pieza común: el CU-20 y el CU-21 lo usan para lo que se hizo sin
 conexión.
 
-## Presentación 3 — dom 08/11 (CU-27 a CU-39)
+## Presentación 3 — dom 08/11 (CU-27 a CU-40)
 
 | Luis: IA, analítica y probador | Karen: ofertas, traspasos y datos |
 |---|---|
@@ -48,21 +48,28 @@ conexión.
 | CU-36 Preparar prenda para el probador | CU-33 Solicitar traspaso entre sucursales |
 | CU-37 Probarse una prenda con su talla real | CU-34 Atender traspaso |
 | CU-38 Generar foto realista de la prueba | CU-35 Consultar traspasos sugeridos |
-| | CU-39 Exportar los datos de la empresa |
+| CU-40 Gestionar copias de seguridad de la empresa | CU-39 Exportar los datos de la empresa |
 
 ## Total
 
 | | P1 | P2 | P3 | Total |
 |---|---|---|---|---|
-| Luis | 6 | 7 | 6 | 19 |
+| Luis | 6 | 7 | 7 | 20 |
 | Karen | 6 | 7 | 7 | 20 |
 
 **Lo que no es de un caso de uso** (capítulos I y II, arquitectura, despliegue, base de datos, el Word) lo
 hacemos entre los dos según quién tenga tiempo.
 
-## Diagramas de la presentación 1
+## Los diagramas, por tipo y no por caso de uso
 
-Los 12 diagramas de robustez ya están en EA (`PARCIAL 2 - ICONIX > 3.2 Diagramas de Robustez`), solo con los
-enlaces. Cada uno carga los **mensajes** de sus casos de uso siguiendo
-`docs/diagramas/2do Parcial/3.2-robustez-mensajes.md`. El `.eapx` no se fusiona: **avisar en el grupo antes de
-abrirlo y subirlo apenas se termina**.
+Para los diagramas el reparto es otro (acordado el 23/10):
+
+- **Robustez (3.2): Luis**, todos. Ya están en EA (`PARCIAL 2 - ICONIX > 3.2 Diagramas de Robustez`) solo con
+  los enlaces; los mensajes se cargan siguiendo `docs/diagramas/2do Parcial/3.2-robustez-mensajes.md`.
+- **Secuencia (3.3): Karen**, todos.
+
+El `.eapx` no se fusiona: **avisar en el grupo antes de abrirlo y subirlo apenas se termina**.
+
+**CU-40 (copias de seguridad):** se hace como en PROYECTO_MEDICOS (`backend/backups`). La copia es un JSON con
+los datos de la empresa; las manuales se descargan y no se guardan; las automáticas se guardan cifradas y se
+conservan las últimas N; la frecuencia y la retención las da el plan, y restaurar nunca lo limita el plan.
