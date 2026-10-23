@@ -2062,3 +2062,24 @@ Exportar             $ea.GetProjectInterface().PutDiagramImageToFile($dia.Diagra
 ---
 
 *Última actualización: 13/09/2026. Verificado contra Enterprise Architect 15 Trial en Windows 11.*
+
+---
+
+## Anexo (20/10/2026): robustez ICONIX del 2do parcial (3.2)
+
+**Tipo:** `Analysis` (EA 15 lo acepta por `Diagrams.AddNew(nombre, 'Analysis')` y le pone el marco
+`analysis`) · **Script:** `scripts/ea-p2-ciclo1.ps1`, con los datos en `scripts/ea-p2-ciclo1.datos.json`
+(los arma `scripts/p2_ciclo1_datos.py`, que valida las reglas de conexión de ICONIX antes de escribir).
+
+- Elementos `Class` con estereotipo `boundary` / `control` / `entity` (en inglés, por el ícono, §5.9).
+- **Solo conectores `Association`**, con una etiqueta corta cuando ayuda. Sin `Collaboration`: no hay
+  mensajes, así que tampoco existe el problema de la punta de flecha (§7.3).
+- Controladores de los flujos alternativos en rojo: `BCol=3947750;` en `ObjectStyle` (§6.1), escrito con
+  `$ea.Execute` con el repositorio abierto. Persiste.
+- **Regla 3, segunda vuelta:** como los elementos se comparten entre los doce diagramas, un enlace
+  creado por un diagrama posterior aparece en uno anterior. Se vuelve a correr el ocultamiento sobre
+  todos los diagramas al final.
+- **Regla 7 otra vez:** una tabla de columnas llamada `$X` la pisaba `foreach ($x ...)` y todo quedó
+  apilado en la esquina. Se llama `$colX`.
+- Para revisar sin exportar al repo: `$ea.GetProjectInterface().PutDiagramImageToFile(guid, ruta, 1)`
+  hacia una carpeta temporal. El script se lanza con `-Command`, nunca con `-File`.
