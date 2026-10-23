@@ -12,7 +12,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.core.dependencies import DbSession, requiere_roles
+from app.core.dependencies import DbSession, requiere_limite, requiere_roles
 from app.modules.organizacion import service
 from app.modules.organizacion.schemas import (
     CambioEstadoSucursalIn,
@@ -193,7 +193,10 @@ def listar_sucursales(
     response_model=SucursalOut,
     status_code=status.HTTP_201_CREATED,
     summary="CU-05 Registrar sucursal",
+    # 2do parcial: incluye el CU-05 (límite de sucursales activas del plan).
+    dependencies=[Depends(requiere_limite("sucursales"))],
     responses={
+        403: {"description": "El plan no permite más sucursales activas (plan_limit)."},
         409: {"description": "El nombre ya existe en esa ciudad (excepción E1)."},
         422: {"description": "Horario u capacidad inválidos (excepción E3)."},
     },

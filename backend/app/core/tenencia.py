@@ -140,6 +140,7 @@ TABLAS_DE_EMPRESA = (
     # plataforma
     "suscripcion",
     "cliente_empresa",
+    "consumo_cupo",
     # organización
     "sucursal",
     "empleado",

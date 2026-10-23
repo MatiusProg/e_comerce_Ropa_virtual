@@ -7,7 +7,8 @@ ciclos 2 y 3 se descomentan a medida que se implementan.
 
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -103,6 +104,7 @@ from app.modules.reportes.reportes_router import router as reportes_router
 # 2do parcial
 from app.modules.plataforma.router import router as plataforma_router
 from app.modules.plataforma.mi_plan.router import router as mi_plan_router
+from app.modules.plataforma.verificador import RechazoDelPlan
 
 
 # Antes de construir la aplicacion: uvicorn deja el logger raiz sin manejador
@@ -123,6 +125,16 @@ app = FastAPI(
     redoc_url="/redoc",
     openapi_url="/openapi.json",
 )
+
+
+# 2do parcial - CU-05: el plan no permite la operación. Un solo manejador para
+# todos los casos de uso que lo incluyen. `detail` sigue siendo el mensaje,
+# que es lo que ya muestran los servicios de la web; `codigo` (plan_limit o
+# sin_suscripcion), `limite` y `uso` son para que la interfaz ofrezca ver los
+# planes.
+@app.exception_handler(RechazoDelPlan)
+def _rechazo_del_plan(_: Request, error: RechazoDelPlan) -> JSONResponse:
+    return JSONResponse(status_code=403, content=error.cuerpo())
 
 # CU-42 - la bitacora. Se agrega ANTES que CORS y por eso corre DESPUES:
 # Starlette envuelve en orden inverso al de registro, y asi el asiento se

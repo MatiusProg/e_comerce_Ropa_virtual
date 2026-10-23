@@ -11,7 +11,13 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.core.dependencies import DbSession, Usuario, UsuarioActual, requiere_roles
+from app.core.dependencies import (
+    DbSession,
+    Usuario,
+    UsuarioActual,
+    requiere_limite,
+    requiere_roles,
+)
 from app.modules.organizacion.empleados import service
 from app.modules.organizacion.empleados.schemas import (
     CARGOS,
@@ -130,7 +136,10 @@ def listar_usuarios_vinculables(db: DbSession, usuario: Usuario) -> list[Usuario
     response_model=EmpleadoOut,
     status_code=status.HTTP_201_CREATED,
     summary="CU-06 Registrar empleado",
+    # 2do parcial: incluye el CU-05 (límite de empleados activos del plan).
+    dependencies=[Depends(requiere_limite("empleados"))],
     responses={
+        403: {"description": "El plan no permite más empleados activos (plan_limit)."},
         409: {"description": "Documento o correo ya registrados (excepción E1)."},
         422: {"description": "Sucursal inexistente o dada de baja (excepción E2)."},
     },

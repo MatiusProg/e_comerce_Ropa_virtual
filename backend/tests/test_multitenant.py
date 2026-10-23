@@ -8,7 +8,7 @@ La primera es la guardiana: si mañana alguien agrega una tabla con
 `empresa_id` y se olvida de su política, falla acá y no en producción.
 """
 
-from datetime import time
+from datetime import date, time, timedelta
 
 import psycopg
 import pytest
@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 from app.core.security import hash_password
 from app.core.tenencia import CLAVE_EMPRESA, TABLAS_DE_EMPRESA, fijar_empresa, modo_plataforma
 from app.modules.organizacion.models import Ciudad, Sucursal
-from app.modules.plataforma.models import ClienteEmpresa, Empresa
+from app.modules.plataforma.models import ClienteEmpresa, Empresa, Suscripcion
 from app.modules.seguridad.models import Cliente, Rol, Usuario
 
 EMPRESA_A = 1  # la de las pruebas (conftest.EMPRESA_PRUEBAS)
@@ -33,7 +33,19 @@ def empresa_b(db) -> int:
         return existente.id
     empresa = Empresa(nombre="Tienda B", slug="tienda-b")
     db.add(empresa)
+    db.flush()
+    # CU-05: sin suscripción vigente, la empresa solo consulta.
+    db.add(
+        Suscripcion(
+            empresa_id=empresa.id,
+            plan_id=3,
+            inicio=date.today() - timedelta(days=1),
+            vencimiento=date.today() + timedelta(days=30),
+        )
+    )
+    modo_plataforma(db)  # el WITH CHECK no deja escribir otra empresa
     db.commit()
+    fijar_empresa(db, EMPRESA_A)
     return empresa.id
 
 
