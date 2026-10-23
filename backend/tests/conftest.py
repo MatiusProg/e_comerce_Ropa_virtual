@@ -129,6 +129,11 @@ TABLAS_VOLATILES = (
     "color",
     "coleccion",
     "temporada",
+    # 2do parcial: las empresas que crea una prueba (CU-01) no pueden quedar
+    # para la siguiente. Va al final porque todas las tablas del tenant la
+    # referencian; el CASCADE las alcanza igual. La empresa 1 se vuelve a
+    # sembrar en `_sembrar_referencias`, y RESTART IDENTITY le devuelve el id.
+    "empresa",
 )
 
 #: Credenciales del cliente de prueba. La contrasena cumple la regla del
@@ -254,6 +259,7 @@ def _sembrar_referencias(sesion) -> None:
         "ENCARGADO": "Responsable de una sucursal.",
         "CAJERO": "Atiende el punto de venta.",
         "PROVEEDOR": "Abastece productos.",
+        "ADMIN_PLATAFORMA": "Administra la plataforma SaaS.",
     }
     for nombre, descripcion in roles.items():
         if sesion.scalar(select(Rol).where(Rol.nombre == nombre)) is None:

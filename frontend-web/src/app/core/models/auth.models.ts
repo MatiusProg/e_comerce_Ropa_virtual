@@ -59,7 +59,9 @@ export type Rol =
   | 'CLIENTE'
   | 'ENCARGADO'
   | 'CAJERO'
-  | 'PROVEEDOR';
+  | 'PROVEEDOR'
+  // 2do parcial · CU-01: opera la plataforma, por encima de las empresas.
+  | 'ADMIN_PLATAFORMA';
 
 /**
  * Ruta de inicio de cada rol, según el diagrama de navegación §3.2.
@@ -71,6 +73,7 @@ export const INICIO_POR_ROL: Record<Rol, string> = {
   ENCARGADO: '/sucursal',
   CAJERO: '/caja',
   PROVEEDOR: '/proveedor',
+  ADMIN_PLATAFORMA: '/plataforma',
 };
 
 /**

@@ -37,6 +37,12 @@ const AREA: Record<Rol, { titulo: string; detalle: string; icono: string }> = {
       'Desde la barra de arriba se registran las prendas que abastecés y las tallas y colores en que las traés. Lo que registres queda a la espera de que la tienda lo publique en su catálogo.',
     icono: 'local_shipping',
   },
+  ADMIN_PLATAFORMA: {
+    titulo: 'Plataforma',
+    detalle:
+      'Desde acá se registran las empresas que contratan Violet Boutique, con su plan y su suscripción.',
+    icono: 'domain',
+  },
 };
 
 /**

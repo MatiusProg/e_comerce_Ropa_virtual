@@ -62,6 +62,24 @@ empresa_de_la_peticion: ContextVar[int | None] = ContextVar(
 CLAVE_EMPRESA = "empresa_id"
 CLAVE_PLATAFORMA = "plataforma"
 
+#: El rol que opera la plataforma, por encima de las empresas (CU-01 a CU-03).
+#: No pertenece a ninguna empresa y trabaja en modo plataforma.
+ROL_PLATAFORMA = "ADMIN_PLATAFORMA"
+#: Una empresa dada de baja: ninguno de sus usuarios puede entrar (CU-01, 3b).
+EMPRESA_DE_BAJA = "BAJA"
+
+
+def fijar_contexto_de_usuario(sesion: Session, *, rol: str, empresa_id: int | None) -> None:
+    """El contexto que corresponde a un usuario ya identificado.
+
+    El administrador de la plataforma ve todas las empresas; el personal, la
+    suya; el cliente (sin empresa) sigue en la de la tienda que está mirando.
+    """
+    if rol == ROL_PLATAFORMA:
+        modo_plataforma(sesion)
+    elif empresa_id is not None:
+        fijar_empresa(sesion, empresa_id)
+
 
 def _aplicar(sesion: Session, conexion) -> None:
     empresa = sesion.info.get(CLAVE_EMPRESA)
