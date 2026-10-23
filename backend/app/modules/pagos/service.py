@@ -28,6 +28,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.tenencia import fijar_empresa, modo_plataforma
 from app.integrations import pasarela_pago
 from app.integrations.pasarela_pago import (
     ErrorDePasarela,
@@ -202,6 +203,12 @@ def confirmar_pago(db: Session, *, cuerpo: bytes, firma: str | None) -> str:
     log diga que paso. Levanta `FirmaNoVerificada` o `EventoIlegible`; todo lo
     demas se resuelve adentro y termina en un 200.
     """
+    # 0. 2do parcial: quien llama es la pasarela, no una persona, asi que la
+    #    peticion no dice de que empresa es. Se busca en todas (modo
+    #    plataforma) y, al encontrar el pago, se pasa a la empresa del pago:
+    #    lo que se escribe despues lleva esa empresa y la de nadie mas.
+    modo_plataforma(db)
+
     # 1. Verificar y traducir. Son la misma llamada a proposito: asi no hay
     #    forma de leer el contenido sin haber comprobado quien lo mando.
     try:
@@ -219,6 +226,8 @@ def confirmar_pago(db: Session, *, cuerpo: bytes, firma: str | None) -> str:
 
     # 2. Registrar ANTES de mover nada. Ver la nota de arriba.
     pago = _pago_del_evento(db, evento)
+    if pago is not None:
+        fijar_empresa(db, pago.empresa_id)
     try:
         repository.agregar_transaccion(
             db,

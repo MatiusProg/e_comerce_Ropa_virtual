@@ -14,6 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.security import decodificar_token
+from app.core.tenencia import fijar_empresa
 from app.db.session import get_db
 # Se importa con alias a proposito: mas abajo este modulo define
 # `Usuario = Annotated[UsuarioActual, ...]` como atajo para las rutas, y ese
@@ -36,6 +37,7 @@ class UsuarioActual:
         sucursal_id: int | None,
         jti: uuid.UUID,
         correo: str | None = None,
+        empresa_id: int | None = None,
     ):
         self.id = usuario_id
         self.rol = rol
@@ -46,6 +48,9 @@ class UsuarioActual:
         # El jti se conserva para que el cierre de sesion sepa que fila de
         # sesion_token revocar.
         self.jti = jti
+        # 2do parcial: la empresa del personal; None para el cliente, que no
+        # pertenece a ninguna (RN-13) y opera en la tienda que esta mirando.
+        self.empresa_id = empresa_id
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<UsuarioActual id={self.id} rol={self.rol} sucursal={self.sucursal_id}>"
@@ -93,7 +98,7 @@ def get_usuario_actual(
         raise _rechazar("Su sesión fue cerrada. Inicie sesión nuevamente.")
 
     fila = db.execute(
-        select(UsuarioDB.activo, UsuarioDB.correo).where(
+        select(UsuarioDB.activo, UsuarioDB.correo, UsuarioDB.empresa_id).where(
             UsuarioDB.id == int(datos["sub"])
         )
     ).first()
@@ -109,7 +114,15 @@ def get_usuario_actual(
         sucursal_id=datos.get("sucursal_id"),
         jti=jti,
         correo=fila[1],
+        empresa_id=fila[2],
     )
+    # 2do parcial: desde aca, todo lo que consulte la peticion queda acotado a
+    # la empresa del usuario por RLS. La empresa sale de la base y no del
+    # token: si al usuario lo cambian de empresa, el token viejo no se lleva
+    # los datos de la anterior. El cliente no tiene empresa y sigue en la de la
+    # tienda (ver app/core/tenencia.py).
+    if fila[2] is not None:
+        fijar_empresa(db, fila[2])
     # Se deja a mano para la bitacora (CU-42). El middleware corre fuera del
     # grafo de dependencias y no puede volver a resolver el token: sin esto,
     # todo asiento saldria sin autor.

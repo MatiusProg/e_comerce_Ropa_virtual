@@ -28,6 +28,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.security import hash_password
 from app.db import seed_catalogo, seed_medidas
+from app.core.tenencia import CLAVE_EMPRESA
 from app.db.session import SessionLocal
 from app.modules.organizacion.models import Ciudad
 from app.modules.seguridad.models import Rol, Usuario
@@ -98,7 +99,9 @@ def _sembrar_administrador(db: Session, roles: dict[str, Rol]) -> None:
 
 def main() -> None:
     print("Sembrando datos del Ciclo 1...")
-    with SessionLocal() as db:
+    # 2do parcial: todo lo sembrado es de la empresa 1 (la crea la migracion
+    # 0022). Sin contexto, el DEFAULT de `empresa_id` quedaria en NULL.
+    with SessionLocal(info={CLAVE_EMPRESA: settings.EMPRESA_POR_DEFECTO_ID}) as db:
         roles = _sembrar_roles(db)
         _sembrar_ciudades(db)
         _sembrar_administrador(db, roles)

@@ -26,6 +26,15 @@ class Settings(BaseSettings):
     # docker-compose. Ver backend/.env.example.
     DATABASE_URL: str = "postgresql+psycopg://violetboutique:violetboutique@localhost:5432/violetboutique"
 
+    # --- Multitenant (2do parcial, ver app/core/tenencia.py) -------------
+    # Rol que la aplicacion asume con SET ROLE al conectarse. En Supabase el
+    # usuario `postgres` se salta el RLS; `violet_app` (lo crea la migracion
+    # 0022) no. Vacio = no se cambia de rol (las migraciones lo dejan asi).
+    APP_DB_ROLE: str = ""
+    # La empresa de la tienda cuando la peticion no dice cual (encabezado
+    # `X-Empresa`). La 1 es la Violet Boutique del 1er parcial.
+    EMPRESA_POR_DEFECTO_ID: int = 1
+
     # --- Seguridad (RNF01) -----------------------------------------------
     JWT_SECRET_KEY: str = "cambiar-esta-clave-en-produccion"
     JWT_ALGORITHM: str = "HS256"

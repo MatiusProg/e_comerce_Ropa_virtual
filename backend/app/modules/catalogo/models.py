@@ -37,10 +37,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Auditoria, Base
+from app.db.base import Auditoria, Base, DeEmpresa
 
 
-class Categoria(Auditoria, Base):
+class Categoria(DeEmpresa, Auditoria, Base):
     """Clasificacion jerarquica de las prendas.
 
     La jerarquia es una autorreferencia: una categoria puede tener una padre.
@@ -48,7 +48,7 @@ class Categoria(Auditoria, Base):
 
     __tablename__ = "categoria"
     __table_args__ = (
-        UniqueConstraint("categoria_padre_id", "nombre", name="uq_categoria_padre_nombre"),
+        UniqueConstraint("empresa_id", "categoria_padre_id", "nombre", name="uq_categoria_padre_nombre"),
         # Impide que una categoria sea su propia padre. Los ciclos mas largos
         # (A -> B -> A) los valida el servicio: ver la excepcion E2 de CU-08.
         CheckConstraint("categoria_padre_id IS DISTINCT FROM id", name="no_autopadre"),
@@ -72,7 +72,7 @@ class Categoria(Auditoria, Base):
     )
 
 
-class Talla(Auditoria, Base):
+class Talla(DeEmpresa, Auditoria, Base):
     """Medida de una prenda. Junto al color define la variante.
 
     El orden importa: es el que decide como se muestran las tallas en la ficha
@@ -81,7 +81,7 @@ class Talla(Auditoria, Base):
 
     __tablename__ = "talla"
     __table_args__ = (
-        UniqueConstraint("tipo_prenda", "codigo", name="uq_talla_tipo_codigo"),
+        UniqueConstraint("empresa_id", "tipo_prenda", "codigo", name="uq_talla_tipo_codigo"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -91,7 +91,7 @@ class Talla(Auditoria, Base):
     activa: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
 
 
-class Color(Auditoria, Base):
+class Color(DeEmpresa, Auditoria, Base):
     """Color de una prenda. Junto a la talla define la variante."""
 
     __tablename__ = "color"
@@ -99,15 +99,16 @@ class Color(Auditoria, Base):
         # Evita que un valor mal formado llegue a la interfaz y rompa la
         # muestra de color.
         CheckConstraint("hexadecimal ~ '^#[0-9A-Fa-f]{6}$'", name="hex"),
+        UniqueConstraint("empresa_id", "nombre", name="uq_color_nombre"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    nombre: Mapped[str] = mapped_column(String(40), unique=True)
+    nombre: Mapped[str] = mapped_column(String(40))
     hexadecimal: Mapped[str] = mapped_column(CHAR(7))
     activo: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
 
 
-class Temporada(Auditoria, Base):
+class Temporada(DeEmpresa, Auditoria, Base):
     """Ventana comercial a la que pertenecen los productos.
 
     Es lo que permite medir rotacion por temporada y detectar prendas de
@@ -117,10 +118,11 @@ class Temporada(Auditoria, Base):
     __tablename__ = "temporada"
     __table_args__ = (
         CheckConstraint("fecha_fin > fecha_inicio", name="rango"),
+        UniqueConstraint("empresa_id", "nombre", name="uq_temporada_nombre"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    nombre: Mapped[str] = mapped_column(String(60), unique=True)
+    nombre: Mapped[str] = mapped_column(String(60))
     descripcion: Mapped[str | None] = mapped_column(String(200))
     fecha_inicio: Mapped[date] = mapped_column(Date)
     fecha_fin: Mapped[date] = mapped_column(Date)
@@ -129,7 +131,7 @@ class Temporada(Auditoria, Base):
     colecciones: Mapped[list["Coleccion"]] = relationship(back_populates="temporada")
 
 
-class Coleccion(Auditoria, Base):
+class Coleccion(DeEmpresa, Auditoria, Base):
     """Conjunto de productos lanzado dentro de una temporada."""
 
     __tablename__ = "coleccion"
@@ -152,7 +154,7 @@ class Coleccion(Auditoria, Base):
 # acuerdo entre los dos integrantes: cambiar un nombre de aqui se avisa.
 
 
-class Producto(Auditoria, Base):
+class Producto(DeEmpresa, Auditoria, Base):
     """La prenda como concepto: "Camisa Oxford manga larga".
 
     No es la unidad de negocio. La decision D1 de docs/04-analisis-arquitectura
@@ -170,9 +172,12 @@ class Producto(Auditoria, Base):
     """
 
     __tablename__ = "producto"
+    __table_args__ = (
+        UniqueConstraint("empresa_id", "codigo", name="uq_producto_codigo"),
+    )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    codigo: Mapped[str] = mapped_column(String(30), unique=True)
+    codigo: Mapped[str] = mapped_column(String(30))
     nombre: Mapped[str] = mapped_column(String(120))
     descripcion: Mapped[str | None] = mapped_column(String(500))
     categoria_id: Mapped[int] = mapped_column(ForeignKey("categoria.id"), index=True)
@@ -196,7 +201,7 @@ class Producto(Auditoria, Base):
     )
 
 
-class VarianteProducto(Auditoria, Base):
+class VarianteProducto(DeEmpresa, Auditoria, Base):
     """La combinacion concreta producto x talla x color. Es el SKU.
 
     Todo el inventario, las reservas y las ventas apuntan aqui, nunca a
@@ -218,6 +223,7 @@ class VarianteProducto(Auditoria, Base):
         UniqueConstraint(
             "producto_id", "talla_id", "color_id", name="uq_variante_producto_talla_color"
         ),
+        UniqueConstraint("empresa_id", "sku", name="uq_variante_producto_sku"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -226,7 +232,7 @@ class VarianteProducto(Auditoria, Base):
     )
     talla_id: Mapped[int] = mapped_column(ForeignKey("talla.id"), index=True)
     color_id: Mapped[int] = mapped_column(ForeignKey("color.id"), index=True)
-    sku: Mapped[str] = mapped_column(String(40), unique=True)
+    sku: Mapped[str] = mapped_column(String(40))
     precio: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     activa: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
 
@@ -235,7 +241,7 @@ class VarianteProducto(Auditoria, Base):
     color: Mapped[Color] = relationship()
 
 
-class ImagenProducto(Auditoria, Base):
+class ImagenProducto(DeEmpresa, Auditoria, Base):
     """Una fotografia del producto o de una de sus variantes (CU-11).
 
     Guarda la RUTA, no la imagen ni su URL completa. La seccion 6.8 de las

@@ -92,6 +92,7 @@ from app.modules.pos.router import router as pos_router
 from app.modules.pos.devolucion_router import router as devoluciones_router
 from app.modules.ia.asistente_router import router as asistente_router
 from app.modules.ia.router import router as ia_router
+from app.core.tenencia import EmpresaDeLaTiendaMiddleware
 from app.modules.bitacora.middleware import BitacoraMiddleware
 from app.modules.bitacora.router import router as bitacora_router
 from app.modules.notificaciones.router import router as notificaciones_router
@@ -124,6 +125,11 @@ app = FastAPI(
 # Starlette envuelve en orden inverso al de registro, y asi el asiento se
 # escribe con la respuesta ya armada, incluidos los rechazos por permiso.
 app.add_middleware(BitacoraMiddleware)
+
+# 2do parcial - la empresa de la tienda (app/core/tenencia.py). Se agrega
+# DESPUES que la bitacora para que la envuelva: la bitacora tiene que ver la
+# empresa de la peticion al escribir su asiento.
+app.add_middleware(EmpresaDeLaTiendaMiddleware)
 
 # Angular y Flutter consumen exactamente el mismo contrato (RNF07, RNF08).
 app.add_middleware(

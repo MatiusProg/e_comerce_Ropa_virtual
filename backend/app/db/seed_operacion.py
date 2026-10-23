@@ -1221,9 +1221,11 @@ def main() -> None:
         )
         raise SystemExit(1)
 
+    from app.core.tenencia import CLAVE_EMPRESA
     from app.db.session import SessionLocal
 
-    with SessionLocal() as db:
+    # 2do parcial: la operacion de demostracion es de la empresa 1.
+    with SessionLocal(info={CLAVE_EMPRESA: settings.EMPRESA_POR_DEFECTO_ID}) as db:
         sembrar(db)
 
 

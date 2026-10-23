@@ -57,7 +57,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Auditoria, Base
+from app.db.base import Auditoria, Base, DeEmpresa
 
 #: Sobre que se define la promocion. Los tres alcances del RF35, y nada mas:
 #: una promocion «sobre todo el catalogo» no esta pedida y se puede armar con
@@ -65,7 +65,7 @@ from app.db.base import Auditoria, Base
 ALCANCES_PROMOCION = ("PRODUCTO", "CATEGORIA", "TEMPORADA")
 
 
-class Promocion(Auditoria, Base):
+class Promocion(DeEmpresa, Auditoria, Base):
     """Un descuento con vigencia sobre un producto, una categoria o una temporada.
 
     NO GUARDA A QUE VARIANTES ALCANZA, Y ES A PROPOSITO

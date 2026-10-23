@@ -46,7 +46,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base
+from app.db.base import Base, DeEmpresa
 
 # Los dos canales de D2. Una sola Venta los cubre a los dos: no hay tabla
 # `pedido` aparte, porque duplicarla obligaria a copiar los detalles de una a
@@ -99,7 +99,7 @@ MODALIDADES_ENTREGA = ("RETIRO", "ENVIO")
 TIPOS_COMPROBANTE = ("RECIBO", "FACTURA")
 
 
-class Caja(Base):
+class Caja(DeEmpresa, Base):
     """Un punto de cobro fisico dentro de una sucursal (CU-30).
 
     No usa el mixin de Auditoria: es una tabla de catalogo, se da de alta una
@@ -125,7 +125,7 @@ class Caja(Base):
     turnos: Mapped[list["TurnoCaja"]] = relationship(back_populates="caja")
 
 
-class TurnoCaja(Base):
+class TurnoCaja(DeEmpresa, Base):
     """Una jornada de cobro: se abre con un monto y se cierra con un arqueo.
 
     `monto_esperado` lo calcula el sistema al cerrar -apertura mas lo cobrado en
@@ -179,7 +179,7 @@ class TurnoCaja(Base):
     caja: Mapped[Caja] = relationship(back_populates="turnos")
 
 
-class Venta(Base):
+class Venta(DeEmpresa, Base):
     """La tabla central de P7. UN concepto para los dos canales (D2).
 
     No hay tabla `pedido`: CU-27 crea una Venta en PENDIENTE_PAGO y la pasarela
@@ -306,7 +306,7 @@ class Venta(Base):
     comprobante: Mapped["Comprobante | None"] = relationship(back_populates="venta")
 
 
-class DetalleVenta(Base):
+class DetalleVenta(DeEmpresa, Base):
     """Una variante vendida, con su precio CONGELADO.
 
     INMUTABLE, como MovimientoInventario (D4): una correccion es una devolucion
@@ -359,7 +359,7 @@ class DetalleVenta(Base):
     venta: Mapped[Venta] = relationship(back_populates="detalles")
 
 
-class Comprobante(Base):
+class Comprobante(DeEmpresa, Base):
     """El recibo o la factura de una venta. Uno por venta, y no se edita.
 
     `nit_ci` y `razon_social` son nulos en un RECIBO y obligatorios en una
@@ -395,7 +395,7 @@ class Comprobante(Base):
     venta: Mapped[Venta] = relationship(back_populates="comprobante")
 
 
-class Devolucion(Base):
+class Devolucion(DeEmpresa, Base):
     """Una venta que vuelve, entera o en parte (CU-32).
 
     INMUTABLE, sin `actualizado_en`: si la devolucion estaba mal, se corrige con
@@ -481,7 +481,7 @@ class Devolucion(Base):
     )
 
 
-class DetalleDevolucion(Base):
+class DetalleDevolucion(DeEmpresa, Base):
     """Que variante vuelve y cuantas unidades.
 
     Devolver REINGRESA al inventario con un MovimientoInventario de tipo

@@ -39,7 +39,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Auditoria, Base
+from app.db.base import Auditoria, Base, DeEmpresa
 
 #: Tipos de movimiento que registra CU-15, tomados de la descripcion de P4 en
 #: docs/04-analisis-arquitectura.md.
@@ -60,7 +60,7 @@ TIPOS_MOVIMIENTO = (
 )
 
 
-class Existencia(Auditoria, Base):
+class Existencia(DeEmpresa, Auditoria, Base):
     """Saldo de una variante en una sucursal.
 
     Conceptualmente es el saldo de sus movimientos (D4 en
@@ -121,7 +121,7 @@ class Existencia(Auditoria, Base):
     )
 
 
-class MovimientoInventario(Base):
+class MovimientoInventario(DeEmpresa, Base):
     """Registro trazable de cada cambio de una existencia.
 
     **No usa el mixin `Auditoria`**: un movimiento es inmutable por diseno (D4),
@@ -215,7 +215,7 @@ class MovimientoInventario(Base):
     existencia: Mapped["Existencia"] = relationship(back_populates="movimientos")
 
 
-class Abastecimiento(Auditoria, Base):
+class Abastecimiento(DeEmpresa, Auditoria, Base):
     """Lo que un proveedor anuncia que puede traer (CU-39). Ver la 0015.
 
     Es lo unico que produce el estado `PROXIMA_A_INGRESAR` del inventario

@@ -28,7 +28,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Auditoria, Base
+from app.db.base import Auditoria, Base, DeEmpresa
 
 
 class Ciudad(Auditoria, Base):
@@ -43,7 +43,7 @@ class Ciudad(Auditoria, Base):
     sucursales: Mapped[list["Sucursal"]] = relationship(back_populates="ciudad")
 
 
-class Sucursal(Auditoria, Base):
+class Sucursal(DeEmpresa, Auditoria, Base):
     """Tienda fisica.
 
     Es el eje sobre el que se particionan el inventario, las reservas y las
@@ -53,7 +53,7 @@ class Sucursal(Auditoria, Base):
 
     __tablename__ = "sucursal"
     __table_args__ = (
-        UniqueConstraint("ciudad_id", "nombre", name="uq_sucursal_ciudad_nombre"),
+        UniqueConstraint("empresa_id", "ciudad_id", "nombre", name="uq_sucursal_ciudad_nombre"),
         CheckConstraint("horario_cierre > horario_apertura", name="horario"),
         CheckConstraint("capacidad_vestidores > 0", name="capacidad"),
     )
@@ -74,7 +74,7 @@ class Sucursal(Auditoria, Base):
     empleados: Mapped[list["Empleado"]] = relationship(back_populates="sucursal")
 
 
-class Empleado(Auditoria, Base):
+class Empleado(DeEmpresa, Auditoria, Base):
     """Persona que trabaja en una sucursal, con su cargo.
 
     Vincula a la persona con su tienda, que es lo que permite acotar el ambito
@@ -87,6 +87,7 @@ class Empleado(Auditoria, Base):
         CheckConstraint(
             "fecha_baja IS NULL OR fecha_baja >= fecha_ingreso", name="fechas"
         ),
+        UniqueConstraint("empresa_id", "documento", name="uq_empleado_documento"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -94,7 +95,7 @@ class Empleado(Auditoria, Base):
         BigInteger, ForeignKey("usuario.id"), unique=True
     )
     sucursal_id: Mapped[int] = mapped_column(ForeignKey("sucursal.id"), index=True)
-    documento: Mapped[str] = mapped_column(String(20), unique=True)
+    documento: Mapped[str] = mapped_column(String(20))
     telefono: Mapped[str | None] = mapped_column(String(20))
     cargo: Mapped[str] = mapped_column(String(30))
     fecha_ingreso: Mapped[date] = mapped_column(Date)
@@ -103,7 +104,7 @@ class Empleado(Auditoria, Base):
     sucursal: Mapped[Sucursal] = relationship(back_populates="empleados")
 
 
-class Proveedor(Auditoria, Base):
+class Proveedor(DeEmpresa, Auditoria, Base):
     """Empresa que abastece prendas.
 
     El vinculo con un usuario es opcional: solo lo tiene el proveedor al que se
@@ -111,13 +112,20 @@ class Proveedor(Auditoria, Base):
     """
 
     __tablename__ = "proveedor"
+    __table_args__ = (
+        UniqueConstraint(
+            "empresa_id",
+            "identificacion_tributaria",
+            name="uq_proveedor_identificacion_tributaria",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     usuario_id: Mapped[int | None] = mapped_column(
         BigInteger, ForeignKey("usuario.id"), unique=True
     )
     razon_social: Mapped[str] = mapped_column(String(120))
-    identificacion_tributaria: Mapped[str] = mapped_column(String(30), unique=True)
+    identificacion_tributaria: Mapped[str] = mapped_column(String(30))
     contacto: Mapped[str | None] = mapped_column(String(80))
     telefono: Mapped[str | None] = mapped_column(String(20))
     correo: Mapped[str | None] = mapped_column(String(120))

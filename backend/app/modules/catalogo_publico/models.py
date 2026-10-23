@@ -25,10 +25,10 @@ from datetime import datetime
 from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base
+from app.db.base import Base, DeEmpresa
 
 
-class Favorito(Base):
+class Favorito(DeEmpresa, Base):
     """Una prenda que el Cliente marco para volver a mirarla (CU-20).
 
     **Es del PRODUCTO, no de la variante, y es la unica excepcion a la decision

@@ -18,7 +18,7 @@ from decimal import Decimal
 from sqlalchemy import BigInteger, CheckConstraint, ForeignKey, Numeric, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Auditoria, Base
+from app.db.base import Auditoria, Base, DeEmpresa
 
 
 class MedidaCliente(Auditoria, Base):
@@ -55,7 +55,7 @@ class MedidaCliente(Auditoria, Base):
     # al reves, por `cliente_id`.
 
 
-class MedidaTalla(Auditoria, Base):
+class MedidaTalla(DeEmpresa, Auditoria, Base):
     """Cuanto mide LA PRENDA de un producto en una talla, con holgura incluida."""
 
     __tablename__ = "medida_talla"

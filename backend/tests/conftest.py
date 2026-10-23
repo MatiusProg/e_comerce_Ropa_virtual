@@ -62,6 +62,7 @@ from app.modules.catalogo_publico import models as modelos_cat_pub  # noqa: E402
 from app.modules.inventario import models as modelos_inventario  # noqa: E402,F401
 from app.modules.reservas import models as modelos_reservas  # noqa: E402,F401
 from app.modules.organizacion import models as modelos_organizacion  # noqa: E402,F401
+from app.modules.plataforma import models as modelos_plataforma  # noqa: E402,F401
 from app.modules.seguridad import models as modelos_seguridad  # noqa: E402,F401
 from app.modules.ventas import carrito_models as modelos_carrito  # noqa: E402,F401
 
@@ -168,11 +169,44 @@ def motor():
     motor.dispose()
 
 
+#: 2do parcial: la empresa de las pruebas que no hablan de multitenant. Es la
+#: misma que la migracion 0022 le da a los datos del 1er parcial.
+EMPRESA_PRUEBAS = 1
+
+
 @pytest.fixture(scope="session")
-def fabrica_sesiones(motor):
+def motor_app(motor):
+    """Motor con el que trabaja la aplicacion: asume el rol SIN BYPASSRLS.
+
+    El usuario de la base local es superusuario y se saltaria todas las
+    politicas. Con este motor, TODA la bateria corre con el RLS de verdad: si
+    algun camino del codigo olvida fijar la empresa, su prueba ve cero filas y
+    falla, en vez de pasar por casualidad. El esquema y el TRUNCATE siguen
+    usando `motor`, que es el dueno de las tablas.
+    """
+    from sqlalchemy import create_engine
+
+    from app.core.tenencia import ROL_APP
+    from app.db.session import asumir_rol_de_la_aplicacion
+
+    motor_app = create_engine(URL_PRUEBAS)
+    asumir_rol_de_la_aplicacion(motor_app, ROL_APP)
+    yield motor_app
+    motor_app.dispose()
+
+
+@pytest.fixture(scope="session")
+def fabrica_sesiones(motor_app):
     from sqlalchemy.orm import sessionmaker
 
-    return sessionmaker(bind=motor, autoflush=False, expire_on_commit=False)
+    from app.core.tenencia import CLAVE_EMPRESA
+
+    return sessionmaker(
+        bind=motor_app,
+        autoflush=False,
+        expire_on_commit=False,
+        info={CLAVE_EMPRESA: EMPRESA_PRUEBAS},
+    )
 
 
 @pytest.fixture
@@ -200,11 +234,19 @@ def db(motor, fabrica_sesiones):
 
 
 def _sembrar_referencias(sesion) -> None:
-    """Siembra los roles y las ciudades. Es idempotente."""
+    """Siembra la empresa de las pruebas, los roles y las ciudades. Es idempotente."""
     from sqlalchemy import select
 
     from app.modules.organizacion.models import Ciudad
+    from app.modules.plataforma.models import Empresa
     from app.modules.seguridad.models import Rol
+
+    if sesion.get(Empresa, EMPRESA_PRUEBAS) is None:
+        empresa = Empresa(nombre="Violet Boutique", slug="violet-boutique")
+        sesion.add(empresa)
+        sesion.flush()
+        # La primera fila de una tabla recien creada: la secuencia da el 1.
+        assert empresa.id == EMPRESA_PRUEBAS, empresa.id
 
     roles = {
         "ADMINISTRADOR": "Administra todo el sistema.",
