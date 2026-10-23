@@ -21,7 +21,8 @@ from sqlalchemy.orm import Session, joinedload
 # docs/04-analisis-arquitectura.md.
 from app.modules.catalogo.models import Categoria
 from app.modules.organizacion.models import Ciudad, Empleado, Proveedor, Sucursal
-from app.modules.plataforma.models import ClienteEmpresa
+from app.core.tenencia import ROL_PLATAFORMA
+from app.modules.plataforma.models import ClienteEmpresa, Empresa
 from app.modules.seguridad.models import (
     Cliente,
     DireccionCliente,
@@ -122,6 +123,11 @@ def agregar_cliente(
 
 # --- CU-02 Iniciar y cerrar sesion ---------------------------------------
 
+def estado_de_empresa(db: Session, empresa_id: int) -> str | None:
+    """2do parcial: si la empresa del usuario sigue activa (`empresa` no tiene RLS)."""
+    return db.scalar(select(Empresa.estado).where(Empresa.id == empresa_id))
+
+
 def obtener_usuario_con_rol(db: Session, correo: str) -> Usuario | None:
     """Igual que obtener_usuario_por_correo, pero trae el rol en la misma
     consulta.
@@ -136,9 +142,38 @@ def obtener_usuario_con_rol(db: Session, correo: str) -> Usuario | None:
 
 
 def obtener_usuario_con_id(db: Session, usuario_id: int) -> Usuario | None:
-    """Usuario por identificador, con su rol cargado."""
+    """Usuario por identificador, con su rol cargado. SIN filtro de empresa:
+    solo para el propio usuario (su sesion, su contrasena). Para administrar
+    usuarios, `obtener_usuario_de_la_empresa`."""
     return db.scalar(
         select(Usuario).options(joinedload(Usuario.rol)).where(Usuario.id == usuario_id)
+    )
+
+
+def usuario_de_la_empresa_actual():
+    """2do parcial: la condicion que acota `usuario` a la empresa del contexto.
+
+    `usuario` es tabla de identidad y no tiene RLS (el login la consulta antes
+    de saber la empresa), asi que el filtro lo pone el codigo: el personal de
+    la empresa, y los clientes que compran en ella. `cliente_empresa` si tiene
+    RLS, y por eso la subconsulta ya sale acotada.
+    """
+    return or_(
+        Usuario.empresa_id == func.app_empresa_actual(),
+        Usuario.id.in_(
+            select(Cliente.usuario_id).join(
+                ClienteEmpresa, ClienteEmpresa.cliente_id == Cliente.id
+            )
+        ),
+    )
+
+
+def obtener_usuario_de_la_empresa(db: Session, usuario_id: int) -> Usuario | None:
+    """CU-03: un usuario de la empresa del contexto; el de otra, no existe."""
+    return db.scalar(
+        select(Usuario)
+        .options(joinedload(Usuario.rol))
+        .where(Usuario.id == usuario_id, usuario_de_la_empresa_actual())
     )
 
 
@@ -200,8 +235,14 @@ def revocar_sesiones_de_usuario(db: Session, usuario_id: int) -> int:
 # --- CU-03 Gestionar usuarios y roles ------------------------------------
 
 def listar_roles(db: Session) -> list[Rol]:
-    """Todos los roles asignables, en orden alfabetico."""
-    return list(db.scalars(select(Rol).order_by(Rol.nombre)))
+    """Los roles que una empresa puede asignar, en orden alfabetico.
+
+    2do parcial: sin el de la plataforma, que no se asigna desde una empresa
+    (CU-08, flujo alternativo 5a).
+    """
+    return list(
+        db.scalars(select(Rol).where(Rol.nombre != ROL_PLATAFORMA).order_by(Rol.nombre))
+    )
 
 
 def _de_la_empresa(empresa_id: int):

@@ -76,4 +76,5 @@ export const ETIQUETA_ROL: Record<Rol, string> = {
   ENCARGADO: 'Encargado de sucursal',
   CAJERO: 'Cajero',
   PROVEEDOR: 'Proveedor',
+  ADMIN_PLATAFORMA: 'Administrador de la plataforma',
 };

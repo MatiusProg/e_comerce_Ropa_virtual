@@ -137,6 +137,24 @@ export const routes: Routes = [
   },
 
   // --- Con sesión, una por rol ------------------------------------------
+  // 2do parcial · CU-01: el administrador de la plataforma, por encima de las empresas.
+  {
+    path: 'plataforma',
+    canActivate: [sesionGuard, rolGuard('ADMIN_PLATAFORMA')],
+    loadComponent: () =>
+      import('./features/plataforma/plataforma-layout/plataforma-layout').then(
+        (m) => m.PlataformaLayout,
+      ),
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'empresas' },
+      {
+        path: 'empresas',
+        title: 'Empresas · Violet Boutique',
+        loadComponent: () =>
+          import('./features/plataforma/empresas/empresas').then((m) => m.Empresas),
+      },
+    ],
+  },
   {
     path: 'admin',
     canActivate: [sesionGuard, rolGuard('ADMINISTRADOR')],

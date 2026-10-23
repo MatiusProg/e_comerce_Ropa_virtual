@@ -48,7 +48,8 @@ router = APIRouter(
 consulta_router = APIRouter(
     prefix="/organizacion",
     tags=["Organizacion"],
-    dependencies=[Depends(requiere_roles("ADMINISTRADOR", "CLIENTE"))],
+    # 2do parcial: la plataforma tambien, para la sucursal principal del alta (CU-01).
+    dependencies=[Depends(requiere_roles("ADMINISTRADOR", "CLIENTE", "ADMIN_PLATAFORMA"))],
     responses={
         401: {"description": "Falta el token o ya no es válido."},
         403: {"description": "El usuario no tiene un rol habilitado."},

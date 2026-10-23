@@ -23,6 +23,7 @@ from app.core import tiempo
 
 from app.core.config import settings
 from app.core.security import crear_access_token, hash_password, verify_password
+from app.core.tenencia import EMPRESA_DE_BAJA, ROL_PLATAFORMA, fijar_contexto_de_usuario
 from app.integrations.correo import Mensaje, enviar
 from app.modules.seguridad import repository
 from app.modules.seguridad.models import Cliente
@@ -185,6 +186,11 @@ class CuentaDesactivada(ErrorDeAutenticacion):
     su cuenta fue dada de baja."""
 
 
+class EmpresaDadaDeBaja(ErrorDeAutenticacion):
+    """2do parcial, CU-01 3b: la cuenta esta bien, pero su empresa fue dada de
+    baja por la plataforma. Ninguno de sus usuarios puede entrar."""
+
+
 def autenticar(db: Session, datos: LoginIn) -> TokenOut:
     """Verifica las credenciales y emite un token, registrando la sesion.
 
@@ -206,6 +212,13 @@ def autenticar(db: Session, datos: LoginIn) -> TokenOut:
 
     if not usuario.activo:
         raise CuentaDesactivada(datos.correo)
+
+    # 2do parcial. Antes de buscar la sucursal: `empleado` tiene RLS, y con el
+    # contexto de la tienda el personal de otra empresa saldria sin sucursal.
+    if usuario.empresa_id is not None:
+        if repository.estado_de_empresa(db, usuario.empresa_id) == EMPRESA_DE_BAJA:
+            raise EmpresaDadaDeBaja(datos.correo)
+    fijar_contexto_de_usuario(db, rol=usuario.rol.nombre, empresa_id=usuario.empresa_id)
 
     emitido = crear_access_token(
         usuario_id=usuario.id,
@@ -424,7 +437,8 @@ def crear_usuario(
         raise CorreoYaRegistrado(datos.correo)
 
     rol = repository.obtener_rol_por_nombre(db, datos.rol)
-    if rol is None:
+    # 2do parcial: el rol de la plataforma no se asigna desde una empresa (CU-08, 5a).
+    if rol is None or rol.nombre == ROL_PLATAFORMA:
         raise RolInexistente(datos.rol)
     if rol.nombre in ROLES_NO_ASIGNABLES:
         raise RolNoAsignable(rol.nombre)
@@ -485,7 +499,7 @@ def editar_usuario(
     rol = usuario.rol
     if datos.rol and datos.rol != usuario.rol.nombre:
         rol = repository.obtener_rol_por_nombre(db, datos.rol)
-        if rol is None:
+        if rol is None or rol.nombre == ROL_PLATAFORMA:
             raise RolInexistente(datos.rol)
         if rol.nombre in ROLES_NO_ASIGNABLES:
             raise RolNoAsignable(rol.nombre)

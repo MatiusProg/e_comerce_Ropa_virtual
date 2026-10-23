@@ -100,6 +100,8 @@ from app.modules.notificaciones.router import (
     mantenimiento_router as notificaciones_mantenimiento_router,
 )
 from app.modules.reportes.reportes_router import router as reportes_router
+# 2do parcial
+from app.modules.plataforma.router import router as plataforma_router
 from app.modules.plataforma.mi_plan.router import router as mi_plan_router
 
 
@@ -185,6 +187,7 @@ API = settings.API_PREFIX
 
 # --- Ciclo 1 -------------------------------------------------------------
 app.include_router(seguridad_router, prefix=API)
+app.include_router(plataforma_router, prefix=API)
 app.include_router(seguridad_admin_router, prefix=API)
 app.include_router(seguridad_perfil_router, prefix=API)
 app.include_router(organizacion_router, prefix=API)
