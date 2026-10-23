@@ -21,7 +21,14 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response
 from pydantic import BaseModel, Field
 
 from app.core import tiempo
-from app.core.dependencies import DbSession, Usuario, requiere_roles
+from app.core.dependencies import (
+    DbSession,
+    Usuario,
+    requiere_cupo,
+    requiere_funcion,
+    requiere_roles,
+)
+from app.modules.plataforma import verificador
 from app.modules.reportes import reportes_service as service
 from app.modules.reportes.exportador import FORMATOS
 
@@ -80,7 +87,14 @@ def hay_pedido_por_voz():
     return {"disponible": interprete.esta_disponible()}
 
 
-@router.post("/voz", response_model=PedidoEntendidoOut)
+@router.post(
+    "/voz",
+    response_model=PedidoEntendidoOut,
+    # 2do parcial: incluye el CU-05. El pedido por voz usa la IA, que es una
+    # función de pago con cupo mensual (RN-11).
+    dependencies=[Depends(requiere_funcion("reportes_ia")), Depends(requiere_cupo("reportes_ia"))],
+    responses={403: {"description": "El plan no incluye los reportes con IA o se agotó el cupo."}},
+)
 def pedir_por_voz(datos: PedidoPorVozIn, db: DbSession, usuario: Usuario):
     """CU-35 · Traduce lo que se dijo a uno de los reportes que existen (RF25).
 
@@ -130,6 +144,11 @@ def pedir_por_voz(datos: PedidoPorVozIn, db: DbSession, usuario: Usuario):
             motivo="No entendí qué reporte necesitás.",
             ejemplos=list(service.EJEMPLOS),
         )
+
+    # Se descuenta recién ahora, con el pedido entendido: un pedido que el
+    # modelo no entendió no gasta el cupo de la empresa.
+    verificador.consumir_cupo(db, "reportes_ia")
+    db.commit()
 
     partes = []
     if pedido.desde:

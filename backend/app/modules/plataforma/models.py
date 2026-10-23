@@ -2,12 +2,13 @@
 P12 - Plataforma SaaS  |  capa: modelo (SQLAlchemy)
 
 2do parcial. Las tablas por encima de las empresas: la empresa (el tenant), los
-planes, la suscripción de cada empresa y la asociación del cliente con cada
-empresa donde compra.
+planes, la suscripción de cada empresa, la asociación del cliente con cada
+empresa donde compra y el consumo mensual de los cupos (CU-05).
 
 `empresa` y `plan` NO tienen RLS: son de la plataforma, y el login necesita
 encontrar la empresa por su slug antes de saber de qué empresa es la petición.
-`suscripcion` y `cliente_empresa` sí: cada empresa ve solo las suyas.
+`suscripcion`, `cliente_empresa` y `consumo_cupo` sí: cada empresa ve solo las
+suyas.
 """
 
 from datetime import date, datetime
@@ -143,3 +144,27 @@ class ClienteEmpresa(DeEmpresa, Base):
     creado_en: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+
+
+class ConsumoCupo(DeEmpresa, Base):
+    """Lo que una empresa usó de un cupo mensual de su plan (CU-05, RN-11).
+
+    Una fila por empresa, cupo y mes. Los límites (sucursales, empleados) se
+    cuentan sobre sus propias tablas; los cupos no, porque lo que consumen
+    (una foto con IA, un reporte con IA) no deja otra fila donde contarlo.
+    `periodo` es el primer día del mes en hora de Bolivia.
+    """
+
+    __tablename__ = "consumo_cupo"
+    __table_args__ = (CheckConstraint("usados >= 0", name="usados"),)
+
+    # Se repite la columna del mixin para que forme parte de la clave primaria.
+    empresa_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("empresa.id"),
+        primary_key=True,
+        server_default=text("app_empresa_actual()"),
+    )
+    recurso: Mapped[str] = mapped_column(String(20), primary_key=True)
+    periodo: Mapped[date] = mapped_column(Date, primary_key=True)
+    usados: Mapped[int] = mapped_column(Integer, server_default=text("0"))

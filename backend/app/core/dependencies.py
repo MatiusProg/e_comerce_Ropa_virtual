@@ -14,8 +14,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.security import decodificar_token
-from app.core.tenencia import EMPRESA_DE_BAJA, fijar_contexto_de_usuario
+from app.core.tenencia import EMPRESA_DE_BAJA, ROL_PLATAFORMA, fijar_contexto_de_usuario
 from app.db.session import get_db
+from app.modules.plataforma import verificador
 # Se importa con alias a proposito: mas abajo este modulo define
 # `Usuario = Annotated[UsuarioActual, ...]` como atajo para las rutas, y ese
 # nombre pisaria al modelo de SQLAlchemy.
@@ -130,6 +131,7 @@ def get_usuario_actual(
     # los datos de la anterior. El cliente no tiene empresa y sigue en la de la
     # tienda (ver app/core/tenencia.py).
     fijar_contexto_de_usuario(db, rol=usuario.rol, empresa_id=fila[2])
+    _exigir_suscripcion_para_escribir(peticion, db, usuario)
     # Se deja a mano para la bitacora (CU-42). El middleware corre fuera del
     # grafo de dependencias y no puede volver a resolver el token: sin esto,
     # todo asiento saldria sin autor.
@@ -137,7 +139,79 @@ def get_usuario_actual(
     return usuario
 
 
+#: Lo que no escribe datos de la empresa, o lo que hay que poder hacer igual
+#: con la suscripción vencida: cerrar sesión y cambiar la propia contraseña.
+_METODOS_DE_LECTURA = {"GET", "HEAD", "OPTIONS"}
+_RUTAS_LIBRES = ("/api/v1/auth/",)
+
+
+def _exigir_suscripcion_para_escribir(
+    peticion: Request, db: Session, usuario: UsuarioActual
+) -> None:
+    """CU-05, 2a: sin suscripción vigente, el personal solo consulta (RN-03).
+
+    Va acá y no en cada ruta porque la regla es de TODA escritura: ventas,
+    reservas, traspasos, altas. Declararla ruta por ruta deja agujeros sin que
+    nada avise. Solo cuesta una consulta, y solo en las peticiones que escriben.
+    El cliente y la plataforma no tienen empresa propia y quedan afuera.
+    """
+    if (
+        usuario.empresa_id is None
+        or peticion.method in _METODOS_DE_LECTURA
+        or peticion.url.path.startswith(_RUTAS_LIBRES)
+    ):
+        return
+    if verificador.suscripcion_vigente(db) is None:
+        # Lo traduce a 403 el manejador de `RechazoDelPlan` en app.main.
+        raise verificador.SinSuscripcionVigente()
+
+
 Usuario = Annotated[UsuarioActual, Depends(get_usuario_actual)]
+
+
+# --------------------------------------------------------------------------
+#  CU-05 Verificar límites y funciones del plan
+# --------------------------------------------------------------------------
+# Los casos de uso que lo incluyen declaran la dependencia en la ruta:
+#
+#     @router.post("/sucursales", dependencies=[Depends(requiere_limite("sucursales"))])
+#
+# La plataforma no tiene plan y queda exenta.
+def requiere_funcion(funcion: str):
+    """La ruta solo corre si el plan de la empresa incluye la función (3a)."""
+    if funcion not in verificador.FUNCIONES:
+        raise ValueError(f"Función de plan desconocida: {funcion}")
+
+    def _verificar(usuario: Usuario, db: DbSession) -> None:
+        if usuario.rol != ROL_PLATAFORMA:
+            verificador.verificar_funcion(db, funcion)
+
+    return _verificar
+
+
+def requiere_limite(recurso: str):
+    """La ruta solo corre si la empresa no llegó al límite del recurso (4a)."""
+    if recurso not in verificador.LIMITES:
+        raise ValueError(f"Límite de plan desconocido: {recurso}")
+
+    def _verificar(usuario: Usuario, db: DbSession) -> None:
+        if usuario.rol != ROL_PLATAFORMA:
+            verificador.verificar_limite(db, recurso)
+
+    return _verificar
+
+
+def requiere_cupo(cupo: str):
+    """La ruta solo corre si queda cupo del mes (4a). Descontarlo le toca al
+    servicio, con `verificador.consumir_cupo`, cuando la operación salió bien."""
+    if cupo not in verificador.CUPOS:
+        raise ValueError(f"Cupo de plan desconocido: {cupo}")
+
+    def _verificar(usuario: Usuario, db: DbSession) -> None:
+        if usuario.rol != ROL_PLATAFORMA:
+            verificador.verificar_cupo(db, cupo)
+
+    return _verificar
 
 
 def requiere_roles(*roles: str):
