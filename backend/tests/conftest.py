@@ -18,6 +18,8 @@ que ser una base dedicada a pruebas y vacia.
 """
 
 import os
+from datetime import date, timedelta
+from decimal import Decimal
 
 import pytest
 from fastapi.testclient import TestClient
@@ -133,7 +135,32 @@ TABLAS_VOLATILES = (
     # para la siguiente. Va al final porque todas las tablas del tenant la
     # referencian; el CASCADE las alcanza igual. La empresa 1 se vuelve a
     # sembrar en `_sembrar_referencias`, y RESTART IDENTITY le devuelve el id.
+    "consumo_cupo",
+    "suscripcion",
     "empresa",
+    # CU-05: una prueba puede cambiar los límites de un plan; se vuelven a
+    # sembrar los de la 0022 en `_sembrar_referencias`.
+    "plan",
+)
+
+#: Los tres planes de la migracion 0022, copiados: las pruebas arman el
+#: esquema con `create_all`, que no siembra datos.
+PLANES = (
+    dict(id=1, codigo="BASICO", nombre="Básico", precio_mensual=Decimal("300"),
+         max_sucursales=2, max_empleados=10, cupo_reportes_ia=0, cupo_fotos_ia=0,
+         funciones={"reportes_ia": False, "correo": False, "ia_cliente": False,
+                    "marca_propia": False, "traspasos_sugeridos": False, "foto_ia": False,
+                    "analitica_ml": False, "exportar_datos": False, "bitacora_dias": 30}),
+    dict(id=2, codigo="PROFESIONAL", nombre="Profesional", precio_mensual=Decimal("750"),
+         max_sucursales=10, max_empleados=60, cupo_reportes_ia=300, cupo_fotos_ia=10,
+         funciones={"reportes_ia": True, "correo": True, "ia_cliente": True,
+                    "marca_propia": True, "traspasos_sugeridos": True, "foto_ia": True,
+                    "analitica_ml": False, "exportar_datos": False, "bitacora_dias": 180}),
+    dict(id=3, codigo="EMPRESARIAL", nombre="Empresarial", precio_mensual=Decimal("1500"),
+         max_sucursales=None, max_empleados=None, cupo_reportes_ia=None, cupo_fotos_ia=100,
+         funciones={"reportes_ia": True, "correo": True, "ia_cliente": True,
+                    "marca_propia": True, "traspasos_sugeridos": True, "foto_ia": True,
+                    "analitica_ml": True, "exportar_datos": True, "bitacora_dias": None}),
 )
 
 #: Credenciales del cliente de prueba. La contrasena cumple la regla del
@@ -243,15 +270,27 @@ def _sembrar_referencias(sesion) -> None:
     from sqlalchemy import select
 
     from app.modules.organizacion.models import Ciudad
-    from app.modules.plataforma.models import Empresa
+    from app.modules.plataforma.models import Empresa, Plan, Suscripcion
     from app.modules.seguridad.models import Rol
 
+    for datos in PLANES:
+        if sesion.get(Plan, datos["id"]) is None:
+            sesion.add(Plan(**datos))
     if sesion.get(Empresa, EMPRESA_PRUEBAS) is None:
         empresa = Empresa(nombre="Violet Boutique", slug="violet-boutique")
         sesion.add(empresa)
         sesion.flush()
         # La primera fila de una tabla recien creada: la secuencia da el 1.
         assert empresa.id == EMPRESA_PRUEBAS, empresa.id
+        # CU-05: sin suscripcion vigente la empresa solo consulta. Igual que
+        # la 0022: el Empresarial, que no limita nada.
+        sesion.add(
+            Suscripcion(
+                plan_id=3,
+                inicio=date.today() - timedelta(days=1),
+                vencimiento=date.today() + timedelta(days=365),
+            )
+        )
 
     roles = {
         "ADMINISTRADOR": "Administra todo el sistema.",

@@ -12,6 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.modules.organizacion import repository
+from app.modules.plataforma import verificador
 from app.modules.organizacion.schemas import (
     CiudadCrearIn,
     CiudadEditarIn,
@@ -330,6 +331,11 @@ def cambiar_estado_sucursal(
     sucursal = repository.obtener_sucursal(db, sucursal_id)
     if sucursal is None:
         raise SucursalInexistente(str(sucursal_id))
+
+    # 2do parcial, CU-05: reactivar suma una sucursal activa, igual que el
+    # alta. Dar de baja nunca se impide (RN-04).
+    if activa and not sucursal.activa:
+        verificador.verificar_limite(db, "sucursales")
 
     try:
         sucursal.activa = activa
