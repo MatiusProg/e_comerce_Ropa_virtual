@@ -1,4 +1,4 @@
-# Genera "SI2 Ex2 Grupo 16.docx" a partir de la plantilla del 1er parcial (Defensa.docx):
+# Genera "SI2 Ex2 Grupo 15.docx" (ya NO se usa: el Word se edita a mano; ver editar_22_10.py) a partir de la plantilla del 1er parcial (Defensa.docx):
 # conserva portada, índice, estilos, encabezados y pie; reemplaza el cuerpo.
 import copy, sys
 import docx

@@ -1,5 +1,12 @@
 # Robustez (ICONIX) vs. comunicación (lo que hicimos en el 1er parcial)
 
+> **Superado el 23/10/2026.** En la revisión del 22/10 la ing dijo que la robustez es casi igual a
+> nuestro diagrama de comunicación, mensajes incluidos; lo único que cambia es que **nunca se
+> comunica una entidad con otra**. Por eso se volvió al estilo del 2.2 del 1er parcial (un Gestor
+> por caso de uso, sin controladores alternativos en rojo). El generador es `scripts/ea-p2.ps1`,
+> que dibuja solo los enlaces; los mensajes están en `2do Parcial/3.2-robustez-mensajes.md`.
+> Lo de abajo queda como historia.
+
 *20/10/2026. Para Karen, antes de dibujar los 3.2 del 2do parcial.*
 
 **Respuesta corta: sí hay diferencia.** Usan los mismos tres símbolos y las mismas reglas de

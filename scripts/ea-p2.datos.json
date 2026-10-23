@@ -1,0 +1,831 @@
+{
+ "actores": {
+  "Usuario": {
+   "abstracto": true,
+   "notas": "Actor abstracto: cualquiera que inicia sesión en una empresa (CU-06)."
+  },
+  "Administrador de la plataforma": {
+   "padre": "Usuario",
+   "notas": "Opera la plataforma SaaS, fuera de los tenants. Entra sin slug."
+  },
+  "Administrador de la empresa": {
+   "padre": "Usuario",
+   "notas": "Administra su empresa (tenant) y todas sus sucursales."
+  },
+  "Encargado de sucursal": {
+   "padre": "Usuario",
+   "notas": "Opera su sucursal dentro de una empresa."
+  },
+  "Cajero": {
+   "padre": "Usuario",
+   "notas": "Vende en caja dentro de su sucursal."
+  },
+  "Proveedor": {
+   "padre": "Usuario",
+   "notas": "Consulta y actualiza sus productos."
+  },
+  "Cliente": {
+   "padre": "Usuario",
+   "notas": "Una sola cuenta en la plataforma, que usa en varias empresas (RN-13)."
+  },
+  "Empresa interesada": {
+   "notas": "Visitante de la página pública que contrata un plan (CU-11)."
+  }
+ },
+ "casos": [
+  {
+   "id": "CU-01",
+   "n": "Gestionar empresas",
+   "actores": [
+    "Administrador de la plataforma"
+   ],
+   "incluye": [],
+   "notas": "Registrar, editar y dar de baja empresas, con su administrador. RF-01, RF-02, RF-03."
+  },
+  {
+   "id": "CU-02",
+   "n": "Gestionar planes",
+   "actores": [
+    "Administrador de la plataforma"
+   ],
+   "incluye": [],
+   "notas": "Precio simulado, límites y funciones de cada plan. RF-04."
+  },
+  {
+   "id": "CU-03",
+   "n": "Gestionar suscripciones",
+   "actores": [
+    "Administrador de la plataforma"
+   ],
+   "incluye": [],
+   "notas": "Asignar, cambiar, renovar, suspender y reactivar, con el cobro simulado. RF-05, RF-07, RF-08."
+  },
+  {
+   "id": "CU-04",
+   "n": "Consultar plan y consumo",
+   "actores": [
+    "Administrador de la empresa"
+   ],
+   "incluye": [],
+   "notas": "Plan, estado de la suscripción, uso de límites y cupos. RF-06, RF-50."
+  },
+  {
+   "id": "CU-05",
+   "n": "Verificar límites y funciones del plan",
+   "actores": [],
+   "incluye": [],
+   "notas": "Lo incluyen los casos de uso que crean recursos limitados o usan funciones de pago. RF-09."
+  },
+  {
+   "id": "CU-06",
+   "n": "Iniciar sesión en una empresa",
+   "actores": [
+    "Usuario"
+   ],
+   "incluye": [],
+   "notas": "Reemplaza al CU-02 del primer parcial. Login con el slug de la empresa; token con empresa y rol. RN-12."
+  },
+  {
+   "id": "CU-07",
+   "n": "Registrar cliente con cuenta única",
+   "actores": [
+    "Cliente"
+   ],
+   "incluye": [],
+   "notas": "Reemplaza al CU-01 del primer parcial. Una cuenta por persona en toda la plataforma. RF-51, RN-13."
+  },
+  {
+   "id": "CU-08",
+   "n": "Gestionar usuarios de la empresa",
+   "actores": [
+    "Administrador de la empresa"
+   ],
+   "incluye": [
+    "CU-05"
+   ],
+   "notas": "Reemplaza al CU-03 del primer parcial. Solo los usuarios de su empresa, dentro del límite. RF-03, RF-09."
+  },
+  {
+   "id": "CU-09",
+   "n": "Gestionar sucursales de la empresa",
+   "actores": [
+    "Administrador de la empresa"
+   ],
+   "incluye": [
+    "CU-05"
+   ],
+   "notas": "Reemplaza al CU-05 del primer parcial. Límite de sucursales activas. RF-03, RF-09."
+  },
+  {
+   "id": "CU-10",
+   "n": "Gestionar empleados de la empresa",
+   "actores": [
+    "Administrador de la empresa"
+   ],
+   "incluye": [
+    "CU-05"
+   ],
+   "notas": "Reemplaza al CU-06 del primer parcial. Límite de empleados activos. RF-09."
+  },
+  {
+   "id": "CU-11",
+   "n": "Contratar un plan desde la web",
+   "actores": [
+    "Empresa interesada"
+   ],
+   "incluye": [],
+   "notas": "Aporte propio. Alta de la empresa con el cobro simulado. RF-47."
+  },
+  {
+   "id": "CU-12",
+   "n": "Personalizar la tienda de la empresa",
+   "actores": [
+    "Administrador de la empresa"
+   ],
+   "incluye": [
+    "CU-05"
+   ],
+   "notas": "Aporte propio. Logo y colores en la tienda en línea. RF-46."
+  }
+ ],
+ "robustez": [
+  {
+   "cu": "CU-01",
+   "n": "Gestionar empresas",
+   "a": [
+    "Administrador de la plataforma"
+   ],
+   "f": [
+    "PantallaEmpresas",
+    "CanalDeCorreo"
+   ],
+   "c": [
+    "GestorEmpresas",
+    "GestorAutenticacion"
+   ],
+   "e": [
+    "Empresa",
+    "Plan",
+    "Suscripcion",
+    "Sucursal",
+    "Usuario"
+   ],
+   "pares": [
+    [
+     "A:Administrador de la plataforma",
+     "PantallaEmpresas"
+    ],
+    [
+     "CanalDeCorreo",
+     "GestorEmpresas"
+    ],
+    [
+     "Empresa",
+     "GestorEmpresas"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorEmpresas"
+    ],
+    [
+     "GestorEmpresas",
+     "PantallaEmpresas"
+    ],
+    [
+     "GestorEmpresas",
+     "Plan"
+    ],
+    [
+     "GestorEmpresas",
+     "Sucursal"
+    ],
+    [
+     "GestorEmpresas",
+     "Suscripcion"
+    ],
+    [
+     "GestorEmpresas",
+     "Usuario"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-02",
+   "n": "Gestionar planes",
+   "a": [
+    "Administrador de la plataforma"
+   ],
+   "f": [
+    "PantallaPlanes"
+   ],
+   "c": [
+    "GestorPlanes",
+    "GestorAutenticacion"
+   ],
+   "e": [
+    "Plan",
+    "Suscripcion"
+   ],
+   "pares": [
+    [
+     "A:Administrador de la plataforma",
+     "PantallaPlanes"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorPlanes"
+    ],
+    [
+     "GestorPlanes",
+     "PantallaPlanes"
+    ],
+    [
+     "GestorPlanes",
+     "Plan"
+    ],
+    [
+     "GestorPlanes",
+     "Suscripcion"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-03",
+   "n": "Gestionar suscripciones",
+   "a": [
+    "Administrador de la plataforma",
+    "Sistema"
+   ],
+   "f": [
+    "PantallaSuscripcion",
+    "TareaProgramada"
+   ],
+   "c": [
+    "GestorSuscripciones",
+    "GestorAutenticacion"
+   ],
+   "e": [
+    "Empresa",
+    "Suscripcion",
+    "Plan",
+    "PagoSimulado",
+    "Sucursal",
+    "Empleado"
+   ],
+   "pares": [
+    [
+     "A:Administrador de la plataforma",
+     "PantallaSuscripcion"
+    ],
+    [
+     "A:Sistema",
+     "TareaProgramada"
+    ],
+    [
+     "Empleado",
+     "GestorSuscripciones"
+    ],
+    [
+     "Empresa",
+     "GestorSuscripciones"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorSuscripciones"
+    ],
+    [
+     "GestorSuscripciones",
+     "PagoSimulado"
+    ],
+    [
+     "GestorSuscripciones",
+     "PantallaSuscripcion"
+    ],
+    [
+     "GestorSuscripciones",
+     "Plan"
+    ],
+    [
+     "GestorSuscripciones",
+     "Sucursal"
+    ],
+    [
+     "GestorSuscripciones",
+     "Suscripcion"
+    ],
+    [
+     "GestorSuscripciones",
+     "TareaProgramada"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-04",
+   "n": "Consultar plan y consumo",
+   "a": [
+    "Administrador de la empresa"
+   ],
+   "f": [
+    "PantallaMiPlan"
+   ],
+   "c": [
+    "GestorConsumoPlan",
+    "GestorAutenticacion"
+   ],
+   "e": [
+    "Suscripcion",
+    "Plan",
+    "Sucursal",
+    "Empleado",
+    "ConsumoCupo"
+   ],
+   "pares": [
+    [
+     "A:Administrador de la empresa",
+     "PantallaMiPlan"
+    ],
+    [
+     "ConsumoCupo",
+     "GestorConsumoPlan"
+    ],
+    [
+     "Empleado",
+     "GestorConsumoPlan"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorConsumoPlan"
+    ],
+    [
+     "GestorConsumoPlan",
+     "PantallaMiPlan"
+    ],
+    [
+     "GestorConsumoPlan",
+     "Plan"
+    ],
+    [
+     "GestorConsumoPlan",
+     "Sucursal"
+    ],
+    [
+     "GestorConsumoPlan",
+     "Suscripcion"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-05",
+   "n": "Verificar límites y funciones del plan",
+   "a": [
+    "Usuario"
+   ],
+   "f": [
+    "OperacionControlada"
+   ],
+   "c": [
+    "VerificadorPlan"
+   ],
+   "e": [
+    "Suscripcion",
+    "Plan",
+    "ConsumoCupo"
+   ],
+   "pares": [
+    [
+     "A:Usuario",
+     "OperacionControlada"
+    ],
+    [
+     "ConsumoCupo",
+     "VerificadorPlan"
+    ],
+    [
+     "OperacionControlada",
+     "VerificadorPlan"
+    ],
+    [
+     "Plan",
+     "VerificadorPlan"
+    ],
+    [
+     "Suscripcion",
+     "VerificadorPlan"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-06",
+   "n": "Iniciar sesión en una empresa",
+   "a": [
+    "Usuario"
+   ],
+   "f": [
+    "PantallaInicioSesion",
+    "MenuPrincipal"
+   ],
+   "c": [
+    "GestorAutenticacion"
+   ],
+   "e": [
+    "Empresa",
+    "Suscripcion",
+    "Usuario",
+    "SesionToken"
+   ],
+   "pares": [
+    [
+     "A:Usuario",
+     "MenuPrincipal"
+    ],
+    [
+     "A:Usuario",
+     "PantallaInicioSesion"
+    ],
+    [
+     "Empresa",
+     "GestorAutenticacion"
+    ],
+    [
+     "GestorAutenticacion",
+     "MenuPrincipal"
+    ],
+    [
+     "GestorAutenticacion",
+     "PantallaInicioSesion"
+    ],
+    [
+     "GestorAutenticacion",
+     "SesionToken"
+    ],
+    [
+     "GestorAutenticacion",
+     "Suscripcion"
+    ],
+    [
+     "GestorAutenticacion",
+     "Usuario"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-07",
+   "n": "Registrar cliente con cuenta única",
+   "a": [
+    "Cliente"
+   ],
+   "f": [
+    "FormularioRegistro"
+   ],
+   "c": [
+    "GestorRegistro",
+    "GestorAutenticacion"
+   ],
+   "e": [
+    "Usuario",
+    "Cliente",
+    "Empresa",
+    "ClienteEmpresa",
+    "SesionToken"
+   ],
+   "pares": [
+    [
+     "A:Cliente",
+     "FormularioRegistro"
+    ],
+    [
+     "Cliente",
+     "GestorRegistro"
+    ],
+    [
+     "ClienteEmpresa",
+     "GestorRegistro"
+    ],
+    [
+     "Empresa",
+     "GestorRegistro"
+    ],
+    [
+     "FormularioRegistro",
+     "GestorRegistro"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorRegistro"
+    ],
+    [
+     "GestorAutenticacion",
+     "SesionToken"
+    ],
+    [
+     "GestorRegistro",
+     "Usuario"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-08",
+   "n": "Gestionar usuarios de la empresa",
+   "a": [
+    "Administrador de la empresa"
+   ],
+   "f": [
+    "PantallaUsuarios"
+   ],
+   "c": [
+    "GestorUsuarios",
+    "GestorAutenticacion",
+    "VerificadorPlan"
+   ],
+   "e": [
+    "Usuario",
+    "Rol",
+    "Sucursal"
+   ],
+   "pares": [
+    [
+     "A:Administrador de la empresa",
+     "PantallaUsuarios"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorUsuarios"
+    ],
+    [
+     "GestorUsuarios",
+     "PantallaUsuarios"
+    ],
+    [
+     "GestorUsuarios",
+     "Rol"
+    ],
+    [
+     "GestorUsuarios",
+     "Sucursal"
+    ],
+    [
+     "GestorUsuarios",
+     "Usuario"
+    ],
+    [
+     "GestorUsuarios",
+     "VerificadorPlan"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-09",
+   "n": "Gestionar sucursales de la empresa",
+   "a": [
+    "Administrador de la empresa"
+   ],
+   "f": [
+    "PantallaSucursales"
+   ],
+   "c": [
+    "GestorOrganizacion",
+    "GestorAutenticacion",
+    "VerificadorPlan"
+   ],
+   "e": [
+    "Sucursal",
+    "Ciudad"
+   ],
+   "pares": [
+    [
+     "A:Administrador de la empresa",
+     "PantallaSucursales"
+    ],
+    [
+     "Ciudad",
+     "GestorOrganizacion"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorOrganizacion"
+    ],
+    [
+     "GestorOrganizacion",
+     "PantallaSucursales"
+    ],
+    [
+     "GestorOrganizacion",
+     "Sucursal"
+    ],
+    [
+     "GestorOrganizacion",
+     "VerificadorPlan"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-10",
+   "n": "Gestionar empleados de la empresa",
+   "a": [
+    "Administrador de la empresa"
+   ],
+   "f": [
+    "PantallaEmpleados"
+   ],
+   "c": [
+    "GestorEmpleados",
+    "GestorAutenticacion",
+    "VerificadorPlan"
+   ],
+   "e": [
+    "Empleado",
+    "Sucursal",
+    "Usuario",
+    "Rol"
+   ],
+   "pares": [
+    [
+     "A:Administrador de la empresa",
+     "PantallaEmpleados"
+    ],
+    [
+     "Empleado",
+     "GestorEmpleados"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorEmpleados"
+    ],
+    [
+     "GestorEmpleados",
+     "PantallaEmpleados"
+    ],
+    [
+     "GestorEmpleados",
+     "Rol"
+    ],
+    [
+     "GestorEmpleados",
+     "Sucursal"
+    ],
+    [
+     "GestorEmpleados",
+     "Usuario"
+    ],
+    [
+     "GestorEmpleados",
+     "VerificadorPlan"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-11",
+   "n": "Contratar un plan desde la web",
+   "a": [
+    "Empresa interesada"
+   ],
+   "f": [
+    "PaginaPlanes",
+    "FormularioContratacion",
+    "CanalDeCorreo"
+   ],
+   "c": [
+    "GestorContratacion",
+    "GestorEmpresas"
+   ],
+   "e": [
+    "Plan",
+    "Empresa",
+    "PagoSimulado",
+    "Suscripcion",
+    "Sucursal",
+    "Usuario"
+   ],
+   "pares": [
+    [
+     "A:Empresa interesada",
+     "FormularioContratacion"
+    ],
+    [
+     "A:Empresa interesada",
+     "PaginaPlanes"
+    ],
+    [
+     "CanalDeCorreo",
+     "GestorContratacion"
+    ],
+    [
+     "Empresa",
+     "GestorContratacion"
+    ],
+    [
+     "Empresa",
+     "GestorEmpresas"
+    ],
+    [
+     "FormularioContratacion",
+     "GestorContratacion"
+    ],
+    [
+     "GestorContratacion",
+     "GestorEmpresas"
+    ],
+    [
+     "GestorContratacion",
+     "PaginaPlanes"
+    ],
+    [
+     "GestorContratacion",
+     "PagoSimulado"
+    ],
+    [
+     "GestorContratacion",
+     "Plan"
+    ],
+    [
+     "GestorEmpresas",
+     "Sucursal"
+    ],
+    [
+     "GestorEmpresas",
+     "Suscripcion"
+    ],
+    [
+     "GestorEmpresas",
+     "Usuario"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-12",
+   "n": "Personalizar la tienda de la empresa",
+   "a": [
+    "Administrador de la empresa"
+   ],
+   "f": [
+    "PantallaMiTienda",
+    "TiendaEnLinea"
+   ],
+   "c": [
+    "GestorMarca",
+    "GestorAutenticacion",
+    "VerificadorPlan"
+   ],
+   "e": [
+    "Empresa"
+   ],
+   "pares": [
+    [
+     "A:Administrador de la empresa",
+     "PantallaMiTienda"
+    ],
+    [
+     "Empresa",
+     "GestorMarca"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorMarca"
+    ],
+    [
+     "GestorMarca",
+     "PantallaMiTienda"
+    ],
+    [
+     "GestorMarca",
+     "TiendaEnLinea"
+    ],
+    [
+     "GestorMarca",
+     "VerificadorPlan"
+    ]
+   ]
+  }
+ ],
+ "descripcion": {
+  "GestorEmpresas": "Coordina CU-01 y el alta de CU-11: crea empresa, suscripción, sucursal principal y administrador en una transacción.",
+  "GestorPlanes": "Coordina CU-02: planes con sus límites y funciones.",
+  "GestorSuscripciones": "Coordina CU-03: asigna, renueva, suspende y vence suscripciones.",
+  "GestorConsumoPlan": "Coordina CU-04: plan vigente, uso de los límites y consumo de los cupos.",
+  "VerificadorPlan": "CU-05: verifica función, límite y cupo del plan antes de una operación controlada; responde 403 plan_limit.",
+  "GestorAutenticacion": "CU-06 y la autorización del resto: login con slug, token con empresa y rol, cierre de sesión.",
+  "GestorRegistro": "Coordina CU-07: cuenta única del cliente y su asociación con la empresa.",
+  "GestorUsuarios": "Coordina CU-08: usuarios de la empresa, con su rol y su sucursal.",
+  "GestorOrganizacion": "Coordina CU-09: sucursales de la empresa dentro del límite del plan.",
+  "GestorEmpleados": "Coordina CU-10: crea el empleado y su usuario en una transacción.",
+  "GestorContratacion": "Coordina CU-11: elección del plan, pago simulado y alta de la empresa.",
+  "GestorMarca": "Coordina CU-12: logo y colores de la tienda de la empresa.",
+  "Empresa": "Tenant. Tiene slug único (RN-14), estado y marca (logo y colores).",
+  "Plan": "Precio simulado, límites max_* (vacío = ilimitado) y funciones habilitadas.",
+  "Suscripcion": "Plan de una empresa con inicio, vencimiento y estado. Una sola vigente por empresa (RN-02).",
+  "PagoSimulado": "Registro del cobro simulado de una suscripción.",
+  "ConsumoCupo": "Uso del mes de cada límite o cupo (reportes y fotos con IA) por empresa.",
+  "ClienteEmpresa": "Asocia la cuenta única de un cliente con cada empresa donde compra (RN-13).",
+  "SesionToken": "Sesión emitida: el JWT lleva usuario, empresa y rol.",
+  "Usuario": "Identidad y credencial de quien accede, dentro de una empresa.",
+  "Cliente": "Datos comerciales de la persona con rol Cliente.",
+  "Rol": "Conjunto de permisos de un tipo de usuario.",
+  "Sucursal": "Tienda física; pertenece a una sola empresa (RN-01).",
+  "Ciudad": "Agrupa las sucursales de una misma plaza.",
+  "Empleado": "Persona que trabaja en una sucursal de la empresa, con su cargo.",
+  "OperacionControlada": "Frontera técnica: cualquier endpoint que crea un recurso limitado o usa una función de pago.",
+  "TareaProgramada": "Frontera sin persona: el proceso diario del backend.",
+  "CanalDeCorreo": "Frontera de salida: el correo enviado por Brevo.",
+  "TiendaEnLinea": "La tienda pública de la empresa, que muestra su marca."
+ }
+}
