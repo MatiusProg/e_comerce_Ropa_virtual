@@ -30,6 +30,8 @@
         @for (r of roles(); track r.id) {
           <mat-option [value]="r.nombre">{{ nombreRol(r.nombre) }}</mat-option>
         }
+        <!-- CU-08: el cliente no es un rol asignable, pero sí aparece en la lista. -->
+        <mat-option value="CLIENTE">{{ nombreRol('CLIENTE') }}</mat-option>
       </mat-select>
     </mat-form-field>
 
@@ -106,23 +108,31 @@
                 <mat-icon>more_vert</mat-icon>
               </button>
               <mat-menu #menu="matMenu">
-                <button mat-menu-item type="button" (click)="editar(u)">
-                  <mat-icon>edit</mat-icon>
-                  <span>Editar</span>
-                </button>
-
-                <!-- Excepción E3: sobre la propia cuenta no se ofrecen estas acciones. -->
-                @if (u.id !== miId()) {
-                  <button mat-menu-item type="button" (click)="cambiarEstado(u)">
-                    <mat-icon>{{ u.activo ? 'block' : 'check_circle' }}</mat-icon>
-                    <span>{{ u.activo ? 'Desactivar' : 'Activar' }}</span>
-                  </button>
-                  <button mat-menu-item type="button" class="accion-peligro" (click)="eliminar(u)">
-                    <mat-icon>delete_outline</mat-icon>
-                    <span>Eliminar</span>
-                  </button>
+                <!-- CU-08: la cuenta del cliente es de la plataforma (RN-13); la
+                     empresa la ve pero no la modifica. -->
+                @if (u.rol === 'CLIENTE') {
+                  <span class="nota-menu">
+                    Cuenta del cliente: la usa en todas las tiendas y no se modifica desde la empresa
+                  </span>
                 } @else {
-                  <span class="nota-menu">Es tu propia cuenta</span>
+                  <button mat-menu-item type="button" (click)="editar(u)">
+                    <mat-icon>edit</mat-icon>
+                    <span>Editar</span>
+                  </button>
+
+                  <!-- Excepción E3: sobre la propia cuenta no se ofrecen estas acciones. -->
+                  @if (u.id !== miId()) {
+                    <button mat-menu-item type="button" (click)="cambiarEstado(u)">
+                      <mat-icon>{{ u.activo ? 'block' : 'check_circle' }}</mat-icon>
+                      <span>{{ u.activo ? 'Desactivar' : 'Activar' }}</span>
+                    </button>
+                    <button mat-menu-item type="button" class="accion-peligro" (click)="eliminar(u)">
+                      <mat-icon>delete_outline</mat-icon>
+                      <span>Eliminar</span>
+                    </button>
+                  } @else {
+                    <span class="nota-menu">Es tu propia cuenta</span>
+                  }
                 }
               </mat-menu>
             </td>

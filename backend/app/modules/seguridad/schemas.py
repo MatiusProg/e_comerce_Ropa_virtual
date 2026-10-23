@@ -150,6 +150,12 @@ class TokenOut(BaseModel):
 #: (excepcion E2).
 ROLES_CON_SUCURSAL = frozenset({"ENCARGADO", "CAJERO"})
 
+#: 2do parcial, CU-08: roles que el administrador de una empresa no asigna. El
+#: cliente tiene una cuenta de la plataforma y la crea él en la tienda (CU-07).
+#: Cuando el CU-06 sume el rol del administrador de la plataforma, va acá
+#: también (flujo 5a).
+ROLES_NO_ASIGNABLES = frozenset({"CLIENTE"})
+
 
 class RolOut(BaseModel):
     """Un rol asignable, para poblar el selector del formulario."""
