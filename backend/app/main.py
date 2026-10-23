@@ -100,6 +100,7 @@ from app.modules.notificaciones.router import (
     mantenimiento_router as notificaciones_mantenimiento_router,
 )
 from app.modules.reportes.reportes_router import router as reportes_router
+from app.modules.plataforma.mi_plan.router import router as mi_plan_router
 
 
 # Antes de construir la aplicacion: uvicorn deja el logger raiz sin manejador
@@ -232,3 +233,7 @@ app.include_router(reportes_router, prefix=API)
 app.include_router(bitacora_router, prefix=API)
 app.include_router(notificaciones_router, prefix=API)
 app.include_router(notificaciones_mantenimiento_router, prefix=API)
+
+# --- 2do parcial -----------------------------------------------------------
+# CU-04: el plan de la empresa y lo que ya usó de cada límite.
+app.include_router(mi_plan_router, prefix=API)
