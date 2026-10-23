@@ -25,6 +25,8 @@ export type ErrorUsuarios =
   | { tipo: 'documento-duplicado'; mensaje: string }
   | { tipo: 'auto-operacion'; mensaje: string }
   | { tipo: 'no-eliminable'; mensaje: string }
+  /** CU-08: la cuenta del cliente es de la plataforma (RN-13). */
+  | { tipo: 'cuenta-plataforma'; mensaje: string }
   | { tipo: 'validacion'; mensaje: string }
   | { tipo: 'sistema'; mensaje: string };
 
@@ -87,6 +89,9 @@ export class UsuariosService {
       }
       if (detalle.includes('propia cuenta')) {
         return { tipo: 'auto-operacion', mensaje: detalle };
+      }
+      if (detalle.includes('cuenta de un cliente')) {
+        return { tipo: 'cuenta-plataforma', mensaje: detalle };
       }
       if (detalle.includes('documento')) {
         return { tipo: 'documento-duplicado', mensaje: detalle };

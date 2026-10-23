@@ -72,6 +72,7 @@ def agregar_usuario(
     nombres: str,
     apellidos: str,
     rol_id: int,
+    empresa_id: int | None = None,
 ) -> Usuario:
     """Agrega el usuario a la sesion y le asigna su id, sin confirmar.
 
@@ -85,6 +86,9 @@ def agregar_usuario(
         apellidos=apellidos,
         rol_id=rol_id,
     )
+    if empresa_id is not None:
+        # CU-08: se nombra la empresa en vez de dejarla al DEFAULT del contexto.
+        usuario.empresa_id = empresa_id
     db.add(usuario)
     db.flush()
     return usuario
@@ -200,9 +204,28 @@ def listar_roles(db: Session) -> list[Rol]:
     return list(db.scalars(select(Rol).order_by(Rol.nombre)))
 
 
+def _de_la_empresa(empresa_id: int):
+    """Los usuarios que ve el administrador de una empresa (CU-08, paso 2).
+
+    `usuario` es tabla de identidad y NO tiene RLS (el login la lee antes de
+    saber la empresa), así que acá el filtro lo pone el código, no la base.
+    Entran el personal de la empresa y los clientes que compran en ella: el
+    cliente no tiene empresa (RN-13) y su vínculo es `cliente_empresa`, que sí
+    tiene RLS --- igual se nombra la empresa, para no depender solo de eso.
+    """
+    cliente_de_la_empresa = (
+        select(ClienteEmpresa.cliente_id)
+        .join(Cliente, Cliente.id == ClienteEmpresa.cliente_id)
+        .where(Cliente.usuario_id == Usuario.id, ClienteEmpresa.empresa_id == empresa_id)
+        .exists()
+    )
+    return or_(Usuario.empresa_id == empresa_id, cliente_de_la_empresa)
+
+
 def contar_y_listar_usuarios(
     db: Session,
     *,
+    empresa_id: int,
     busqueda: str | None,
     rol: str | None,
     activo: bool | None,
@@ -232,7 +255,7 @@ def contar_y_listar_usuarios(
         .outerjoin(Sucursal, Sucursal.id == Empleado.sucursal_id)
     )
 
-    condiciones = []
+    condiciones = [_de_la_empresa(empresa_id)]
     if busqueda:
         # Busqueda por nombre o correo, sin distinguir mayusculas.
         patron = f"%{busqueda.strip().lower()}%"
@@ -248,8 +271,7 @@ def contar_y_listar_usuarios(
     if activo is not None:
         condiciones.append(Usuario.activo.is_(activo))
 
-    if condiciones:
-        origen = origen.where(*condiciones)
+    origen = origen.where(*condiciones)
 
     total = db.scalar(select(func.count()).select_from(origen.subquery())) or 0
 
@@ -261,9 +283,14 @@ def contar_y_listar_usuarios(
     return total, list(filas)
 
 
-def obtener_detalle_usuario(db: Session, usuario_id: int) -> Row | None:
-    """Una sola fila del listado, para devolver el usuario recien tocado."""
-    return db.execute(
+def obtener_detalle_usuario(
+    db: Session, usuario_id: int, empresa_id: int | None = None
+) -> Row | None:
+    """Una sola fila del listado, para devolver el usuario recien tocado.
+
+    Con `empresa_id`, solo si es un usuario que esa empresa puede ver (CU-08).
+    """
+    consulta = (
         select(
             Usuario.id,
             Usuario.correo,
@@ -279,7 +306,10 @@ def obtener_detalle_usuario(db: Session, usuario_id: int) -> Row | None:
         .outerjoin(Empleado, Empleado.usuario_id == Usuario.id)
         .outerjoin(Sucursal, Sucursal.id == Empleado.sucursal_id)
         .where(Usuario.id == usuario_id)
-    ).one_or_none()
+    )
+    if empresa_id is not None:
+        consulta = consulta.where(_de_la_empresa(empresa_id))
+    return db.execute(consulta).one_or_none()
 
 
 def obtener_empleado_de_usuario(db: Session, usuario_id: int) -> Empleado | None:

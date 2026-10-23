@@ -15,7 +15,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
-from app.core.dependencies import DbSession, Usuario, requiere_roles
+from app.core.dependencies import DbSession, Usuario, UsuarioActual, requiere_roles
 from app.integrations.correo import ErrorDeEnvio
 from app.modules.seguridad import service
 from app.modules.seguridad.schemas import (
@@ -299,6 +299,17 @@ def _traducir(error: service.ErrorDeGestion) -> HTTPException:
     if isinstance(error, service.AutodesactivacionProhibida):
         # Excepcion E3.
         return HTTPException(409, "No puede desactivar ni eliminar su propia cuenta.")
+    if isinstance(error, service.CuentaDePlataforma):
+        # CU-08: el cliente es de la plataforma (RN-13).
+        return HTTPException(
+            409,
+            "Es la cuenta de un cliente, que la usa en todas las tiendas de la "
+            "plataforma: la empresa no puede modificarla.",
+        )
+    if isinstance(error, service.RolNoAsignable):
+        return HTTPException(
+            422, "Ese rol no se asigna desde la empresa: el cliente crea su cuenta en la tienda."
+        )
     if isinstance(error, service.UsuarioConOperaciones):
         # Flujo 3c: la interfaz usa este mensaje para ofrecer desactivar.
         return HTTPException(
@@ -307,6 +318,16 @@ def _traducir(error: service.ErrorDeGestion) -> HTTPException:
             "Puede desactivarlo en su lugar.",
         )
     return HTTPException(400, "No se pudo completar la operación.")
+
+
+def _empresa(usuario: UsuarioActual) -> int:
+    """CU-08: la empresa del administrador. Sin empresa no hay usuarios que gestionar.
+
+    `usuario` no tiene RLS, así que esta empresa es la que filtra todo el CU.
+    """
+    if usuario.empresa_id is None:
+        raise HTTPException(403, "Esta cuenta no pertenece a ninguna empresa.")
+    return usuario.empresa_id
 
 
 @router.get(
@@ -323,6 +344,7 @@ def listar_roles(db: DbSession) -> list[RolOut]:
 @admin_router.get("", response_model=PaginaUsuarios, summary="CU-03 Listar usuarios")
 def listar_usuarios(
     db: DbSession,
+    usuario: Usuario,
     busqueda: Annotated[str | None, Query(max_length=120)] = None,
     rol: Annotated[str | None, Query(max_length=30)] = None,
     activo: Annotated[bool | None, Query()] = None,
@@ -331,7 +353,7 @@ def listar_usuarios(
 ) -> PaginaUsuarios:
     """Listado paginado con búsqueda por nombre o correo y filtros (paso 2)."""
     return service.listar_usuarios(
-        db, busqueda=busqueda, rol=rol, activo=activo, pagina=pagina, tamano=tamano
+        db, empresa_id=_empresa(usuario), busqueda=busqueda, rol=rol, activo=activo, pagina=pagina, tamano=tamano
     )
 
 
@@ -342,10 +364,10 @@ def listar_usuarios(
     summary="CU-03 Crear usuario",
     responses={409: {"description": "El correo ya está registrado (excepción E1)."}},
 )
-def crear_usuario(datos: UsuarioCrearIn, db: DbSession) -> UsuarioResumenOut:
+def crear_usuario(datos: UsuarioCrearIn, db: DbSession, usuario: Usuario) -> UsuarioResumenOut:
     """Crea una cuenta con su rol y, si corresponde, su sucursal."""
     try:
-        return service.crear_usuario(db, datos)
+        return service.crear_usuario(db, datos, _empresa(usuario))
     except service.CorreoYaRegistrado:
         raise HTTPException(409, "Ya existe una cuenta con ese correo electrónico.")
     except service.DocumentoYaRegistrado:
@@ -357,9 +379,9 @@ def crear_usuario(datos: UsuarioCrearIn, db: DbSession) -> UsuarioResumenOut:
 @admin_router.get(
     "/{usuario_id}", response_model=UsuarioResumenOut, summary="CU-03 Ver un usuario"
 )
-def obtener_usuario(usuario_id: int, db: DbSession) -> UsuarioResumenOut:
+def obtener_usuario(usuario_id: int, db: DbSession, usuario: Usuario) -> UsuarioResumenOut:
     try:
-        return service.obtener_usuario(db, usuario_id)
+        return service.obtener_usuario(db, usuario_id, _empresa(usuario))
     except service.ErrorDeGestion as error:
         raise _traducir(error)
 
@@ -368,14 +390,14 @@ def obtener_usuario(usuario_id: int, db: DbSession) -> UsuarioResumenOut:
     "/{usuario_id}", response_model=UsuarioResumenOut, summary="CU-03 Editar usuario"
 )
 def editar_usuario(
-    usuario_id: int, datos: UsuarioEditarIn, db: DbSession
+    usuario_id: int, datos: UsuarioEditarIn, db: DbSession, usuario: Usuario
 ) -> UsuarioResumenOut:
     """Modifica los datos de una cuenta.
 
     La contraseña solo cambia si se envía una nueva (flujo alternativo 3a).
     """
     try:
-        return service.editar_usuario(db, usuario_id, datos)
+        return service.editar_usuario(db, usuario_id, datos, _empresa(usuario))
     except service.CorreoYaRegistrado:
         raise HTTPException(409, "Ya existe una cuenta con ese correo electrónico.")
     except service.ErrorDeGestion as error:
@@ -393,7 +415,8 @@ def cambiar_estado(
     """Cambia el estado de la cuenta; al desactivar revoca sus sesiones."""
     try:
         return service.cambiar_estado(
-            db, usuario_id, datos.activo, solicitante_id=usuario.id
+            db, usuario_id, datos.activo, solicitante_id=usuario.id,
+            empresa_id=_empresa(usuario),
         )
     except service.ErrorDeGestion as error:
         raise _traducir(error)
@@ -407,7 +430,9 @@ def cambiar_estado(
 def eliminar_usuario(usuario_id: int, db: DbSession, usuario: Usuario) -> None:
     """Elimina la cuenta, solo si no tiene operaciones asociadas (flujo 3c)."""
     try:
-        service.eliminar_usuario(db, usuario_id, solicitante_id=usuario.id)
+        service.eliminar_usuario(
+            db, usuario_id, solicitante_id=usuario.id, empresa_id=_empresa(usuario)
+        )
     except service.ErrorDeGestion as error:
         raise _traducir(error)
 
