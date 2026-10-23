@@ -119,6 +119,18 @@ class Usuario(Auditoria, Base):
     rol_id: Mapped[int] = mapped_column(SmallInteger, ForeignKey("rol.id"), index=True)
     activo: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
 
+    #: 2do parcial. La empresa del personal (administrador, encargado, cajero,
+    #: proveedor). Es NULL para el cliente, que tiene una sola cuenta en toda la
+    #: plataforma (RN-13; dónde compra lo dice `cliente_empresa`), y para el
+    #: administrador de la plataforma. `usuario` es tabla de identidad y no tiene
+    #: RLS: el login la consulta antes de saber de qué empresa es la petición.
+    empresa_id: Mapped[int | None] = mapped_column(
+        BigInteger,
+        ForeignKey("empresa.id"),
+        index=True,
+        server_default=text("app_empresa_actual()"),
+    )
+
     rol: Mapped[Rol] = relationship(back_populates="usuarios")
 
     # passive_deletes deja que el ON DELETE CASCADE de la base haga el trabajo.

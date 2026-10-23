@@ -29,10 +29,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base
+from app.db.base import Base, DeEmpresa
 
 
-class Carrito(Base):
+class Carrito(DeEmpresa, Base):
     """El carrito abierto de un cliente. Hay uno solo, y puede no existir.
 
     NO GUARDA PRECIOS NI TOTALES. Un carrito es una intencion, no un contrato:
@@ -55,7 +55,8 @@ class Carrito(Base):
     __table_args__ = (
         # Un cliente, un carrito. Es lo que vuelve imposible que dos peticiones
         # simultaneas creen dos carritos y la compra quede partida en dos.
-        UniqueConstraint("cliente_id", name="uq_carrito_cliente_id"),
+        # 2do parcial: uno por empresa, porque el cliente compra en varias.
+        UniqueConstraint("empresa_id", "cliente_id", name="uq_carrito_cliente_id"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -77,7 +78,7 @@ class Carrito(Base):
     )
 
 
-class CarritoDetalle(Base):
+class CarritoDetalle(DeEmpresa, Base):
     """Una prenda concreta en el carrito, con cuántas unidades.
 
     Apunta a la VARIANTE y no al producto, como todo lo que es una unidad de

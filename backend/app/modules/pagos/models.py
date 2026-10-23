@@ -34,10 +34,11 @@ from sqlalchemy import (
     String,
     Text,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base
+from app.db.base import Base, DeEmpresa
 
 # PASARELA es el pago digital de CU-27/CU-28; los otros dos son del punto de
 # venta de CU-31 y no pasan por ninguna integracion.
@@ -48,7 +49,7 @@ METODOS_PAGO = ("PASARELA", "EFECTIVO", "TARJETA_POS")
 ESTADOS_PAGO = ("INICIADO", "APROBADO", "RECHAZADO", "REEMBOLSADO")
 
 
-class Pago(Base):
+class Pago(DeEmpresa, Base):
     """El cobro de una venta. Uno por venta.
 
     `monto` es una copia congelada, igual que `DetalleVenta.precio_unitario`:
@@ -101,7 +102,7 @@ class Pago(Base):
     )
 
 
-class TransaccionPasarela(Base):
+class TransaccionPasarela(DeEmpresa, Base):
     """Todo lo que la pasarela dijo, se haya aplicado o no. INMUTABLE.
 
     ACA ESTA TODA LA IDEMPOTENCIA, Y ES UNA SOLA RESTRICCION
@@ -128,6 +129,16 @@ class TransaccionPasarela(Base):
     __tablename__ = "transaccion_pasarela"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+
+    #: 2do parcial: nula cuando el evento no se pudo asociar a ningun pago
+    #: (firma invalida, sesion desconocida): no se sabe de que empresa es. Como
+    #: la bitacora, esas filas solo las ve la plataforma.
+    empresa_id: Mapped[int | None] = mapped_column(
+        BigInteger,
+        ForeignKey("empresa.id"),
+        index=True,
+        server_default=text("app_empresa_actual()"),
+    )
     pago_id: Mapped[int | None] = mapped_column(
         BigInteger, ForeignKey("pago.id"), index=True
     )

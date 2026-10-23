@@ -33,19 +33,28 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, String, func
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, String, func, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base
+from app.db.base import Base, DeEmpresa
 
 
-class AsientoBitacora(Base):
+class AsientoBitacora(DeEmpresa, Base):
     """Una linea de la bitacora. Se escribe una vez y no se toca mas."""
 
     __tablename__ = "bitacora"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+
+    #: 2do parcial: nula solo en lo que hace la plataforma, que no es de ninguna
+    #: empresa. La política de RLS no la deja ver a ninguna empresa.
+    empresa_id: Mapped[int | None] = mapped_column(
+        BigInteger,
+        ForeignKey("empresa.id"),
+        index=True,
+        server_default=text("app_empresa_actual()"),
+    )
 
     #: Cuando paso. `timestamptz`, como todo lo demas: el instante es
     #: absoluto y la pantalla lo muestra en hora boliviana.

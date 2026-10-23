@@ -68,7 +68,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base
+from app.db.base import Base, DeEmpresa
 
 #: Los cuatro hechos del RF11 y de la ficha de CU-40. La lista es cerrada a
 #: proposito: un tipo nuevo es una decision de alcance, no un valor que alguien
@@ -87,7 +87,7 @@ TIPOS_NOTIFICACION = (
 ESTADOS_CORREO = ("OMITIDO", "PENDIENTE", "ENVIADO", "FALLIDO")
 
 
-class Notificacion(Base):
+class Notificacion(DeEmpresa, Base):
     """Un aviso dirigido a una persona por un hecho que ya ocurrio."""
 
     __tablename__ = "notificacion"

@@ -7,8 +7,10 @@ PostgreSQL y las migraciones de bajada (downgrade) fallan.
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, MetaData, func
+from sqlalchemy import BigInteger, DateTime, ForeignKey, MetaData, func, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+from app.core.tenencia import preparar_metadata
 
 CONVENCION_NOMBRES = {
     "ix": "ix_%(column_0_label)s",
@@ -21,6 +23,26 @@ CONVENCION_NOMBRES = {
 
 class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=CONVENCION_NOMBRES)
+
+
+# Funciones y políticas de RLS también cuando el esquema se arma con create_all.
+preparar_metadata(Base.metadata)
+
+
+class DeEmpresa:
+    """Mixin multitenant: la fila pertenece a una empresa (ver app/core/tenencia.py).
+
+    El DEFAULT toma la empresa del contexto de la transacción, así que el código
+    que inserta no necesita nombrarla. La tabla tiene que figurar además en
+    `TABLAS_DE_EMPRESA` para recibir su política de RLS.
+    """
+
+    empresa_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("empresa.id"),
+        index=True,
+        server_default=text("app_empresa_actual()"),
+    )
 
 
 class Auditoria:

@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session, joinedload
 # docs/04-analisis-arquitectura.md.
 from app.modules.catalogo.models import Categoria
 from app.modules.organizacion.models import Ciudad, Empleado, Proveedor, Sucursal
+from app.modules.plataforma.models import ClienteEmpresa
 from app.modules.seguridad.models import (
     Cliente,
     DireccionCliente,
@@ -96,13 +97,21 @@ def agregar_cliente(
     documento: str | None,
     telefono: str | None,
 ) -> Cliente:
-    """Agrega la ficha de cliente asociada al usuario, sin confirmar."""
+    """Agrega la ficha de cliente asociada al usuario, sin confirmar.
+
+    2do parcial (RN-13): el cliente no pertenece a ninguna empresa, así que su
+    usuario queda sin empresa; queda asociado a la empresa de la tienda donde
+    se registró, que es la del contexto.
+    """
     cliente = Cliente(
         usuario_id=usuario_id,
         documento=documento,
         telefono=telefono,
     )
     db.add(cliente)
+    db.flush()
+    db.execute(update(Usuario).where(Usuario.id == usuario_id).values(empresa_id=None))
+    db.add(ClienteEmpresa(cliente_id=cliente.id))
     db.flush()
     return cliente
 

@@ -31,7 +31,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Auditoria, Base
+from app.db.base import Auditoria, Base, DeEmpresa
 
 #: Estados de una reserva. Es el objeto con ciclo de vida rico del Ciclo 2, y
 #: el que sostiene el diagrama de estado del documento —la seccion 5.3 del plan
@@ -58,7 +58,7 @@ ESTADOS_RESERVA = ("PENDIENTE", "PREPARADA", "ATENDIDA", "CANCELADA", "EXPIRADA"
 RESULTADOS_PRUEBA = ("LLEVA", "NO_LLEVA")
 
 
-class Reserva(Auditoria, Base):
+class Reserva(DeEmpresa, Auditoria, Base):
     """Apartado de prendas para probarselas en una sucursal.
 
     La franja horaria es lo que la hace expirar: CU-25 busca las que siguen en
@@ -108,7 +108,7 @@ class Reserva(Auditoria, Base):
     )
 
 
-class DetalleReserva(Auditoria, Base):
+class DetalleReserva(DeEmpresa, Auditoria, Base):
     """Una variante y su cantidad dentro de una reserva.
 
     La clase se llama `DetalleReserva` porque asi la nombra el modelo de

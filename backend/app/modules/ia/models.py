@@ -31,10 +31,10 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Auditoria, Base
+from app.db.base import Auditoria, Base, DeEmpresa
 
 
-class Recomendacion(Base, Auditoria):
+class Recomendacion(DeEmpresa, Base, Auditoria):
     """La recomendacion VIGENTE de un cliente. Ver la migracion 0013.
 
     Una fila por cliente, sin historial: lo que interesa es la que esta en uso.
@@ -42,7 +42,7 @@ class Recomendacion(Base, Auditoria):
 
     __tablename__ = "recomendacion"
     __table_args__ = (
-        UniqueConstraint("cliente_id", name="uq_recomendacion_cliente_id"),
+        UniqueConstraint("empresa_id", "cliente_id", name="uq_recomendacion_cliente_id"),
         CheckConstraint(
             "jsonb_typeof(sugerencias) = 'array'", name="sugerencias_es_lista"
         ),
@@ -51,7 +51,7 @@ class Recomendacion(Base, Auditoria):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     cliente_id: Mapped[int] = mapped_column(
-        BigInteger, ForeignKey("cliente.id", ondelete="CASCADE"), unique=True
+        BigInteger, ForeignKey("cliente.id", ondelete="CASCADE")
     )
     generada_en: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=text("now()")
