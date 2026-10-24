@@ -14,6 +14,7 @@ import uuid
 from datetime import date, datetime, timezone
 
 from sqlalchemy import Row, func, or_, select, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session, joinedload
 
 # `Categoria` es de P3. La dependencia P1 -> P3 para el catalogo de
@@ -119,6 +120,28 @@ def agregar_cliente(
     db.add(ClienteEmpresa(cliente_id=cliente.id))
     db.flush()
     return cliente
+
+
+# --- 2do parcial, CU-07 Registrar cliente con cuenta unica --------------
+
+def obtener_cliente_de_usuario(db: Session, usuario_id: int) -> Cliente | None:
+    """La ficha de cliente de la cuenta, o None si la cuenta es del personal."""
+    return db.scalar(select(Cliente).where(Cliente.usuario_id == usuario_id))
+
+
+def asociar_cliente_a_la_tienda(db: Session, cliente_id: int) -> bool:
+    """Asocia el cliente a la empresa del contexto (RN-13), sin confirmar.
+
+    Devuelve False si ya estaba asociado. El ON CONFLICT cubre al mismo
+    cliente asociandose dos veces a la vez.
+    """
+    sentencia = (
+        pg_insert(ClienteEmpresa)
+        .values(cliente_id=cliente_id)
+        .on_conflict_do_nothing()
+        .returning(ClienteEmpresa.cliente_id)
+    )
+    return db.scalar(sentencia) is not None
 
 
 # --- CU-02 Iniciar y cerrar sesion ---------------------------------------

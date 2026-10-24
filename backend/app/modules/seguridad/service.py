@@ -81,6 +81,19 @@ class RolClienteInexistente(ErrorDeRegistro):
     """La tabla rol no tiene el rol CLIENTE. Falta correr el seed."""
 
 
+class CuentaDeClienteExistente(CorreoYaRegistrado):
+    """2do parcial, CU-07 4b: el correo ya es de un cliente de la plataforma.
+
+    No es un error para el cliente: su cuenta es una sola para todas las
+    tiendas (RN-13). La interfaz le ofrece iniciar sesion con ella para
+    usarla tambien en esta.
+    """
+
+
+class NoEsCuentaDeCliente(ErrorDeRegistro):
+    """CU-07 4b: las credenciales son de una cuenta del personal, que no compra."""
+
+
 # --- CU-01 Registrar cliente ---------------------------------------------
 
 def registrar_cliente(db: Session, datos: ClienteRegistroIn) -> ClienteRegistradoOut:
@@ -99,7 +112,11 @@ def registrar_cliente(db: Session, datos: ClienteRegistroIn) -> ClienteRegistrad
     las dos no se crea ninguna (excepcion E2).
     """
     # Paso 5 - precondicion del caso de uso (excepcion E1).
-    if repository.obtener_usuario_por_correo(db, datos.correo) is not None:
+    existente = repository.obtener_usuario_por_correo(db, datos.correo)
+    if existente is not None:
+        # 2do parcial, CU-07 4b: si es la cuenta de un cliente, se ofrece usarla.
+        if repository.obtener_cliente_de_usuario(db, existente.id) is not None:
+            raise CuentaDeClienteExistente(datos.correo)
         raise CorreoYaRegistrado(datos.correo)
 
     if datos.documento is not None and repository.existe_cliente_con_documento(
@@ -154,6 +171,28 @@ def registrar_cliente(db: Session, datos: ClienteRegistroIn) -> ClienteRegistrad
         apellidos=usuario.apellidos,
         rol=rol.nombre,
     )
+
+
+def asociar_cuenta_existente(db: Session, datos: LoginIn) -> TokenOut:
+    """2do parcial, CU-07 4b: el cliente usa su cuenta en esta tienda.
+
+    Valida las credenciales, asocia el cliente a la empresa de la tienda (la
+    del contexto) e inicia la sesion. No crea otra cuenta: el correo sigue
+    siendo uno solo en la plataforma (RN-13). Si ya estaba asociado, solo
+    inicia la sesion.
+    """
+    usuario = repository.obtener_usuario_con_rol(db, datos.correo)
+    if usuario is None or not verify_password(datos.contrasena, usuario.hash_contrasena):
+        raise CredencialesInvalidas(datos.correo)
+
+    cliente = repository.obtener_cliente_de_usuario(db, usuario.id)
+    if cliente is None:
+        raise NoEsCuentaDeCliente(datos.correo)
+
+    repository.asociar_cliente_a_la_tienda(db, cliente.id)
+    # `autenticar` confirma la transaccion: la asociacion y la sesion quedan
+    # juntas, y si la cuenta esta desactivada no queda ninguna de las dos.
+    return autenticar(db, datos)
 
 
 def _viola(exc: IntegrityError, tabla: str, columna: str) -> bool:

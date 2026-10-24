@@ -68,6 +68,16 @@ def registrar_cliente(datos: ClienteRegistroIn, db: DbSession) -> ClienteRegistr
     """
     try:
         return service.registrar_cliente(db, datos)
+    except service.CuentaDeClienteExistente:
+        # 2do parcial, CU-07 4b: la interfaz reconoce "cuenta de cliente" y
+        # ofrece iniciar sesion con ella (POST /auth/registro/asociar).
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Ese correo ya tiene una cuenta de cliente en Violet. Inicie sesión "
+                "con su contraseña para usarla también en esta tienda."
+            ),
+        )
     except service.CorreoYaRegistrado:
         # Excepcion E1. El caso de uso indica ofrecer iniciar sesion o
         # recuperar la contrasena; eso lo resuelve la interfaz con este 409.
@@ -85,6 +95,42 @@ def registrar_cliente(datos: ClienteRegistroIn, db: DbSession) -> ClienteRegistr
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="El sistema no está inicializado. Contacte al administrador.",
+        )
+
+
+@router.post(
+    "/registro/asociar",
+    response_model=TokenOut,
+    summary="CU-07 Usar la cuenta de cliente en esta tienda",
+    responses={
+        401: {"description": "Credenciales invalidas."},
+        403: {"description": "La cuenta esta desactivada."},
+        409: {"description": "La cuenta es del personal, no de un cliente."},
+    },
+)
+def asociar_cuenta_existente(datos: LoginIn, db: DbSession) -> TokenOut:
+    """2do parcial, CU-07 flujo alternativo 4b.
+
+    El correo ya tiene cuenta de cliente: con su contraseña, la cuenta queda
+    asociada a la empresa de esta tienda y se inicia la sesion. Publico, como
+    el registro.
+    """
+    try:
+        return service.asociar_cuenta_existente(db, datos)
+    except service.CredencialesInvalidas:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="El correo o la contraseña son incorrectos.",
+        )
+    except service.CuentaDesactivada:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Su cuenta está desactivada. Contacte al administrador.",
+        )
+    except service.NoEsCuentaDeCliente:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Esa cuenta es del personal de una empresa y no puede comprar.",
         )
 
 
