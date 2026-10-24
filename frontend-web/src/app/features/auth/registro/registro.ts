@@ -14,7 +14,11 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 import { AuthLayout } from '../auth-layout/auth-layout';
-import { AuthService, type ErrorRegistro } from '../../../core/services/auth.service';
+import {
+  AuthService,
+  type ErrorLogin,
+  type ErrorRegistro,
+} from '../../../core/services/auth.service';
 import {
   CONTRASENA_LONGITUD_MINIMA,
   CONTRASENA_PATRON,
@@ -25,6 +29,10 @@ import {
  *
  * Realiza los pasos 1 a 3 y 8 del flujo principal, el flujo alternativo 4a y
  * el mostrado de la excepción E1. La creación efectiva ocurre en el backend.
+ *
+ * 2do parcial · CU-07 Registrar cliente con cuenta única: si el correo ya es
+ * de un cliente (4b), no se crea otra cuenta. Se le pide su contraseña y la
+ * misma cuenta queda asociada también a esta tienda (RN-13).
  */
 @Component({
   selector: 'app-registro',
@@ -57,6 +65,14 @@ export class Registro {
 
   /** Paso 8: se muestra la confirmación en lugar del formulario. */
   protected readonly registrado = signal(false);
+
+  /** CU-07 4b: el correo que ya tiene cuenta de cliente; muestra el panel para usarla. */
+  protected readonly cuentaExistente = signal<string | null>(null);
+
+  /** La contraseña de la cuenta existente, aparte de la del formulario. */
+  protected readonly contrasenaExistente = this.fb.nonNullable.control('', Validators.required);
+
+  protected readonly errorAsociar = signal<ErrorLogin | null>(null);
 
   /** Oculta o revela la contraseña escrita. */
   protected readonly verContrasena = signal(false);
@@ -120,6 +136,13 @@ export class Registro {
           this.enviando.set(false);
           this.error.set(error);
 
+          // CU-07 4b: no es un error, es la misma persona con su cuenta única.
+          if (error.tipo === 'cuenta-existente') {
+            this.error.set(null);
+            this.cuentaExistente.set(valores.correo.trim().toLowerCase());
+            return;
+          }
+
           // Excepción E1: se señala el campo culpable sin borrar el formulario.
           if (error.tipo === 'correo-duplicado') {
             this.control('correo').setErrors({ duplicado: true });
@@ -128,6 +151,37 @@ export class Registro {
           }
         },
       });
+  }
+
+  /** CU-07 4b: con su contraseña, la cuenta queda asociada a esta tienda. */
+  protected usarCuentaExistente(): void {
+    const correo = this.cuentaExistente();
+    if (!correo || this.contrasenaExistente.invalid) {
+      this.contrasenaExistente.markAsTouched();
+      return;
+    }
+    this.enviando.set(true);
+    this.errorAsociar.set(null);
+
+    this.auth
+      .asociarCuentaExistente({ correo, contrasena: this.contrasenaExistente.value })
+      .subscribe({
+        next: () => {
+          this.enviando.set(false);
+          this.router.navigateByUrl(this.auth.inicioDelRol());
+        },
+        error: (error: ErrorLogin) => {
+          this.enviando.set(false);
+          this.errorAsociar.set(error);
+        },
+      });
+  }
+
+  /** Vuelve al formulario, por ejemplo para registrarse con otro correo. */
+  protected volverAlFormulario(): void {
+    this.cuentaExistente.set(null);
+    this.errorAsociar.set(null);
+    this.contrasenaExistente.reset();
   }
 
   protected irALogin(): void {

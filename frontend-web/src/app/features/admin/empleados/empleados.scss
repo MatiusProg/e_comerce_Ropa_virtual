@@ -176,3 +176,11 @@ th {
     }
   }
 }
+
+// 2do parcial · CU-10: el límite del plan junto al botón de alta.
+.acciones-encabezado {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
