@@ -31,6 +31,11 @@ from app.db import seed_catalogo, seed_medidas
 from app.core.tenencia import CLAVE_EMPRESA
 from app.db.session import SessionLocal
 from app.modules.organizacion.models import Ciudad
+# 2do parcial: `usuario.empresa_id` apunta a `empresa`. Sin importar el modelo,
+# el metadata no tiene la tabla y el primer INSERT de usuario falla con
+# «could not find table 'empresa'». La app lo importa por sus routers; el seed
+# corre solo y tiene que nombrarlo.
+from app.modules.plataforma import models as _plataforma_models  # noqa: F401
 from app.modules.seguridad.models import Rol, Usuario
 
 ROLES: list[tuple[str, str]] = [

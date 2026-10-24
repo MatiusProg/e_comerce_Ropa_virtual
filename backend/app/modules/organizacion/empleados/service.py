@@ -140,11 +140,11 @@ def obtener_empleado(db: Session, empleado_id: int) -> EmpleadoOut:
     return _fila_a_empleado(fila)
 
 
-def listar_usuarios_vinculables(db: Session) -> list[UsuarioVinculableOut]:
+def listar_usuarios_vinculables(db: Session, empresa_id: int) -> list[UsuarioVinculableOut]:
     """Flujo alternativo 3c: cuentas existentes sin ficha de empleado."""
     return [
         UsuarioVinculableOut.model_validate(f, from_attributes=True)
-        for f in repository.listar_usuarios_vinculables(db)
+        for f in repository.listar_usuarios_vinculables(db, empresa_id)
     ]
 
 
@@ -159,7 +159,7 @@ def _validar_sucursal(db: Session, sucursal_id: int) -> None:
     raise SucursalInexistente(str(sucursal_id))
 
 
-def crear_empleado(db: Session, datos: EmpleadoCrearIn) -> EmpleadoOut:
+def crear_empleado(db: Session, datos: EmpleadoCrearIn, empresa_id: int) -> EmpleadoOut:
     """Registra un empleado y su cuenta.
 
     Paso 6: valida los datos, verifica que el documento no este registrado y
@@ -182,7 +182,7 @@ def crear_empleado(db: Session, datos: EmpleadoCrearIn) -> EmpleadoOut:
             # Flujo 3c. Se vuelve a comprobar que siga libre: entre que la
             # interfaz mostro la lista y llego esta peticion, otro
             # administrador pudo haberlo vinculado.
-            usuario = repository.obtener_usuario_vinculable(db, datos.usuario_id)
+            usuario = repository.obtener_usuario_vinculable(db, datos.usuario_id, empresa_id)
             if usuario is None:
                 raise UsuarioNoVinculable(str(datos.usuario_id))
 
@@ -202,6 +202,7 @@ def crear_empleado(db: Session, datos: EmpleadoCrearIn) -> EmpleadoOut:
                 nombres=datos.nombres,
                 apellidos=datos.apellidos,
                 rol_id=rol.id,
+                empresa_id=empresa_id,
             )
 
         empleado = repository.agregar_empleado(

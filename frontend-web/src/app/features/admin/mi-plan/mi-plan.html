@@ -1,0 +1,188 @@
+<header class="encabezado">
+  <div>
+    <h1>Mi plan</h1>
+    <p class="bajada">
+      El plan de tu empresa, hasta cuándo está vigente y cuánto usaste de cada límite.
+    </p>
+  </div>
+  @if (datos(); as d) {
+    <p class="empresa">
+      <mat-icon>apartment</mat-icon>
+      {{ d.empresa }} · <code>{{ d.slug }}</code>
+    </p>
+  }
+</header>
+
+@if (cargando()) {
+  <mat-progress-bar mode="indeterminate" />
+} @else if (error(); as e) {
+  <section class="tarjeta aviso error" role="alert">
+    <mat-icon>error_outline</mat-icon>
+    <p>{{ e.mensaje }}</p>
+    @if (e.tipo === 'sistema') {
+      <button matButton type="button" (click)="consultar()">Reintentar</button>
+    }
+  </section>
+} @else if (datos(); as d) {
+  @if (!d.suscripcion || d.suscripcion.solo_consulta) {
+    <!-- Flujo 2a: vencida o suspendida, la empresa solo consulta (RN-03). -->
+    <section class="tarjeta aviso alerta" role="status">
+      <mat-icon>warning_amber</mat-icon>
+      <p>
+        @if (d.suscripcion) {
+          La suscripción está <strong>{{ estado(d.suscripcion.estado) | lowercase }}</strong>.
+        } @else {
+          La empresa no tiene una suscripción.
+        }
+        Mientras tanto la empresa está en <strong>modo solo consulta</strong>: no puede registrar
+        ventas, reservas ni traspasos. Comuníquese con la plataforma para renovarla.
+      </p>
+    </section>
+  }
+
+  <div class="rejilla">
+    <section class="tarjeta plan">
+      @if (d.plan; as p) {
+        <p class="rotulo">Plan contratado</p>
+        <h2>{{ p.nombre }}</h2>
+        <p class="precio">
+          {{ p.precio_mensual | currency: 'BOB' : 'Bs ' : '1.0-0' }} <span>por mes</span>
+        </p>
+      } @else {
+        <p class="rotulo">Plan contratado</p>
+        <h2>Sin plan</h2>
+      }
+      @if (d.suscripcion; as s) {
+        <dl class="fechas">
+          <div>
+            <dt>Estado</dt>
+            <dd>
+              <span class="chip" [class]="'chip ' + s.estado.toLowerCase()">{{ estado(s.estado) }}</span>
+            </dd>
+          </div>
+          <div>
+            <dt>Desde</dt>
+            <dd>{{ s.inicio | date: 'dd/MM/yyyy' }}</dd>
+          </div>
+          <div>
+            <dt>Vence</dt>
+            <dd>{{ s.vencimiento | date: 'dd/MM/yyyy' }}</dd>
+          </div>
+          <div>
+            <dt>Faltan</dt>
+            <dd [class.vencido]="s.dias_restantes < 0">
+              @if (s.dias_restantes >= 0) {
+                {{ s.dias_restantes }} {{ s.dias_restantes === 1 ? 'día' : 'días' }}
+              } @else {
+                Venció hace {{ -s.dias_restantes }} {{ s.dias_restantes === -1 ? 'día' : 'días' }}
+              }
+            </dd>
+          </div>
+        </dl>
+      }
+    </section>
+
+    <section class="tarjeta consumo">
+      <h3>Límites del plan</h3>
+      @for (l of d.limites; track l.codigo) {
+        <ng-container *ngTemplateOutlet="barra; context: { $implicit: l }" />
+      }
+      <h3>Cupos del mes</h3>
+      @for (l of d.cupos; track l.codigo) {
+        <ng-container *ngTemplateOutlet="barra; context: { $implicit: l }" />
+      }
+    </section>
+  </div>
+
+  @if (d.plan; as p) {
+    <section class="tarjeta funciones">
+      <h3>Qué incluye tu plan</h3>
+      <ul>
+        @for (f of p.funciones; track f.codigo) {
+          <li [class.no-incluida]="!f.incluida">
+            <mat-icon>{{ f.incluida ? 'check_circle' : 'block' }}</mat-icon>
+            <span class="nombre">{{ f.etiqueta }}</span>
+            @if (f.detalle) {
+              <span class="detalle">{{ f.detalle }}</span>
+            } @else if (!f.incluida) {
+              <span class="detalle">No incluida</span>
+            }
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  <!-- Paso 4: comparar con los otros planes. -->
+  <div class="acciones">
+    <button matButton="outlined" type="button" (click)="comparando.set(!comparando())">
+      <mat-icon>{{ comparando() ? 'expand_less' : 'compare_arrows' }}</mat-icon>
+      {{ comparando() ? 'Ocultar la comparación' : 'Comparar con los otros planes' }}
+    </button>
+  </div>
+
+  @if (comparando()) {
+    <section class="tarjeta comparacion">
+      <div class="desplazable">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col"><span class="oculto">Característica</span></th>
+              @for (p of planesComparados(); track p.id) {
+                <th scope="col" [class.actual]="p.id === d.plan?.id">
+                  {{ p.nombre }}
+                  @if (p.id === d.plan?.id) {
+                    <span class="marca-actual">Tu plan</span>
+                  }
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Precio mensual</th>
+              @for (p of planesComparados(); track p.id) {
+                <td [class.actual]="p.id === d.plan?.id">
+                  {{ p.precio_mensual | currency: 'BOB' : 'Bs ' : '1.0-0' }}
+                </td>
+              }
+            </tr>
+            @for (fila of filasLimites; track fila.codigo) {
+              <tr>
+                <th scope="row">{{ fila.etiqueta }}</th>
+                @for (p of planesComparados(); track p.id) {
+                  <td [class.actual]="p.id === d.plan?.id">{{ limiteDe(p, fila.codigo) }}</td>
+                }
+              </tr>
+            }
+            @for (fila of filasComparacion(); track fila.codigo) {
+              <tr>
+                <th scope="row">{{ fila.etiqueta }}</th>
+                @for (p of planesComparados(); track p.id) {
+                  <td [class.actual]="p.id === d.plan?.id">{{ funcionDe(p, fila.codigo) }}</td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+}
+
+<ng-template #barra let-l>
+  <div class="limite" [class.alcanzado]="l.alcanzado">
+    <div class="limite-cabecera">
+      <span>{{ l.etiqueta }}</span>
+      <strong>{{ textoLimite(l) }}</strong>
+    </div>
+    @if (l.usado !== null && l.limite !== null && l.limite > 0) {
+      <mat-progress-bar mode="determinate" [value]="porcentaje(l)" />
+    }
+    @if (l.alcanzado) {
+      <p class="nota">
+        Límite alcanzado: no se pueden crear más hasta subir de plan o desactivar alguno.
+      </p>
+    }
+  </div>
+</ng-template>

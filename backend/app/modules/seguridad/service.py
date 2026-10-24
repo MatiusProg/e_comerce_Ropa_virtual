@@ -29,6 +29,7 @@ from app.modules.seguridad import repository
 from app.modules.seguridad.models import Cliente
 from app.modules.seguridad.schemas import (
     ROLES_CON_SUCURSAL,
+    ROLES_NO_ASIGNABLES,
     CambioContrasenaIn,
     CambioEstadoIn,  # noqa: F401  (lo usa el router)
     ClienteRegistradoOut,
@@ -314,6 +315,19 @@ class AutodesactivacionProhibida(ErrorDeGestion):
     """Excepcion E3: nadie puede desactivarse ni borrarse a si mismo."""
 
 
+class CuentaDePlataforma(ErrorDeGestion):
+    """CU-08: la cuenta es de un cliente, que es de la plataforma y no de la empresa.
+
+    El cliente tiene una sola cuenta para todas las tiendas (RN-13). Si una
+    empresa pudiera desactivarla o cambiarle el correo, lo dejaría afuera
+    también de las otras.
+    """
+
+
+class RolNoAsignable(ErrorDeGestion):
+    """CU-08: el cliente crea su cuenta en la tienda (CU-07), no desde el panel."""
+
+
 class UsuarioConOperaciones(ErrorDeGestion):
     """Flujo 3c: tiene operaciones asociadas; corresponde desactivar, no borrar."""
 
@@ -333,7 +347,10 @@ def _fila_a_resumen(fila) -> UsuarioResumenOut:
 
 
 def listar_roles(db: Session) -> list[RolOut]:
-    """Roles asignables, marcando cuales exigen sucursal."""
+    """Roles asignables, marcando cuales exigen sucursal.
+
+    CU-08: sin los que una empresa no puede asignar (`ROLES_NO_ASIGNABLES`).
+    """
     return [
         RolOut(
             id=r.id,
@@ -342,12 +359,14 @@ def listar_roles(db: Session) -> list[RolOut]:
             exige_sucursal=r.nombre in ROLES_CON_SUCURSAL,
         )
         for r in repository.listar_roles(db)
+        if r.nombre not in ROLES_NO_ASIGNABLES
     ]
 
 
 def listar_usuarios(
     db: Session,
     *,
+    empresa_id: int,
     busqueda: str | None = None,
     rol: str | None = None,
     activo: bool | None = None,
@@ -356,7 +375,7 @@ def listar_usuarios(
 ) -> PaginaUsuarios:
     """Listado paginado con busqueda y filtros (paso 2)."""
     total, filas = repository.contar_y_listar_usuarios(
-        db, busqueda=busqueda, rol=rol, activo=activo, pagina=pagina, tamano=tamano
+        db, empresa_id=empresa_id, busqueda=busqueda, rol=rol, activo=activo, pagina=pagina, tamano=tamano
     )
     return PaginaUsuarios(
         items=[_fila_a_resumen(f) for f in filas],
@@ -367,11 +386,31 @@ def listar_usuarios(
     )
 
 
-def obtener_usuario(db: Session, usuario_id: int) -> UsuarioResumenOut:
-    fila = repository.obtener_detalle_usuario(db, usuario_id)
+def obtener_usuario(db: Session, usuario_id: int, empresa_id: int) -> UsuarioResumenOut:
+    """Un usuario que la empresa puede ver; el de otra empresa no existe (404)."""
+    fila = repository.obtener_detalle_usuario(db, usuario_id, empresa_id)
     if fila is None:
         raise UsuarioInexistente(str(usuario_id))
     return _fila_a_resumen(fila)
+
+
+def _personal_de_la_empresa(db: Session, usuario_id: int, empresa_id: int):
+    """El usuario a modificar, solo si es personal de la empresa (CU-08).
+
+    El de otra empresa responde como inexistente: decir «existe pero no es
+    tuyo» ya le cuenta algo que no debe saber. El cliente de la propia empresa
+    sí se ve, pero su cuenta no se toca desde acá.
+    """
+    usuario = repository.obtener_usuario_con_id(db, usuario_id)
+    if usuario is None:
+        raise UsuarioInexistente(str(usuario_id))
+    if usuario.empresa_id != empresa_id:
+        if usuario.empresa_id is None and repository.obtener_detalle_usuario(
+            db, usuario_id, empresa_id
+        ) is not None:
+            raise CuentaDePlataforma(str(usuario_id))
+        raise UsuarioInexistente(str(usuario_id))
+    return usuario
 
 
 def _validar_ambito(
@@ -385,7 +424,9 @@ def _validar_ambito(
             raise SucursalInvalida(str(sucursal_id))
 
 
-def crear_usuario(db: Session, datos: UsuarioCrearIn) -> UsuarioResumenOut:
+def crear_usuario(
+    db: Session, datos: UsuarioCrearIn, empresa_id: int
+) -> UsuarioResumenOut:
     """Alta de usuario desde el panel (pasos 5 a 7).
 
     Cuando el rol exige sucursal se crea tambien la ficha de empleado, en la
@@ -399,7 +440,11 @@ def crear_usuario(db: Session, datos: UsuarioCrearIn) -> UsuarioResumenOut:
     # 2do parcial: el rol de la plataforma no se asigna desde una empresa (CU-08, 5a).
     if rol is None or rol.nombre == ROL_PLATAFORMA:
         raise RolInexistente(datos.rol)
+    if rol.nombre in ROLES_NO_ASIGNABLES:
+        raise RolNoAsignable(rol.nombre)
 
+    # La sucursal se busca con RLS: la de otra empresa no aparece y cae como
+    # inválida (CU-08, paso 5).
     _validar_ambito(db, rol.nombre, datos.sucursal_id)
 
     exige_empleado = rol.nombre in ROLES_CON_SUCURSAL
@@ -414,6 +459,7 @@ def crear_usuario(db: Session, datos: UsuarioCrearIn) -> UsuarioResumenOut:
             nombres=datos.nombres,
             apellidos=datos.apellidos,
             rol_id=rol.id,
+            empresa_id=empresa_id,
         )
         if exige_empleado:
             repository.agregar_empleado(
@@ -436,16 +482,14 @@ def crear_usuario(db: Session, datos: UsuarioCrearIn) -> UsuarioResumenOut:
         db.rollback()
         raise
 
-    return obtener_usuario(db, usuario.id)
+    return obtener_usuario(db, usuario.id, empresa_id)
 
 
 def editar_usuario(
-    db: Session, usuario_id: int, datos: UsuarioEditarIn
+    db: Session, usuario_id: int, datos: UsuarioEditarIn, empresa_id: int
 ) -> UsuarioResumenOut:
     """Edición de un usuario (flujo alternativo 3a)."""
-    usuario = repository.obtener_usuario_de_la_empresa(db, usuario_id)
-    if usuario is None:
-        raise UsuarioInexistente(str(usuario_id))
+    usuario = _personal_de_la_empresa(db, usuario_id, empresa_id)
 
     if datos.correo and datos.correo != usuario.correo:
         otro = repository.obtener_usuario_por_correo(db, datos.correo)
@@ -457,6 +501,8 @@ def editar_usuario(
         rol = repository.obtener_rol_por_nombre(db, datos.rol)
         if rol is None or rol.nombre == ROL_PLATAFORMA:
             raise RolInexistente(datos.rol)
+        if rol.nombre in ROLES_NO_ASIGNABLES:
+            raise RolNoAsignable(rol.nombre)
 
     empleado = repository.obtener_empleado_de_usuario(db, usuario_id)
     sucursal_id = datos.sucursal_id if datos.sucursal_id is not None else (
@@ -494,11 +540,11 @@ def editar_usuario(
         db.rollback()
         raise
 
-    return obtener_usuario(db, usuario_id)
+    return obtener_usuario(db, usuario_id, empresa_id)
 
 
 def cambiar_estado(
-    db: Session, usuario_id: int, activo: bool, *, solicitante_id: int
+    db: Session, usuario_id: int, activo: bool, *, solicitante_id: int, empresa_id: int
 ) -> UsuarioResumenOut:
     """Activa o desactiva una cuenta (flujo alternativo 3b).
 
@@ -507,9 +553,7 @@ def cambiar_estado(
     postcondicion del caso de uso --"un usuario desactivado no puede iniciar
     sesion"-- se cumpliria solo a medias.
     """
-    usuario = repository.obtener_usuario_de_la_empresa(db, usuario_id)
-    if usuario is None:
-        raise UsuarioInexistente(str(usuario_id))
+    usuario = _personal_de_la_empresa(db, usuario_id, empresa_id)
 
     # Excepcion E3.
     if not activo and usuario_id == solicitante_id:
@@ -524,19 +568,19 @@ def cambiar_estado(
         db.rollback()
         raise
 
-    return obtener_usuario(db, usuario_id)
+    return obtener_usuario(db, usuario_id, empresa_id)
 
 
-def eliminar_usuario(db: Session, usuario_id: int, *, solicitante_id: int) -> None:
+def eliminar_usuario(
+    db: Session, usuario_id: int, *, solicitante_id: int, empresa_id: int
+) -> None:
     """Baja de un usuario (flujo alternativo 3c).
 
     Solo se permite si no tiene operaciones asociadas; si las tiene, el caso de
     uso indica ofrecer desactivar en su lugar, y eso lo resuelve la interfaz
     con el error que devuelve este servicio.
     """
-    usuario = repository.obtener_usuario_de_la_empresa(db, usuario_id)
-    if usuario is None:
-        raise UsuarioInexistente(str(usuario_id))
+    usuario = _personal_de_la_empresa(db, usuario_id, empresa_id)
 
     # Excepcion E3: tampoco puede borrarse a si mismo.
     if usuario_id == solicitante_id:
