@@ -91,7 +91,8 @@ def test_lista_los_clientes_que_compran_en_la_empresa(
     assert CORREO_CLIENTE in _correos(api, cabeceras_admin)
 
     admin_b = _usuario(sesion_b, "admin@b.bo", "ADMINISTRADOR", empresa_b)
-    cabeceras_b = {"Authorization": f"Bearer {_iniciar_sesion(api, admin_b.correo, CLAVE)}"}
+    token_b = _iniciar_sesion(api, admin_b.correo, CLAVE, "tienda-b")
+    cabeceras_b = {"Authorization": f"Bearer {token_b}"}
 
     assert CORREO_CLIENTE not in _correos(api, cabeceras_b)
 
@@ -241,8 +242,10 @@ def test_edita_y_desactiva_su_personal(api, cabeceras_admin, db):
 
 def test_usuario_sin_empresa_no_gestiona(api, db):
     """El administrador de la plataforma no tiene empresa: no hay usuarios que gestionar."""
-    _usuario(db, "plataforma@violet.bo", "ADMINISTRADOR", None)
-    token = _iniciar_sesion(api, "plataforma@violet.bo", CLAVE)
+    # CU-06 (RN-12): sin empresa solo existe la cuenta de la plataforma, que
+    # entra sin slug.
+    _usuario(db, "plataforma@violet.bo", "ADMIN_PLATAFORMA", None)
+    token = _iniciar_sesion(api, "plataforma@violet.bo", CLAVE, None)
 
     respuesta = api.get(URL, headers={"Authorization": f"Bearer {token}"})
 

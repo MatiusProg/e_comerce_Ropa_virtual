@@ -204,6 +204,23 @@ def motor():
 #: 2do parcial: la empresa de las pruebas que no hablan de multitenant. Es la
 #: misma que la migracion 0022 le da a los datos del 1er parcial.
 EMPRESA_PRUEBAS = 1
+SLUG_PRUEBAS = "violet-boutique"
+
+
+class _ClienteDePruebas(TestClient):
+    """CU-06: el login indica la empresa por su slug (RN-12).
+
+    Las pruebas anteriores al 2do parcial inician sesión sin slug; en vez de
+    tocar cada una, este cliente le agrega el de la empresa de las pruebas al
+    login que no trae la clave `empresa`. Las pruebas del CU-06 (y las de la
+    plataforma, que entra sin slug) la mandan explícita, aunque sea `None`.
+    """
+
+    def post(self, url, *args, **kwargs):
+        cuerpo = kwargs.get("json")
+        if str(url).endswith("/auth/login") and isinstance(cuerpo, dict) and "empresa" not in cuerpo:
+            kwargs["json"] = {"empresa": SLUG_PRUEBAS, **cuerpo}
+        return super().post(url, *args, **kwargs)
 
 
 @pytest.fixture(scope="session")
@@ -328,14 +345,18 @@ def api(db, fabrica_sesiones):
             sesion.close()
 
     app.dependency_overrides[get_db] = _get_db_de_prueba
-    with TestClient(app) as cliente:
+    with _ClienteDePruebas(app) as cliente:
         yield cliente
     app.dependency_overrides.clear()
 
 
-def _iniciar_sesion(api: TestClient, correo: str, contrasena: str) -> str:
+def _iniciar_sesion(
+    api: TestClient, correo: str, contrasena: str, empresa: str | None = SLUG_PRUEBAS
+) -> str:
+    """CU-06: `empresa` es el slug; `None` para el administrador de la plataforma."""
     respuesta = api.post(
-        "/api/v1/auth/login", json={"correo": correo, "contrasena": contrasena}
+        "/api/v1/auth/login",
+        json={"empresa": empresa, "correo": correo, "contrasena": contrasena},
     )
     assert respuesta.status_code == 200, respuesta.text
     return respuesta.json()["access_token"]

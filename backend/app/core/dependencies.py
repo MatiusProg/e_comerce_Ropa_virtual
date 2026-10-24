@@ -10,7 +10,7 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.security import decodificar_token
@@ -40,6 +40,7 @@ class UsuarioActual:
         jti: uuid.UUID,
         correo: str | None = None,
         empresa_id: int | None = None,
+        empresa_de_sesion: int | None = None,
     ):
         self.id = usuario_id
         self.rol = rol
@@ -53,6 +54,9 @@ class UsuarioActual:
         # 2do parcial: la empresa del personal; None para el cliente, que no
         # pertenece a ninguna (RN-13) y opera en la tienda que esta mirando.
         self.empresa_id = empresa_id
+        # CU-06: la empresa donde inicio sesion. Para el personal es la suya;
+        # para el cliente, la tienda (claim del token); None en la plataforma.
+        self.empresa_de_sesion = empresa_de_sesion
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<UsuarioActual id={self.id} rol={self.rol} sucursal={self.sucursal_id}>"
@@ -99,9 +103,16 @@ def get_usuario_actual(
     if sesion is None or sesion.revocado_en is not None:
         raise _rechazar("Su sesión fue cerrada. Inicie sesión nuevamente.")
 
+    # La empresa del personal es la suya; la del cliente, la tienda donde
+    # inicio sesion (claim del token, CU-06). Las dos se miran en la misma
+    # consulta, para cortar el acceso si la dieron de baja.
+    empresa_del_token = datos.get("empresa_id")
     fila = db.execute(
         select(UsuarioDB.activo, UsuarioDB.correo, UsuarioDB.empresa_id, Empresa.estado)
-        .outerjoin(Empresa, Empresa.id == UsuarioDB.empresa_id)
+        .outerjoin(
+            Empresa,
+            Empresa.id == func.coalesce(UsuarioDB.empresa_id, empresa_del_token),
+        )
         .where(UsuarioDB.id == int(datos["sub"]))
     ).first()
     if fila is None or not fila[0]:
@@ -124,13 +135,16 @@ def get_usuario_actual(
         jti=jti,
         correo=fila[1],
         empresa_id=fila[2],
+        # La del personal sale de la base y no del token: si lo cambian de
+        # empresa, el token viejo no se lleva los datos de la anterior.
+        empresa_de_sesion=fila[2] if fila[2] is not None else empresa_del_token,
     )
     # 2do parcial: desde aca, todo lo que consulte la peticion queda acotado a
     # la empresa del usuario por RLS. La empresa sale de la base y no del
     # token: si al usuario lo cambian de empresa, el token viejo no se lleva
     # los datos de la anterior. El cliente no tiene empresa y sigue en la de la
     # tienda (ver app/core/tenencia.py).
-    fijar_contexto_de_usuario(db, rol=usuario.rol, empresa_id=fila[2])
+    fijar_contexto_de_usuario(db, rol=usuario.rol, empresa_id=usuario.empresa_de_sesion)
     _exigir_suscripcion_para_escribir(peticion, db, usuario)
     # Se deja a mano para la bitacora (CU-42). El middleware corre fuera del
     # grafo de dependencias y no puede volver a resolver el token: sin esto,

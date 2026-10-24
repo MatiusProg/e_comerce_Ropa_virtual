@@ -14,6 +14,7 @@ import uuid
 from datetime import date, datetime, timezone
 
 from sqlalchemy import Row, func, or_, select, update
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session, joinedload
 
 # `Categoria` es de P3. La dependencia P1 -> P3 para el catalogo de
@@ -42,9 +43,20 @@ from app.modules.seguridad.models import (
 
 # --- Consultas -----------------------------------------------------------
 
-def obtener_usuario_por_correo(db: Session, correo: str) -> Usuario | None:
-    """Devuelve el usuario con ese correo, o None si no existe."""
-    return db.scalar(select(Usuario).where(Usuario.correo == correo))
+def _de_la_empresa(empresa_id: int | None):
+    """El alcance del correo (CU-06): único por empresa para el personal, y en
+    la plataforma para las cuentas sin empresa (cliente y plataforma)."""
+    if empresa_id is None:
+        return Usuario.empresa_id.is_(None)
+    return Usuario.empresa_id == empresa_id
+
+
+def obtener_usuario_por_correo(
+    db: Session, correo: str, empresa_id: int | None
+) -> Usuario | None:
+    """El usuario con ese correo en esa empresa (`None`: una cuenta sin
+    empresa), o None si no existe."""
+    return db.scalar(select(Usuario).where(Usuario.correo == correo, _de_la_empresa(empresa_id)))
 
 
 def obtener_rol_por_nombre(db: Session, nombre: str) -> Rol | None:
@@ -121,14 +133,34 @@ def agregar_cliente(
     return cliente
 
 
+def asociar_cliente_a_la_empresa(db: Session, usuario_id: int) -> None:
+    """CU-06: el cliente que entra a una tienda queda asociado a su empresa.
+
+    Tiene una sola cuenta en la plataforma (RN-13): la primera vez que entra a
+    otra tienda, esa empresa empieza a verlo. Es idempotente, y la empresa es
+    la del contexto, que el login ya fijó con el slug.
+    """
+    cliente_id = db.scalar(select(Cliente.id).where(Cliente.usuario_id == usuario_id))
+    if cliente_id is not None:
+        db.execute(
+            insert(ClienteEmpresa).values(cliente_id=cliente_id).on_conflict_do_nothing()
+        )
+
+
 # --- CU-02 Iniciar y cerrar sesion ---------------------------------------
+
+def obtener_empresa(db: Session, empresa_id: int) -> Empresa | None:
+    return db.get(Empresa, empresa_id)
+
 
 def estado_de_empresa(db: Session, empresa_id: int) -> str | None:
     """2do parcial: si la empresa del usuario sigue activa (`empresa` no tiene RLS)."""
     return db.scalar(select(Empresa.estado).where(Empresa.id == empresa_id))
 
 
-def obtener_usuario_con_rol(db: Session, correo: str) -> Usuario | None:
+def obtener_usuario_con_rol(
+    db: Session, correo: str, empresa_id: int | None
+) -> Usuario | None:
     """Igual que obtener_usuario_por_correo, pero trae el rol en la misma
     consulta.
 
@@ -137,8 +169,16 @@ def obtener_usuario_con_rol(db: Session, correo: str) -> Usuario | None:
     sesion antes de eso, falla.
     """
     return db.scalar(
-        select(Usuario).options(joinedload(Usuario.rol)).where(Usuario.correo == correo)
+        select(Usuario)
+        .options(joinedload(Usuario.rol))
+        .where(Usuario.correo == correo, _de_la_empresa(empresa_id))
     )
+
+
+def obtener_empresa_por_slug(db: Session, slug: str) -> Empresa | None:
+    """CU-06, paso 2. `empresa` no tiene RLS: el login la busca antes de saber
+    de qué empresa es la petición."""
+    return db.scalar(select(Empresa).where(Empresa.slug == slug))
 
 
 def obtener_usuario_con_id(db: Session, usuario_id: int) -> Usuario | None:

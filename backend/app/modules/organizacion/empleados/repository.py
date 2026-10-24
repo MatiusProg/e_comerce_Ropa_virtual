@@ -203,8 +203,11 @@ def obtener_rol_por_nombre(db: Session, nombre: str) -> Rol | None:
     return db.scalar(select(Rol).where(Rol.nombre == nombre))
 
 
-def obtener_usuario_por_correo(db: Session, correo: str) -> Usuario | None:
-    return db.scalar(select(Usuario).where(Usuario.correo == correo))
+def obtener_usuario_por_correo(db: Session, correo: str, empresa_id: int) -> Usuario | None:
+    """CU-06: el correo del personal es único dentro de su empresa."""
+    return db.scalar(
+        select(Usuario).where(Usuario.correo == correo, Usuario.empresa_id == empresa_id)
+    )
 
 
 def agregar_usuario(

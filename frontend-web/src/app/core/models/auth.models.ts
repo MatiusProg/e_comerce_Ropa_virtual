@@ -25,8 +25,10 @@ export interface ClienteRegistradoOut {
   rol: string;
 }
 
-/** Cuerpo de POST /api/v1/auth/login — CU-02. */
+/** Cuerpo de POST /api/v1/auth/login — CU-06. */
 export interface LoginIn {
+  /** Slug de la empresa (RN-12). `null` solo para la plataforma. */
+  empresa: string | null;
   correo: string;
   contrasena: string;
 }
@@ -39,6 +41,17 @@ export interface UsuarioAutenticado {
   apellidos: string;
   rol: Rol;
   sucursal_id: number | null;
+  /** 2do parcial · CU-06. `null` solo para la plataforma. */
+  empresa: EmpresaDeLaSesion | null;
+  /** CU-06 3a: suscripción vencida o suspendida; solo se puede consultar. */
+  solo_consulta: boolean;
+}
+
+/** La empresa donde se inició sesión. */
+export interface EmpresaDeLaSesion {
+  id: number;
+  nombre: string;
+  slug: string;
 }
 
 /** Respuesta 200 de POST /api/v1/auth/login. */
@@ -92,6 +105,8 @@ export const CONTRASENA_PATRON = /^(?=.*[A-Za-z])(?=.*\d).+$/;
 
 /** Cuerpo de POST /api/v1/auth/recuperacion — CU-41, paso 2. */
 export interface RecuperacionSolicitudIn {
+  /** El correo es único por empresa (CU-06). `null`: cuenta sin empresa. */
+  empresa: string | null;
   correo: string;
 }
 

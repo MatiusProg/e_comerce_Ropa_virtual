@@ -51,11 +51,14 @@ def cabeceras_plataforma(api, db, planes) -> dict[str, str]:
             )
         )
         db.commit()
-    return _token(api, CORREO_PLATAFORMA, CLAVE)
+    return _token(api, CORREO_PLATAFORMA, CLAVE, empresa=None)
 
 
-def _token(api, correo: str, clave: str) -> dict[str, str]:
-    respuesta = api.post(f"{API}/auth/login", json={"correo": correo, "contrasena": clave})
+def _token(api, correo: str, clave: str, empresa: str | None = "moda-andina") -> dict[str, str]:
+    """CU-06: la plataforma entra sin slug; el personal, con el de su empresa."""
+    respuesta = api.post(
+        f"{API}/auth/login", json={"empresa": empresa, "correo": correo, "contrasena": clave}
+    )
     assert respuesta.status_code == 200, respuesta.text
     return {"Authorization": f"Bearer {respuesta.json()['access_token']}"}
 
@@ -124,13 +127,21 @@ def test_slug_repetido_no_crea_nada(api, db, cabeceras_plataforma):
     assert db.scalar(select(Usuario).where(Usuario.correo == "otro@modaandina.bo")) is None
 
 
-def test_correo_ya_registrado(api, cabeceras_plataforma):
-    respuesta = api.post(
-        f"{API}/plataforma/empresas",
-        json=_alta(slug="otra", correo=CORREO_PLATAFORMA),
-        headers=cabeceras_plataforma,
-    )
-    assert respuesta.status_code == 409
+def test_el_mismo_correo_puede_administrar_dos_empresas(api, cabeceras_plataforma):
+    """CU-06: el correo es único por empresa; el slug del login las distingue."""
+    una = api.post(f"{API}/plataforma/empresas", json=_alta(slug="moda-andina"),
+                   headers=cabeceras_plataforma).json()
+    otra = api.post(f"{API}/plataforma/empresas", json=_alta(slug="moda-sur"),
+                    headers=cabeceras_plataforma)
+    assert otra.status_code == 201, otra.text
+    otra = otra.json()
+
+    for slug, alta in (("moda-andina", una), ("moda-sur", otra)):
+        login = api.post(f"{API}/auth/login", json={
+            "empresa": slug, "correo": "admin@modaandina.bo",
+            "contrasena": alta["contrasena_temporal"]})
+        assert login.status_code == 200, login.text
+        assert login.json()["usuario"]["empresa"]["id"] == alta["id"]
 
 
 def test_slug_invalido_y_plan_inexistente(api, cabeceras_plataforma):
@@ -172,8 +183,10 @@ def test_la_baja_corta_el_acceso_y_la_reactivacion_lo_devuelve(api, cabeceras_pl
                     headers=cabeceras_plataforma).json()["estado"] == "BAJA"
     # El token que ya tenía deja de servir, y no puede volver a entrar.
     assert api.get(f"{API}/organizacion/sucursales", headers=cabeceras).status_code in (401, 403)
-    login = api.post(f"{API}/auth/login", json={"correo": "admin@modaandina.bo", "contrasena": clave})
-    assert login.status_code == 403
+    login = api.post(f"{API}/auth/login", json={
+        "empresa": "moda-andina", "correo": "admin@modaandina.bo", "contrasena": clave})
+    # CU-06 2a: para quien intenta entrar, la empresa de baja no existe.
+    assert login.status_code == 404
 
     api.post(f"{API}/plataforma/empresas/{alta['id']}/reactivar", headers=cabeceras_plataforma)
     _token(api, "admin@modaandina.bo", clave)
@@ -248,6 +261,7 @@ def test_el_personal_de_otra_empresa_recibe_su_sucursal_en_el_login(api, db, cab
         headers=cabeceras_b,
     )
     assert creado.status_code == 201, creado.text
-    login = api.post(f"{API}/auth/login", json={"correo": "cajera@modaandina.bo", "contrasena": "Secreta123"})
+    login = api.post(f"{API}/auth/login", json={
+        "empresa": "moda-andina", "correo": "cajera@modaandina.bo", "contrasena": "Secreta123"})
     assert login.status_code == 200
     assert login.json()["usuario"]["sucursal_id"] == sucursal_id

@@ -220,9 +220,9 @@ def crear_empresa(db: Session, datos: EmpresaCrearIn) -> EmpresaCreadaOut:
     # Paso 4: validar. Lo que no depende de la empresa nueva, antes de escribir.
     if db.scalar(select(Empresa.id).where(Empresa.slug == datos.slug)) is not None:
         raise SlugRepetido(datos.slug)
+    # El correo del administrador no se valida contra las demás empresas: es
+    # único por empresa (CU-06), y la empresa nueva todavía no tiene a nadie.
     correo = datos.administrador.correo.lower()
-    if db.scalar(select(Usuario.id).where(func.lower(Usuario.correo) == correo)) is not None:
-        raise CorreoYaRegistrado(correo)
     plan = db.scalar(
         select(Plan).where(Plan.codigo == datos.plan_codigo.upper(), Plan.activo.is_(True))
     )
@@ -282,7 +282,7 @@ def crear_empresa(db: Session, datos: EmpresaCrearIn) -> EmpresaCreadaOut:
         mensaje = str(error.orig)
         if "uq_empresa_slug" in mensaje:
             raise SlugRepetido(datos.slug) from error
-        if "uq_usuario_correo" in mensaje:
+        if "uq_usuario_empresa_correo" in mensaje:
             raise CorreoYaRegistrado(correo) from error
         raise
     finally:

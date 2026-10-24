@@ -192,7 +192,7 @@ def crear_empleado(db: Session, datos: EmpleadoCrearIn, empresa_id: int) -> Empl
             usuario.rol_id = rol.id
             repositorio_seguridad.revocar_sesiones_de_usuario(db, usuario.id)
         else:
-            if repository.obtener_usuario_por_correo(db, datos.correo) is not None:
+            if repository.obtener_usuario_por_correo(db, datos.correo, empresa_id) is not None:
                 raise CorreoYaRegistrado(datos.correo)
 
             usuario = repository.agregar_usuario(
@@ -224,7 +224,7 @@ def crear_empleado(db: Session, datos: EmpleadoCrearIn, empresa_id: int) -> Empl
         db.rollback()
         if _viola(exc, "uq_empleado_documento"):
             raise DocumentoYaRegistrado(datos.documento) from exc
-        if _viola(exc, "uq_usuario_correo"):
+        if _viola(exc, "uq_usuario_empresa_correo"):
             raise CorreoYaRegistrado(datos.correo or "") from exc
         raise
     except Exception:
