@@ -23,6 +23,7 @@ import {
   CONTRASENA_LONGITUD_MINIMA,
   CONTRASENA_PATRON,
 } from '../../../core/models/auth.models';
+import { empresaRecordada, normalizarEmpresa } from '../../../core/empresa-recordada';
 
 /**
  * CU-01 · Registrar cliente — «boundary» FormularioRegistro.
@@ -163,8 +164,13 @@ export class Registro {
     this.enviando.set(true);
     this.errorAsociar.set(null);
 
+    // La tienda es la del CU-06: la última empresa con la que se entró.
     this.auth
-      .asociarCuentaExistente({ correo, contrasena: this.contrasenaExistente.value })
+      .asociarCuentaExistente({
+        empresa: normalizarEmpresa(empresaRecordada()),
+        correo,
+        contrasena: this.contrasenaExistente.value,
+      })
       .subscribe({
         next: () => {
           this.enviando.set(false);

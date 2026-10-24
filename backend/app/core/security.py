@@ -48,6 +48,7 @@ def crear_access_token(
     usuario_id: int,
     rol: str,
     sucursal_id: int | None = None,
+    empresa_id: int | None = None,
     vigencia: timedelta | None = None,
 ) -> TokenEmitido:
     """Emite un token de acceso.
@@ -69,6 +70,9 @@ def crear_access_token(
         "sub": str(usuario_id),
         "rol": rol,
         "sucursal_id": sucursal_id,
+        # 2do parcial, CU-06: la empresa donde se inició sesión. Para el
+        # personal coincide con la suya; para el cliente es la tienda.
+        "empresa_id": empresa_id,
         "jti": str(jti),
         "iat": ahora,
         "exp": expiracion,

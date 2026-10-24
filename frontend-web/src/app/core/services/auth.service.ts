@@ -30,6 +30,8 @@ export type ErrorRegistro =
 export type ErrorLogin =
   | { tipo: 'credenciales'; mensaje: string }
   | { tipo: 'desactivada'; mensaje: string }
+  // CU-06 1a y 2a: falta la empresa, o no existe.
+  | { tipo: 'empresa'; mensaje: string }
   | { tipo: 'sistema'; mensaje: string };
 
 /**
@@ -264,6 +266,11 @@ export class AuthService {
         tipo: 'desactivada',
         mensaje: detalle || 'Su cuenta está desactivada. Contacte al administrador.',
       };
+    }
+    // CU-06: 404 es la empresa que no existe (2a); 422 con mensaje, la que
+    // falta (1a). El 422 de validación trae una lista y no un mensaje.
+    if (error.status === 404 || (error.status === 422 && typeof detalle === 'string' && detalle)) {
+      return { tipo: 'empresa', mensaje: detalle || 'Empresa no encontrada.' };
     }
     if (error.status === 0) {
       return {

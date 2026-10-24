@@ -2,11 +2,12 @@
 
 El cliente tiene UNA cuenta en la plataforma (RN-13). Si ya se registró en la
 tienda A y quiere comprar en la B, no se le crea otra: inicia sesión con la
-suya y queda asociado también a B (flujo alternativo 4b).
+suya, con el slug de B (CU-06), y queda asociado también a B (flujo
+alternativo 4b).
 """
 
 import pytest
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 
 from app.core.security import hash_password
 from app.core.tenencia import CLAVE_EMPRESA, modo_plataforma
@@ -50,7 +51,28 @@ def tienda_b(db) -> dict[str, str]:
     empresa = Empresa(nombre="Tienda B", slug="tienda-b")
     db.add(empresa)
     db.commit()
-    return {"X-Empresa": str(empresa.id)}
+    return {"X-Empresa": str(empresa.id), "slug": empresa.slug}
+
+
+def _cabecera(tienda: dict[str, str]) -> dict[str, str]:
+    return {"X-Empresa": tienda["X-Empresa"]}
+
+
+def _credenciales(tienda: dict[str, str], correo: str = CORREO_CLIENTE,
+                  contrasena: str = CLAVE_CLIENTE) -> dict[str, str]:
+    return {"empresa": tienda["slug"], "correo": correo, "contrasena": contrasena}
+
+
+def _cuenta_de_plataforma(db) -> None:
+    """El administrador de la plataforma: una cuenta sin empresa que no compra."""
+    rol = db.scalar(select(Rol.id).where(Rol.nombre == "ADMIN_PLATAFORMA"))
+    usuario = Usuario(correo="plataforma@violet.bo", hash_contrasena=hash_password("Clave12345"),
+                      nombres="Pla", apellidos="Taforma", rol_id=rol)
+    db.add(usuario)
+    db.commit()
+    # Un None en el objeto no llega al INSERT (DEFAULT de la empresa del contexto).
+    db.execute(update(Usuario).where(Usuario.id == usuario.id).values(empresa_id=None))
+    db.commit()
 
 
 @pytest.fixture
@@ -76,7 +98,7 @@ def _empresas(plataforma, correo: str) -> set[int]:
 # --- Flujo principal ---------------------------------------------------------
 
 def test_cuenta_nueva_queda_en_la_tienda_donde_se_registra(api, db, tienda_b, plataforma):
-    respuesta = api.post(REGISTRO, json=DATOS, headers=tienda_b)
+    respuesta = api.post(REGISTRO, json=DATOS, headers=_cabecera(tienda_b))
 
     assert respuesta.status_code == 201, respuesta.text
     usuario = db.scalar(select(Usuario).where(Usuario.correo == CORREO_CLIENTE))
@@ -87,15 +109,14 @@ def test_cuenta_nueva_queda_en_la_tienda_donde_se_registra(api, db, tienda_b, pl
 # --- 4b: el correo ya tiene cuenta de cliente --------------------------------
 
 def test_registrarse_otra_vez_ofrece_usar_la_cuenta(api, token_cliente, tienda_b):
-    respuesta = api.post(REGISTRO, json=DATOS, headers=tienda_b)
+    respuesta = api.post(REGISTRO, json=DATOS, headers=_cabecera(tienda_b))
 
     assert respuesta.status_code == 409
     assert "cuenta de cliente" in respuesta.json()["detail"]
 
 
 def test_asociar_usa_la_misma_cuenta_en_la_otra_tienda(api, db, token_cliente, tienda_b, plataforma):
-    respuesta = api.post(ASOCIAR, headers=tienda_b,
-                         json={"correo": CORREO_CLIENTE, "contrasena": CLAVE_CLIENTE})
+    respuesta = api.post(ASOCIAR, json=_credenciales(tienda_b))
 
     assert respuesta.status_code == 200, respuesta.text
     assert respuesta.json()["access_token"]
@@ -107,29 +128,43 @@ def test_asociar_usa_la_misma_cuenta_en_la_otra_tienda(api, db, token_cliente, t
 
 
 def test_asociar_dos_veces_no_duplica(api, db, token_cliente, tienda_b, plataforma):
-    credenciales = {"correo": CORREO_CLIENTE, "contrasena": CLAVE_CLIENTE}
-    api.post(ASOCIAR, headers=tienda_b, json=credenciales)
+    api.post(ASOCIAR, json=_credenciales(tienda_b))
 
-    respuesta = api.post(ASOCIAR, headers=tienda_b, json=credenciales)
+    respuesta = api.post(ASOCIAR, json=_credenciales(tienda_b))
 
     assert respuesta.status_code == 200, respuesta.text
     assert _empresas(plataforma, CORREO_CLIENTE) == {1, int(tienda_b["X-Empresa"])}
 
 
 def test_asociar_con_la_contrasena_equivocada_no_asocia(api, db, token_cliente, tienda_b, plataforma):
-    respuesta = api.post(ASOCIAR, headers=tienda_b,
-                         json={"correo": CORREO_CLIENTE, "contrasena": "Otra12345"})
+    respuesta = api.post(ASOCIAR, json=_credenciales(tienda_b, contrasena="Otra12345"))
 
     assert respuesta.status_code == 401
     assert _empresas(plataforma, CORREO_CLIENTE) == {1}
 
 
-def test_asociar_una_cuenta_del_personal_no_se_permite(api, db, cabeceras_admin, tienda_b):
-    respuesta = api.post(ASOCIAR, headers=tienda_b,
-                         json={"correo": CORREO_ADMIN, "contrasena": CLAVE_ADMIN})
+def test_asociar_una_cuenta_que_no_es_de_cliente_no_se_permite(api, db, tienda_b):
+    _cuenta_de_plataforma(db)
+
+    respuesta = api.post(ASOCIAR, json=_credenciales(
+        tienda_b, correo="plataforma@violet.bo", contrasena="Clave12345"))
 
     assert respuesta.status_code == 409
-    assert "personal" in respuesta.json()["detail"]
+    assert "no es de un cliente" in respuesta.json()["detail"]
+
+
+def test_asociar_una_cuenta_del_personal_no_la_encuentra(api, cabeceras_admin, tienda_b):
+    """El personal es de su empresa (CU-06): no es una cuenta de la plataforma."""
+    respuesta = api.post(ASOCIAR, json=_credenciales(
+        tienda_b, correo=CORREO_ADMIN, contrasena=CLAVE_ADMIN))
+
+    assert respuesta.status_code == 401
+
+
+def test_asociar_sin_slug_pide_la_empresa(api, token_cliente):
+    respuesta = api.post(ASOCIAR, json={"correo": CORREO_CLIENTE, "contrasena": CLAVE_CLIENTE})
+
+    assert respuesta.status_code == 422
 
 
 def test_asociar_una_cuenta_desactivada_no_asocia(api, db, token_cliente, tienda_b, plataforma):
@@ -137,21 +172,18 @@ def test_asociar_una_cuenta_desactivada_no_asocia(api, db, token_cliente, tienda
     usuario.activo = False
     db.commit()
 
-    respuesta = api.post(ASOCIAR, headers=tienda_b,
-                         json={"correo": CORREO_CLIENTE, "contrasena": CLAVE_CLIENTE})
+    respuesta = api.post(ASOCIAR, json=_credenciales(tienda_b))
 
     assert respuesta.status_code == 403
     assert _empresas(plataforma, CORREO_CLIENTE) == {1}
 
 
-def test_el_correo_del_personal_sigue_siendo_duplicado(api, db, tienda_b):
-    """El 4b es solo para clientes: el correo de un empleado no se ofrece."""
-    rol = db.scalar(select(Rol.id).where(Rol.nombre == "CAJERO"))
-    db.add(Usuario(correo="cajero@a.bo", hash_contrasena=hash_password("Clave12345"),
-                   nombres="Ca", apellidos="Jero", rol_id=rol))
-    db.commit()
+def test_el_correo_de_la_plataforma_sigue_siendo_duplicado(api, db, tienda_b):
+    """El 4b es solo para clientes: el de otra cuenta sin empresa no se ofrece."""
+    _cuenta_de_plataforma(db)
 
-    respuesta = api.post(REGISTRO, headers=tienda_b, json={**DATOS, "correo": "cajero@a.bo"})
+    respuesta = api.post(REGISTRO, headers=_cabecera(tienda_b),
+                         json={**DATOS, "correo": "plataforma@violet.bo"})
 
     assert respuesta.status_code == 409
     assert "cuenta de cliente" not in respuesta.json()["detail"]

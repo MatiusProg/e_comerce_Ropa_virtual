@@ -121,6 +121,11 @@ def fijar_empresa(sesion: Session, empresa_id: int | None) -> None:
         _aplicar(sesion, sesion.connection())
 
 
+def empresa_actual(sesion: Session) -> int | None:
+    """La empresa del contexto de la sesión, tal como la ve la base."""
+    return sesion.scalar(text("SELECT app_empresa_actual()"))
+
+
 def modo_plataforma(sesion: Session) -> None:
     """La sesión ve todas las empresas. Solo para la plataforma y el sistema."""
     sesion.info[CLAVE_PLATAFORMA] = True

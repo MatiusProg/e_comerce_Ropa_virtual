@@ -35,15 +35,22 @@ class RepositorioAuth {
     }
   }
 
-  /// CU-02 · Iniciar sesion.
+  /// CU-06 · Iniciar sesion en una empresa (evoluciona el CU-02).
+  ///
+  /// [empresa] es el slug (RN-12); `null` solo para la plataforma.
   Future<Token> iniciarSesion({
+    required String? empresa,
     required String correo,
     required String contrasena,
   }) async {
     try {
       final respuesta = await _dio.post<Map<String, dynamic>>(
         '/auth/login',
-        data: {'correo': correo.trim().toLowerCase(), 'contrasena': contrasena},
+        data: {
+          'empresa': empresa,
+          'correo': correo.trim().toLowerCase(),
+          'contrasena': contrasena,
+        },
       );
       return Token.desdeJson(respuesta.data!);
     } on DioException catch (fallo) {

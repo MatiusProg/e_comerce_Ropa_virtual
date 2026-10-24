@@ -45,6 +45,13 @@
 
         <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
           <mat-form-field appearance="outline" class="ancho-completo">
+            <mat-label>Empresa</mat-label>
+            <input matInput formControlName="empresa" autocapitalize="none" spellcheck="false" />
+            <mat-icon matSuffix>domain</mat-icon>
+            <mat-hint>La de tu cuenta de trabajo. Si sos cliente, podés dejarla vacía.</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="ancho-completo">
             <mat-label>Correo electrónico</mat-label>
             <input matInput type="email" formControlName="correo" autocomplete="email" />
             <mat-icon matSuffix>mail_outline</mat-icon>

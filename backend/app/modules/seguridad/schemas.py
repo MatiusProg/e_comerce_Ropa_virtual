@@ -103,11 +103,26 @@ class ClienteRegistradoOut(BaseModel):
 
 # --- CU-02 Iniciar y cerrar sesion ---------------------------------------
 
-class LoginIn(BaseModel):
-    """Credenciales que envia el usuario (paso 2 del flujo principal)."""
+def _slug_o_nada(valor: str | None) -> str | None:
+    """El slug de la empresa (CU-06), normalizado; vacío cuenta como ausente."""
+    if valor is None:
+        return None
+    valor = valor.strip().lower()
+    return valor or None
 
+
+class LoginIn(BaseModel):
+    """Credenciales que envia el usuario (paso 1 del flujo principal del CU-06).
+
+    `empresa` es el slug. Sin él solo entra el administrador de la plataforma
+    (RN-12).
+    """
+
+    empresa: str | None = Field(default=None, max_length=40)
     correo: EmailStr = Field(max_length=120)
     contrasena: str = Field(min_length=1, max_length=128)
+
+    _empresa = field_validator("empresa", mode="before")(_slug_o_nada)
 
     @field_validator("correo")
     @classmethod
@@ -115,6 +130,16 @@ class LoginIn(BaseModel):
         """Misma normalizacion que en el registro, o el login no encontraria
         al usuario que se registro escribiendo su correo con mayusculas."""
         return valor.strip().lower()
+
+
+class EmpresaDeLaSesionOut(BaseModel):
+    """La empresa donde se inició sesión (CU-06, paso 6)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nombre: str
+    slug: str
 
 
 class UsuarioAutenticadoOut(BaseModel):
@@ -128,6 +153,10 @@ class UsuarioAutenticadoOut(BaseModel):
     apellidos: str
     rol: str
     sucursal_id: int | None = None
+    # 2do parcial, CU-06. `empresa` es None solo para la plataforma.
+    empresa: EmpresaDeLaSesionOut | None = None
+    # 3a: suscripción vencida o suspendida; la interfaz avisa que solo consulta.
+    solo_consulta: bool = False
 
 
 class TokenOut(BaseModel):
@@ -489,9 +518,17 @@ class CambioContrasenaIn(BaseModel):
 # --- CU-41 Recuperar contrasena ------------------------------------------
 
 class RecuperacionSolicitudIn(BaseModel):
-    """Paso 2 del flujo principal: el correo de la cuenta a recuperar."""
+    """Paso 2 del flujo principal: el correo de la cuenta a recuperar.
 
+    2do parcial: el correo es único por empresa (CU-06), así que se indica
+    también el slug. Sin él, se busca la cuenta sin empresa (cliente o
+    plataforma).
+    """
+
+    empresa: str | None = Field(default=None, max_length=40)
     correo: EmailStr = Field(max_length=120)
+
+    _empresa = field_validator("empresa", mode="before")(_slug_o_nada)
 
     @field_validator("correo")
     @classmethod

@@ -118,10 +118,12 @@ class ControlSesion extends Notifier<EstadoSesion> {
   /// CU-02 · Iniciar sesion. Propaga [ErrorApi] para que el formulario muestre
   /// el mensaje junto al boton, en vez de dejarlo en el estado global.
   Future<void> iniciarSesion({
+    required String? empresa,
     required String correo,
     required String contrasena,
   }) async {
     final token = await _repositorio.iniciarSesion(
+      empresa: empresa,
       correo: correo,
       contrasena: contrasena,
     );

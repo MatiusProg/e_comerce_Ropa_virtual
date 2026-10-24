@@ -224,9 +224,10 @@ def _admin_de(db, empresa_id: int, correo: str) -> None:
     db.commit()
 
 
-def _token(api, correo: str) -> dict[str, str]:
+def _token(api, correo: str, empresa: str = "violet-boutique") -> dict[str, str]:
     respuesta = api.post(
-        "/api/v1/auth/login", json={"correo": correo, "contrasena": "Admin12345"}
+        "/api/v1/auth/login",
+        json={"empresa": empresa, "correo": correo, "contrasena": "Admin12345"},
     )
     assert respuesta.status_code == 200, respuesta.text
     return {"Authorization": f"Bearer {respuesta.json()['access_token']}"}
@@ -236,7 +237,7 @@ def test_el_administrador_de_cada_empresa_ve_solo_sus_sucursales(api, db, empres
     _admin_de(db, EMPRESA_A, "admin.a@violetboutique.bo")
     _admin_de(db, empresa_b, "admin.b@tiendab.bo")
     ciudad = _ciudad(db)
-    a, b = _token(api, "admin.a@violetboutique.bo"), _token(api, "admin.b@tiendab.bo")
+    a, b = _token(api, "admin.a@violetboutique.bo"), _token(api, "admin.b@tiendab.bo", "tienda-b")
     alta = {
         "ciudad_id": ciudad,
         "nombre": "Centro",
