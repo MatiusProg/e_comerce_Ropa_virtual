@@ -1,6 +1,4 @@
 <!-- CU-22 y CU-23 · Mis reservas — «boundary» PantallaReservas. -->
-<app-navegacion-cliente />
-
 <mat-toolbar class="barra">
   <span class="logotipo vb-titulo">Violet Boutique</span>
   <span class="etiqueta-area">Mi cuenta</span>
@@ -17,6 +15,9 @@
     </span>
   }
 </mat-toolbar>
+
+<!-- Debajo de la barra, igual que en «Mi perfil». -->
+<app-navegacion-cliente />
 
 <main class="contenido">
   <header class="encabezado">
@@ -85,8 +86,8 @@
             <div class="que">
               <mat-icon>checkroom</mat-icon>
               <div>
-                <strong>{{ r.prendas }} prenda(s)</strong>
-                <span class="detalle">{{ r.unidades }} unidades en total</span>
+                <strong>{{ r.prendas }} {{ r.prendas === 1 ? 'prenda' : 'prendas' }}</strong>
+                <span class="detalle">{{ r.unidades }} {{ r.unidades === 1 ? 'unidad' : 'unidades' }} en total</span>
               </div>
             </div>
 
@@ -162,7 +163,7 @@
               <div class="resumen">
                 <strong>{{ r.franja_inicio | date: 'dd/MM/yyyy HH:mm' }}</strong>
                 <span class="detalle">
-                  {{ r.sucursal }} · {{ r.prendas }} prenda(s) · {{ r.unidades }} unidades
+                  {{ r.sucursal }} · {{ r.prendas }} {{ r.prendas === 1 ? 'prenda' : 'prendas' }} · {{ r.unidades }} {{ r.unidades === 1 ? 'unidad' : 'unidades' }}
                 </span>
               </div>
               <button

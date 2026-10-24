@@ -1,9 +1,6 @@
-:host {
-  display: block;
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 2rem 1.25rem 3rem;
-}
+@use '../../../shared/navegacion-cliente/pagina';
+
+@include pagina.pagina(1100px);
 
 .volver {
   margin-bottom: 1rem;
@@ -233,7 +230,12 @@
       color: var(--vb-malva);
     }
 
+    // El tamaño va explícito: la regla `.nombre` del título de la prenda
+    // (1.6rem) también alcanza a este, que está dentro del mismo bloque, y los
+    // nombres de sucursal salían como títulos.
     .nombre {
+      margin: 0;
+      font-size: 0.95rem;
       font-weight: 600;
       color: var(--vb-tinta);
     }

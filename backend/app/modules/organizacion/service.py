@@ -234,6 +234,11 @@ def crear_sucursal(db: Session, datos: SucursalCrearIn) -> SucursalOut:
     ):
         raise NombreDeSucursalDuplicado(datos.nombre)
 
+    # 2do parcial, CU-05: el límite es de sucursales ACTIVAS. Una que nace
+    # desactivada no lo consume, igual que darla de baja nunca se impide.
+    if datos.activa:
+        verificador.verificar_limite(db, "sucursales")
+
     try:
         sucursal = repository.agregar_sucursal(
             db,

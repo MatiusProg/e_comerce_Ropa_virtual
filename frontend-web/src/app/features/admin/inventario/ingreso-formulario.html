@@ -79,7 +79,7 @@
             </span>
             <span class="aviso__proveedor">
               {{ a.proveedor }}
-              <span class="detalle">en {{ a.dias_plazo }} día(s)</span>
+              <span class="detalle">en {{ a.dias_plazo }} {{ a.dias_plazo === 1 ? 'día' : 'días' }}</span>
             </span>
             @if (a.cantidad_recibida > 0) {
               <span class="aviso__parcial" matTooltip="Ya entró parte de este aviso">
@@ -213,7 +213,7 @@
       </div>
 
       <p class="total">
-        <strong>{{ lineas().length }}</strong> prenda(s) ·
+        <strong>{{ lineas().length }}</strong> {{ lineas().length === 1 ? 'prenda' : 'prendas' }} ·
         <strong>{{ unidades() }}</strong> unidades en total
       </p>
     </section>

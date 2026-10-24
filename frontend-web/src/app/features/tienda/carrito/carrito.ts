@@ -12,6 +12,7 @@ import { CarritoService, type ErrorCarrito } from '../../../core/services/carrit
 import { CANTIDAD_MAXIMA, type LineaCarrito } from '../../../core/models/carrito.models';
 import { Confirmacion, type DatosConfirmacion } from '../../../shared/confirmacion/confirmacion';
 import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion-cliente';
+import { UrlMediaPipe } from '../../../shared/url-media.pipe';
 
 /**
  * CU-26 · Gestionar carrito de compras — «boundary» PantallaCarrito.
@@ -34,6 +35,7 @@ import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion
 @Component({
   selector: 'app-carrito',
   imports: [
+    UrlMediaPipe,
     NavegacionCliente,
     RouterLink,
     MatButtonModule,

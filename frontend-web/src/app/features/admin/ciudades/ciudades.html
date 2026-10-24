@@ -67,7 +67,7 @@
           <td mat-cell *matCellDef="let c">
             @if (c.sucursales) {
               <span class="recuento">
-                <span class="pastilla pastilla-activo">{{ c.sucursales_activas }} activas</span>
+                <span class="pastilla pastilla-activo">{{ c.sucursales_activas }} {{ c.sucursales_activas === 1 ? 'activa' : 'activas' }}</span>
                 @if (c.sucursales > c.sucursales_activas) {
                   <span class="pastilla pastilla-inactivo">
                     {{ c.sucursales - c.sucursales_activas }} de baja

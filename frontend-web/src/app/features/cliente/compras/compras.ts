@@ -18,6 +18,7 @@ import {
 } from '../../../core/services/compras.service';
 import type { EstadoPedido, Pedido } from '../../../core/models/pedidos.models';
 import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion-cliente';
+import { UrlMediaPipe } from '../../../shared/url-media.pipe';
 
 /** Los estados en los que la compra ya se cobró y tiene recibo. */
 const CON_COMPROBANTE: EstadoPedido[] = ['PAGADA', 'ENTREGADA'];
@@ -38,6 +39,7 @@ const CON_COMPROBANTE: EstadoPedido[] = ['PAGADA', 'ENTREGADA'];
 @Component({
   selector: 'app-compras',
   imports: [
+    UrlMediaPipe,
     NavegacionCliente,
     CurrencyPipe,
     DatePipe,

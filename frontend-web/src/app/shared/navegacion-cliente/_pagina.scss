@@ -1,0 +1,28 @@
+// Pantalla del Cliente con un ancho de lectura acotado.
+//
+// La barra `<app-navegacion-cliente />` es la primera hija de cada pantalla.
+// Si el ancho máximo se pone en el `:host`, la barra queda encerrada en esa
+// columna: en el carrito se cortaba en «Mis re…» y la campana se montaba
+// encima, mientras que en «Mis compras» ocupaba todo el ancho. Con este mixin
+// el límite va al contenido y la barra siempre ocupa el ancho de la ventana.
+//
+// Para el visitante anónimo la barra no se dibuja, pero su elemento sigue ahí:
+// su margen inferior hace de margen superior de la página.
+@mixin pagina($ancho, $lado: 1.25rem, $arriba: 2rem, $abajo: 3rem) {
+  :host {
+    display: block;
+    padding: 0 $lado $abajo;
+  }
+
+  :host > app-navegacion-cliente {
+    display: block;
+    margin: 0 (-$lado) $arriba;
+  }
+
+  // El margen se calcula en vez de usar `auto`: `auto` no centra un elemento
+  // en línea, y el «Seguir mirando» del carrito se iba al borde izquierdo.
+  :host > :not(app-navegacion-cliente) {
+    max-width: $ancho;
+    margin-inline: max(0px, calc((100% - #{$ancho}) / 2));
+  }
+}

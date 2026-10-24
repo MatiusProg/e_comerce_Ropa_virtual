@@ -1,9 +1,6 @@
-:host {
-  display: block;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem 1.25rem 3rem;
-}
+@use '../../../shared/navegacion-cliente/pagina';
+
+@include pagina.pagina(1200px);
 
 .encabezado {
   display: flex;

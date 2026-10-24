@@ -61,7 +61,7 @@
           @for (linea of c.lineas; track linea.variante_id) {
             <li class="linea" [class.caida]="!linea.disponible">
               @if (linea.imagen_url) {
-                <img [src]="linea.imagen_url" [alt]="linea.producto_nombre" class="foto" />
+                <img [src]="linea.imagen_url | urlMedia" [alt]="linea.producto_nombre" class="foto" />
               } @else {
                 <span class="foto sin-foto"><mat-icon>checkroom</mat-icon></span>
               }

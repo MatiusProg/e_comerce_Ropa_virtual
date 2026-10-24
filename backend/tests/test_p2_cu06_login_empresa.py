@@ -100,9 +100,20 @@ def test_sin_slug_el_personal_tiene_que_indicar_la_empresa(api, cabeceras_admin,
     assert "empresa" in respuesta.json()["detail"]
 
 
-def test_la_plataforma_no_entra_con_un_slug(api, db):
+def test_la_plataforma_entra_aunque_quede_escrito_un_slug(api, db):
+    """La pantalla recuerda el último slug: el superadmin no tiene que borrarlo."""
     _usuario(db, "plataforma@violetboutique.bo", "ADMIN_PLATAFORMA", None)
-    assert _login(api, "plataforma@violetboutique.bo", CLAVE, "violet-boutique").status_code == 401
+
+    respuesta = _login(api, "plataforma@violetboutique.bo", CLAVE, "violet-boutique")
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert respuesta.json()["usuario"]["rol"] == "ADMIN_PLATAFORMA"
+    assert respuesta.json()["usuario"]["empresa"] is None
+
+
+def test_la_plataforma_con_slug_y_mala_clave_no_entra(api, db):
+    _usuario(db, "plataforma@violetboutique.bo", "ADMIN_PLATAFORMA", None)
+    assert _login(api, "plataforma@violetboutique.bo", "Equivocada1", "violet-boutique").status_code == 401
 
 
 # --------------------------------------------------------------------------

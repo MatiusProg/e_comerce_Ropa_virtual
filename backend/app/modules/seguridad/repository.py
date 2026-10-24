@@ -225,6 +225,10 @@ def obtener_sucursal_de_usuario(db: Session, usuario_id: int) -> int | None:
     return db.scalar(select(Empleado.sucursal_id).where(Empleado.usuario_id == usuario_id))
 
 
+def nombre_de_sucursal(db: Session, sucursal_id: int) -> str | None:
+    return db.scalar(select(Sucursal.nombre).where(Sucursal.id == sucursal_id))
+
+
 def agregar_sesion(
     db: Session,
     *,

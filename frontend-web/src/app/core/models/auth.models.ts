@@ -41,6 +41,8 @@ export interface UsuarioAutenticado {
   apellidos: string;
   rol: Rol;
   sucursal_id: number | null;
+  /** Para mostrar la sucursal por su nombre. */
+  sucursal_nombre: string | null;
   /** 2do parcial · CU-06. `null` solo para la plataforma. */
   empresa: EmpresaDeLaSesion | null;
   /** CU-06 3a: suscripción vencida o suspendida; solo se puede consultar. */
