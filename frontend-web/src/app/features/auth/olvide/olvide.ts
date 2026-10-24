@@ -10,6 +10,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 import { AuthLayout } from '../auth-layout/auth-layout';
 import { AuthService, type ErrorRecuperacion } from '../../../core/services/auth.service';
+import { empresaRecordada, normalizarEmpresa } from '../../../core/empresa-recordada';
 
 /**
  * CU-41 · Recuperar contraseña — «boundary» FormularioOlvideContrasena.
@@ -52,6 +53,9 @@ export class Olvide {
   protected readonly acuse = signal<string | null>(null);
 
   protected readonly formulario = this.fb.nonNullable.group({
+    // 2do parcial: el correo es único por empresa (CU-06). El cliente puede
+    // dejarla vacía: su cuenta es de la plataforma (RN-13).
+    empresa: [empresaRecordada(), [Validators.maxLength(40)]],
     correo: ['', [Validators.required, Validators.email, Validators.maxLength(120)]],
   });
 
@@ -65,11 +69,12 @@ export class Olvide {
       return;
     }
 
-    const { correo } = this.formulario.getRawValue();
+    const { empresa, correo } = this.formulario.getRawValue();
     this.enviando.set(true);
     this.error.set(null);
 
-    this.auth.solicitarRecuperacion({ correo: correo.trim().toLowerCase() }).subscribe({
+    const datos = { empresa: normalizarEmpresa(empresa), correo: correo.trim().toLowerCase() };
+    this.auth.solicitarRecuperacion(datos).subscribe({
       next: (r) => {
         this.enviando.set(false);
         this.acuse.set(r.mensaje);

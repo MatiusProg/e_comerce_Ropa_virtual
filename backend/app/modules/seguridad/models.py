@@ -110,9 +110,19 @@ class Usuario(Auditoria, Base):
     """
 
     __tablename__ = "usuario"
+    # 2do parcial, CU-06: el correo es único POR EMPRESA para el personal, y
+    # único en la plataforma para las cuentas sin empresa (el cliente, RN-13, y
+    # el administrador de la plataforma). La misma persona puede trabajar en
+    # dos empresas con el mismo correo: el login la distingue por el slug.
+    __table_args__ = (
+        Index("uq_usuario_empresa_correo", "empresa_id", "correo", unique=True,
+              postgresql_where=text("empresa_id IS NOT NULL")),
+        Index("uq_usuario_correo_sin_empresa", "correo", unique=True,
+              postgresql_where=text("empresa_id IS NULL")),
+    )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    correo: Mapped[str] = mapped_column(String(120), unique=True)
+    correo: Mapped[str] = mapped_column(String(120))
     hash_contrasena: Mapped[str] = mapped_column(String(255))
     nombres: Mapped[str] = mapped_column(String(80))
     apellidos: Mapped[str] = mapped_column(String(80))

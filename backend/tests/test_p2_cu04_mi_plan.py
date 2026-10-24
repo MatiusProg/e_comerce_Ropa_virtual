@@ -227,14 +227,15 @@ def test_usuario_sin_empresa(api, db, planes):
     """El administrador de la plataforma no tiene empresa: no hay «mi plan»."""
     from tests.conftest import _iniciar_sesion
 
-    rol = db.scalar(select(Rol).where(Rol.nombre == "ADMINISTRADOR"))
+    # CU-06 (RN-12): sin empresa solo existe la cuenta de la plataforma.
+    rol = db.scalar(select(Rol).where(Rol.nombre == "ADMIN_PLATAFORMA"))
     usuario = Usuario(correo="plataforma@violet.bo", hash_contrasena=hash_password("Clave12345"),
                       nombres="Plata", apellidos="Forma", rol_id=rol.id)
     db.add(usuario)
     db.commit()
     db.execute(text("UPDATE usuario SET empresa_id = NULL WHERE id = :id"), {"id": usuario.id})
     db.commit()
-    token = _iniciar_sesion(api, "plataforma@violet.bo", "Clave12345")
+    token = _iniciar_sesion(api, "plataforma@violet.bo", "Clave12345", None)
 
     respuesta = api.get(URL, headers={"Authorization": f"Bearer {token}"})
 

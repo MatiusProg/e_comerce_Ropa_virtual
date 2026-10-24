@@ -23,8 +23,15 @@ from app.core import tiempo
 
 from app.core.config import settings
 from app.core.security import crear_access_token, hash_password, verify_password
-from app.core.tenencia import EMPRESA_DE_BAJA, ROL_PLATAFORMA, fijar_contexto_de_usuario
+from app.core.tenencia import (
+    EMPRESA_DE_BAJA,
+    ROL_PLATAFORMA,
+    fijar_contexto_de_usuario,
+    fijar_empresa,
+    modo_plataforma,
+)
 from app.integrations.correo import Mensaje, enviar
+from app.modules.plataforma import verificador
 from app.modules.seguridad import repository
 from app.modules.seguridad.models import Cliente
 from app.modules.seguridad.schemas import (
@@ -36,6 +43,7 @@ from app.modules.seguridad.schemas import (
     ClienteRegistroIn,
     DireccionIn,
     DireccionOut,
+    EmpresaDeLaSesionOut,
     LoginIn,
     PaginaUsuarios,
     CategoriaPreferidaOut,
@@ -98,8 +106,9 @@ def registrar_cliente(db: Session, datos: ClienteRegistroIn) -> ClienteRegistrad
     Las dos entidades se crean en UNA sola transaccion: si falla cualquiera de
     las dos no se crea ninguna (excepcion E2).
     """
-    # Paso 5 - precondicion del caso de uso (excepcion E1).
-    if repository.obtener_usuario_por_correo(db, datos.correo) is not None:
+    # Paso 5 - precondicion del caso de uso (excepcion E1). El cliente tiene
+    # una sola cuenta en la plataforma (RN-13): se busca entre las sin empresa.
+    if repository.obtener_usuario_por_correo(db, datos.correo, None) is not None:
         raise CorreoYaRegistrado(datos.correo)
 
     if datos.documento is not None and repository.existe_cliente_con_documento(
@@ -186,22 +195,46 @@ class CuentaDesactivada(ErrorDeAutenticacion):
     su cuenta fue dada de baja."""
 
 
-class EmpresaDadaDeBaja(ErrorDeAutenticacion):
-    """2do parcial, CU-01 3b: la cuenta esta bien, pero su empresa fue dada de
-    baja por la plataforma. Ninguno de sus usuarios puede entrar."""
+class EmpresaNoEncontrada(ErrorDeAutenticacion):
+    """2do parcial, CU-06 2a: el slug no existe o la empresa fue dada de baja.
+
+    Las dos cosas comparten mensaje: a quien intenta entrar le da lo mismo, y
+    distinguirlas diría qué empresas existieron.
+    """
+
+
+class EmpresaRequerida(ErrorDeAutenticacion):
+    """2do parcial, CU-06 1a: sin slug solo entra el administrador de la
+    plataforma (RN-12)."""
 
 
 def autenticar(db: Session, datos: LoginIn) -> TokenOut:
-    """Verifica las credenciales y emite un token, registrando la sesion.
+    """CU-06 Iniciar sesión en una empresa (evoluciona el CU-02).
 
-      1. buscar el usuario por correo
-      2. verificar que la cuenta este activa
-      3. verificar el hash de la contrasena
-      4. emitir el token con su jti
-      5. registrar la sesion
-      6. devolver el token
+      1. buscar la empresa por su slug (sin slug: solo la plataforma, 1a)
+      2. buscar al usuario dentro de esa empresa
+      3. verificar la contraseña y que la cuenta esté activa
+      4. emitir el token con el usuario, la empresa y el rol
+      5. registrar la sesión
+
+    Con la suscripción vencida se entra igual, en modo solo consulta (3a): lo
+    dice `solo_consulta`, y lo hace cumplir el CU-05 en cada escritura.
     """
-    usuario = repository.obtener_usuario_con_rol(db, datos.correo)
+    if datos.empresa is None:
+        return _autenticar_en_la_plataforma(db, datos)
+
+    empresa = repository.obtener_empresa_por_slug(db, datos.empresa)
+    if empresa is None or empresa.estado == EMPRESA_DE_BAJA:
+        raise EmpresaNoEncontrada(datos.empresa)
+    fijar_empresa(db, empresa.id)
+
+    # Primero el personal de la empresa; si no, la cuenta única del cliente
+    # (RN-13), que entra a cualquier tienda. La plataforma no entra con slug.
+    usuario = repository.obtener_usuario_con_rol(db, datos.correo, empresa.id)
+    if usuario is None:
+        usuario = repository.obtener_usuario_con_rol(db, datos.correo, None)
+        if usuario is not None and usuario.rol.nombre != ROL_CLIENTE:
+            usuario = None
 
     # El orden importa: primero se comprueba que exista y que la contrasena
     # sea correcta, y recien despues si esta activo. Al reves, un atacante
@@ -209,23 +242,39 @@ def autenticar(db: Session, datos: LoginIn) -> TokenOut:
     # contrasena, y eso ya revela que el correo esta registrado.
     if usuario is None or not verify_password(datos.contrasena, usuario.hash_contrasena):
         raise CredencialesInvalidas(datos.correo)
-
     if not usuario.activo:
         raise CuentaDesactivada(datos.correo)
 
-    # 2do parcial. Antes de buscar la sucursal: `empleado` tiene RLS, y con el
-    # contexto de la tienda el personal de otra empresa saldria sin sucursal.
-    if usuario.empresa_id is not None:
-        if repository.estado_de_empresa(db, usuario.empresa_id) == EMPRESA_DE_BAJA:
-            raise EmpresaDadaDeBaja(datos.correo)
-    fijar_contexto_de_usuario(db, rol=usuario.rol.nombre, empresa_id=usuario.empresa_id)
+    if usuario.rol.nombre == ROL_CLIENTE:
+        repository.asociar_cliente_a_la_empresa(db, usuario.id)
+    return _emitir(db, usuario, empresa)
 
+
+def _autenticar_en_la_plataforma(db: Session, datos: LoginIn) -> TokenOut:
+    """CU-06 1a. A quien no es de la plataforma se le pide la empresa, sin
+    decir si su correo existe: con contraseña equivocada pasa lo mismo."""
+    usuario = repository.obtener_usuario_con_rol(db, datos.correo, None)
+    if (
+        usuario is None
+        or usuario.rol.nombre != ROL_PLATAFORMA
+        or not verify_password(datos.contrasena, usuario.hash_contrasena)
+    ):
+        raise EmpresaRequerida(datos.correo)
+    if not usuario.activo:
+        raise CuentaDesactivada(datos.correo)
+    modo_plataforma(db)
+    return _emitir(db, usuario, None)
+
+
+def _emitir(db: Session, usuario, empresa) -> TokenOut:
+    """Pasos 4 y 5: el token con la empresa como claim, y la sesión."""
+    sucursal_id = repository.obtener_sucursal_de_usuario(db, usuario.id)
     emitido = crear_access_token(
         usuario_id=usuario.id,
         rol=usuario.rol.nombre,
-        sucursal_id=repository.obtener_sucursal_de_usuario(db, usuario.id),
+        sucursal_id=sucursal_id,
+        empresa_id=empresa.id if empresa else None,
     )
-
     try:
         repository.agregar_sesion(
             db,
@@ -241,33 +290,39 @@ def autenticar(db: Session, datos: LoginIn) -> TokenOut:
     return TokenOut(
         access_token=emitido.token,
         expira_en=emitido.expira_en,
-        usuario=UsuarioAutenticadoOut(
-            id=usuario.id,
-            correo=usuario.correo,
-            nombres=usuario.nombres,
-            apellidos=usuario.apellidos,
-            rol=usuario.rol.nombre,
-            sucursal_id=repository.obtener_sucursal_de_usuario(db, usuario.id),
-        ),
+        usuario=_autenticado(db, usuario, empresa, sucursal_id),
     )
 
 
-def obtener_usuario_autenticado(db: Session, usuario_id: int) -> UsuarioAutenticadoOut:
-    """Datos del usuario que porta el token, leidos de la base.
-
-    No se arman desde el token: si el nombre o el rol cambiaron despues de
-    emitirlo, el token seguiria diciendo lo viejo.
-    """
-    usuario = repository.obtener_usuario_con_id(db, usuario_id)
-    if usuario is None:
-        raise CredencialesInvalidas(str(usuario_id))
+def _autenticado(db: Session, usuario, empresa, sucursal_id) -> UsuarioAutenticadoOut:
     return UsuarioAutenticadoOut(
         id=usuario.id,
         correo=usuario.correo,
         nombres=usuario.nombres,
         apellidos=usuario.apellidos,
         rol=usuario.rol.nombre,
-        sucursal_id=repository.obtener_sucursal_de_usuario(db, usuario.id),
+        sucursal_id=sucursal_id,
+        empresa=EmpresaDeLaSesionOut.model_validate(empresa) if empresa else None,
+        # 3a: la interfaz avisa; el CU-05 es el que impide escribir.
+        solo_consulta=empresa is not None and verificador.suscripcion_vigente(db) is None,
+    )
+
+
+def obtener_usuario_autenticado(
+    db: Session, usuario_id: int, empresa_id: int | None
+) -> UsuarioAutenticadoOut:
+    """Datos del usuario que porta el token, leidos de la base.
+
+    No se arman desde el token: si el nombre o el rol cambiaron despues de
+    emitirlo, el token seguiria diciendo lo viejo. La empresa es la de la
+    sesion: la del personal, o la tienda donde entro el cliente.
+    """
+    usuario = repository.obtener_usuario_con_id(db, usuario_id)
+    if usuario is None:
+        raise CredencialesInvalidas(str(usuario_id))
+    empresa = repository.obtener_empresa(db, empresa_id) if empresa_id else None
+    return _autenticado(
+        db, usuario, empresa, repository.obtener_sucursal_de_usuario(db, usuario.id)
     )
 
 
@@ -433,7 +488,8 @@ def crear_usuario(
     MISMA transaccion: es esa ficha la que guarda la sucursal, y un usuario
     Encargado sin ella no tendria ambito de datos.
     """
-    if repository.obtener_usuario_por_correo(db, datos.correo) is not None:
+    # CU-06: el correo es único dentro de la empresa.
+    if repository.obtener_usuario_por_correo(db, datos.correo, empresa_id) is not None:
         raise CorreoYaRegistrado(datos.correo)
 
     rol = repository.obtener_rol_por_nombre(db, datos.rol)
@@ -492,7 +548,7 @@ def editar_usuario(
     usuario = _personal_de_la_empresa(db, usuario_id, empresa_id)
 
     if datos.correo and datos.correo != usuario.correo:
-        otro = repository.obtener_usuario_por_correo(db, datos.correo)
+        otro = repository.obtener_usuario_por_correo(db, datos.correo, empresa_id)
         if otro is not None and otro.id != usuario_id:
             raise CorreoYaRegistrado(datos.correo)
 
@@ -737,9 +793,10 @@ def editar_perfil(db: Session, usuario_id: int, datos: PerfilEditarIn) -> Perfil
     usuario = cliente.usuario
     enviados = datos.model_fields_set
 
-    # Excepcion E2: el correo nuevo no puede estar en uso por otra cuenta.
+    # Excepcion E2: el correo nuevo no puede estar en uso por otra cuenta
+    # de cliente (las sin empresa, RN-13).
     if datos.correo and datos.correo != usuario.correo:
-        otro = repository.obtener_usuario_por_correo(db, datos.correo)
+        otro = repository.obtener_usuario_por_correo(db, datos.correo, None)
         if otro is not None and otro.id != usuario_id:
             raise CorreoYaRegistrado(datos.correo)
 
@@ -1010,8 +1067,20 @@ def solicitar_recuperacion(db: Session, datos: RecuperacionSolicitudIn) -> None:
 
     Lo mismo vale para la cuenta desactivada: no se le manda enlace --- no
     tendria a donde entrar --- y tampoco se dice nada.
+
+    2do parcial: el correo es único por empresa (CU-06). Igual que en el
+    login, con slug se busca primero al personal de esa empresa y después la
+    cuenta única del cliente (RN-13); sin slug, solo las cuentas sin empresa.
+    Una empresa inexistente o de baja cae en el mismo silencio.
     """
-    usuario = repository.obtener_usuario_por_correo(db, datos.correo)
+    usuario = None
+    if datos.empresa is not None:
+        empresa = repository.obtener_empresa_por_slug(db, datos.empresa)
+        if empresa is None or empresa.estado == EMPRESA_DE_BAJA:
+            return
+        usuario = repository.obtener_usuario_por_correo(db, datos.correo, empresa.id)
+    if usuario is None:
+        usuario = repository.obtener_usuario_por_correo(db, datos.correo, None)
 
     if usuario is None or not usuario.activo:
         # Silencio deliberado. Ver el docstring.

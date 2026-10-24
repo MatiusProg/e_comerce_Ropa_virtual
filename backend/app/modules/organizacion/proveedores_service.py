@@ -15,6 +15,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_password
+from app.core.tenencia import empresa_actual
 from app.modules.organizacion import proveedores_repository as repository
 from app.modules.organizacion.proveedores_schemas import (
     AccesoProveedorIn,
@@ -243,7 +244,8 @@ def habilitar_acceso(
     if proveedor.usuario_id is not None:
         raise AccesoYaHabilitado(str(proveedor_id))
 
-    if seguridad.obtener_usuario_por_correo(db, datos.correo) is not None:
+    # CU-06: el correo es único dentro de la empresa.
+    if seguridad.obtener_usuario_por_correo(db, datos.correo, empresa_actual(db)) is not None:
         raise CorreoYaRegistrado(datos.correo)
 
     rol = seguridad.obtener_rol_por_nombre(db, ROL_PROVEEDOR)
@@ -263,7 +265,7 @@ def habilitar_acceso(
         db.commit()
     except IntegrityError as exc:
         db.rollback()
-        if _viola(exc, "uq_usuario_correo"):
+        if _viola(exc, "uq_usuario_empresa_correo"):
             raise CorreoYaRegistrado(datos.correo) from exc
         if _viola(exc, "uq_proveedor_usuario_id"):
             raise AccesoYaHabilitado(str(proveedor_id)) from exc

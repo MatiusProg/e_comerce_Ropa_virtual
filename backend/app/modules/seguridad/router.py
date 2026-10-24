@@ -91,10 +91,12 @@ def registrar_cliente(datos: ClienteRegistroIn, db: DbSession) -> ClienteRegistr
 @router.post(
     "/login",
     response_model=TokenOut,
-    summary="CU-02 Iniciar sesion",
+    summary="CU-06 Iniciar sesion en una empresa",
     responses={
-        401: {"description": "Credenciales invalidas (excepcion E1)."},
-        403: {"description": "La cuenta esta desactivada (excepcion E2)."},
+        401: {"description": "Credenciales invalidas (4a)."},
+        403: {"description": "La cuenta esta desactivada."},
+        404: {"description": "La empresa no existe o fue dada de baja (2a)."},
+        422: {"description": "Sin slug, y no es el administrador de la plataforma (1a)."},
     },
 )
 def iniciar_sesion(peticion: Request, datos: LoginIn, db: DbSession) -> TokenOut:
@@ -123,10 +125,15 @@ def iniciar_sesion(peticion: Request, datos: LoginIn, db: DbSession) -> TokenOut
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Su cuenta está desactivada. Contacte al administrador.",
         )
-    except service.EmpresaDadaDeBaja:
+    except service.EmpresaNoEncontrada:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="La empresa fue dada de baja. Contacte a la plataforma.",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Empresa no encontrada. Revise el nombre de la empresa.",
+        )
+    except service.EmpresaRequerida:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Indique la empresa para iniciar sesión.",
         )
 
     # QUIEN entro, para la bitacora. Sin esto el asiento de un inicio de
@@ -168,7 +175,7 @@ def usuario_autenticado(usuario: Usuario, db: DbSession) -> UsuarioAutenticadoOu
     guardado en el navegador, le pregunta al servidor. Si el token fue
     revocado, esta llamada falla y la sesion se cierra sola.
     """
-    return service.obtener_usuario_autenticado(db, usuario.id)
+    return service.obtener_usuario_autenticado(db, usuario.id, usuario.empresa_de_sesion)
 
 
 # --- CU-41 Recuperar contrasena ------------------------------------------

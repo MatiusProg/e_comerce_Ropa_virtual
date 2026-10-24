@@ -1,4 +1,7 @@
-/// CU-02 · Iniciar sesion.
+/// CU-06 · Iniciar sesion en una empresa (evoluciona el CU-02).
+///
+/// 2do parcial: se indica la empresa por su slug (RN-12). Se recuerda la
+/// ultima con la que se entro; la primera vez viene la de Violet Boutique.
 ///
 /// Contraparte movil de `features/auth/login/` de la web. Los mensajes de error
 /// no se inventan aqui: se muestra el `detail` que devuelve el backend, que ya
@@ -9,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/enrutado/router.dart';
 import '../../core/red/excepciones.dart';
@@ -22,8 +26,13 @@ class PantallaLogin extends ConsumerStatefulWidget {
   ConsumerState<PantallaLogin> createState() => _PantallaLoginState();
 }
 
+/// Donde se recuerda el slug de la ultima empresa con la que se entro.
+const _claveEmpresa = 'vb.empresa';
+const _empresaInicial = 'violet-boutique';
+
 class _PantallaLoginState extends ConsumerState<PantallaLogin> {
   final _formulario = GlobalKey<FormState>();
+  final _empresa = TextEditingController(text: _empresaInicial);
   final _correo = TextEditingController();
   final _contrasena = TextEditingController();
 
@@ -39,10 +48,15 @@ class _PantallaLoginState extends ConsumerState<PantallaLogin> {
     if (sesion is SesionCerrada && sesion.aviso != null) {
       _error = sesion.aviso;
     }
+    SharedPreferences.getInstance().then((preferencias) {
+      final recordada = preferencias.getString(_claveEmpresa);
+      if (mounted && recordada != null) _empresa.text = recordada;
+    });
   }
 
   @override
   void dispose() {
+    _empresa.dispose();
     _correo.dispose();
     _contrasena.dispose();
     super.dispose();
@@ -56,11 +70,16 @@ class _PantallaLoginState extends ConsumerState<PantallaLogin> {
       _error = null;
     });
 
+    // Vacio viaja como null: es el administrador de la plataforma.
+    final slug = _empresa.text.trim().toLowerCase();
     try {
       await ref.read(sesionProvider.notifier).iniciarSesion(
+            empresa: slug.isEmpty ? null : slug,
             correo: _correo.text,
             contrasena: _contrasena.text,
           );
+      final preferencias = await SharedPreferences.getInstance();
+      await preferencias.setString(_claveEmpresa, slug);
       // ESTO ES LO QUE HACE QUE EL GESTOR OFREZCA GUARDAR.
       //
       // Los `autofillHints` solos no bastan: le dicen a Android QUE es cada
@@ -118,6 +137,18 @@ class _PantallaLoginState extends ConsumerState<PantallaLogin> {
                                       ?.copyWith(fontWeight: FontWeight.w600),
                                 ),
                                 const SizedBox(height: 20),
+                                TextFormField(
+                                  controller: _empresa,
+                                  enabled: !_enviando,
+                                  textInputAction: TextInputAction.next,
+                                  autocorrect: false,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Empresa',
+                                    helperText: 'Por ejemplo, violet-boutique',
+                                    prefixIcon: Icon(Icons.business_outlined),
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
                                 TextFormField(
                                   controller: _correo,
                                   enabled: !_enviando,

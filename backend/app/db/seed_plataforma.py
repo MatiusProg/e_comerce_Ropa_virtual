@@ -32,7 +32,12 @@ def main() -> None:
 
     with SessionLocal() as db:
         modo_plataforma(db)
-        if db.scalar(select(Usuario.id).where(func.lower(Usuario.correo) == correo)):
+        # La cuenta de la plataforma no tiene empresa: su correo es único entre
+        # las cuentas sin empresa (CU-06).
+        existe = select(Usuario.id).where(
+            func.lower(Usuario.correo) == correo, Usuario.empresa_id.is_(None)
+        )
+        if db.scalar(existe):
             print(f"  = {correo} ya existe, no se toca")
             return
         rol = db.scalar(select(Rol).where(Rol.nombre == ROL_PLATAFORMA))
