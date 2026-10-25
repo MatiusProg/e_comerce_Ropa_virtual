@@ -13,6 +13,7 @@ import { CANTIDAD_MAXIMA, type LineaCarrito } from '../../../core/models/carrito
 import { Confirmacion, type DatosConfirmacion } from '../../../shared/confirmacion/confirmacion';
 import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion-cliente';
 import { UrlMediaPipe } from '../../../shared/url-media.pipe';
+import { BsPipe } from '../../../shared/bs.pipe';
 
 /**
  * CU-26 · Gestionar carrito de compras — «boundary» PantallaCarrito.
@@ -35,6 +36,7 @@ import { UrlMediaPipe } from '../../../shared/url-media.pipe';
 @Component({
   selector: 'app-carrito',
   imports: [
+    BsPipe,
     UrlMediaPipe,
     NavegacionCliente,
     RouterLink,

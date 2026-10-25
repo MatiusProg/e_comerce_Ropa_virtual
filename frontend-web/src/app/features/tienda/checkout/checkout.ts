@@ -1,4 +1,3 @@
-import { CurrencyPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -21,6 +20,7 @@ import type {
 } from '../../../core/models/pedidos.models';
 import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion-cliente';
 import { UrlMediaPipe } from '../../../shared/url-media.pipe';
+import { BsPipe } from '../../../shared/bs.pipe';
 
 /**
  * Dónde se guarda el código del pedido antes de irse a la pasarela.
@@ -64,7 +64,7 @@ export const CLAVE_PEDIDO_EN_CURSO = 'vb.pedido-en-curso';
   imports: [
     UrlMediaPipe,
     NavegacionCliente,
-    CurrencyPipe,
+    BsPipe,
     ReactiveFormsModule,
     RouterLink,
     MatButtonModule,

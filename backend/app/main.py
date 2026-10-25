@@ -21,6 +21,7 @@ from app.modules.seguridad.router import perfil_router as seguridad_perfil_route
 from app.modules.seguridad.router import router as seguridad_router
 from app.modules.organizacion.router import router as organizacion_router
 from app.modules.organizacion.router import consulta_router as organizacion_consulta_router
+from app.modules.organizacion.router import ciudades_router as organizacion_ciudades_router
 from app.modules.organizacion.empleados.router import router as empleados_router
 from app.modules.organizacion.proveedores_router import router as proveedores_router
 from app.modules.organizacion.proveedores_router import (
@@ -206,6 +207,7 @@ app.include_router(seguridad_admin_router, prefix=API)
 app.include_router(seguridad_perfil_router, prefix=API)
 app.include_router(organizacion_router, prefix=API)
 app.include_router(organizacion_consulta_router, prefix=API)
+app.include_router(organizacion_ciudades_router, prefix=API)
 app.include_router(empleados_router, prefix=API)
 app.include_router(proveedores_router, prefix=API)
 app.include_router(proveedores_mi_ficha_router, prefix=API)

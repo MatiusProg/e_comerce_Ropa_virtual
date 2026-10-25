@@ -58,7 +58,7 @@
         <mat-select formControlName="plan_codigo">
           @for (p of datos.planes; track p.codigo) {
             <mat-option [value]="p.codigo">
-              {{ p.nombre }} · Bs {{ p.precio_mensual }} por mes
+              {{ p.nombre }} · {{ p.precio_mensual | bs }} por mes
             </mat-option>
           }
         </mat-select>

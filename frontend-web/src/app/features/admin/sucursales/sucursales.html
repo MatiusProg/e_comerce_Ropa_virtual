@@ -9,10 +9,6 @@
   <div class="acciones-encabezado">
     <!-- 2do parcial · CU-09: cuántas sucursales activas permite el plan. -->
     <app-limite-del-plan recurso="sucursales" />
-    <a matButton routerLink="/admin/ciudades">
-      <mat-icon>location_city</mat-icon>
-      Ciudades
-    </a>
     <button matButton="filled" type="button" class="vb-boton-marca" (click)="nueva()">
       <mat-icon>add_business</mat-icon>
       Nueva sucursal
@@ -171,11 +167,9 @@
         <button matButton type="button" (click)="limpiarFiltros()">Limpiar los filtros</button>
       } @else if (!ciudades().length) {
         <p class="pista-vacio">
-          Antes de registrar una sucursal hace falta al menos una ciudad.
+          Antes de registrar una sucursal hace falta al menos una ciudad. Las da de
+          alta el administrador de la plataforma.
         </p>
-        <a matButton="filled" class="vb-boton-marca" routerLink="/admin/ciudades">
-          Registrar una ciudad
-        </a>
       }
     </div>
   }

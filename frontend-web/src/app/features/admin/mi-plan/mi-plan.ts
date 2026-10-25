@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe, LowerCasePipe, NgTemplateOutlet } from '@angular/common';
+import { DatePipe, LowerCasePipe, NgTemplateOutlet } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -6,6 +6,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 import type { LimitePlan, MiPlan as DatosMiPlan, Plan } from '../../../core/models/mi-plan.models';
 import { MiPlanService, type ErrorMiPlan } from '../../../core/services/mi-plan.service';
+import { BsPipe } from '../../../shared/bs.pipe';
 
 const ESTADOS: Record<string, string> = {
   VIGENTE: 'Vigente',
@@ -30,7 +31,7 @@ type CodigoLimite = 'sucursales' | 'empleados' | 'reportes_ia' | 'fotos_ia';
 @Component({
   selector: 'app-mi-plan',
   imports: [
-    CurrencyPipe,
+    BsPipe,
     DatePipe,
     LowerCasePipe,
     NgTemplateOutlet,

@@ -1,3 +1,80 @@
+// --- Barra de marca --------------------------------------------------------
+// La misma del área de administración: que la aplicación se lea como un solo
+// sistema. Vino de «Mi perfil» y «Mis reservas», que la tenían copiada.
+
+.barra {
+  background: var(--vb-degradado);
+  color: #fff;
+  box-shadow: var(--vb-sombra-suave);
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0;
+    height: 2px;
+    background: var(--vb-filete);
+  }
+}
+
+.logotipo {
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: inherit;
+  text-decoration: none;
+}
+
+.separador {
+  flex: 1 1 auto;
+}
+
+.identidad {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-right: 0.35rem;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 18%);
+  border: 1px solid rgb(231 191 168 / 60%);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.datos {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+
+  .nombre {
+    font-size: 0.92rem;
+    font-weight: 500;
+  }
+
+  .rol {
+    font-size: 0.74rem;
+    opacity: 0.85;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+}
+
+// En el teléfono queda el avatar solo: el nombre no entra junto al logotipo.
+@media (max-width: 600px) {
+  .datos {
+    display: none;
+  }
+}
+
+// --- Secciones -------------------------------------------------------------
+
 // Misma forma que la navegación de `proveedor-layout` y `sucursal-layout`: el
 // Cliente era el único rol sin una. Ver la nota del componente.
 .navegacion {

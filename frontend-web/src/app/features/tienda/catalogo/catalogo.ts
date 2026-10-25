@@ -25,6 +25,7 @@ import type {
   ProductoVitrina,
 } from '../../../core/models/tienda.models';
 import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion-cliente';
+import { BsPipe, formatoBs } from '../../../shared/bs.pipe';
 import { UrlMediaPipe } from '../../../shared/url-media.pipe';
 
 /**
@@ -50,6 +51,7 @@ import { UrlMediaPipe } from '../../../shared/url-media.pipe';
 @Component({
   selector: 'app-catalogo',
   imports: [
+    BsPipe,
     NavegacionCliente,
     ReactiveFormsModule,
     RouterLink,
@@ -262,9 +264,9 @@ export class Catalogo implements OnInit {
   protected precio(producto: ProductoVitrina): string {
     if (!producto.precio_desde) return 'Sin precio';
     if (producto.precio_hasta && producto.precio_hasta !== producto.precio_desde) {
-      return `desde Bs ${producto.precio_desde}`;
+      return `desde ${formatoBs(producto.precio_desde)}`;
     }
-    return `Bs ${producto.precio_desde}`;
+    return formatoBs(producto.precio_desde);
   }
 
   private reiniciar(): void {

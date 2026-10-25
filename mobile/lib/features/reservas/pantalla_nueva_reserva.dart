@@ -26,6 +26,7 @@ import '../../data/repositorios/repositorio_reservas.dart';
 import '../catalogo/estado_catalogo.dart';
 import 'estado_reservas.dart';
 import 'widgets_reservas.dart';
+import '../../core/moneda.dart';
 
 /// Las duraciones que ofrece el selector, dentro de lo que admite el servidor
 /// (`DURACION_MINIMA_MINUTOS` .. `DURACION_MAXIMA_MINUTOS`).
@@ -815,7 +816,7 @@ class _EstadoSelectorDePrenda extends ConsumerState<_SelectorDePrenda> {
             const Spacer(),
             if (variante != null)
               Text(
-                'Bs ${variante.precio}',
+                bs(variante.precio),
                 style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w600,

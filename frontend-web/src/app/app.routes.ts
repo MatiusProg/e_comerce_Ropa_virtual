@@ -153,6 +153,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/plataforma/empresas/empresas').then((m) => m.Empresas),
       },
+      {
+        path: 'ciudades',
+        title: 'Ciudades · Violet Boutique',
+        loadComponent: () =>
+          import('./features/plataforma/ciudades/ciudades').then((m) => m.Ciudades),
+      },
     ],
   },
   {
@@ -192,12 +198,6 @@ export const routes: Routes = [
         title: 'Sucursales · Violet Boutique',
         loadComponent: () =>
           import('./features/admin/sucursales/sucursales').then((m) => m.Sucursales),
-      },
-      {
-        path: 'ciudades',
-        title: 'Ciudades · Violet Boutique',
-        loadComponent: () =>
-          import('./features/admin/ciudades/ciudades').then((m) => m.Ciudades),
       },
       {
         path: 'empleados',

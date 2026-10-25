@@ -47,7 +47,7 @@
                   <mat-panel-description>
                     <span class="fecha">{{ compra.creado_en | date: 'dd/MM/yyyy' }}</span>
                     <span class="importe">
-                      {{ compra.total | currency: 'BOB' : 'symbol-narrow' }}
+                      {{ compra.total | bs }}
                     </span>
                   </mat-panel-description>
                 </mat-expansion-panel-header>
@@ -68,7 +68,7 @@
                         </span>
                       </span>
                       <span class="subtotal">
-                        {{ linea.subtotal | currency: 'BOB' : 'symbol-narrow' }}
+                        {{ linea.subtotal | bs }}
                       </span>
                     </li>
                   }
@@ -83,7 +83,7 @@
                     <dd>{{ compra.sucursal_nombre }}</dd>
                   }
                   <dt>Total</dt>
-                  <dd class="total">{{ compra.total | currency: 'BOB' : 'symbol-narrow' }}</dd>
+                  <dd class="total">{{ compra.total | bs }}</dd>
                 </dl>
 
                 <mat-action-row>

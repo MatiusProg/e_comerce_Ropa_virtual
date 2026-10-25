@@ -27,6 +27,7 @@ import '../../core/tema.dart';
 import '../../data/modelos/compra.dart';
 import '../../data/repositorios/repositorio_compra.dart';
 import 'estado_compra.dart';
+import '../../core/moneda.dart';
 
 class PantallaPedido extends ConsumerStatefulWidget {
   const PantallaPedido({super.key, required this.codigo, this.recienCreado});
@@ -136,17 +137,17 @@ class _PantallaPedidoState extends ConsumerState<PantallaPedido>
             contentPadding: EdgeInsets.zero,
             title: Text(linea.productoNombre),
             subtitle: Text(
-              '${linea.descripcionVariante}  ·  ${linea.cantidad} x Bs ${linea.precioUnitario}',
+              '${linea.descripcionVariante}  ·  ${linea.cantidad} x ${bs(linea.precioUnitario)}',
             ),
-            trailing: Text('Bs ${linea.subtotal}'),
+            trailing: Text(bs(linea.subtotal)),
           ),
 
         const Divider(height: 24),
-        _Fila('Subtotal', 'Bs ${pedido.subtotal}'),
+        _Fila('Subtotal', bs(pedido.subtotal)),
         if (pedido.descuento != '0.00' && pedido.descuento != '0')
-          _Fila('Descuento', '− Bs ${pedido.descuento}'),
+          _Fila('Descuento', '− ${bs(pedido.descuento)}'),
         const SizedBox(height: 4),
-        _Fila('Total', 'Bs ${pedido.total}', fuerte: true),
+        _Fila('Total', bs(pedido.total), fuerte: true),
 
         const SizedBox(height: 20),
         // El precio de estas líneas está CONGELADO: es el que se cobró, no el

@@ -1,14 +1,14 @@
-<!-- CU-05 · flujo alternativo 3a — «boundary» PantallaCiudades. -->
+<!-- CU-05 · flujo alternativo 3a — «boundary» PantallaCiudades.
+     2do parcial: las ciudades son de todas las empresas, así que las gestiona
+     solo la plataforma. -->
 <header class="encabezado">
   <div>
     <h1 class="vb-titulo">Ciudades</h1>
-    <p class="bajada">Plazas donde opera la cadena. Cada sucursal pertenece a una.</p>
+    <p class="bajada">
+      Ciudades que todas las empresas eligen para sus sucursales y sus clientes para sus direcciones.
+    </p>
   </div>
   <div class="acciones-encabezado">
-    <a matButton routerLink="/admin/sucursales">
-      <mat-icon>storefront</mat-icon>
-      Sucursales
-    </a>
     <button matButton="filled" type="button" class="vb-boton-marca" (click)="nueva()">
       <mat-icon>add_location_alt</mat-icon>
       Nueva ciudad

@@ -72,8 +72,10 @@
 
         <ng-container matColumnDef="faltan">
           <th mat-header-cell *matHeaderCellDef class="numerica">Faltan</th>
+          <!-- Estar justo en el mínimo ya es momento de reponer, pero «0» se
+               leía como que no faltaba nada. -->
           <td mat-cell *matCellDef="let a" class="numerica destacado">
-            {{ faltan(a) }}
+            {{ faltan(a) || 'En el mínimo' }}
           </td>
         </ng-container>
 

@@ -25,6 +25,7 @@ import '../../core/red/excepciones.dart';
 import '../../core/tema.dart';
 import '../../data/modelos/gestion.dart';
 import 'estado_gestion.dart';
+import '../../core/moneda.dart';
 
 class PantallaTablero extends ConsumerWidget {
   const PantallaTablero({super.key});
@@ -151,10 +152,10 @@ class _Ventas extends StatelessWidget {
         children: [
           Row(
             children: [
-              _Numero(rotulo: 'Hoy', valor: 'Bs ${ventas.montoHoy ?? '0'}'),
+              _Numero(rotulo: 'Hoy', valor: bs(ventas.montoHoy ?? '0')),
               _Numero(
                 rotulo: 'En el período',
-                valor: 'Bs ${ventas.montoPeriodo ?? '0'}',
+                valor: bs(ventas.montoPeriodo ?? '0'),
               ),
             ],
           ),
@@ -167,7 +168,7 @@ class _Ventas extends StatelessWidget {
               ),
               _Numero(
                 rotulo: 'Ticket promedio',
-                valor: 'Bs ${ventas.ticketPromedio ?? '0'}',
+                valor: bs(ventas.ticketPromedio ?? '0'),
               ),
             ],
           ),
