@@ -4,10 +4,14 @@
     <h1 class="vb-titulo">Empleados</h1>
     <p class="bajada">Quién trabaja en cada sucursal, con qué cargo y desde cuándo.</p>
   </div>
-  <button matButton="filled" type="button" class="vb-boton-marca" (click)="nuevo()">
-    <mat-icon>badge</mat-icon>
-    Registrar empleado
-  </button>
+  <div class="acciones-encabezado">
+    <!-- 2do parcial · CU-10: cuántos empleados activos permite el plan. -->
+    <app-limite-del-plan recurso="empleados" />
+    <button matButton="filled" type="button" class="vb-boton-marca" (click)="nuevo()">
+      <mat-icon>badge</mat-icon>
+      Registrar empleado
+    </button>
+  </div>
 </header>
 
 <mat-card class="tarjeta vb-filete-superior" appearance="outlined">

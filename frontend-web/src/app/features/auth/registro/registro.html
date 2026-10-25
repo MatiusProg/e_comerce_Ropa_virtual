@@ -26,6 +26,62 @@
           Iniciar sesión
         </button>
       </mat-card-content>
+    } @else if (cuentaExistente(); as correo) {
+      <!-- CU-07 4b: la cuenta única. Se usa la misma, no se crea otra. -->
+      <mat-card-content class="cuenta-existente">
+        <mat-icon class="icono-cuenta">account_circle</mat-icon>
+        <h1 class="vb-titulo">Ya tenés una cuenta</h1>
+        <p>
+          <strong>{{ correo }}</strong> ya es cliente en Violet. Con tu contraseña de siempre
+          la usás también en esta tienda: no hace falta crear otra.
+        </p>
+
+        @if (errorAsociar(); as e) {
+          <div class="aviso" role="alert">
+            <mat-icon>error_outline</mat-icon>
+            <span>{{ e.mensaje }}</span>
+          </div>
+        }
+
+        <form (ngSubmit)="usarCuentaExistente()" novalidate class="form-cuenta">
+          <mat-form-field appearance="outline" class="ancho-completo">
+            <mat-label>Contraseña</mat-label>
+            <input
+              matInput
+              [type]="verContrasena() ? 'text' : 'password'"
+              [formControl]="contrasenaExistente"
+              autocomplete="current-password"
+            />
+            <button
+              matIconButton
+              type="button"
+              matSuffix
+              (click)="verContrasena.set(!verContrasena())"
+              [attr.aria-label]="verContrasena() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+            >
+              <mat-icon>{{ verContrasena() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            @if (contrasenaExistente.hasError('required')) {
+              <mat-error>Ingrese su contraseña.</mat-error>
+            }
+          </mat-form-field>
+
+          <button
+            matButton="filled"
+            type="submit"
+            class="vb-boton-marca boton-principal"
+            [disabled]="enviando()"
+          >
+            Usar mi cuenta en esta tienda
+          </button>
+        </form>
+
+        <p class="pie">
+          <a routerLink="/olvide-contrasena">¿Olvidaste tu contraseña?</a>
+          ·
+          <button matButton type="button" (click)="volverAlFormulario()">Usar otro correo</button>
+        </p>
+      </mat-card-content>
     } @else {
       <mat-card-content>
         @if (error(); as e) {

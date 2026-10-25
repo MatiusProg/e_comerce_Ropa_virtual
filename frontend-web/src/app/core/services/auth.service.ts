@@ -20,6 +20,8 @@ import {
 /** Errores previstos del registro (CU-01), traducidos desde el código HTTP. */
 export type ErrorRegistro =
   | { tipo: 'correo-duplicado'; mensaje: string }
+  /** 2do parcial · CU-07 4b: el correo ya es de un cliente; se ofrece usar esa cuenta. */
+  | { tipo: 'cuenta-existente'; mensaje: string }
   | { tipo: 'documento-duplicado'; mensaje: string }
   | { tipo: 'datos-invalidos'; mensaje: string }
   | { tipo: 'sistema'; mensaje: string };
@@ -106,6 +108,22 @@ export class AuthService {
       .pipe(
         catchError((e: HttpErrorResponse) => throwError(() => this.traducirRegistro(e))),
       );
+  }
+
+  /**
+   * 2do parcial · CU-07 4b: usar la cuenta de cliente que ya existe en esta
+   * tienda. El servidor la asocia a la empresa de la tienda e inicia la
+   * sesión, así que se guarda el token igual que en el login.
+   */
+  asociarCuentaExistente(datos: LoginIn): Observable<UsuarioAutenticado> {
+    return this.http.post<TokenOut>(`${this.base}/registro/asociar`, datos).pipe(
+      tap((r) => {
+        this.guardarToken(r.access_token);
+        this._usuario.set(r.usuario);
+      }),
+      map((r) => r.usuario),
+      catchError((e: HttpErrorResponse) => throwError(() => this.traducirLogin(e))),
+    );
   }
 
   // --- CU-02 Iniciar y cerrar sesión -------------------------------------
@@ -212,6 +230,9 @@ export class AuthService {
     const detalle: string = error.error?.detail ?? '';
 
     if (error.status === 409) {
+      if (detalle.includes('cuenta de cliente')) {
+        return { tipo: 'cuenta-existente', mensaje: detalle };
+      }
       return detalle.includes('documento')
         ? { tipo: 'documento-duplicado', mensaje: detalle }
         : { tipo: 'correo-duplicado', mensaje: detalle };

@@ -11,6 +11,7 @@ import {
   FiltrosEmpleados,
   UsuarioVinculable,
 } from '../models/empleados.models';
+import { rechazoDelPlan } from '../models/plan.models';
 
 /**
  * Errores previstos de CU-06, traducidos desde el código HTTP.
@@ -26,6 +27,8 @@ export type ErrorEmpleados =
   | { tipo: 'no-vinculable'; mensaje: string }
   | { tipo: 'ya-dado-de-baja'; mensaje: string }
   | { tipo: 'validacion'; mensaje: string }
+  /** 2do parcial · CU-05: el plan no permite la operación (límite o suscripción). */
+  | { tipo: 'plan'; mensaje: string }
   | { tipo: 'sistema'; mensaje: string };
 
 /**
@@ -83,6 +86,12 @@ export class EmpleadosService {
   private traducir(error: HttpErrorResponse): ErrorEmpleados {
     const detalle: string =
       typeof error.error?.detail === 'string' ? error.error.detail : '';
+
+    // 2do parcial · CU-05: el rechazo del plan, antes que cualquier otro 403.
+    const plan = rechazoDelPlan(error);
+    if (plan) {
+      return { tipo: 'plan', mensaje: plan.detail };
+    }
 
     if (error.status === 409) {
       if (detalle.includes('documento')) {

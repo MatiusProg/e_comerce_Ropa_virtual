@@ -289,7 +289,7 @@ def listar_roles(db: Session) -> list[Rol]:
     )
 
 
-def _de_la_empresa(empresa_id: int):
+def _visibles_para_la_empresa(empresa_id: int):
     """Los usuarios que ve el administrador de una empresa (CU-08, paso 2).
 
     `usuario` es tabla de identidad y NO tiene RLS (el login la lee antes de
@@ -340,7 +340,7 @@ def contar_y_listar_usuarios(
         .outerjoin(Sucursal, Sucursal.id == Empleado.sucursal_id)
     )
 
-    condiciones = [_de_la_empresa(empresa_id)]
+    condiciones = [_visibles_para_la_empresa(empresa_id)]
     if busqueda:
         # Busqueda por nombre o correo, sin distinguir mayusculas.
         patron = f"%{busqueda.strip().lower()}%"
@@ -393,7 +393,7 @@ def obtener_detalle_usuario(
         .where(Usuario.id == usuario_id)
     )
     if empresa_id is not None:
-        consulta = consulta.where(_de_la_empresa(empresa_id))
+        consulta = consulta.where(_visibles_para_la_empresa(empresa_id))
     return db.execute(consulta).one_or_none()
 
 

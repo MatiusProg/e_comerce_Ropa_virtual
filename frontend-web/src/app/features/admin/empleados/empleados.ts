@@ -1,6 +1,7 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, viewChild } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
+import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -24,6 +25,7 @@ import {
 } from '../../../core/models/empleados.models';
 import type { SucursalBreve } from '../../../core/models/organizacion.models';
 import { Confirmacion, type DatosConfirmacion } from '../../../shared/confirmacion/confirmacion';
+import { LimiteDelPlan } from '../../../shared/limite-del-plan/limite-del-plan';
 import { EmpleadoFormulario, type DatosFormularioEmpleado } from './empleado-formulario';
 
 /**
@@ -32,6 +34,10 @@ import { EmpleadoFormulario, type DatosFormularioEmpleado } from './empleado-for
  * Realiza el paso 2 (listado con filtro por sucursal y por cargo) y ofrece las
  * acciones de los flujos alternativos 3a (editar y reasignar) y 3b (dar de
  * baja). El 3c vive dentro del formulario.
+ *
+ * 2do parcial · CU-10 Gestionar empleados de la empresa: muestra cuántos
+ * empleados activos permite el plan y, si ya llegó, lo dice antes de abrir el
+ * formulario (4a). El rechazo de verdad lo da el backend (CU-05).
  */
 @Component({
   selector: 'app-empleados',
@@ -49,6 +55,7 @@ import { EmpleadoFormulario, type DatosFormularioEmpleado } from './empleado-for
     MatSelectModule,
     MatTableModule,
     MatTooltipModule,
+    LimiteDelPlan,
   ],
   templateUrl: './empleados.html',
   styleUrl: './empleados.scss',
@@ -58,6 +65,8 @@ export class Empleados implements OnInit {
   private readonly organizacion = inject(OrganizacionService);
   private readonly dialogo = inject(MatDialog);
   private readonly aviso = inject(MatSnackBar);
+  private readonly router = inject(Router);
+  private readonly limiteDelPlan = viewChild(LimiteDelPlan);
 
   protected readonly columnas = [
     'empleado',
@@ -156,6 +165,15 @@ export class Empleados implements OnInit {
   }
 
   protected nuevo(): void {
+    // CU-10 4a: con el límite alcanzado, se avisa sin abrir el formulario.
+    const limite = this.limiteDelPlan();
+    if (limite?.alcanzado()) {
+      this.aviso
+        .open(limite.mensajeAlcanzado(), 'Ver mi plan', { duration: 8000 })
+        .onAction()
+        .subscribe(() => this.router.navigate(['/admin/mi-plan']));
+      return;
+    }
     this.abrirFormulario({ sucursales: this.sucursales(), empleado: null });
   }
 
@@ -175,6 +193,7 @@ export class Empleados implements OnInit {
       .subscribe((guardado) => {
         if (!guardado) return;
         this.cargar();
+        this.limiteDelPlan()?.recargar();
         this.aviso.open(
           datos.empleado ? 'Empleado actualizado.' : 'Empleado registrado.',
           'Cerrar',
@@ -208,6 +227,8 @@ export class Empleados implements OnInit {
         this.api.darDeBaja(empleado.id).subscribe({
           next: () => {
             this.cargar();
+            // La baja libera un lugar del límite del plan.
+            this.limiteDelPlan()?.recargar();
             this.aviso.open('Empleado dado de baja.', 'Cerrar', { duration: 3500 });
           },
           error: (e: ErrorEmpleados) =>

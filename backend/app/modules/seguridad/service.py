@@ -89,6 +89,20 @@ class RolClienteInexistente(ErrorDeRegistro):
     """La tabla rol no tiene el rol CLIENTE. Falta correr el seed."""
 
 
+class CuentaDeClienteExistente(CorreoYaRegistrado):
+    """2do parcial, CU-07 4b: el correo ya es de un cliente de la plataforma.
+
+    No es un error para el cliente: su cuenta es una sola para todas las
+    tiendas (RN-13). La interfaz le ofrece iniciar sesion con ella para
+    usarla tambien en esta.
+    """
+
+
+class NoEsCuentaDeCliente(ErrorDeRegistro):
+    """CU-07 4b: las credenciales son de una cuenta sin empresa que no es de un
+    cliente (la plataforma), y no compra."""
+
+
 # --- CU-01 Registrar cliente ---------------------------------------------
 
 def registrar_cliente(db: Session, datos: ClienteRegistroIn) -> ClienteRegistradoOut:
@@ -108,7 +122,11 @@ def registrar_cliente(db: Session, datos: ClienteRegistroIn) -> ClienteRegistrad
     """
     # Paso 5 - precondicion del caso de uso (excepcion E1). El cliente tiene
     # una sola cuenta en la plataforma (RN-13): se busca entre las sin empresa.
-    if repository.obtener_usuario_por_correo(db, datos.correo, None) is not None:
+    existente = repository.obtener_usuario_por_correo(db, datos.correo, None)
+    if existente is not None:
+        # 2do parcial, CU-07 4b: si es la cuenta de un cliente, se ofrece usarla.
+        if repository.obtener_cliente_de_usuario(db, existente.id) is not None:
+            raise CuentaDeClienteExistente(datos.correo)
         raise CorreoYaRegistrado(datos.correo)
 
     if datos.documento is not None and repository.existe_cliente_con_documento(
@@ -163,6 +181,26 @@ def registrar_cliente(db: Session, datos: ClienteRegistroIn) -> ClienteRegistrad
         apellidos=usuario.apellidos,
         rol=rol.nombre,
     )
+
+
+def asociar_cuenta_existente(db: Session, datos: LoginIn) -> TokenOut:
+    """2do parcial, CU-07 4b: el cliente usa su cuenta en esta tienda.
+
+    Es el inicio de sesion del CU-06 con el slug de la tienda, que ya asocia
+    al cliente a su empresa (RN-13), pero solo para la cuenta de un cliente:
+    el 4b sale del registro, y ahi el personal no tiene nada que hacer. No crea
+    otra cuenta; si ya estaba asociado, solo inicia la sesion.
+    """
+    if datos.empresa is None:
+        raise EmpresaRequerida(datos.correo)
+
+    usuario = repository.obtener_usuario_con_rol(db, datos.correo, None)
+    if usuario is None or not verify_password(datos.contrasena, usuario.hash_contrasena):
+        raise CredencialesInvalidas(datos.correo)
+    if usuario.rol.nombre != ROL_CLIENTE:
+        raise NoEsCuentaDeCliente(datos.correo)
+
+    return autenticar(db, datos)
 
 
 def _viola(exc: IntegrityError, tabla: str, columna: str) -> bool:

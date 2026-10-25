@@ -3,8 +3,9 @@
 :host {
   @include auth.formulario-auth;
 
-  // Confirmación del paso 8 de CU-01.
-  .confirmacion {
+  // Confirmación del paso 8 de CU-01, y el panel de la cuenta única (CU-07 4b).
+  .confirmacion,
+  .cuenta-existente {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -24,7 +25,8 @@
       color: var(--mat-sys-on-surface-variant);
     }
 
-    .icono-ok {
+    .icono-ok,
+    .icono-cuenta {
       width: 3.5rem;
       height: 3.5rem;
       font-size: 3.5rem;
@@ -34,6 +36,23 @@
     .boton-principal {
       margin-top: 1rem;
       min-width: 14rem;
+    }
+  }
+
+  .cuenta-existente {
+    padding-top: 2rem;
+
+    .form-cuenta {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      margin-top: 0.75rem;
+    }
+
+    .aviso {
+      text-align: left;
+      width: 100%;
     }
   }
 }

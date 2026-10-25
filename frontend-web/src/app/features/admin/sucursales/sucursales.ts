@@ -1,6 +1,6 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, viewChild } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -21,6 +21,7 @@ import {
 } from '../../../core/services/organizacion.service';
 import type { Ciudad, Sucursal } from '../../../core/models/organizacion.models';
 import { Confirmacion, type DatosConfirmacion } from '../../../shared/confirmacion/confirmacion';
+import { LimiteDelPlan } from '../../../shared/limite-del-plan/limite-del-plan';
 import { SucursalFormulario, type DatosSucursal } from './sucursal-formulario';
 
 /**
@@ -33,6 +34,10 @@ import { SucursalFormulario, type DatosSucursal } from './sucursal-formulario';
  * No hay paginación, a diferencia de CU-03: la cantidad de sucursales de una
  * cadena es del orden de las decenas y no crece sola. Un paginador sobre diez
  * filas es ruido; los filtros alcanzan.
+ *
+ * 2do parcial · CU-09 Gestionar sucursales de la empresa: muestra cuántas
+ * sucursales activas permite el plan y, si ya llegó, lo dice antes de abrir
+ * el formulario (4a). El rechazo de verdad lo da el backend (CU-05).
  */
 @Component({
   selector: 'app-sucursales',
@@ -50,6 +55,7 @@ import { SucursalFormulario, type DatosSucursal } from './sucursal-formulario';
     MatSelectModule,
     MatTableModule,
     MatTooltipModule,
+    LimiteDelPlan,
   ],
   templateUrl: './sucursales.html',
   styleUrl: './sucursales.scss',
@@ -58,6 +64,8 @@ export class Sucursales implements OnInit {
   private readonly api = inject(OrganizacionService);
   private readonly dialogo = inject(MatDialog);
   private readonly aviso = inject(MatSnackBar);
+  private readonly router = inject(Router);
+  private readonly limiteDelPlan = viewChild(LimiteDelPlan);
 
   protected readonly columnas = [
     'sucursal',
@@ -145,6 +153,12 @@ export class Sucursales implements OnInit {
 
   /** Pasos 3 a 7 del flujo principal. */
   protected nueva(): void {
+    // CU-09 4a: con el límite alcanzado, se avisa sin abrir el formulario.
+    const limite = this.limiteDelPlan();
+    if (limite?.alcanzado()) {
+      this.mostrarRechazoDelPlan(limite.mensajeAlcanzado());
+      return;
+    }
     this.abrirFormulario({ ciudades: this.ciudades(), sucursal: null });
   }
 
@@ -172,6 +186,7 @@ export class Sucursales implements OnInit {
           this.cargar();
           // El recuento de sucursales por ciudad cambió.
           this.cargarCiudades();
+          this.limiteDelPlan()?.recargar();
         }
       });
   }
@@ -194,8 +209,11 @@ export class Sucursales implements OnInit {
           this.mostrar(dandoDeBaja ? 'Sucursal dada de baja.' : 'Sucursal reactivada.');
           this.cargar();
           this.cargarCiudades();
+          this.limiteDelPlan()?.recargar();
         },
-        error: (e: ErrorOrganizacion) => this.mostrar(e.mensaje),
+        // CU-09 4a: reactivar también suma una sucursal activa.
+        error: (e: ErrorOrganizacion) =>
+          e.tipo === 'plan' ? this.mostrarRechazoDelPlan(e.mensaje) : this.mostrar(e.mensaje),
       }),
     );
   }
@@ -205,6 +223,14 @@ export class Sucursales implements OnInit {
       .open(Confirmacion, { data: datos, width: '460px', maxWidth: '95vw' })
       .afterClosed()
       .subscribe((si) => si && accion());
+  }
+
+  /** CU-05 3a/4a: el rechazo del plan ofrece ir a «Mi plan» (CU-04). */
+  private mostrarRechazoDelPlan(mensaje: string): void {
+    this.aviso
+      .open(mensaje, 'Ver mi plan', { duration: 8000 })
+      .onAction()
+      .subscribe(() => this.router.navigate(['/admin/mi-plan']));
   }
 
   private mostrar(mensaje: string): void {
