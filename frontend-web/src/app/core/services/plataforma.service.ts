@@ -5,6 +5,7 @@ import { catchError } from 'rxjs/operators';
 
 import { environment } from '../../../environments/environment';
 import type {
+  AsignarPlan,
   Empresa,
   EmpresaCreada,
   EmpresaCrear,
@@ -14,6 +15,9 @@ import type {
   PlanGuardado,
   PlanGuardar,
   PlanOferta,
+  SuscripcionGuardada,
+  SuscripcionesEmpresa,
+  Vencimiento,
 } from '../models/plataforma.models';
 import type { Ciudad } from '../models/organizacion.models';
 
@@ -30,7 +34,8 @@ export type ErrorPlataforma =
   | { tipo: 'sistema'; mensaje: string };
 
 /**
- * P12 · Plataforma SaaS — CU-01 Gestionar empresas y CU-02 Gestionar planes.
+ * P12 · Plataforma SaaS — CU-01 Gestionar empresas, CU-02 Gestionar planes y
+ * CU-03 Gestionar suscripciones.
  * Solo ADMIN_PLATAFORMA.
  */
 @Injectable({ providedIn: 'root' })
@@ -92,6 +97,12 @@ export class PlataformaService {
       .pipe(catchError((e) => this.traducir(e)));
   }
 
+  obtenerEmpresa(id: number): Observable<Empresa> {
+    return this.http
+      .get<Empresa>(`${this.base}/empresas/${id}`)
+      .pipe(catchError((e) => this.traducir(e)));
+  }
+
   crearEmpresa(datos: EmpresaCrear): Observable<EmpresaCreada> {
     return this.http
       .post<EmpresaCreada>(`${this.base}/empresas`, datos)
@@ -108,6 +119,37 @@ export class PlataformaService {
     const accion = activa ? 'reactivar' : 'baja';
     return this.http
       .post<Empresa>(`${this.base}/empresas/${id}/${accion}`, {})
+      .pipe(catchError((e) => this.traducir(e)));
+  }
+
+  // --- CU-03 ------------------------------------------------------------
+
+  suscripciones(empresaId: number): Observable<SuscripcionesEmpresa> {
+    return this.http
+      .get<SuscripcionesEmpresa>(`${this.base}/empresas/${empresaId}/suscripciones`)
+      .pipe(catchError((e) => this.traducir(e)));
+  }
+
+  asignarPlan(empresaId: number, datos: AsignarPlan): Observable<SuscripcionGuardada> {
+    return this.http
+      .post<SuscripcionGuardada>(`${this.base}/empresas/${empresaId}/suscripciones`, datos)
+      .pipe(catchError((e) => this.traducir(e)));
+  }
+
+  /** 3a renovar, 3b suspender o reactivar. */
+  accionSuscripcion(
+    empresaId: number,
+    accion: 'renovar' | 'suspender' | 'reactivar',
+  ): Observable<SuscripcionGuardada> {
+    return this.http
+      .post<SuscripcionGuardada>(`${this.base}/empresas/${empresaId}/suscripciones/${accion}`, {})
+      .pipe(catchError((e) => this.traducir(e)));
+  }
+
+  /** E1: lo que hace el proceso diario, disparado a mano. */
+  marcarVencidas(): Observable<Vencimiento> {
+    return this.http
+      .post<Vencimiento>(`${this.base}/suscripciones/vencimiento`, {})
       .pipe(catchError((e) => this.traducir(e)));
   }
 

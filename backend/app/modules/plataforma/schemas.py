@@ -169,3 +169,67 @@ class FuncionOut(BaseModel):
 
     clave: str
     nombre: str
+
+
+# --- CU-03 Suscripciones ------------------------------------------------------
+
+
+class SuscripcionOut(BaseModel):
+    """Una suscripción del historial de la empresa."""
+
+    id: int
+    plan_id: int
+    plan_codigo: str
+    plan_nombre: str
+    inicio: date
+    vencimiento: date
+    #: VIGENTE, SUSPENDIDA, VENCIDA o REEMPLAZADA. Una VIGENTE cuya fecha ya
+    #: pasó sale como VENCIDA aunque el proceso diario (E1) no la haya marcado.
+    estado: str
+    dias_restantes: int
+
+
+class PagoSimuladoOut(BaseModel):
+    id: int
+    suscripcion_id: int
+    concepto: str
+    plan_nombre: str
+    monto: float
+    comprobante: str
+    pagado_en: datetime
+
+
+class SuscripcionesOut(BaseModel):
+    """Paso 2: la suscripción actual y el historial de la empresa."""
+
+    empresa_id: int
+    empresa: str
+    #: La VIGENTE o SUSPENDIDA; si no hay, la última (vencida o reemplazada).
+    actual: SuscripcionOut | None
+    historial: list[SuscripcionOut]
+    pagos: list[PagoSimuladoOut]
+
+
+class AsignarPlanIn(BaseModel):
+    """Paso 3: el plan y la fecha de inicio (hoy si no se indica)."""
+
+    plan_id: int
+    inicio: date | None = None
+
+
+class SuscripcionGuardadaOut(SuscripcionesOut):
+    """El estado actualizado, el pago registrado y el aviso del 5a.
+
+    `excedidas` lista lo que la empresa ya tiene por encima de los límites del
+    plan nuevo: no se borra nada, solo no puede crear más (RN-04).
+    """
+
+    pago: PagoSimuladoOut | None = None
+    excedidas: list[EmpresaExcedidaOut] = []
+
+
+class VencimientoOut(BaseModel):
+    """E1: lo que hizo el proceso diario."""
+
+    vencidas: int
+    empresas: list[str]

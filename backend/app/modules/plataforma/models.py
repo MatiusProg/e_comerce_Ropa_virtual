@@ -128,6 +128,34 @@ class Suscripcion(DeEmpresa, Auditoria, Base):
     plan: Mapped[Plan] = relationship()
 
 
+class PagoSimulado(DeEmpresa, Base):
+    """Lo que se habría cobrado por una suscripción (CU-03, paso 4).
+
+    Se registra en el alta, en el cambio de plan y en cada renovación. No pasa
+    por ninguna pasarela: deja el monto y un comprobante para el historial.
+    """
+
+    __tablename__ = "pago_simulado"
+    __table_args__ = (
+        CheckConstraint("concepto IN ('ALTA', 'CAMBIO', 'RENOVACION')", name="concepto"),
+        CheckConstraint("monto >= 0", name="monto"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    suscripcion_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("suscripcion.id"), index=True
+    )
+    plan_id: Mapped[int] = mapped_column(SmallInteger, ForeignKey("plan.id"))
+    concepto: Mapped[str] = mapped_column(String(12))
+    monto: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    comprobante: Mapped[str] = mapped_column(String(24), unique=True)
+    pagado_en: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    plan: Mapped[Plan] = relationship()
+
+
 class ClienteEmpresa(DeEmpresa, Base):
     """Un cliente que compra en una empresa (RN-13).
 

@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import {
@@ -74,13 +75,15 @@ export class EmpresaCreadaDialogo {
  *
  * Paso 2: la lista de empresas con su slug, su plan y su estado. Desde acá se
  * registra una empresa (flujo principal), se edita (3a) y se da de baja o se
- * reactiva (3b). Solo la ve el administrador de la plataforma.
+ * reactiva (3b). Solo la ve el administrador de la plataforma. Cada empresa
+ * abre su ficha con la suscripción (CU-03).
  */
 @Component({
   selector: 'app-empresas',
   imports: [
     DatePipe,
     ReactiveFormsModule,
+    RouterLink,
     MatButtonModule,
     MatCardModule,
     MatDialogModule,
@@ -191,6 +194,21 @@ export class Empresas implements OnInit {
           error: (e: ErrorPlataforma) => this.mostrar(e.mensaje),
         });
       });
+  }
+
+  /** CU-03 E1: marca como vencidas las suscripciones cuya fecha pasó. */
+  protected marcarVencidas(): void {
+    this.api.marcarVencidas().subscribe({
+      next: (r) => {
+        this.mostrar(
+          r.vencidas
+            ? `Se marcaron ${r.vencidas} vencidas: ${r.empresas.join(', ')}.`
+            : 'No hay suscripciones nuevas por vencer.',
+        );
+        if (r.vencidas) this.cargar();
+      },
+      error: (e: ErrorPlataforma) => this.mostrar(e.mensaje),
+    });
   }
 
   private mostrar(mensaje: string): void {

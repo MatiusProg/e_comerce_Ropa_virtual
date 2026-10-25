@@ -5,6 +5,11 @@
     <p class="bajada">Las empresas que contratan la plataforma, con su plan y su estado.</p>
   </div>
   <div class="acciones-encabezado">
+    <!-- CU-03 E1: lo que hace el proceso diario, disparado a mano. -->
+    <button matButton="outlined" type="button" (click)="marcarVencidas()" [disabled]="cargando()">
+      <mat-icon>event_busy</mat-icon>
+      Revisar vencimientos
+    </button>
     <button matButton="filled" type="button" class="vb-boton-marca" (click)="nueva()">
       <mat-icon>add_business</mat-icon>
       Nueva empresa
@@ -42,7 +47,7 @@
           <th mat-header-cell *matHeaderCellDef>Empresa</th>
           <td mat-cell *matCellDef="let e">
             <span class="celda-principal">
-              <span class="nombre">{{ e.nombre }}</span>
+              <a class="nombre enlace" [routerLink]="[e.id]">{{ e.nombre }}</a>
               <span class="secundario">{{ e.slug }}{{ e.nit ? ' · NIT ' + e.nit : '' }}</span>
             </span>
           </td>
@@ -54,7 +59,13 @@
             @if (e.suscripcion; as s) {
               <span class="celda-principal">
                 <span class="nombre">{{ s.plan_nombre }}</span>
-                <span class="secundario">vence el {{ s.vencimiento | date: 'dd/MM/yyyy' }}</span>
+                <span class="secundario">
+                  @switch (s.estado) {
+                    @case ('SUSPENDIDA') { suspendida · }
+                    @case ('VENCIDA') { venció · }
+                  }
+                  vence el {{ s.vencimiento | date: 'dd/MM/yyyy' }}
+                </span>
               </span>
             } @else {
               <span class="secundario">Sin suscripción vigente</span>
@@ -94,6 +105,10 @@
               <mat-icon>more_vert</mat-icon>
             </button>
             <mat-menu #menu="matMenu">
+              <a mat-menu-item [routerLink]="[e.id]">
+                <mat-icon>card_membership</mat-icon>
+                <span>Suscripción</span>
+              </a>
               <button mat-menu-item type="button" (click)="editar(e)">
                 <mat-icon>edit</mat-icon>
                 <span>Editar</span>

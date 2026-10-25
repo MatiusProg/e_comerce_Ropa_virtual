@@ -82,6 +82,17 @@ th {
     font-weight: 500;
   }
 
+  .enlace {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--vb-malva-oscuro);
+      text-decoration: underline;
+    }
+  }
+
   .secundario {
     font-size: 0.84rem;
     color: var(--mat-sys-on-surface-variant);

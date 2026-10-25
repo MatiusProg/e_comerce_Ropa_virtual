@@ -1,0 +1,197 @@
+<!-- CU-03 · Gestionar suscripciones — «boundary» PantallaSuscripcion. -->
+<a matButton routerLink="/plataforma/empresas" class="volver">
+  <mat-icon>arrow_back</mat-icon>
+  Empresas
+</a>
+
+@if (error(); as e) {
+  <mat-card class="tarjeta" appearance="outlined">
+    <div class="vacio estado-error" role="alert">
+      <mat-icon>cloud_off</mat-icon>
+      <p class="titulo-vacio">No se pudo cargar la empresa</p>
+      <p class="pista-vacio">{{ e }}</p>
+      <button matButton="filled" type="button" class="vb-boton-marca" (click)="cargar()">
+        <mat-icon>refresh</mat-icon>
+        Reintentar
+      </button>
+    </div>
+  </mat-card>
+} @else if (empresa(); as emp) {
+  <header class="encabezado">
+    <div>
+      <h1 class="vb-titulo">{{ emp.nombre }}</h1>
+      <p class="bajada">
+        {{ emp.slug }}{{ emp.nit ? ' · NIT ' + emp.nit : '' }} · {{ emp.sucursales }}
+        {{ emp.sucursales === 1 ? 'sucursal' : 'sucursales' }} · {{ emp.usuarios }}
+        {{ emp.usuarios === 1 ? 'usuario' : 'usuarios' }}
+        @if (deBaja()) {
+          · <span class="pastilla pastilla-inactivo">De baja</span>
+        }
+      </p>
+    </div>
+  </header>
+
+  <mat-card class="tarjeta vb-filete-superior actual" appearance="outlined">
+    @if (cargando()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    <div class="cuerpo">
+      <h2 class="seccion-titulo">Suscripción</h2>
+      @if (actual(); as a) {
+        <div class="resumen">
+          <div class="plan">
+            <span class="nombre-plan">{{ a.plan_nombre }}</span>
+            <span [class]="'pastilla estado-' + a.estado.toLowerCase()">
+              {{ etiqueta(a.estado) }}
+            </span>
+          </div>
+          <dl class="fechas">
+            <div>
+              <dt>Inicio</dt>
+              <dd>{{ a.inicio | date: 'dd/MM/yyyy' }}</dd>
+            </div>
+            <div>
+              <dt>Vencimiento</dt>
+              <dd>{{ a.vencimiento | date: 'dd/MM/yyyy' }}</dd>
+            </div>
+            <div>
+              <dt>{{ a.dias_restantes >= 0 ? 'Faltan' : 'Venció hace' }}</dt>
+              <dd>
+                {{ a.dias_restantes >= 0 ? a.dias_restantes : -a.dias_restantes }}
+                {{ (a.dias_restantes === 1 || a.dias_restantes === -1) ? 'día' : 'días' }}
+              </dd>
+            </div>
+          </dl>
+          @if (a.estado === 'SUSPENDIDA' || a.estado === 'VENCIDA') {
+            <p class="nota">
+              <mat-icon>info</mat-icon>
+              La empresa está en modo solo consulta: ve sus datos pero no registra nada nuevo.
+            </p>
+          }
+        </div>
+      } @else {
+        <p class="nota">
+          <mat-icon>info</mat-icon>
+          La empresa no tiene ninguna suscripción. Asígnele un plan.
+        </p>
+      }
+
+      @if (deBaja()) {
+        <p class="nota">
+          <mat-icon>block</mat-icon>
+          La empresa está dada de baja: reactívela en la lista de empresas para cambiar su
+          suscripción.
+        </p>
+      } @else {
+        <div class="acciones">
+          <button
+            matButton="filled"
+            type="button"
+            class="vb-boton-marca"
+            (click)="cambiarPlan()"
+            [disabled]="cargando()"
+          >
+            <mat-icon>swap_horiz</mat-icon>
+            {{ actual() ? 'Cambiar plan' : 'Asignar plan' }}
+          </button>
+          @if (actual()) {
+            <button matButton="outlined" type="button" (click)="renovar()" [disabled]="cargando()">
+              <mat-icon>autorenew</mat-icon>
+              Renovar
+            </button>
+          }
+          @if (enCurso()) {
+            <button
+              matButton="outlined"
+              type="button"
+              [class.accion-peligro]="actual()?.estado === 'VIGENTE'"
+              (click)="suspenderOReactivar()"
+              [disabled]="cargando() || actual()?.estado === 'VENCIDA'"
+            >
+              <mat-icon>{{ actual()?.estado === 'VIGENTE' ? 'pause_circle' : 'play_circle' }}</mat-icon>
+              {{ actual()?.estado === 'VIGENTE' ? 'Suspender' : 'Reactivar' }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+  </mat-card>
+
+  @if (datos(); as d) {
+    <mat-card class="tarjeta" appearance="outlined">
+      <h2 class="seccion-titulo cuerpo-titulo">Historial de suscripciones</h2>
+      @if (d.historial.length) {
+        <div class="envoltorio-tabla">
+          <table mat-table [dataSource]="d.historial">
+            <ng-container matColumnDef="plan">
+              <th mat-header-cell *matHeaderCellDef>Plan</th>
+              <td mat-cell *matCellDef="let s">{{ s.plan_nombre }}</td>
+            </ng-container>
+            <ng-container matColumnDef="inicio">
+              <th mat-header-cell *matHeaderCellDef>Inicio</th>
+              <td mat-cell *matCellDef="let s" class="celda-nowrap">
+                {{ s.inicio | date: 'dd/MM/yyyy' }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="vencimiento">
+              <th mat-header-cell *matHeaderCellDef>Vencimiento</th>
+              <td mat-cell *matCellDef="let s" class="celda-nowrap">
+                {{ s.vencimiento | date: 'dd/MM/yyyy' }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let s">
+                <span [class]="'pastilla estado-' + s.estado.toLowerCase()">
+                  {{ etiqueta(s.estado) }}
+                </span>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columnasHistorial"></tr>
+            <tr mat-row *matRowDef="let fila; columns: columnasHistorial"></tr>
+          </table>
+        </div>
+      } @else {
+        <p class="sin-filas">Sin suscripciones.</p>
+      }
+    </mat-card>
+
+    <mat-card class="tarjeta" appearance="outlined">
+      <h2 class="seccion-titulo cuerpo-titulo">Pagos simulados</h2>
+      @if (d.pagos.length) {
+        <div class="envoltorio-tabla">
+          <table mat-table [dataSource]="d.pagos">
+            <ng-container matColumnDef="fecha">
+              <th mat-header-cell *matHeaderCellDef>Fecha</th>
+              <td mat-cell *matCellDef="let p" class="celda-nowrap">
+                {{ p.pagado_en | date: 'dd/MM/yyyy HH:mm' }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="concepto">
+              <th mat-header-cell *matHeaderCellDef>Concepto</th>
+              <td mat-cell *matCellDef="let p">{{ concepto(p.concepto) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="plan">
+              <th mat-header-cell *matHeaderCellDef>Plan</th>
+              <td mat-cell *matCellDef="let p">{{ p.plan_nombre }}</td>
+            </ng-container>
+            <ng-container matColumnDef="monto">
+              <th mat-header-cell *matHeaderCellDef class="celda-monto">Monto</th>
+              <td mat-cell *matCellDef="let p" class="celda-monto">{{ p.monto | bs }}</td>
+            </ng-container>
+            <ng-container matColumnDef="comprobante">
+              <th mat-header-cell *matHeaderCellDef>Comprobante</th>
+              <td mat-cell *matCellDef="let p" class="comprobante">{{ p.comprobante }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columnasPagos"></tr>
+            <tr mat-row *matRowDef="let fila; columns: columnasPagos"></tr>
+          </table>
+        </div>
+      } @else {
+        <p class="sin-filas">Todavía no hay pagos registrados.</p>
+      }
+    </mat-card>
+  }
+} @else if (cargando()) {
+  <mat-progress-bar mode="indeterminate" />
+}

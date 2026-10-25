@@ -1,7 +1,8 @@
 """
 P12 - Plataforma SaaS  |  capa: router (FastAPI)
 
-CU-01 Gestionar empresas y CU-02 Gestionar planes. Todo el router exige
+CU-01 Gestionar empresas, CU-02 Gestionar planes y CU-03 Gestionar
+suscripciones. Todo el router exige
 ADMIN_PLATAFORMA, declarado una sola vez: endpoint por endpoint, olvidarlo en
 uno abriría un agujero.
 """
@@ -12,8 +13,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.dependencies import DbSession, requiere_roles
 from app.core.tenencia import ROL_PLATAFORMA
-from app.modules.plataforma import planes, service
+from app.modules.plataforma import planes, service, suscripciones
 from app.modules.plataforma.schemas import (
+    AsignarPlanIn,
     EmpresaCrearIn,
     EmpresaCreadaOut,
     EmpresaEditarIn,
@@ -22,6 +24,9 @@ from app.modules.plataforma.schemas import (
     PlanGuardadoOut,
     PlanIn,
     PlanOut,
+    SuscripcionGuardadaOut,
+    SuscripcionesOut,
+    VencimientoOut,
 )
 
 router = APIRouter(
@@ -199,3 +204,117 @@ def reactivar(empresa_id: int, db: DbSession) -> EmpresaOut:
         return service.cambiar_estado(db, empresa_id, activa=True)
     except service.ErrorDePlataforma as error:
         raise _traducir(error) from error
+
+
+# --- CU-03 Suscripciones ---------------------------------------------------
+
+
+def _traducir_suscripcion(error: suscripciones.ErrorDeSuscripcion) -> HTTPException:
+    s = suscripciones
+    conocidos = {
+        s.EmpresaInexistente: (status.HTTP_404_NOT_FOUND, "La empresa indicada no existe."),
+        s.PlanInexistente: (status.HTTP_404_NOT_FOUND, "El plan indicado no existe."),
+        s.EmpresaDeBaja: (
+            status.HTTP_409_CONFLICT,
+            "La empresa está dada de baja: reactívela antes de tocar su suscripción.",
+        ),
+        s.PlanNoOfrecido: (
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "Ese plan ya no se ofrece: actívelo en «Planes» o elija otro.",
+        ),
+        s.InicioEnElPasado: (
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "La fecha de inicio no puede ser anterior a hoy.",
+        ),
+        s.SinSuscripcion: (
+            status.HTTP_409_CONFLICT,
+            "La empresa no tiene una suscripción para eso: asígnele un plan.",
+        ),
+        s.EstadoSinCambio: (status.HTTP_409_CONFLICT, "La suscripción ya está en ese estado."),
+        s.VencioSuspendida: (
+            status.HTTP_409_CONFLICT,
+            "La suscripción venció mientras estaba suspendida: renuévela.",
+        ),
+        s.CambioSimultaneo: (
+            status.HTTP_409_CONFLICT,
+            "Otro cambio se adelantó sobre esta suscripción. Vuelva a cargarla.",
+        ),
+    }
+    codigo, mensaje = conocidos.get(type(error), (status.HTTP_400_BAD_REQUEST, str(error)))
+    return HTTPException(codigo, mensaje)
+
+
+@router.get(
+    "/empresas/{empresa_id}/suscripciones",
+    response_model=SuscripcionesOut,
+    tags=["Plataforma · Suscripciones"],
+    summary="CU-03 Suscripción actual, historial y pagos de una empresa",
+)
+def obtener_suscripciones(empresa_id: int, db: DbSession) -> SuscripcionesOut:
+    try:
+        return suscripciones.obtener(db, empresa_id)
+    except suscripciones.ErrorDeSuscripcion as error:
+        raise _traducir_suscripcion(error) from error
+
+
+@router.post(
+    "/empresas/{empresa_id}/suscripciones",
+    response_model=SuscripcionGuardadaOut,
+    tags=["Plataforma · Suscripciones"],
+    summary="CU-03 Asignar o cambiar el plan (cierra la anterior y registra el pago simulado)",
+)
+def asignar_plan(empresa_id: int, datos: AsignarPlanIn, db: DbSession) -> SuscripcionGuardadaOut:
+    try:
+        return suscripciones.asignar_plan(db, empresa_id, datos)
+    except suscripciones.ErrorDeSuscripcion as error:
+        raise _traducir_suscripcion(error) from error
+
+
+@router.post(
+    "/empresas/{empresa_id}/suscripciones/renovar",
+    response_model=SuscripcionGuardadaOut,
+    tags=["Plataforma · Suscripciones"],
+    summary="CU-03 Renovar: extiende el vencimiento desde el actual",
+)
+def renovar_suscripcion(empresa_id: int, db: DbSession) -> SuscripcionGuardadaOut:
+    try:
+        return suscripciones.renovar(db, empresa_id)
+    except suscripciones.ErrorDeSuscripcion as error:
+        raise _traducir_suscripcion(error) from error
+
+
+@router.post(
+    "/empresas/{empresa_id}/suscripciones/suspender",
+    response_model=SuscripcionGuardadaOut,
+    tags=["Plataforma · Suscripciones"],
+    summary="CU-03 Suspender: la empresa queda en modo solo consulta",
+)
+def suspender_suscripcion(empresa_id: int, db: DbSession) -> SuscripcionGuardadaOut:
+    try:
+        return suscripciones.cambiar_estado(db, empresa_id, suspender=True)
+    except suscripciones.ErrorDeSuscripcion as error:
+        raise _traducir_suscripcion(error) from error
+
+
+@router.post(
+    "/empresas/{empresa_id}/suscripciones/reactivar",
+    response_model=SuscripcionGuardadaOut,
+    tags=["Plataforma · Suscripciones"],
+    summary="CU-03 Reactivar una suscripción suspendida",
+)
+def reactivar_suscripcion(empresa_id: int, db: DbSession) -> SuscripcionGuardadaOut:
+    try:
+        return suscripciones.cambiar_estado(db, empresa_id, suspender=False)
+    except suscripciones.ErrorDeSuscripcion as error:
+        raise _traducir_suscripcion(error) from error
+
+
+@router.post(
+    "/suscripciones/vencimiento",
+    response_model=VencimientoOut,
+    tags=["Plataforma · Suscripciones"],
+    summary="CU-03 E1 Marcar como vencidas las suscripciones cuya fecha pasó (proceso diario)",
+)
+def marcar_vencidas(db: DbSession) -> VencimientoOut:
+    """Pensado para un planificador; idempotente. Devuelve qué marcó."""
+    return suscripciones.marcar_vencidas(db)

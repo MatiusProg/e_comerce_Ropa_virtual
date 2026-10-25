@@ -39,6 +39,7 @@ from app.core.tenencia import EMPRESA_DE_BAJA, fijar_empresa, modo_plataforma
 from app.integrations.correo import ErrorDeEnvio, Mensaje, enviar
 from app.modules.organizacion.models import Ciudad, Sucursal
 from app.modules.plataforma.models import Empresa, Plan, Suscripcion
+from app.modules.plataforma.suscripciones import estado_efectivo, registrar_pago
 from app.modules.plataforma.schemas import (
     EmpresaCrearIn,
     EmpresaCreadaOut,
@@ -90,17 +91,18 @@ def _resumenes(db: Session, empresas: list[Empresa]) -> list[EmpresaOut]:
     ids = [e.id for e in empresas]
     if not ids:
         return []
-    suscripciones = {
-        s.empresa_id: (s, p)
-        for s, p in db.execute(
-            select(Suscripcion, Plan)
-            .join(Plan, Plan.id == Suscripcion.plan_id)
-            .where(
-                Suscripcion.empresa_id.in_(ids),
-                Suscripcion.estado.in_(("VIGENTE", "SUSPENDIDA")),
-            )
-        ).all()
-    }
+    # La actual de cada empresa; si no tiene, la última (vencida). Por id
+    # descendente la actual va primero: cambiar de plan siempre abre una fila
+    # nueva, y la reemplazada queda con un id menor.
+    suscripciones: dict[int, tuple[Suscripcion, Plan]] = {}
+    for s, p in db.execute(
+        select(Suscripcion, Plan)
+        .join(Plan, Plan.id == Suscripcion.plan_id)
+        .where(Suscripcion.empresa_id.in_(ids), Suscripcion.estado != "REEMPLAZADA")
+        .order_by(Suscripcion.id.desc())
+    ).all():
+        suscripciones.setdefault(s.empresa_id, (s, p))
+    hoy = tiempo.hoy()
     sucursales = dict(
         db.execute(
             select(Sucursal.empresa_id, func.count())
@@ -135,7 +137,7 @@ def _resumenes(db: Session, empresas: list[Empresa]) -> list[EmpresaOut]:
                         plan_nombre=par[1].nombre,
                         inicio=par[0].inicio,
                         vencimiento=par[0].vencimiento,
-                        estado=par[0].estado,
+                        estado=estado_efectivo(par[0], hoy),
                     )
                     if par
                     else None
@@ -235,13 +237,15 @@ def crear_empresa(db: Session, datos: EmpresaCrearIn) -> EmpresaCreadaOut:
         # Desde acá, lo que se escribe es de la empresa nueva.
         fijar_empresa(db, empresa.id)
         inicio = tiempo.hoy()
-        db.add(
-            Suscripcion(
-                plan_id=plan.id,
-                inicio=inicio,
-                vencimiento=inicio + timedelta(days=plan.duracion_dias),
-            )
+        suscripcion = Suscripcion(
+            plan_id=plan.id,
+            inicio=inicio,
+            vencimiento=inicio + timedelta(days=plan.duracion_dias),
         )
+        db.add(suscripcion)
+        db.flush()
+        # CU-03, paso 4: el alta también deja su pago simulado.
+        registrar_pago(db, suscripcion, plan, "ALTA")
         sucursal = Sucursal(
             ciudad_id=datos.sucursal.ciudad_id,
             nombre=datos.sucursal.nombre,

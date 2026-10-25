@@ -146,6 +146,7 @@ TABLAS_DE_EMPRESA = (
     "suscripcion",
     "cliente_empresa",
     "consumo_cupo",
+    "pago_simulado",
     # organización
     "sucursal",
     "empleado",
