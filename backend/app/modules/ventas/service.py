@@ -251,9 +251,9 @@ def _elegir_sucursal_de_envio(completas: list, ciudad_destino: int) -> int:
     return (del_destino or completas)[0].id
 
 
-def _linea_pedido(fila, imagenes: dict[int, str]) -> LineaPedidoOut:
+def _linea_pedido(fila, imagenes: dict[int, str], del_color: dict[int, str]) -> LineaPedidoOut:
     unitario = fila.precio_unitario - fila.descuento_unitario
-    ruta = imagenes.get(fila.producto_id)
+    ruta = del_color.get(fila.variante_id) or imagenes.get(fila.producto_id)
     return LineaPedidoOut(
         variante_id=fila.variante_id,
         sku=fila.sku,
@@ -274,6 +274,9 @@ def _armar_pedido(db: Session, fila) -> PedidoOut:
     imagenes = carrito_repository.imagen_principal(
         db, [linea.producto_id for linea in lineas]
     )
+    del_color = carrito_repository.imagen_de_variantes(
+        db, [linea.variante_id for linea in lineas]
+    )
 
     direccion = None
     if fila.direccion_id is not None:
@@ -291,7 +294,7 @@ def _armar_pedido(db: Session, fila) -> PedidoOut:
         sucursal_id=fila.sucursal_id,
         sucursal_nombre=fila.sucursal_nombre,
         direccion_envio=direccion,
-        lineas=[_linea_pedido(l, imagenes) for l in lineas],
+        lineas=[_linea_pedido(l, imagenes, del_color) for l in lineas],
         subtotal=fila.subtotal,
         descuento=fila.descuento,
         total=fila.total,

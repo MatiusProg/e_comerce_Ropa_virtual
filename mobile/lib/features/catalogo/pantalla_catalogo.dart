@@ -25,6 +25,7 @@ import '../../data/repositorios/repositorio_catalogo.dart';
 import '../compra/estado_compra.dart';
 import 'boton_favorito.dart';
 import 'estado_catalogo.dart';
+import '../../core/moneda.dart';
 
 class PantallaCatalogo extends ConsumerStatefulWidget {
   const PantallaCatalogo({super.key});
@@ -344,7 +345,7 @@ class _TarjetaPrenda extends ConsumerWidget {
                       ],
                     ),
                     Text(
-                      'Bs ${d.precioFinal}',
+                      bs(d.precioFinal),
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         color: ColoresVB.malvaOscuro,

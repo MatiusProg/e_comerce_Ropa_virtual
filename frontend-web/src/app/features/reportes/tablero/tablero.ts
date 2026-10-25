@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -16,6 +16,7 @@ import { OrganizacionService } from '../../../core/services/organizacion.service
 import { TableroService, type ErrorTablero } from '../../../core/services/tablero.service';
 import type { SucursalBreve } from '../../../core/models/organizacion.models';
 import type { Tablero as DatosTablero } from '../../../core/models/tablero.models';
+import { BsPipe } from '../../../shared/bs.pipe';
 
 /** Cuántos días atrás mira cada atajo del selector de período. */
 const ATAJOS = [
@@ -63,7 +64,7 @@ const COLORES = {
 @Component({
   selector: 'app-tablero',
   imports: [
-    CurrencyPipe,
+    BsPipe,
     DatePipe,
     ReactiveFormsModule,
     BaseChartDirective,

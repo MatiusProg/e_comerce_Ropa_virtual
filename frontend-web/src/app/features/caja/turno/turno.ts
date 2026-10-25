@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -13,6 +13,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { CajaService, type ErrorCaja } from '../../../core/services/caja.service';
 import type { Caja, Turno as TurnoModelo } from '../../../core/models/caja.models';
+import { BsPipe } from '../../../shared/bs.pipe';
 
 /**
  * CU-30 · Abrir y cerrar caja — «boundary» PantallaTurno.
@@ -34,7 +35,7 @@ import type { Caja, Turno as TurnoModelo } from '../../../core/models/caja.model
 @Component({
   selector: 'app-turno',
   imports: [
-    CurrencyPipe,
+    BsPipe,
     DatePipe,
     ReactiveFormsModule,
     MatButtonModule,

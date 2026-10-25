@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { AuthService } from '../../core/services/auth.service';
@@ -39,6 +40,7 @@ import { Campanita } from '../campanita/campanita';
     MatBadgeModule,
     MatButtonModule,
     MatIconModule,
+    MatToolbarModule,
     MatTooltipModule,
     Campanita,
   ],
@@ -53,6 +55,12 @@ export class NavegacionCliente {
   protected readonly visible = computed(() => this.auth.rol() === 'CLIENTE');
 
   protected readonly itemsEnCarrito = this.carrito.items;
+
+  protected readonly usuario = this.auth.usuario;
+  protected readonly iniciales = computed(() => {
+    const u = this.usuario();
+    return u ? `${u.nombres.charAt(0)}${u.apellidos.charAt(0)}`.toUpperCase() : '';
+  });
 
   /**
    * Cerrar sesión vive ACÁ y no en cada pantalla.

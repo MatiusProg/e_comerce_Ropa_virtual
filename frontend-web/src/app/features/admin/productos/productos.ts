@@ -36,6 +36,7 @@ import { Confirmacion, type DatosConfirmacion } from '../../../shared/confirmaci
 import { Galeria, type DatosGaleria } from './galeria';
 import { ProductoFormulario, type DatosProductoFormulario } from './producto-formulario';
 import { Variantes, type DatosVariantes } from './variantes';
+import { BsPipe } from '../../../shared/bs.pipe';
 
 /**
  * CU-10 · Gestionar productos y variantes — «boundary» PantallaProductos.
@@ -57,6 +58,7 @@ import { Variantes, type DatosVariantes } from './variantes';
 @Component({
   selector: 'app-productos',
   imports: [
+    BsPipe,
     ReactiveFormsModule,
     MatButtonModule,
     MatCardModule,

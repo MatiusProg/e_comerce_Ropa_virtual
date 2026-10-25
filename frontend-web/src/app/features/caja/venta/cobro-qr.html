@@ -4,7 +4,7 @@
 </h2>
 
 <mat-dialog-content>
-  <p class="monto">{{ datos.total | currency: 'BOB' : 'symbol-narrow' }}</p>
+  <p class="monto">{{ datos.total | bs }}</p>
 
   <div class="marco" [class.apagado]="estado() === 'vencido' || estado() === 'rechazado'">
     <svg

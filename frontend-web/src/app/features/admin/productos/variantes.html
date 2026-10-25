@@ -59,7 +59,7 @@
           <mat-label>Precio</mat-label>
           <input matInput formControlName="precio" inputmode="decimal" />
           <span matTextPrefix>Bs&nbsp;</span>
-          <mat-hint>Vacío = precio base ({{ producto().precio_base }}).</mat-hint>
+          <mat-hint>Vacío = precio base ({{ producto().precio_base | bs }}).</mat-hint>
           @if (generacion.controls.precio.hasError('pattern')) {
             <mat-error>Un importe con hasta dos decimales.</mat-error>
           }
@@ -140,7 +140,7 @@
               (click)="empezarAEditarPrecio(v)"
               matTooltip="Editar el precio de esta variante"
             >
-              Bs {{ v.precio }}
+              {{ v.precio | bs }}
             </button>
           }
         </td>

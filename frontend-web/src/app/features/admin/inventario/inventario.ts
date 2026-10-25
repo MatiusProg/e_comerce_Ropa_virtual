@@ -98,35 +98,43 @@ export class Inventario implements OnInit {
     () => this.auth.rol() === 'ADMINISTRADOR',
   );
 
-  protected readonly columnasExistencias = [
-    'sku',
-    'producto',
-    'sucursal',
-    'disponible',
-    'reservada',
-    'fisica',
-    'minimo',
-    'acciones',
-  ];
-  protected readonly columnasIngresos = [
-    'fecha',
-    'proveedor',
-    'sucursal',
-    'referencia',
-    'lineas',
-    'unidades',
-    'usuario',
-  ];
-  protected readonly columnasMovimientos = [
-    'fecha',
-    'tipo',
-    'sku',
-    'producto',
-    'sucursal',
-    'cantidad',
-    'motivo',
-    'usuario',
-  ];
+  // La columna «Sucursal» es solo del Administrador: el Encargado ve la suya
+  // y nada más, y en su tabla decía lo mismo en todas las filas.
+  protected readonly columnasExistencias = computed(() =>
+    [
+      'sku',
+      'producto',
+      'sucursal',
+      'disponible',
+      'reservada',
+      'fisica',
+      'minimo',
+      'acciones',
+    ].filter((c) => c !== 'sucursal' || this.esAdministrador()),
+  );
+  protected readonly columnasIngresos = computed(() =>
+    [
+      'fecha',
+      'proveedor',
+      'sucursal',
+      'referencia',
+      'lineas',
+      'unidades',
+      'usuario',
+    ].filter((c) => c !== 'sucursal' || this.esAdministrador()),
+  );
+  protected readonly columnasMovimientos = computed(() =>
+    [
+      'fecha',
+      'tipo',
+      'sku',
+      'producto',
+      'sucursal',
+      'cantidad',
+      'motivo',
+      'usuario',
+    ].filter((c) => c !== 'sucursal' || this.esAdministrador()),
+  );
 
   protected readonly cargando = signal(false);
   protected readonly error = signal<string | null>(null);

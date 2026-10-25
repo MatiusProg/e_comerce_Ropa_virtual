@@ -127,6 +127,7 @@ def _armar_carrito(db: Session, carrito_id: int | None) -> CarritoOut:
     filas = repository.lineas_resueltas(db, carrito_id)
     stock = repository.stock_de_variantes(db, [f.variante_id for f in filas])
     imagenes = repository.imagen_principal(db, [f.producto_id for f in filas])
+    del_color = repository.imagen_de_variantes(db, [f.variante_id for f in filas])
 
     # CU-12. Una sola consulta para todo el carrito, no una por linea.
     descuentos = promociones.descuentos_por_variante(
@@ -148,7 +149,7 @@ def _armar_carrito(db: Session, carrito_id: int | None) -> CarritoOut:
         else:
             no_disponibles += 1
 
-        ruta = imagenes.get(fila.producto_id)
+        ruta = del_color.get(fila.variante_id) or imagenes.get(fila.producto_id)
         lineas.append(
             LineaCarritoOut(
                 variante_id=fila.variante_id,

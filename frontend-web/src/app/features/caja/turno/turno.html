@@ -29,22 +29,22 @@
 
       <dl class="cuentas">
         <dt>Monto de apertura</dt>
-        <dd>{{ c.monto_apertura | currency: 'BOB' : 'symbol-narrow' }}</dd>
+        <dd>{{ c.monto_apertura | bs }}</dd>
         <dt>Cobrado en efectivo</dt>
-        <dd>{{ c.efectivo_cobrado | currency: 'BOB' : 'symbol-narrow' }}</dd>
+        <dd>{{ c.efectivo_cobrado | bs }}</dd>
         <dt>Devoluciones</dt>
-        <dd>− {{ c.devoluciones | currency: 'BOB' : 'symbol-narrow' }}</dd>
+        <dd>− {{ c.devoluciones | bs }}</dd>
         <dt class="fuerte">El sistema esperaba</dt>
-        <dd class="fuerte">{{ c.monto_esperado | currency: 'BOB' : 'symbol-narrow' }}</dd>
+        <dd class="fuerte">{{ c.monto_esperado | bs }}</dd>
         <dt class="fuerte">Usted contó</dt>
-        <dd class="fuerte">{{ c.monto_cierre | currency: 'BOB' : 'symbol-narrow' }}</dd>
+        <dd class="fuerte">{{ c.monto_cierre | bs }}</dd>
       </dl>
 
       <p class="diferencia" [class.cuadra]="c.diferencia === '0.00'">
         @if (c.diferencia === '0.00') {
           La caja cuadra.
         } @else {
-          Diferencia: {{ c.diferencia | currency: 'BOB' : 'symbol-narrow' }}
+          Diferencia: {{ c.diferencia | bs }}
         }
       </p>
 
@@ -76,9 +76,9 @@
 
         <dl class="cuentas">
           <dt>Monto de apertura</dt>
-          <dd>{{ t.monto_apertura | currency: 'BOB' : 'symbol-narrow' }}</dd>
+          <dd>{{ t.monto_apertura | bs }}</dd>
           <dt>Cobrado en efectivo</dt>
-          <dd>{{ t.efectivo_cobrado | currency: 'BOB' : 'symbol-narrow' }}</dd>
+          <dd>{{ t.efectivo_cobrado | bs }}</dd>
           <dt>
             Devoluciones
             <mat-icon
@@ -87,9 +87,9 @@
               >help_outline</mat-icon
             >
           </dt>
-          <dd>− {{ t.devoluciones | currency: 'BOB' : 'symbol-narrow' }}</dd>
+          <dd>− {{ t.devoluciones | bs }}</dd>
           <dt class="fuerte">Debería haber</dt>
-          <dd class="fuerte">{{ t.monto_esperado | currency: 'BOB' : 'symbol-narrow' }}</dd>
+          <dd class="fuerte">{{ t.monto_esperado | bs }}</dd>
         </dl>
 
         @if (t.por_metodo.length) {
@@ -108,7 +108,7 @@
                   <td>{{ linea.metodo }}</td>
                   <td class="numero">{{ linea.ventas }}</td>
                   <td class="numero">
-                    {{ linea.total | currency: 'BOB' : 'symbol-narrow' }}
+                    {{ linea.total | bs }}
                   </td>
                 </tr>
               }
@@ -153,11 +153,11 @@
             } @else if (diferencia()! > 0) {
               <mat-icon>trending_up</mat-icon>
               Va a quedar registrado un sobrante de
-              {{ diferencia() | currency: 'BOB' : 'symbol-narrow' }}.
+              {{ diferencia() | bs }}.
             } @else {
               <mat-icon>trending_down</mat-icon>
               Va a quedar registrado un faltante de
-              {{ -diferencia()! | currency: 'BOB' : 'symbol-narrow' }}.
+              {{ -diferencia()! | bs }}.
             }
           </p>
         }

@@ -36,6 +36,7 @@ import '../../core/red/excepciones.dart';
 import '../../core/tema.dart';
 import '../../data/modelos/compra.dart';
 import 'estado_compra.dart';
+import '../../core/moneda.dart';
 
 class PantallaMisCompras extends ConsumerWidget {
   const PantallaMisCompras({super.key});
@@ -133,7 +134,7 @@ class _FilaDeCompra extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              'Bs ${pedido.total}',
+              bs(pedido.total),
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: ColoresVB.malvaOscuro,

@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -25,6 +25,7 @@ import type {
   Ticket,
 } from '../../../core/models/pos.models';
 import { CobroQr, type DatosCobroQrDialogo, type ResultadoCobroQr } from './cobro-qr';
+import { BsPipe } from '../../../shared/bs.pipe';
 
 /** Los tres estados de la pantalla. No hay dos a la vez. */
 type Cara = 'armando' | 'cobrado';
@@ -62,7 +63,7 @@ type Cara = 'armando' | 'cobrado';
 @Component({
   selector: 'app-venta',
   imports: [
-    CurrencyPipe,
+    BsPipe,
     DatePipe,
     RouterLink,
     ReactiveFormsModule,

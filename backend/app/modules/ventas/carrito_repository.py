@@ -8,7 +8,7 @@ Regla: aqui solo van consultas. Ninguna regla de negocio, ninguna validacion de
 permisos, NINGUN commit: el control de la transaccion vive en el servicio.
 """
 from sqlalchemy import Row, func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 from app.modules.catalogo.models import (
     Color,
@@ -158,6 +158,39 @@ def imagen_principal(db: Session, producto_ids: list[int]) -> dict[int, str]:
         .order_by(
             ImagenProducto.producto_id,
             ImagenProducto.es_principal.desc(),
+            ImagenProducto.orden,
+            ImagenProducto.id,
+        )
+    ).all()
+    return {fila[0]: fila[1] for fila in filas}
+
+
+def imagen_de_variantes(db: Session, variante_ids: list[int]) -> dict[int, str]:
+    """La foto del color de cada variante, si el producto tiene una.
+
+    Las fotos de galeria se cargan una por color, atadas a una variante de ese
+    color en cualquier talla. Sin esto el carrito mostraba la principal: una
+    blusa «Rojo vino» aparecia verde porque la principal era de otro color.
+    Gana la foto de la variante exacta; la que falta la completa
+    `imagen_principal`.
+    """
+    if not variante_ids:
+        return {}
+    elegida = aliased(VarianteProducto)
+    de_la_foto = aliased(VarianteProducto)
+    filas = db.execute(
+        select(elegida.id, ImagenProducto.ruta)
+        .join(ImagenProducto, ImagenProducto.producto_id == elegida.producto_id)
+        .join(
+            de_la_foto,
+            (de_la_foto.id == ImagenProducto.variante_id)
+            & (de_la_foto.color_id == elegida.color_id),
+        )
+        .where(elegida.id.in_(variante_ids), ImagenProducto.es_transparente.is_(False))
+        .distinct(elegida.id)
+        .order_by(
+            elegida.id,
+            (ImagenProducto.variante_id == elegida.id).desc(),
             ImagenProducto.orden,
             ImagenProducto.id,
         )

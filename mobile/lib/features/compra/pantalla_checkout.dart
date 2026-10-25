@@ -29,6 +29,7 @@ import '../../core/tema.dart';
 import '../../data/modelos/compra.dart';
 import '../../data/repositorios/repositorio_compra.dart';
 import 'estado_compra.dart';
+import '../../core/moneda.dart';
 
 class PantallaCheckout extends ConsumerStatefulWidget {
   const PantallaCheckout({super.key});
@@ -109,9 +110,9 @@ class _PantallaCheckoutState extends ConsumerState<PantallaCheckout> {
             contentPadding: EdgeInsets.zero,
             title: Text(linea.productoNombre),
             subtitle: Text(
-              '${linea.descripcionVariante}  ·  ${linea.cantidad} x Bs ${linea.precioUnitario}',
+              '${linea.descripcionVariante}  ·  ${linea.cantidad} x ${bs(linea.precioUnitario)}',
             ),
-            trailing: Text('Bs ${linea.subtotal}'),
+            trailing: Text(bs(linea.subtotal)),
           ),
 
         const Divider(height: 24),
@@ -262,7 +263,7 @@ class _PantallaCheckoutState extends ConsumerState<PantallaCheckout> {
               children: [
                 const Text('Total a pagar'),
                 Text(
-                  'Bs ${opciones.total}',
+                  bs(opciones.total),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: ColoresVB.malvaOscuro,
                     fontWeight: FontWeight.bold,
@@ -375,7 +376,7 @@ class _PantallaCheckoutState extends ConsumerState<PantallaCheckout> {
               children: [
                 const Text('Usted vio'),
                 Text(
-                  'Bs ${fallo.totalEsperado}',
+                  bs(fallo.totalEsperado),
                   style: const TextStyle(
                     decoration: TextDecoration.lineThrough,
                   ),
@@ -387,7 +388,7 @@ class _PantallaCheckoutState extends ConsumerState<PantallaCheckout> {
               children: [
                 const Text('Ahora es'),
                 Text(
-                  'Bs ${fallo.totalActual}',
+                  bs(fallo.totalActual),
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ],

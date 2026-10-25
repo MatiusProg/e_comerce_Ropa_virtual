@@ -62,8 +62,8 @@
                 <span class="detalle">{{ linea.talla }} · {{ linea.color }}</span>
               </td>
               <td class="numero">{{ linea.cantidad }}</td>
-              <td class="numero">{{ linea.precio_unitario | currency: 'BOB' : 'symbol-narrow' }}</td>
-              <td class="numero">{{ linea.subtotal | currency: 'BOB' : 'symbol-narrow' }}</td>
+              <td class="numero">{{ linea.precio_unitario | bs }}</td>
+              <td class="numero">{{ linea.subtotal | bs }}</td>
             </tr>
           }
         </tbody>
@@ -71,7 +71,7 @@
 
       <dl class="cuentas">
         <dt class="fuerte">Total</dt>
-        <dd class="fuerte">{{ t.total | currency: 'BOB' : 'symbol-narrow' }}</dd>
+        <dd class="fuerte">{{ t.total | bs }}</dd>
         <dt>Cobrado con</dt>
         <dd>{{ t.metodo_pago }}</dd>
         @if (referenciaQr(); as ref) {
@@ -80,11 +80,11 @@
         }
         @if (t.monto_recibido) {
           <dt>Recibido</dt>
-          <dd>{{ t.monto_recibido | currency: 'BOB' : 'symbol-narrow' }}</dd>
+          <dd>{{ t.monto_recibido | bs }}</dd>
         }
         @if (t.vuelto) {
           <dt class="fuerte">Vuelto</dt>
-          <dd class="fuerte">{{ t.vuelto | currency: 'BOB' : 'symbol-narrow' }}</dd>
+          <dd class="fuerte">{{ t.vuelto | bs }}</dd>
         }
       </dl>
 
@@ -172,14 +172,14 @@
                            precio, no una oferta, y el cajero no puede explicar
                            la rebaja si el cliente pregunta. -->
                       <span class="tachado">
-                        {{ prenda.precio | currency: 'BOB' : 'symbol-narrow' }}
+                        {{ prenda.precio | bs }}
                       </span>
                       <span class="rebajado">
-                        {{ d.precio_final | currency: 'BOB' : 'symbol-narrow' }}
+                        {{ d.precio_final | bs }}
                       </span>
                       <span class="promo" [matTooltip]="d.nombre">−{{ d.porcentaje }} %</span>
                     } @else {
-                      {{ prenda.precio | currency: 'BOB' : 'symbol-narrow' }}
+                      {{ prenda.precio | bs }}
                     }
                   </span>
                   <span
@@ -219,7 +219,7 @@
                     </span>
                   </span>
                   <span class="precio">
-                    {{ fila.total | currency: 'BOB' : 'symbol-narrow' }}
+                    {{ fila.total | bs }}
                   </span>
                 </button>
               </li>
@@ -255,7 +255,7 @@
                   </td>
                   <td class="numero">×{{ linea.cantidad }}</td>
                   <td class="numero">
-                    {{ linea.subtotal | currency: 'BOB' : 'symbol-narrow' }}
+                    {{ linea.subtotal | bs }}
                   </td>
                 </tr>
               }
@@ -301,7 +301,7 @@
                     </button>
                   </td>
                   <td class="numero">
-                    {{ subtotalDe(linea) | currency: 'BOB' : 'symbol-narrow' }}
+                    {{ subtotalDe(linea) | bs }}
                   </td>
                   <td>
                     <button
@@ -321,7 +321,7 @@
 
         <p class="total">
           <span>Total</span>
-          <strong>{{ total() | currency: 'BOB' : 'symbol-narrow' }}</strong>
+          <strong>{{ total() | bs }}</strong>
         </p>
 
         <h3>¿Cómo paga?</h3>
@@ -354,10 +354,10 @@
             <p class="anticipo" [class.falta]="vuelto()! < 0">
               @if (vuelto()! < 0) {
                 <mat-icon>error_outline</mat-icon>
-                Faltan {{ enBs(-vuelto()!) | currency: 'BOB' : 'symbol-narrow' }}.
+                Faltan {{ enBs(-vuelto()!) | bs }}.
               } @else {
                 <mat-icon>savings</mat-icon>
-                Vuelto: {{ enBs(vuelto()!) | currency: 'BOB' : 'symbol-narrow' }}
+                Vuelto: {{ enBs(vuelto()!) | bs }}
               }
             </p>
           }

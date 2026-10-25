@@ -29,6 +29,7 @@ import '../../core/tema.dart';
 import '../../data/repositorios/repositorio_catalogo.dart';
 import '../../data/repositorios/repositorio_recomendaciones.dart';
 import '../auth/estado_sesion.dart';
+import '../../core/moneda.dart';
 
 class PantallaParaVos extends ConsumerStatefulWidget {
   const PantallaParaVos({super.key});
@@ -219,7 +220,7 @@ class _EstadoParaVos extends ConsumerState<PantallaParaVos> {
                     if (prenda.precioDesde != null) ...[
                       const SizedBox(height: 2),
                       Text(
-                        'Bs ${prenda.precioDesde}',
+                        bs(prenda.precioDesde),
                         style: const TextStyle(
                           color: ColoresVB.malva,
                           fontWeight: FontWeight.w700,

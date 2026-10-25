@@ -23,6 +23,7 @@ import type {
 import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion-cliente';
 import { ReservaFormulario } from '../../cliente/reservas/reserva-formulario';
 import type { Reserva } from '../../../core/models/reservas.models';
+import { BsPipe, formatoBs } from '../../../shared/bs.pipe';
 
 /**
  * CU-18 · Consultar ficha de producto — «boundary» PantallaFichaProducto.
@@ -48,6 +49,7 @@ import type { Reserva } from '../../../core/models/reservas.models';
 @Component({
   selector: 'app-ficha',
   imports: [
+    BsPipe,
     NavegacionCliente,
     RouterLink,
     MatButtonModule,
@@ -142,14 +144,14 @@ export class Ficha implements OnInit {
    *  el rango del producto. */
   protected readonly precio = computed<string>(() => {
     const variante = this.variante();
-    if (variante) return `Bs ${variante.precio}`;
+    if (variante) return formatoBs(variante.precio);
 
     const ficha = this.ficha();
     if (!ficha?.precio_desde) return 'Sin precio';
     if (ficha.precio_hasta && ficha.precio_hasta !== ficha.precio_desde) {
-      return `Bs ${ficha.precio_desde} — ${ficha.precio_hasta}`;
+      return `${formatoBs(ficha.precio_desde)} — ${formatoBs(ficha.precio_hasta)}`;
     }
-    return `Bs ${ficha.precio_desde}`;
+    return formatoBs(ficha.precio_desde);
   });
 
   /**
@@ -267,13 +269,33 @@ export class Ficha implements OnInit {
     });
   }
 
-  /** Si la variante elegida tiene foto propia, la galería salta a ella. */
+  /**
+   * La galería sigue al color elegido.
+   *
+   * Antes solo saltaba con la variante completa (talla y color) y si la foto
+   * era de esa misma variante. Pero las fotos se cargan una por color, en
+   * cualquiera de sus tallas: elegir el color sin la talla, o una talla sin
+   * foto propia, dejaba la prenda en el color anterior. Ahora gana la foto de
+   * la variante exacta, después cualquiera del mismo color, y si no hay
+   * ninguna, la principal.
+   */
   private mostrarFotoDeLaVariante(): void {
-    const variante = this.variante();
     const ficha = this.ficha();
-    if (!variante || !ficha) return;
-    const indice = ficha.imagenes.findIndex((i) => i.variante_id === variante.id);
-    if (indice >= 0) this.fotoActiva.set(indice);
+    if (!ficha) return;
+    const variante = this.variante();
+    const color = this.colorElegido();
+
+    let indice = variante ? ficha.imagenes.findIndex((i) => i.variante_id === variante.id) : -1;
+    if (indice < 0 && color != null) {
+      const delColor = new Set(
+        ficha.variantes.filter((v) => v.color_id === color).map((v) => v.id),
+      );
+      indice = ficha.imagenes.findIndex((i) => i.variante_id != null && delColor.has(i.variante_id));
+    }
+    // Sin foto propia, la principal: quedarse en la anterior mostraría la
+    // prenda en el color que se acaba de dejar.
+    if (indice < 0) indice = Math.max(0, ficha.imagenes.findIndex((i) => i.es_principal));
+    this.fotoActiva.set(indice);
   }
 
   /**

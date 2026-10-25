@@ -133,15 +133,15 @@
               </div>
 
               <div class="importe">
-                <span class="subtotal">Bs {{ linea.subtotal }}</span>
+                <span class="subtotal">{{ linea.subtotal | bs }}</span>
                 @if (linea.descuento; as d) {
                   <span class="unitario">
-                    <span class="tachado">Bs {{ linea.precio_unitario }}</span>
-                    <strong>Bs {{ d.precio_final }}</strong> c/u
+                    <span class="tachado">{{ linea.precio_unitario | bs }}</span>
+                    <strong>{{ d.precio_final | bs }}</strong> c/u
                   </span>
                   <span class="promo">{{ d.nombre }} · −{{ d.porcentaje }} %</span>
                 } @else {
-                  <span class="unitario">Bs {{ linea.precio_unitario }} c/u</span>
+                  <span class="unitario">{{ linea.precio_unitario | bs }} c/u</span>
                 }
               </div>
 
@@ -167,7 +167,7 @@
             </p>
             <p class="fila total">
               <span>Total</span>
-              <strong>Bs {{ c.total }}</strong>
+              <strong>{{ c.total | bs }}</strong>
             </p>
             <!--
               Las promociones son CU-12 y todavía no existen. Se dice acá en vez

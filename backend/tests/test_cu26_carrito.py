@@ -445,3 +445,36 @@ def test_sin_token_no_hay_carrito(api: TestClient) -> None:
     """A diferencia de la vitrina, esto NO es público: un carrito es de alguien."""
     assert api.get(CARRITO).status_code == 401
     assert api.post(ITEMS, json={"variante_id": 1, "cantidad": 1}).status_code == 401
+
+
+def test_la_foto_de_la_linea_es_la_del_color_elegido(
+    api: TestClient, db, cabeceras_cliente: dict[str, str], catalogo: dict
+) -> None:
+    """2do parcial: la foto del color gana a la principal, aunque sea de otra talla.
+
+    Las fotos de galería se cargan una por color. Antes la línea mostraba
+    siempre la principal, y una prenda negra podía verse de otro color.
+    """
+    from app.modules.catalogo.models import ImagenProducto
+
+    db.add_all([
+        ImagenProducto(producto_id=catalogo["producto_uno"], ruta="productos/x/principal.jpg",
+                       es_principal=True, orden=0),
+        # Del mismo color (Negro) pero de la talla L: igual vale para la M.
+        ImagenProducto(producto_id=catalogo["producto_uno"], variante_id=catalogo["v_uno_l"],
+                       ruta="productos/x/color-negro.jpg", orden=1),
+        # El PNG del vestidor no es una foto de galería: nunca se elige.
+        ImagenProducto(producto_id=catalogo["producto_uno"], variante_id=catalogo["v_uno"],
+                       ruta="productos/x/vestidor.png", es_transparente=True, orden=2),
+        ImagenProducto(producto_id=catalogo["producto_dos"], ruta="productos/y/principal.jpg",
+                       es_principal=True, orden=0),
+    ])
+    db.commit()
+
+    _agregar(api, cabeceras_cliente, catalogo["v_uno"])
+    carrito = _agregar(api, cabeceras_cliente, catalogo["v_dos"]).json()
+
+    fotos = {l["variante_id"]: l["imagen_url"] for l in carrito["lineas"]}
+    assert fotos[catalogo["v_uno"]].endswith("color-negro.jpg")
+    # Sin foto de su color, la principal del producto.
+    assert fotos[catalogo["v_dos"]].endswith("productos/y/principal.jpg")
