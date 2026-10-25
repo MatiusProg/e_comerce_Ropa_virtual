@@ -65,6 +65,7 @@ from app.modules.notificaciones.schemas import (
     ResumenNotificacionesOut,
 )
 from app.modules.organizacion.models import Empleado
+from app.modules.plataforma import verificador
 from app.modules.seguridad.models import Cliente, Usuario
 
 log = logging.getLogger(__name__)
@@ -145,11 +146,21 @@ def notificar(
 ) -> Notificacion:
     """Deja el aviso en la transaccion en curso. NO confirma y NO manda correo.
 
-    El estado inicial del correo sale de si hay a donde mandarlo: una cuenta sin
-    direccion nace OMITIDO y no PENDIENTE, para que el despachador no la
-    persiga en cada corrida por algo que no va a cambiar solo.
+    El estado inicial del correo sale de si hay a donde mandarlo y de si el
+    plan incluye los avisos por correo: si no, nace OMITIDO y no PENDIENTE,
+    para que el despachador no la persiga en cada corrida por algo que no va a
+    cambiar solo.
     """
     hay_direccion = bool((destinatario.correo or "").strip())
+    # 2do parcial: los avisos por correo son una función del plan. Sin ella el
+    # aviso igual queda en la campanita; solo no sale por correo.
+    con_correo = verificador.incluye(db, "correo")
+    if not hay_direccion:
+        estado, motivo = "OMITIDO", None
+    elif not con_correo:
+        estado, motivo = "OMITIDO", "El plan de la empresa no incluye avisos por correo."
+    else:
+        estado, motivo = "PENDIENTE", None
     return repository.crear(
         db,
         destinatario_id=destinatario.id,
@@ -159,7 +170,8 @@ def notificar(
         enlace=enlace,
         entidad=entidad,
         entidad_id=entidad_id,
-        correo_estado="PENDIENTE" if hay_direccion else "OMITIDO",
+        correo_estado=estado,
+        correo_error=motivo,
     )
 
 

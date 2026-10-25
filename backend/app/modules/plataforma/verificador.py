@@ -83,6 +83,37 @@ CUPOS = {
     "fotos_ia": ("cupo_fotos_ia", "fotos con IA"),
 }
 
+#: LO QUE EL PLAN PROMETE, SE CUMPLE. Dónde se hace cumplir cada límite, cupo,
+#: función y ajuste que un plan declara (la idea es la de PLAN_RULES de
+#: PROYECTO_MEDICOS). `tests/test_p2_reglas_del_plan.py` falla si un plan
+#: declara algo que no figura acá. Estados:
+#:   aplicado   el backend lo hace cumplir donde dice
+#:   pendiente  la funcionalidad todavía no existe: se aplica al construirla,
+#:              con `requiere_funcion` o `verificar_funcion`
+#:   no_aplica  no limita nada del sistema (se explica)
+REGLAS_DEL_PLAN: dict[str, tuple[str, str]] = {
+    # Columnas del plan
+    "precio_mensual": ("no_aplica", "es el precio simulado: lo usa el cobro de la suscripción (CU-03)"),
+    "duracion_dias": ("no_aplica", "da el vencimiento de la suscripción (CU-03)"),
+    "max_sucursales": ("aplicado", "organizacion/service.py · alta y reactivación de sucursal"),
+    "max_empleados": ("aplicado", "organizacion/empleados/router.py · alta de empleado"),
+    "cupo_reportes_ia": ("aplicado", "reportes/reportes_router.py · reporte por voz"),
+    "cupo_fotos_ia": ("aplicado", "vestidor_virtual/router.py · probado por IA"),
+    # Funciones
+    "reportes_ia": ("aplicado", "reportes/reportes_router.py · reporte por voz y su disponibilidad"),
+    "correo": ("aplicado", "notificaciones/service.py · el aviso no sale por correo sin la función"),
+    "ia_cliente": ("aplicado", "ia/ · el asistente se rechaza y las recomendaciones van por popularidad"),
+    "foto_ia": ("aplicado", "vestidor_virtual/router.py · probado por IA y su disponibilidad"),
+    "marca_propia": ("pendiente", "CU-12 Personalizar la tienda de la empresa"),
+    "traspasos_sugeridos": ("pendiente", "CU-35 Consultar traspasos sugeridos"),
+    "analitica_ml": ("pendiente", "CU-29 y CU-30, analítica con ML y su dashboard"),
+    "exportar_datos": ("pendiente", "CU-39 Exportar los datos de la empresa"),
+    # Ajustes numéricos guardados en `funciones`
+    "bitacora_dias": ("aplicado", "bitacora/service.py · la consulta no va más atrás de esos días"),
+    "respaldo_intervalo_horas": ("pendiente", "CU-40 Gestionar copias de seguridad de la empresa"),
+    "respaldo_retencion": ("pendiente", "CU-40 Gestionar copias de seguridad de la empresa"),
+}
+
 
 # --------------------------------------------------------------------------
 #  Errores
@@ -142,6 +173,37 @@ def plan_vigente(db: Session) -> Plan:
     if suscripcion is None:
         raise SinSuscripcionVigente()
     return suscripcion.plan
+
+
+def incluye(db: Session, funcion: str) -> bool:
+    """Si el plan vigente incluye la función, sin rechazar.
+
+    Para lo que no se corta sino que se hace de otra forma: el aviso que no
+    sale por correo, las recomendaciones por popularidad en vez de IA, o el
+    botón que la interfaz esconde. Sin suscripción vigente no incluye nada.
+    """
+    try:
+        plan = plan_vigente(db)
+    except SinSuscripcionVigente:
+        return False
+    return (plan.funciones or {}).get(funcion) is True
+
+
+def dias_de_bitacora(db: Session) -> int | None:
+    """Cuántos días hacia atrás ve la empresa su bitácora; None es todo.
+
+    Es una consulta, así que se permite aun sin suscripción vigente (RN-03):
+    rige el plan de la última suscripción. Sin ninguna, no se recorta.
+    """
+    plan = db.scalar(
+        select(Plan)
+        .join(Suscripcion, Suscripcion.plan_id == Plan.id)
+        .order_by(Suscripcion.vencimiento.desc(), Suscripcion.id.desc())
+        .limit(1)
+    )
+    if plan is None:
+        return None
+    return (plan.funciones or {}).get("bitacora_dias")
 
 
 def verificar_funcion(db: Session, funcion: str) -> None:

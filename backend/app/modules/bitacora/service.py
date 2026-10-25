@@ -10,13 +10,14 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from sqlalchemy.orm import Session
 
 from app.core import tiempo
 from app.modules.bitacora import repository
+from app.modules.plataforma import verificador
 
 _log = logging.getLogger("violetboutique.bitacora")
 
@@ -177,6 +178,14 @@ def listar(
 
     if desde and hasta and desde > hasta:
         raise ErrorDeBitacora("La fecha inicial es posterior a la final.", 422)
+
+    # 2do parcial: cuántos días de historial se ven lo da el plan
+    # (`bitacora_dias`; vacío es todo). Pedir más atrás no es un error: se
+    # recorta, igual que si no hubiera nada antes.
+    dias = verificador.dias_de_bitacora(db)
+    if dias is not None:
+        primero = tiempo.hoy() - timedelta(days=dias - 1)
+        desde = max(desde, primero) if desde else primero
 
     inicio = tiempo.inicio_del_dia(desde) if desde else None
     fin = tiempo.fin_del_dia(hasta) if hasta else None

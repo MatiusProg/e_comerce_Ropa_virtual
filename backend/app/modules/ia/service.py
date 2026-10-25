@@ -51,6 +51,7 @@ from app.integrations.recomendador import (
 )
 from app.modules.ia import repository
 from app.modules.inventario import service as inventario
+from app.modules.plataforma import verificador
 
 _log = logging.getLogger("violetboutique.recomendador")
 
@@ -179,13 +180,18 @@ def _por_popularidad(candidatas: list[Candidata]) -> list[dict]:
     ]
 
 
-def _generar(db: Session, cliente) -> tuple[str, list[dict]]:
+def _generar(db: Session, cliente, *, con_ia: bool) -> tuple[str, list[dict]]:
     perfil, categoria_ids = _perfil(db, cliente)
     candidatas = _candidatas(db, cliente, categoria_ids)
     if not candidatas:
         # No hay NADA que recomendar: ni una prenda activa con stock. Es un
         # catálogo vacío, no un fallo, y se guarda igual para no reintentar.
         return MOTOR_DEGRADADO, []
+
+    if not con_ia:
+        # 2do parcial: la IA para el cliente es una función del plan. Sin ella
+        # la tienda igual recomienda, por popularidad, y no se llama al modelo.
+        return MOTOR_DEGRADADO, _por_popularidad(candidatas)
 
     try:
         sugerencias = recomendador.ordenar(perfil, candidatas, CUANTAS_SUGERENCIAS)
@@ -227,8 +233,12 @@ def recomendaciones(
     if cliente is None:
         return None
 
+    con_ia = verificador.incluye(db, "ia_cliente")
     guardada = repository.guardada(db, cliente.id)
-    if not forzar and guardada is not None and not _vencida(guardada.generada_en):
+    # Una recomendación hecha con IA no se sigue mostrando si el plan ya no la
+    # incluye: la empresa bajó de plan y se rehace por popularidad.
+    sirve = guardada is not None and (con_ia or guardada.motor == MOTOR_DEGRADADO)
+    if not forzar and sirve and not _vencida(guardada.generada_en):
         vigente = _armar(
             db, guardada.motor, guardada.generada_en, guardada.sugerencias
         )
@@ -245,7 +255,7 @@ def recomendaciones(
             len(vigente.prendas),
         )
 
-    motor, sugerencias = _generar(db, cliente)
+    motor, sugerencias = _generar(db, cliente, con_ia=con_ia)
     fila = repository.guardar(db, cliente.id, motor, sugerencias)
     db.commit()
     db.refresh(fila)

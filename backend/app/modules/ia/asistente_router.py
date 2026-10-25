@@ -13,8 +13,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.core.dependencies import DbSession, Usuario, requiere_roles
+from app.core.dependencies import DbSession, Usuario, requiere_funcion, requiere_roles
 from app.modules.ia import asistente_service as service
+from app.modules.plataforma import verificador
 from app.modules.ia.asistente_schemas import (
     DisponibleOut,
     PreguntaIn,
@@ -37,10 +38,14 @@ router = APIRouter(
     response_model=DisponibleOut,
     summary="CU-34 Si se puede conversar",
 )
-def hay_asistente() -> DisponibleOut:
-    """La pantalla lo pregunta ANTES de ofrecer el asistente."""
+def hay_asistente(db: DbSession) -> DisponibleOut:
+    """La pantalla lo pregunta ANTES de ofrecer el asistente.
+
+    2do parcial: tampoco está si el plan de la tienda no incluye la IA para el
+    cliente.
+    """
     return DisponibleOut(
-        disponible=service.esta_disponible(),
+        disponible=service.esta_disponible() and verificador.incluye(db, "ia_cliente"),
         ejemplos=list(service.EJEMPLOS),
     )
 
@@ -49,6 +54,7 @@ def hay_asistente() -> DisponibleOut:
     "",
     response_model=RespuestaOut,
     summary="CU-34 Preguntarle al asistente",
+    dependencies=[Depends(requiere_funcion("ia_cliente"))],
     responses={
         422: {"description": "La pregunta está vacía o es demasiado larga."},
         503: {"description": "No hay modelo, o no respondió."},
