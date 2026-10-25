@@ -137,6 +137,8 @@ TABLAS_VOLATILES = (
     # referencian; el CASCADE las alcanza igual. La empresa 1 se vuelve a
     # sembrar en `_sembrar_referencias`, y RESTART IDENTITY le devuelve el id.
     "consumo_cupo",
+    # CU-03: apunta a `suscripcion` y a `plan`, las dos más abajo.
+    "pago_simulado",
     "suscripcion",
     "empresa",
     # CU-05: una prueba puede cambiar los límites de un plan; se vuelven a

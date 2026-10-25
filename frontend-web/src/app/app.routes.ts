@@ -153,6 +153,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/plataforma/empresas/empresas').then((m) => m.Empresas),
       },
+      // 2do parcial · CU-03 Gestionar suscripciones: la ficha de la empresa.
+      {
+        path: 'empresas/:id',
+        title: 'Empresa · Violet Boutique',
+        loadComponent: () =>
+          import('./features/plataforma/empresas/ficha-empresa').then((m) => m.FichaEmpresa),
+      },
       // 2do parcial · CU-02 Gestionar planes.
       {
         path: 'planes',

@@ -103,3 +103,55 @@ export interface FuncionDePlan {
 
 /** La misma regla que el CHECK de la tabla `empresa` (RN-14). */
 export const PATRON_SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+// --- CU-03 Gestionar suscripciones ------------------------------------------
+
+export type EstadoSuscripcion = SuscripcionResumen['estado'];
+
+export interface Suscripcion {
+  id: number;
+  plan_id: number;
+  plan_codigo: string;
+  plan_nombre: string;
+  inicio: string;
+  vencimiento: string;
+  /** Una VIGENTE con la fecha pasada llega como VENCIDA. */
+  estado: EstadoSuscripcion;
+  dias_restantes: number;
+}
+
+export interface PagoSimulado {
+  id: number;
+  suscripcion_id: number;
+  concepto: 'ALTA' | 'CAMBIO' | 'RENOVACION';
+  plan_nombre: string;
+  monto: number;
+  comprobante: string;
+  pagado_en: string;
+}
+
+/** Paso 2: la actual (o la última, si no hay) y el historial. */
+export interface SuscripcionesEmpresa {
+  empresa_id: number;
+  empresa: string;
+  actual: Suscripcion | null;
+  historial: Suscripcion[];
+  pagos: PagoSimulado[];
+}
+
+export interface SuscripcionGuardada extends SuscripcionesEmpresa {
+  pago: PagoSimulado | null;
+  /** 5a: lo que ya pasa los límites del plan nuevo. No se borra nada. */
+  excedidas: EmpresaExcedida[];
+}
+
+export interface AsignarPlan {
+  plan_id: number;
+  /** `YYYY-MM-DD`; sin indicar, hoy. */
+  inicio: string | null;
+}
+
+export interface Vencimiento {
+  vencidas: number;
+  empresas: string[];
+}

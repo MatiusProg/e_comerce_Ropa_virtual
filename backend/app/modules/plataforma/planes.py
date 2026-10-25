@@ -175,6 +175,14 @@ def _excedidas(db: Session, plan: Plan) -> list[EmpresaExcedidaOut]:
             .where(Suscripcion.plan_id == plan.id, Suscripcion.estado.in_(ESTADOS_CON_PLAN))
         ).all()
     )
+    return excedidas_en(db, plan, empresas)
+
+
+def excedidas_en(db: Session, plan: Plan, empresas: dict[int, str]) -> list[EmpresaExcedidaOut]:
+    """Lo que esas empresas (id → nombre) tienen por encima de los límites del plan.
+
+    También lo usa el CU-03 (5a) para avisar antes de bajar de plan a una empresa.
+    """
     if not empresas:
         return []
 
