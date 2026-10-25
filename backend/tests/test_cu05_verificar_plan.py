@@ -93,6 +93,19 @@ def test_la_sucursal_que_pasa_el_limite_se_rechaza_con_plan_limit(api, db, cabec
     assert "Sur" not in nombres
 
 
+def test_una_sucursal_que_nace_desactivada_no_consume_el_limite(api, db, cabeceras_admin):
+    _pasar_a(db, "BASICO")
+    _sucursal(api, cabeceras_admin, "Centro")
+    _sucursal(api, cabeceras_admin, "Norte")
+
+    r = api.post(SUCURSALES, headers=cabeceras_admin, json={
+        "ciudad_id": 1, "nombre": "Sur", "direccion": "Avenida Sur 100",
+        "horario_apertura": "09:00:00", "horario_cierre": "20:00:00",
+        "capacidad_vestidores": 4, "activa": False})
+
+    assert r.status_code == 201, r.text
+
+
 def test_bajar_de_plan_no_borra_nada_solo_impide_crear_mas(api, db, cabeceras_admin):
     """RN-04: con 3 sucursales y un plan de 2, las 3 siguen; la cuarta no entra."""
     ids = [_sucursal(api, cabeceras_admin, n).json()["id"] for n in ("A", "B", "C")]

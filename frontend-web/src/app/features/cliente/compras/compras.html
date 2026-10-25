@@ -56,7 +56,7 @@
                   @for (linea of compra.lineas; track linea.variante_id) {
                     <li class="linea">
                       @if (linea.imagen_url) {
-                        <img [src]="linea.imagen_url" [alt]="linea.producto_nombre" />
+                        <img [src]="linea.imagen_url | urlMedia" [alt]="linea.producto_nombre" />
                       } @else {
                         <span class="sin-foto"><mat-icon>checkroom</mat-icon></span>
                       }

@@ -72,3 +72,9 @@
     }
   }
 }
+
+// La insignia del carrito sobresale a la derecha del ícono: sin este aire, el
+// número se montaba sobre la «M» de «Mi carrito».
+.mat-badge {
+  margin-right: 0.3rem;
+}

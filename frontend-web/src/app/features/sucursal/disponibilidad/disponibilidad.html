@@ -35,7 +35,7 @@
     </mat-icon>
     <h2>
       @if (alertas().length) {
-        Hay {{ alertas().length }} prenda(s) para reponer
+        Hay {{ alertas().length }} {{ alertas().length === 1 ? 'prenda' : 'prendas' }} para reponer
       } @else {
         Nada que reponer
       }

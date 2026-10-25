@@ -12,7 +12,7 @@
         @if (u.sucursal_id !== null) {
           <p class="sucursal">
             <mat-icon>place</mat-icon>
-            Sucursal asignada n.º {{ u.sucursal_id }}
+            {{ u.sucursal_nombre ?? 'Sucursal asignada n.º ' + u.sucursal_id }}
           </p>
         }
       </mat-card-content>

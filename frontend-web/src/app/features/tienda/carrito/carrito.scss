@@ -1,8 +1,6 @@
-:host {
-  display: block;
-  max-width: 62rem;
-  margin: 0 auto;
-}
+@use '../../../shared/navegacion-cliente/pagina';
+
+@include pagina.pagina(62rem, $lado: 1rem, $arriba: 1rem);
 
 .volver {
   margin-bottom: 0.75rem;

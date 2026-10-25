@@ -1,6 +1,8 @@
 import {
   ApplicationConfig,
   LOCALE_ID,
+  inject,
+  provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 import { registerLocaleData } from '@angular/common';
@@ -9,8 +11,10 @@ import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/
 import { MatPaginatorIntl } from '@angular/material/paginator';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { AuthService } from './core/services/auth.service';
 import { paginadorEnEspanol } from './core/paginador-es';
 import { routes } from './app.routes';
 
@@ -25,6 +29,14 @@ export const appConfig: ApplicationConfig = {
     // El interceptor adjunta el token a cada petición y reacciona al 401
     // descartando la sesión (CU-02).
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
+    // LA SESIÓN SE RECUPERA AL ARRANCAR, NO SOLO EN LAS GUARDAS.
+    //
+    // El catálogo y la ficha son públicos y no tienen guarda. Antes, quien
+    // recargaba el catálogo con la sesión iniciada lo veía como anónimo:
+    // «Ingresar» arriba, sin la barra del cliente y sin poder marcar
+    // favoritos, hasta pasar por una ruta con guarda. `restaurarSesion` nunca
+    // falla: sin token, o con uno revocado, la app arranca sin sesión.
+    provideAppInitializer(() => firstValueFrom(inject(AuthService).restaurarSesion())),
     { provide: LOCALE_ID, useValue: 'es-BO' },
     { provide: MatPaginatorIntl, useFactory: paginadorEnEspanol },
     // EL DATEPICKER NO TRAE SU PROPIO `DateAdapter` --- y sin él LANZA.

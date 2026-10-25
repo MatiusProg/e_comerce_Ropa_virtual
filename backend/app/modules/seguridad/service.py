@@ -228,12 +228,20 @@ def autenticar(db: Session, datos: LoginIn) -> TokenOut:
         raise EmpresaNoEncontrada(datos.empresa)
     fijar_empresa(db, empresa.id)
 
-    # Primero el personal de la empresa; si no, la cuenta única del cliente
-    # (RN-13), que entra a cualquier tienda. La plataforma no entra con slug.
+    # Primero el personal de la empresa; si no, la cuenta sin empresa: la
+    # única del cliente (RN-13), que entra a cualquier tienda, o la de la
+    # plataforma, que entra igual aunque haya dejado escrito el slug que la
+    # pantalla recuerda. Antes, con el slug puesto, el superadmin recibía
+    # «correo o contraseña incorrectos» con la contraseña bien.
     usuario = repository.obtener_usuario_con_rol(db, datos.correo, empresa.id)
     if usuario is None:
         usuario = repository.obtener_usuario_con_rol(db, datos.correo, None)
-        if usuario is not None and usuario.rol.nombre != ROL_CLIENTE:
+        if usuario is not None and usuario.rol.nombre == ROL_PLATAFORMA:
+            if usuario.activo and verify_password(datos.contrasena, usuario.hash_contrasena):
+                modo_plataforma(db)
+                return _emitir(db, usuario, None)
+            usuario = None  # mala contraseña: el mismo 401 que cualquiera
+        elif usuario is not None and usuario.rol.nombre != ROL_CLIENTE:
             usuario = None
 
     # El orden importa: primero se comprueba que exista y que la contrasena
@@ -302,6 +310,7 @@ def _autenticado(db: Session, usuario, empresa, sucursal_id) -> UsuarioAutentica
         apellidos=usuario.apellidos,
         rol=usuario.rol.nombre,
         sucursal_id=sucursal_id,
+        sucursal_nombre=repository.nombre_de_sucursal(db, sucursal_id) if sucursal_id else None,
         empresa=EmpresaDeLaSesionOut.model_validate(empresa) if empresa else None,
         # 3a: la interfaz avisa; el CU-05 es el que impide escribir.
         solo_consulta=empresa is not None and verificador.suscripcion_vigente(db) is None,

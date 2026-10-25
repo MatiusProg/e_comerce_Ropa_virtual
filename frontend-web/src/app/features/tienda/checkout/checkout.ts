@@ -20,6 +20,7 @@ import type {
   OpcionesDePedido,
 } from '../../../core/models/pedidos.models';
 import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion-cliente';
+import { UrlMediaPipe } from '../../../shared/url-media.pipe';
 
 /**
  * Dónde se guarda el código del pedido antes de irse a la pasarela.
@@ -61,6 +62,7 @@ export const CLAVE_PEDIDO_EN_CURSO = 'vb.pedido-en-curso';
 @Component({
   selector: 'app-checkout',
   imports: [
+    UrlMediaPipe,
     NavegacionCliente,
     CurrencyPipe,
     ReactiveFormsModule,

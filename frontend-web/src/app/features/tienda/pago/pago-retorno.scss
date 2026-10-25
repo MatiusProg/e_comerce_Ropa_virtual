@@ -1,9 +1,6 @@
-:host {
-  display: block;
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 2rem 1rem 3rem;
-}
+@use '../../../shared/navegacion-cliente/pagina';
+
+@include pagina.pagina(720px, $lado: 1rem);
 
 .tarjeta {
   border-radius: var(--vb-radio);

@@ -147,3 +147,26 @@ h2,
     transform: translateY(1px);
   }
 }
+
+// UNA AYUDA (`mat-hint`) NO PUEDE TOCAR EL CAMPO DE ABAJO.
+//
+// La ayuda ocupa la franja inferior del campo, y la etiqueta flotante del
+// campo siguiente sube justo hasta ahí: «Es el correo con el que iniciás
+// sesión» quedaba pisada por «Documento de identidad» en «Mi perfil», y lo
+// mismo en el login. Va acá y no pantalla por pantalla porque hay decenas de
+// ayudas en la web.
+.mat-mdc-form-field:has(.mat-mdc-form-field-hint) {
+  margin-bottom: 0.6rem;
+}
+
+// LA BARRA DE PESTAÑAS DE LOS LAYOUTS SE DESPLAZA, PERO SIN UNA FRANJA GRIS.
+//
+// Administración, caja, proveedor y sucursal tienen más pestañas de las que
+// entran: con mouse, la barra de desplazamiento es la única pista de que hay
+// más a la derecha, así que no se oculta (la del cliente sí, porque ahí el
+// botón de salir queda fijo). Solo se afina y toma el color de la marca, en
+// vez de la franja gris gruesa del sistema.
+.navegacion {
+  scrollbar-width: thin;
+  scrollbar-color: var(--vb-malva-claro) transparent;
+}

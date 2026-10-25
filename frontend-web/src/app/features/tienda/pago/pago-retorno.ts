@@ -13,6 +13,7 @@ import { PedidosService, type ErrorPedido } from '../../../core/services/pedidos
 import type { Pedido } from '../../../core/models/pedidos.models';
 import { CLAVE_PEDIDO_EN_CURSO } from '../checkout/checkout';
 import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion-cliente';
+import { UrlMediaPipe } from '../../../shared/url-media.pipe';
 
 /**
  * CU-27 · Paso 5 — «boundary» PantallaRetornoDePago.
@@ -59,6 +60,7 @@ import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion
 @Component({
   selector: 'app-pago-retorno',
   imports: [
+    UrlMediaPipe,
     NavegacionCliente,
     CurrencyPipe,
     DatePipe,

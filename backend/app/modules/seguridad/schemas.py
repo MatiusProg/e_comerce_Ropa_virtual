@@ -153,6 +153,8 @@ class UsuarioAutenticadoOut(BaseModel):
     apellidos: str
     rol: str
     sucursal_id: int | None = None
+    # Para mostrarla por su nombre y no por su número.
+    sucursal_nombre: str | None = None
     # 2do parcial, CU-06. `empresa` es None solo para la plataforma.
     empresa: EmpresaDeLaSesionOut | None = None
     # 3a: suscripción vencida o suspendida; la interfaz avisa que solo consulta.

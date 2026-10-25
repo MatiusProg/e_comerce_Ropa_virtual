@@ -50,7 +50,7 @@
       <div class="aviso" role="alert">
         <mat-icon>error_outline</mat-icon>
         <span>
-          Hay {{ datos.existencia.cantidad_reservada }} unidades comprometidas en
+          Hay {{ datos.existencia.cantidad_reservada }} {{ datos.existencia.cantidad_reservada === 1 ? 'unidad comprometida' : 'unidades comprometidas' }} en
           reservas. Un conteo menor dejaría una reserva sin prenda que entregar:
           cancele la reserva antes de ajustar.
         </span>

@@ -76,7 +76,7 @@ el bloque de inventario y el de reservas se saltan enteros si ya hay filas.
 import random
 from datetime import date, datetime, timedelta, timezone
 
-from sqlalchemy import func, select, text
+from sqlalchemy import func, null, select, text
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -92,6 +92,10 @@ from app.modules.inventario.schemas import (
     TransferenciaIn,
 )
 from app.modules.organizacion.models import Ciudad, Empleado, Proveedor, Sucursal
+# 2do parcial: `usuario.empresa_id` apunta a `empresa`. Sin importar el modelo,
+# el metadata no tiene la tabla y el primer INSERT de usuario falla (igual que
+# en seed.py).
+from app.modules.plataforma.models import ClienteEmpresa
 from app.modules.reservas import service as reservas
 from app.modules.reservas.models import DetalleReserva, Reserva
 from app.modules.reservas.schemas import LineaReservaIn, ReservaCrearIn
@@ -356,6 +360,9 @@ def _clientes(
             activo=AZAR.random() > 0.04,
             creado_en=alta,
             actualizado_en=alta,
+            # 2do parcial (RN-13): el cliente no tiene empresa. null() y no
+            # None: con None, el DEFAULT le pondria la del contexto.
+            empresa_id=null(),
         )
         db.add(usuario)
         db.flush()
@@ -375,6 +382,8 @@ def _clientes(
             )
         db.add(cliente)
         db.flush()
+        # Y queda asociado a la empresa de la operacion, que es donde compra.
+        db.add(ClienteEmpresa(cliente_id=cliente.id))
 
         for orden in range(AZAR.choice([1, 1, 1, 2, 2, 3])):
             db.add(

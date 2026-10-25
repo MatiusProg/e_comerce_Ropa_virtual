@@ -145,7 +145,7 @@
                   @if (f.variantes_con_vestidor > 0) {
                     <span
                       class="marca-vestidor"
-                      [matTooltip]="f.variantes_con_vestidor + ' variante(s) listas para el vestidor virtual'"
+                      [matTooltip]="f.variantes_con_vestidor + (f.variantes_con_vestidor === 1 ? ' variante lista' : ' variantes listas') + ' para el vestidor virtual'"
                     >
                       <mat-icon>checkroom</mat-icon>{{ f.variantes_con_vestidor }}
                     </span>
