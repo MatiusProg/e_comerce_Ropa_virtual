@@ -179,6 +179,30 @@ def _contrasena_temporal() -> str:
             return clave
 
 
+def _correo_de_bienvenida(empresa: Empresa, correo: str) -> Mensaje:
+    """CU-11: el administrador eligió su contraseña; el correo no la lleva."""
+    url = settings.WEB_BASE_URL.rstrip("/")
+    texto = (
+        f"¡Bienvenido a Violet Boutique! Su empresa {empresa.nombre} ya está lista.\n\n"
+        f"Ingrese en {url}/login con estos datos:\n"
+        f"  Empresa (slug): {empresa.slug}\n"
+        f"  Correo: {correo}\n"
+        "  Contraseña: la que eligió al contratar."
+    )
+    html = (
+        f"<p>¡Bienvenido a Violet Boutique! Su empresa <strong>{empresa.nombre}</strong> ya está lista.</p>"
+        f"<p>Ingrese en <a href=\"{url}/login\">{url}/login</a> con estos datos:</p>"
+        f"<ul><li>Empresa (slug): <strong>{empresa.slug}</strong></li>"
+        f"<li>Correo: {correo}</li><li>Contraseña: la que eligió al contratar.</li></ul>"
+    )
+    return Mensaje(
+        destinatario=correo,
+        asunto=f"Bienvenido a Violet Boutique, {empresa.nombre}",
+        cuerpo_texto=texto,
+        cuerpo_html=html,
+    )
+
+
 def _correo_de_acceso(empresa: Empresa, correo: str, clave: str) -> Mensaje:
     url = settings.WEB_BASE_URL.rstrip("/")
     texto = (
@@ -204,8 +228,19 @@ def _correo_de_acceso(empresa: Empresa, correo: str, clave: str) -> Mensaje:
     )
 
 
-def crear_empresa(db: Session, datos: EmpresaCrearIn) -> EmpresaCreadaOut:
-    """Pasos 4 a 6 del CU-01. **Hace commit.**"""
+def crear_empresa(
+    db: Session,
+    datos: EmpresaCrearIn,
+    *,
+    contrasena: str | None = None,
+    comprobante: str | None = None,
+) -> EmpresaCreadaOut:
+    """Pasos 4 a 6 del CU-01. **Hace commit.**
+
+    El CU-11 (contratar desde la web) pasa por acá con la contraseña que eligió
+    el administrador y el comprobante del pago ya aprobado: lo que se crea es
+    exactamente lo mismo que en un alta de la plataforma.
+    """
     # Paso 4: validar. Lo que no depende de la empresa nueva, antes de escribir.
     if db.scalar(select(Empresa.id).where(Empresa.slug == datos.slug)) is not None:
         raise SlugRepetido(datos.slug)
@@ -221,7 +256,7 @@ def crear_empresa(db: Session, datos: EmpresaCrearIn) -> EmpresaCreadaOut:
         raise CiudadInexistente(str(datos.sucursal.ciudad_id))
     rol = db.scalar(select(Rol).where(Rol.nombre == ROL_ADMINISTRADOR))
 
-    clave = _contrasena_temporal()
+    clave = contrasena or _contrasena_temporal()
     # Paso 5: todo en una transacción.
     try:
         empresa = Empresa(
@@ -245,7 +280,7 @@ def crear_empresa(db: Session, datos: EmpresaCrearIn) -> EmpresaCreadaOut:
         db.add(suscripcion)
         db.flush()
         # CU-03, paso 4: el alta también deja su pago simulado.
-        registrar_pago(db, suscripcion, plan, "ALTA")
+        registrar_pago(db, suscripcion, plan, "ALTA", comprobante=comprobante)
         sucursal = Sucursal(
             ciudad_id=datos.sucursal.ciudad_id,
             nombre=datos.sucursal.nombre,
@@ -282,7 +317,11 @@ def crear_empresa(db: Session, datos: EmpresaCrearIn) -> EmpresaCreadaOut:
     # Paso 6: el acceso por correo, después del commit.
     correo_enviado = True
     try:
-        enviar(_correo_de_acceso(empresa, correo, clave))
+        enviar(
+            _correo_de_bienvenida(empresa, correo)
+            if contrasena
+            else _correo_de_acceso(empresa, correo, clave)
+        )
     except ErrorDeEnvio as error:
         correo_enviado = False
         _log.warning("No se pudo enviar el acceso de la empresa %s: %s", empresa.slug, error)
@@ -291,7 +330,8 @@ def crear_empresa(db: Session, datos: EmpresaCrearIn) -> EmpresaCreadaOut:
     return EmpresaCreadaOut(
         **resumen.model_dump(),
         administrador_correo=correo,
-        contrasena_temporal=clave,
+        # La contraseña elegida (CU-11) no se devuelve: ya la sabe quien la eligió.
+        contrasena_temporal="" if contrasena else clave,
         correo_enviado=correo_enviado,
     )
 

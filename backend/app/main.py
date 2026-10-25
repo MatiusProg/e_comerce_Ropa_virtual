@@ -107,6 +107,8 @@ from app.modules.plataforma.router import router as plataforma_router
 from app.modules.plataforma.mi_plan.router import router as mi_plan_router
 from app.modules.plataforma.mi_tienda.router import router as mi_tienda_router
 from app.modules.plataforma.mi_tienda.router import tienda_router as marca_tienda_router
+# CU-11: público, la empresa interesada todavía no tiene cuenta.
+from app.modules.plataforma.contratacion.router import router as contratacion_router
 from app.modules.plataforma.verificador import RechazoDelPlan
 
 
@@ -259,3 +261,4 @@ app.include_router(mi_plan_router, prefix=API)
 # CU-12: la marca de la tienda (la pantalla del administrador y la publica).
 app.include_router(mi_tienda_router, prefix=API)
 app.include_router(marca_tienda_router, prefix=API)
+app.include_router(contratacion_router, prefix=API)
