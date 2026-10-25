@@ -9,6 +9,10 @@ import type {
   EmpresaCreada,
   EmpresaCrear,
   EmpresaEditar,
+  FuncionDePlan,
+  Plan,
+  PlanGuardado,
+  PlanGuardar,
   PlanOferta,
 } from '../models/plataforma.models';
 import type { Ciudad } from '../models/organizacion.models';
@@ -20,11 +24,15 @@ import type { Ciudad } from '../models/organizacion.models';
 export type ErrorPlataforma =
   | { tipo: 'slug-repetido'; mensaje: string }
   | { tipo: 'correo-repetido'; mensaje: string }
+  | { tipo: 'nombre-repetido'; mensaje: string }
   | { tipo: 'no-encontrado'; mensaje: string }
   | { tipo: 'validacion'; mensaje: string }
   | { tipo: 'sistema'; mensaje: string };
 
-/** P12 · Plataforma SaaS — CU-01 Gestionar empresas. Solo ADMIN_PLATAFORMA. */
+/**
+ * P12 · Plataforma SaaS — CU-01 Gestionar empresas y CU-02 Gestionar planes.
+ * Solo ADMIN_PLATAFORMA.
+ */
 @Injectable({ providedIn: 'root' })
 export class PlataformaService {
   private readonly http = inject(HttpClient);
@@ -40,6 +48,41 @@ export class PlataformaService {
 
   planes(): Observable<PlanOferta[]> {
     return this.http.get<PlanOferta[]>(`${this.base}/planes`).pipe(catchError((e) => this.traducir(e)));
+  }
+
+  // --- CU-02 ------------------------------------------------------------
+
+  /** Todos los planes, también los que ya no se ofrecen. */
+  listarPlanes(): Observable<Plan[]> {
+    const params = new HttpParams().set('incluir_inactivos', true);
+    return this.http
+      .get<Plan[]>(`${this.base}/planes`, { params })
+      .pipe(catchError((e) => this.traducir(e)));
+  }
+
+  funcionesDePlan(): Observable<FuncionDePlan[]> {
+    return this.http
+      .get<FuncionDePlan[]>(`${this.base}/planes/funciones`)
+      .pipe(catchError((e) => this.traducir(e)));
+  }
+
+  crearPlan(datos: PlanGuardar): Observable<PlanGuardado> {
+    return this.http
+      .post<PlanGuardado>(`${this.base}/planes`, datos)
+      .pipe(catchError((e) => this.traducir(e)));
+  }
+
+  editarPlan(id: number, datos: PlanGuardar): Observable<PlanGuardado> {
+    return this.http
+      .put<PlanGuardado>(`${this.base}/planes/${id}`, datos)
+      .pipe(catchError((e) => this.traducir(e)));
+  }
+
+  cambiarEstadoPlan(id: number, activo: boolean): Observable<Plan> {
+    const accion = activo ? 'activar' : 'desactivar';
+    return this.http
+      .post<Plan>(`${this.base}/planes/${id}/${accion}`, {})
+      .pipe(catchError((e) => this.traducir(e)));
   }
 
   /** Las ciudades son compartidas por todas las empresas. */
@@ -73,6 +116,8 @@ export class PlataformaService {
     let error: ErrorPlataforma;
     if (e.status === 409 && detalle?.includes('slug')) {
       error = { tipo: 'slug-repetido', mensaje: detalle };
+    } else if (e.status === 409 && detalle?.includes('plan')) {
+      error = { tipo: 'nombre-repetido', mensaje: detalle };
     } else if (e.status === 409) {
       error = { tipo: 'correo-repetido', mensaje: detalle ?? 'El correo ya tiene una cuenta.' };
     } else if (e.status === 404) {

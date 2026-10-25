@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session
 from app.integrations import probador_ia
 from app.integrations.probador_ia import ErrorDelProbador, SolicitudDeProbado
 from app.modules.catalogo import imagenes_almacen as almacen
+from app.modules.plataforma import verificador
 from app.modules.vestidor_virtual import repository
 from app.modules.vestidor_virtual.schemas import EstadoDelProbador
 
@@ -47,17 +48,31 @@ class CapturaInvalida(ErrorDelVestidor):
     """Lo que subio el cliente no sirve como captura."""
 
 
-def estado() -> EstadoDelProbador:
-    """Si el probado por IA se puede ofrecer. Lo consulta la app al abrir."""
-    if probador_ia.esta_disponible():
-        return EstadoDelProbador(disponible=True)
-    return EstadoDelProbador(
-        disponible=False,
-        motivo=(
-            "El probado con inteligencia artificial no está habilitado en "
-            "este entorno."
-        ),
-    )
+def estado(db: Session) -> EstadoDelProbador:
+    """Si el probado por IA se puede ofrecer. Lo consulta la app al abrir.
+
+    2do parcial: además del proveedor, lo decide el plan de la tienda: tiene
+    que incluir la foto con IA y quedarle cupo en el mes.
+    """
+    if not probador_ia.esta_disponible():
+        return EstadoDelProbador(
+            disponible=False,
+            motivo=(
+                "El probado con inteligencia artificial no está habilitado en "
+                "este entorno."
+            ),
+        )
+    if not verificador.incluye(db, "foto_ia"):
+        return EstadoDelProbador(
+            disponible=False, motivo="El plan de la tienda no incluye la foto con IA."
+        )
+    try:
+        verificador.verificar_cupo(db, "fotos_ia")
+    except verificador.RechazoDelPlan:
+        return EstadoDelProbador(
+            disponible=False, motivo="La tienda ya usó las fotos con IA de este mes."
+        )
+    return EstadoDelProbador(disponible=True)
 
 
 def probar(

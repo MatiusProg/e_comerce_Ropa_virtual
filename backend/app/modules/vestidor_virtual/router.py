@@ -26,8 +26,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import Response
 
-from app.core.dependencies import DbSession, requiere_roles
+from app.core.dependencies import DbSession, requiere_cupo, requiere_funcion, requiere_roles
 from app.integrations.probador_ia import ErrorDelProbador, ProbadorNoConfigurado
+from app.modules.plataforma import verificador
 from app.modules.vestidor_virtual import service
 from app.modules.vestidor_virtual.schemas import EstadoDelProbador
 
@@ -52,20 +53,23 @@ router = APIRouter(
     response_model=EstadoDelProbador,
     summary="CU-21 · ¿Se puede ofrecer el probado por IA?",
 )
-def estado_del_probador() -> EstadoDelProbador:
+def estado_del_probador(db: DbSession) -> EstadoDelProbador:
     """Si hay con qué componer la imagen.
 
     La app lo consulta **una vez, al abrir el vestidor**, y esconde el botón si
     la respuesta es que no. Por eso es un endpoint aparte y no un campo de otra
     respuesta: la pantalla necesita saberlo antes de pintar nada.
     """
-    return service.estado()
+    return service.estado(db)
 
 
 @router.post(
     "/probar",
     summary="CU-21 · Amoldar la prenda al cuerpo (opcional)",
     response_class=Response,
+    # 2do parcial: incluye el CU-05. La foto con IA es una función del plan
+    # con cupo mensual, que se descuenta del de la tienda.
+    dependencies=[Depends(requiere_funcion("foto_ia")), Depends(requiere_cupo("fotos_ia"))],
     responses={
         200: {
             "content": {"image/png": {}},
@@ -74,6 +78,7 @@ def estado_del_probador() -> EstadoDelProbador:
         404: {"description": "Esa variante no tiene imagen para el vestidor."},
         413: {"description": "La captura es demasiado grande."},
         502: {"description": "El servicio de imágenes falló."},
+        403: {"description": "El plan no incluye la foto con IA o se agotó el cupo."},
         503: {"description": "El probado por IA no está habilitado."},
     },
 )
@@ -118,6 +123,10 @@ async def probar(
         # 502: es un tercero el que falló, y el cliente se queda igual con su
         # captura, que es lo que el caso de uso le prometió.
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(e)) from e
+
+    # Recién ahora, con la imagen hecha: una foto que falló no gasta el cupo.
+    verificador.consumir_cupo(db, "fotos_ia")
+    db.commit()
 
     return Response(
         content=imagen,

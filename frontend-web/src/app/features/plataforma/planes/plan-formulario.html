@@ -1,0 +1,108 @@
+<!-- CU-02 · pasos 3 y 4 — «boundary» PantallaPlanes. -->
+<h2 mat-dialog-title class="vb-titulo">{{ esEdicion ? 'Editar plan' : 'Nuevo plan' }}</h2>
+
+@if (guardando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<mat-dialog-content>
+  @if (error(); as e) {
+    <div class="aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ e }}</span>
+    </div>
+  }
+
+  <form [formGroup]="formulario" (ngSubmit)="guardar()" id="formulario-plan">
+    <div class="fila">
+      <mat-form-field appearance="outline">
+        <mat-label>Nombre</mat-label>
+        <input matInput formControlName="nombre" maxlength="40" />
+        @if (formulario.controls.nombre.hasError('repetido')) {
+          <mat-error>Ya existe un plan con ese nombre.</mat-error>
+        } @else {
+          <mat-error>Indique el nombre del plan.</mat-error>
+        }
+      </mat-form-field>
+      @if (esEdicion) {
+        <mat-form-field appearance="outline">
+          <mat-label>Código</mat-label>
+          <input matInput [value]="datos.plan!.codigo" disabled />
+          <mat-hint>No se cambia después del alta.</mat-hint>
+        </mat-form-field>
+      }
+    </div>
+
+    <div class="fila">
+      <mat-form-field appearance="outline">
+        <mat-label>Precio mensual (simulado)</mat-label>
+        <span matTextPrefix>Bs&nbsp;</span>
+        <input matInput type="number" min="0" step="0.01" formControlName="precio_mensual" />
+        <mat-error>Indique un precio de 0 o más.</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Duración</mat-label>
+        <input matInput type="number" min="1" max="366" formControlName="duracion_dias" />
+        <span matTextSuffix>&nbsp;días</span>
+        <mat-error>Entre 1 y 366 días.</mat-error>
+      </mat-form-field>
+    </div>
+
+    <h3 class="seccion">Límites</h3>
+    <p class="explicacion">Vacío es ilimitado.</p>
+    <div class="fila">
+      <mat-form-field appearance="outline">
+        <mat-label>Sucursales activas</mat-label>
+        <input matInput type="number" min="1" formControlName="max_sucursales" placeholder="Ilimitadas" />
+        <mat-error>Un entero de 1 o más, o vacío.</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Empleados activos</mat-label>
+        <input matInput type="number" min="1" formControlName="max_empleados" placeholder="Ilimitados" />
+        <mat-error>Un entero de 1 o más, o vacío.</mat-error>
+      </mat-form-field>
+    </div>
+    <div class="fila">
+      <mat-form-field appearance="outline">
+        <mat-label>Reportes con IA por mes</mat-label>
+        <input matInput type="number" min="0" formControlName="cupo_reportes_ia" placeholder="Ilimitados" />
+        <mat-error>Un entero de 0 o más, o vacío.</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Fotos con IA por mes</mat-label>
+        <input matInput type="number" min="0" formControlName="cupo_fotos_ia" placeholder="Ilimitadas" />
+        <mat-error>Un entero de 0 o más, o vacío.</mat-error>
+      </mat-form-field>
+    </div>
+    <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-label>Días de bitácora visibles</mat-label>
+      <input matInput type="number" min="1" formControlName="bitacora_dias" placeholder="Todo el historial" />
+      <mat-error>Un entero de 1 o más, o vacío.</mat-error>
+    </mat-form-field>
+
+    <h3 class="seccion">Funciones incluidas</h3>
+    <div class="funciones">
+      @for (f of datos.funciones; track f.clave) {
+        <mat-checkbox
+          [checked]="elegidas().has(f.clave)"
+          (change)="alternar(f.clave, $event.checked)"
+        >
+          {{ f.nombre }}
+        </mat-checkbox>
+      }
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="ref.close(null)" [disabled]="guardando()">Cancelar</button>
+  <button
+    matButton="filled"
+    class="vb-boton-marca"
+    type="submit"
+    form="formulario-plan"
+    [disabled]="guardando()"
+  >
+    {{ esEdicion ? 'Guardar cambios' : 'Crear plan' }}
+  </button>
+</mat-dialog-actions>

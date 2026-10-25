@@ -41,6 +41,10 @@ import { AuthService } from '../../../core/services/auth.service';
         <mat-icon>domain</mat-icon>
         Empresas
       </a>
+      <a routerLink="/plataforma/planes" routerLinkActive="activo">
+        <mat-icon>workspace_premium</mat-icon>
+        Planes
+      </a>
       <a routerLink="/plataforma/ciudades" routerLinkActive="activo">
         <mat-icon>location_city</mat-icon>
         Ciudades

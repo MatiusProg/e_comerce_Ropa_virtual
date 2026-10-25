@@ -75,16 +75,20 @@ class PedidoEntendidoOut(BaseModel):
 
 
 @router.get("/voz/disponible")
-def hay_pedido_por_voz():
+def hay_pedido_por_voz(db: DbSession):
     """Si se puede pedir hablando.
 
     La pantalla pregunta esto para esconder el microfono cuando no hay
     modelo, en vez de ofrecerlo y fallar al tocarlo. Sin interprete **no hay
     degradacion posible**: no se puede adivinar que reporte se pidio.
+
+    2do parcial: tampoco se ofrece si el plan no incluye los reportes con IA.
     """
     from app.integrations import interprete
 
-    return {"disponible": interprete.esta_disponible()}
+    return {
+        "disponible": interprete.esta_disponible() and verificador.incluye(db, "reportes_ia")
+    }
 
 
 @router.post(
