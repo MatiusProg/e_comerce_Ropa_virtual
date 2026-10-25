@@ -1,4 +1,3 @@
-import { CurrencyPipe } from '@angular/common';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,6 +7,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { encode } from 'uqr';
 
 import { contenidoQr, nuevaReferencia } from './qr-emv';
+import { BsPipe } from '../../../shared/bs.pipe';
 
 export interface DatosCobroQrDialogo {
   /** El total exacto a cobrar, «250.00». */
@@ -69,7 +69,7 @@ const MOTIVOS_RECHAZO = [
 @Component({
   selector: 'app-cobro-qr',
   imports: [
-    CurrencyPipe,
+    BsPipe,
     MatButtonModule,
     MatDialogModule,
     MatIconModule,

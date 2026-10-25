@@ -49,7 +49,7 @@
                 {{ prenda.nombre }}
               </a>
               @if (prenda.precio_desde) {
-                <span class="precio">Bs {{ prenda.precio_desde }}</span>
+                <span class="precio">{{ prenda.precio_desde | bs }}</span>
               }
               <!-- El motivo viene VACÍO cuando ordenó la popularidad. No se
                    dibuja la etiqueta en vez de inventar un texto: repetirlo

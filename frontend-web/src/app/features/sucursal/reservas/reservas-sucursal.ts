@@ -74,14 +74,18 @@ export class ReservasSucursal implements OnInit {
     () => this.auth.rol() === 'ADMINISTRADOR',
   );
 
-  protected readonly columnas = [
-    'franja',
-    'cliente',
-    'sucursal',
-    'prendas',
-    'estado',
-    'acciones',
-  ];
+  // La columna «Sucursal» es solo del Administrador: el Encargado ve la suya
+  // y nada más, y en su tabla decía lo mismo en todas las filas.
+  protected readonly columnas = computed(() =>
+    [
+      'franja',
+      'cliente',
+      'sucursal',
+      'prendas',
+      'estado',
+      'acciones',
+    ].filter((c) => c !== 'sucursal' || this.esAdministrador()),
+  );
 
   protected readonly cargando = signal(false);
   protected readonly error = signal<string | null>(null);

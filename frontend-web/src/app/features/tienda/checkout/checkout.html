@@ -35,9 +35,9 @@
             <p class="titulo">El precio cambió mientras decidía</p>
             <p class="cuerpo">
               Cuando abrió esta pantalla el total era
-              <strong>{{ c.total_esperado | currency: 'BOB' : 'symbol-narrow' }}</strong>
+              <strong>{{ c.total_esperado | bs }}</strong>
               y ahora es
-              <strong>{{ c.total_actual | currency: 'BOB' : 'symbol-narrow' }}</strong>.
+              <strong>{{ c.total_actual | bs }}</strong>.
               No cobramos nada: revise el detalle y confirme otra vez si está de
               acuerdo.
             </p>
@@ -77,14 +77,14 @@
                 }
               </span>
               <span class="importe">
-                {{ linea.subtotal | currency: 'BOB' : 'symbol-narrow' }}
+                {{ linea.subtotal | bs }}
               </span>
             </li>
           }
         </ul>
         <p class="total">
           <span>Total</span>
-          <strong>{{ o.total | currency: 'BOB' : 'symbol-narrow' }}</strong>
+          <strong>{{ o.total | bs }}</strong>
         </p>
       </section>
 

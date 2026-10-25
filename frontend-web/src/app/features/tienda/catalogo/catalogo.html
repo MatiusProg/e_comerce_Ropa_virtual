@@ -170,7 +170,7 @@
               @if (producto.descuento; as d) {
                 <p class="precio con-promo">
                   <span class="tachado">{{ precio(producto) }}</span>
-                  <span class="rebajado">Bs {{ d.precio_final }}</span>
+                  <span class="rebajado">{{ d.precio_final | bs }}</span>
                 </p>
                 <p class="promo">
                   <mat-icon>sell</mat-icon>

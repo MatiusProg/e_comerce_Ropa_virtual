@@ -32,6 +32,7 @@ import '../compra/estado_compra.dart';
 import '../reservas/estado_reservas.dart';
 import 'boton_favorito.dart';
 import 'estado_catalogo.dart';
+import '../../core/moneda.dart';
 
 class PantallaFicha extends ConsumerStatefulWidget {
   const PantallaFicha({required this.productoId, super.key});
@@ -125,7 +126,7 @@ class _EstadoPantallaFicha extends ConsumerState<PantallaFicha> {
                   textBaseline: TextBaseline.alphabetic,
                   children: [
                     Text(
-                      'Bs ${d.precioFinal}',
+                      bs(d.precioFinal),
                       style: const TextStyle(
                         fontSize: 21,
                         fontWeight: FontWeight.w700,
@@ -135,7 +136,7 @@ class _EstadoPantallaFicha extends ConsumerState<PantallaFicha> {
                     const SizedBox(width: 8),
                     Text(
                       variante != null
-                          ? 'Bs ${variante.precio}'
+                          ? bs(variante.precio)
                           : prenda.precioRotulado,
                       style: const TextStyle(
                         fontSize: 15,
@@ -170,7 +171,7 @@ class _EstadoPantallaFicha extends ConsumerState<PantallaFicha> {
                   // Con variante elegida se muestra su precio propio; sin
                   // ella, el rango del producto. La variante tiene precio.
                   variante != null
-                      ? 'Bs ${variante.precio}'
+                      ? bs(variante.precio)
                       : prenda.precioRotulado,
                   style: const TextStyle(
                     fontSize: 19,
@@ -298,14 +299,25 @@ class _EstadoPantallaFicha extends ConsumerState<PantallaFicha> {
     });
   }
 
-  /// Si la variante elegida tiene foto propia, la galeria salta a ella.
+  /// La galeria sigue al color elegido, igual que en la web: primero la foto
+  /// de la variante exacta, despues cualquiera del mismo color (las fotos se
+  /// cargan una por color), y si no hay ninguna, la principal.
   void _saltarAFotoDeLaVariante(FichaPrenda prenda) {
     final variante = prenda.varianteDe(_tallaElegida, _colorElegido);
-    if (variante == null) return;
-    final indice = prenda.imagenes.indexWhere(
-      (i) => i.varianteId == variante.id,
-    );
-    if (indice >= 0) _fotoActiva = indice;
+    var indice = variante == null
+        ? -1
+        : prenda.imagenes.indexWhere((i) => i.varianteId == variante.id);
+    if (indice < 0 && _colorElegido != null) {
+      final delColor = prenda.variantes
+          .where((v) => v.colorId == _colorElegido)
+          .map((v) => v.id)
+          .toSet();
+      indice = prenda.imagenes.indexWhere(
+        (i) => i.varianteId != null && delColor.contains(i.varianteId),
+      );
+    }
+    if (indice < 0) indice = prenda.imagenes.indexWhere((i) => i.esPrincipal);
+    _fotoActiva = indice < 0 ? 0 : indice;
   }
 }
 

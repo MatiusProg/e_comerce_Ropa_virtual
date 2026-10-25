@@ -178,10 +178,10 @@
                 </td>
               </ng-container>
 
-              <tr mat-header-row *matHeaderRowDef="columnasExistencias"></tr>
+              <tr mat-header-row *matHeaderRowDef="columnasExistencias()"></tr>
               <tr
                 mat-row
-                *matRowDef="let fila; columns: columnasExistencias"
+                *matRowDef="let fila; columns: columnasExistencias()"
                 [class.fila-alerta]="fila.bajo_minimo"
               ></tr>
             </table>
@@ -255,10 +255,10 @@
                   <td mat-cell *matCellDef="let i">{{ i.usuario ?? 'Sistema' }}</td>
                 </ng-container>
 
-                <tr mat-header-row *matHeaderRowDef="columnasIngresos"></tr>
+                <tr mat-header-row *matHeaderRowDef="columnasIngresos()"></tr>
                 <tr
                   mat-row
-                  *matRowDef="let fila; columns: columnasIngresos"
+                  *matRowDef="let fila; columns: columnasIngresos()"
                   class="fila-pulsable"
                   [class.abierta]="estaAbierto(fila)"
                   (click)="alternarDetalle(fila)"
@@ -384,8 +384,8 @@
                   <td mat-cell *matCellDef="let m">{{ m.usuario ?? 'Sistema' }}</td>
                 </ng-container>
 
-                <tr mat-header-row *matHeaderRowDef="columnasMovimientos"></tr>
-                <tr mat-row *matRowDef="let fila; columns: columnasMovimientos"></tr>
+                <tr mat-header-row *matHeaderRowDef="columnasMovimientos()"></tr>
+                <tr mat-row *matRowDef="let fila; columns: columnasMovimientos()"></tr>
               </table>
             </div>
 

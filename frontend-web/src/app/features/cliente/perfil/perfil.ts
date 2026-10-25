@@ -10,7 +10,6 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { AuthService } from '../../../core/services/auth.service';
@@ -61,7 +60,6 @@ import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion
     MatInputModule,
     MatProgressBarModule,
     MatSelectModule,
-    MatToolbarModule,
     MatTooltipModule,
   ],
   templateUrl: './perfil.html',
@@ -77,7 +75,6 @@ export class Perfil {
   protected readonly tallasSuperior = TALLAS_SUPERIOR;
   protected readonly tallasInferior = TALLAS_INFERIOR;
 
-  protected readonly usuario = this.auth.usuario;
   protected readonly cargando = signal(true);
   protected readonly guardando = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -104,11 +101,6 @@ export class Perfil {
     return elegidas.some((id) => !guardadas.has(id));
   });
 
-  protected readonly iniciales = computed(() => {
-    const u = this.usuario();
-    if (!u) return '';
-    return `${u.nombres.charAt(0)}${u.apellidos.charAt(0)}`.toUpperCase();
-  });
 
   protected readonly formulario = this.fb.nonNullable.group({
     nombres: ['', [Validators.required, Validators.maxLength(80)]],

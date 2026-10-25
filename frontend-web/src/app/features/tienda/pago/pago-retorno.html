@@ -105,7 +105,7 @@
                 </span>
               </span>
               <span class="importe">
-                {{ linea.subtotal | currency: 'BOB' : 'symbol-narrow' }}
+                {{ linea.subtotal | bs }}
               </span>
             </li>
           }
@@ -113,7 +113,7 @@
 
         <p class="total">
           <span>Total</span>
-          <strong>{{ p.total | currency: 'BOB' : 'symbol-narrow' }}</strong>
+          <strong>{{ p.total | bs }}</strong>
         </p>
 
         <dl class="entrega">

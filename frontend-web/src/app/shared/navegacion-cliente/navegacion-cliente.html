@@ -1,4 +1,22 @@
 @if (visible()) {
+  <!-- La barra de marca, en todas las pantallas del Cliente. Hasta el 24/10
+       solo la tenían «Mi perfil» y «Mis reservas», cada una con su copia. -->
+  <mat-toolbar class="barra">
+    <a class="logotipo vb-titulo" routerLink="/tienda">Violet Boutique</a>
+
+    <span class="separador"></span>
+
+    @if (usuario(); as u) {
+      <span class="identidad">
+        <span class="avatar">{{ iniciales() }}</span>
+        <span class="datos">
+          <span class="nombre">{{ u.nombres }} {{ u.apellidos }}</span>
+          <span class="rol">Cliente</span>
+        </span>
+      </span>
+    }
+  </mat-toolbar>
+
   <nav class="navegacion" aria-label="Secciones del cliente">
     <div class="enlaces">
     <a routerLink="/tienda" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }">

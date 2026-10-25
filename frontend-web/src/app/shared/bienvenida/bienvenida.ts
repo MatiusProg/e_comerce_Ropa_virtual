@@ -10,7 +10,7 @@ const AREA: Record<Rol, { titulo: string; detalle: string; icono: string }> = {
   ADMINISTRADOR: {
     titulo: 'Panel de administración',
     detalle:
-      'Desde acá se gestionan los usuarios, la organización —ciudades, sucursales, empleados y proveedores— y los maestros del catálogo.',
+      'Desde acá se gestionan los usuarios, la organización —sucursales, empleados y proveedores— y los maestros del catálogo.',
     icono: 'admin_panel_settings',
   },
   CLIENTE: {

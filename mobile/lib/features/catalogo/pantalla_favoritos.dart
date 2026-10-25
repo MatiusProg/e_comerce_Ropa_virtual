@@ -25,6 +25,7 @@ import '../../data/repositorios/repositorio_catalogo.dart';
 import '../auth/estado_sesion.dart';
 import 'boton_favorito.dart';
 import 'estado_favoritos.dart';
+import '../../core/moneda.dart';
 
 class PantallaFavoritos extends ConsumerWidget {
   const PantallaFavoritos({super.key});
@@ -171,7 +172,7 @@ class _TarjetaFavorita extends StatelessWidget {
                   Text(
                     producto.precioDesde == null
                         ? '—'
-                        : 'Bs ${producto.precioDesde}',
+                        : bs(producto.precioDesde),
                     style: const TextStyle(
                       color: ColoresVB.malva,
                       fontWeight: FontWeight.w700,

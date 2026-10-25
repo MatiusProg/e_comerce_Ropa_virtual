@@ -19,6 +19,7 @@ import {
 import type { Producto, Variante } from '../../../core/models/productos.models';
 import type { Color, Talla } from '../../../core/models/maestros.models';
 import { Confirmacion, type DatosConfirmacion } from '../../../shared/confirmacion/confirmacion';
+import { BsPipe } from '../../../shared/bs.pipe';
 
 export interface DatosVariantes {
   producto: Producto;
@@ -44,6 +45,7 @@ export interface DatosVariantes {
 @Component({
   selector: 'app-variantes',
   imports: [
+    BsPipe,
     ReactiveFormsModule,
     MatButtonModule,
     MatDialogModule,

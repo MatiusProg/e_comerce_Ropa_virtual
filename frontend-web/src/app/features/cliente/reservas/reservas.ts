@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -11,10 +11,8 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
-import { AuthService } from '../../../core/services/auth.service';
 import {
   ReservasService,
   type ErrorReservas,
@@ -67,7 +65,6 @@ const LEYENDA: Record<EstadoReserva, string> = {
     MatPaginatorModule,
     MatProgressBarModule,
     MatSelectModule,
-    MatToolbarModule,
     MatTooltipModule,
   ],
   templateUrl: './reservas.html',
@@ -75,11 +72,8 @@ const LEYENDA: Record<EstadoReserva, string> = {
 })
 export class Reservas implements OnInit {
   private readonly api = inject(ReservasService);
-  private readonly auth = inject(AuthService);
   private readonly dialogo = inject(MatDialog);
   private readonly aviso = inject(MatSnackBar);
-
-  protected readonly usuario = this.auth.usuario;
 
   protected readonly cargando = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -98,11 +92,6 @@ export class Reservas implements OnInit {
   private indice = 0;
   private readonly tamano = 10;
 
-  protected readonly iniciales = computed(() => {
-    const u = this.usuario();
-    if (!u) return '';
-    return `${u.nombres.charAt(0)}${u.apellidos.charAt(0)}`.toUpperCase();
-  });
 
   ngOnInit(): void {
     this.refrescar();

@@ -12,6 +12,8 @@
 /// reserva los calcula el servidor.
 library;
 
+import '../../core/moneda.dart';
+
 class ColorPrenda {
   const ColorPrenda({
     required this.id,
@@ -180,9 +182,9 @@ class ProductoVitrina {
   String get precioRotulado {
     if (precioDesde == null) return 'Sin precio';
     if (precioHasta != null && precioHasta != precioDesde) {
-      return 'desde Bs $precioDesde';
+      return 'desde ${bs(precioDesde)}';
     }
-    return 'Bs $precioDesde';
+    return bs(precioDesde);
   }
 
   factory ProductoVitrina.desdeJson(Map<String, dynamic> json) {
@@ -401,9 +403,9 @@ class FichaPrenda {
   String get precioRotulado {
     if (precioDesde == null) return 'Sin precio';
     if (precioHasta != null && precioHasta != precioDesde) {
-      return 'Bs $precioDesde — $precioHasta';
+      return '${bs(precioDesde)} — ${bs(precioHasta)}';
     }
-    return 'Bs $precioDesde';
+    return bs(precioDesde);
   }
 
   factory FichaPrenda.desdeJson(Map<String, dynamic> json) {

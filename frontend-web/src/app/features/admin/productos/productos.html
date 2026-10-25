@@ -103,7 +103,7 @@
 
           <ng-container matColumnDef="precio">
             <th mat-header-cell *matHeaderCellDef>Precio base</th>
-            <td mat-cell *matCellDef="let f" class="numero">Bs {{ f.precio_base }}</td>
+            <td mat-cell *matCellDef="let f" class="numero">{{ f.precio_base | bs }}</td>
           </ng-container>
 
           <!--

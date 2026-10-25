@@ -25,6 +25,7 @@ import '../../core/tema.dart';
 import '../../data/modelos/compra.dart';
 import '../../data/repositorios/repositorio_catalogo.dart';
 import 'estado_compra.dart';
+import '../../core/moneda.dart';
 
 class PantallaCarrito extends ConsumerWidget {
   const PantallaCarrito({super.key});
@@ -267,7 +268,7 @@ class _LineaState extends ConsumerState<_Linea> {
                       ),
                     )
                   else ...[
-                    Text('Bs ${linea.precioUnitario} c/u'),
+                    Text('${bs(linea.precioUnitario)} c/u'),
                     if (linea.stockTotal <= 3)
                       Text(
                         linea.stockTotal == 0
@@ -292,7 +293,7 @@ class _LineaState extends ConsumerState<_Linea> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  'Bs ${linea.subtotal}',
+                  bs(linea.subtotal),
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 IconButton(
@@ -459,7 +460,7 @@ class _BarraDePago extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 Text(
-                  'Bs ${carrito.total}',
+                  bs(carrito.total),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: ColoresVB.malvaOscuro,
                     fontWeight: FontWeight.bold,

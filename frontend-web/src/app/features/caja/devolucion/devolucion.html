@@ -63,7 +63,7 @@
                 </td>
                 <td class="numero">{{ linea.cantidad }}</td>
                 <td class="numero">
-                  {{ linea.subtotal | currency: 'BOB' : 'symbol-narrow' }}
+                  {{ linea.subtotal | bs }}
                 </td>
               </tr>
             }
@@ -81,13 +81,13 @@
           <mat-icon>{{ c.sale_del_cajon ? 'payments' : 'credit_card' }}</mat-icon>
           @if (c.sale_del_cajon) {
             <span>
-              Entregue <strong>{{ c.monto | currency: 'BOB' : 'symbol-narrow' }}</strong>
+              Entregue <strong>{{ c.monto | bs }}</strong>
               en efectivo.
             </span>
           } @else {
             <span>
               Son
-              <strong>{{ c.valor_devuelto | currency: 'BOB' : 'symbol-narrow' }}</strong>,
+              <strong>{{ c.valor_devuelto | bs }}</strong>,
               pero <strong>no salen del cajón</strong>: esa venta no se cobró en
               efectivo y el reintegro vuelve por donde vino.
             </span>
@@ -128,14 +128,14 @@
                     <span class="detalle">{{ linea.talla }} · {{ linea.color }}</span>
                   </span>
                   <span class="numero">
-                    {{ linea.subtotal | currency: 'BOB' : 'symbol-narrow' }}
+                    {{ linea.subtotal | bs }}
                   </span>
                 </li>
               }
             </ul>
             <p class="total">
               <span>Valor devuelto</span>
-              <strong>{{ c.valor_devuelto | currency: 'BOB' : 'symbol-narrow' }}</strong>
+              <strong>{{ c.valor_devuelto | bs }}</strong>
             </p>
           </section>
 
@@ -149,14 +149,14 @@
                     <span class="detalle">{{ linea.talla }} · {{ linea.color }}</span>
                   </span>
                   <span class="numero">
-                    {{ linea.subtotal | currency: 'BOB' : 'symbol-narrow' }}
+                    {{ linea.subtotal | bs }}
                   </span>
                 </li>
               }
             </ul>
             <p class="total">
               <span>Total de lo nuevo</span>
-              <strong>{{ c.total_llevado | currency: 'BOB' : 'symbol-narrow' }}</strong>
+              <strong>{{ c.total_llevado | bs }}</strong>
             </p>
           </section>
         </div>
@@ -176,14 +176,14 @@
             @case ('CLIENTE') {
               <span>
                 Cobre
-                <strong>{{ c.diferencia | currency: 'BOB' : 'symbol-narrow' }}</strong>
+                <strong>{{ c.diferencia | bs }}</strong>
                 de diferencia @if (c.metodo_diferencia) { por {{ c.metodo_diferencia }} }.
               </span>
             }
             @case ('TIENDA') {
               <span>
                 Entregue
-                <strong>{{ -(+c.diferencia) | currency: 'BOB' : 'symbol-narrow' }}</strong>
+                <strong>{{ -(+c.diferencia) | bs }}</strong>
                 de diferencia @if (c.metodo_diferencia) { por {{ c.metodo_diferencia }} }.
               </span>
             }
@@ -253,7 +253,7 @@
               <p class="sub">
                 {{ v.creado_en | date: 'dd/MM/yyyy HH:mm' }} ·
                 {{ v.metodo_pago }} ·
-                {{ v.total | currency: 'BOB' : 'symbol-narrow' }}
+                {{ v.total | bs }}
                 @if (v.cliente) {
                   · {{ v.cliente }}
                 }
@@ -312,7 +312,7 @@
                       {{ fila.linea.producto }}
                       <span class="detalle">
                         {{ fila.linea.talla }} · {{ fila.linea.color }} ·
-                        {{ fila.linea.precio_unitario | currency: 'BOB' : 'symbol-narrow' }}
+                        {{ fila.linea.precio_unitario | bs }}
                       </span>
                     </td>
                     <td class="numero">{{ fila.linea.vendidas }}</td>
@@ -345,7 +345,7 @@
                       }
                     </td>
                     <td class="numero">
-                      {{ subtotalDe(fila) | currency: 'BOB' : 'symbol-narrow' }}
+                      {{ subtotalDe(fila) | bs }}
                     </td>
                   </tr>
                 }
@@ -359,7 +359,7 @@
 
             <p class="total">
               <span>Valor de lo devuelto</span>
-              <strong>{{ enBs(valorCentavos()) | currency: 'BOB' : 'symbol-narrow' }}</strong>
+              <strong>{{ enBs(valorCentavos()) | bs }}</strong>
             </p>
 
             <!-- ============ DEVOLVER O CAMBIAR ============ -->
@@ -420,12 +420,12 @@
                         </span>
                         <span class="precio">
                           @if (prenda.descuento) {
-                            <s>{{ prenda.precio | currency: 'BOB' : 'symbol-narrow' }}</s>
+                            <s>{{ prenda.precio | bs }}</s>
                             <strong>
-                              {{ prenda.descuento.precio_final | currency: 'BOB' : 'symbol-narrow' }}
+                              {{ prenda.descuento.precio_final | bs }}
                             </strong>
                           } @else {
-                            <strong>{{ prenda.precio | currency: 'BOB' : 'symbol-narrow' }}</strong>
+                            <strong>{{ prenda.precio | bs }}</strong>
                           }
                         </span>
                         <button
@@ -484,7 +484,7 @@
                             </span>
                           </td>
                           <td class="numero">
-                            {{ subtotalLlevado(prenda) | currency: 'BOB' : 'symbol-narrow' }}
+                            {{ subtotalLlevado(prenda) | bs }}
                           </td>
                           <td>
                             <button
@@ -504,7 +504,7 @@
                   <p class="total">
                     <span>Total de lo nuevo</span>
                     <strong>
-                      {{ enBs(totalLlevadoCentavos()) | currency: 'BOB' : 'symbol-narrow' }}
+                      {{ enBs(totalLlevadoCentavos()) | bs }}
                     </strong>
                   </p>
 
@@ -518,13 +518,13 @@
                       @case ('CLIENTE') {
                         <span>Hay que <strong>cobrar</strong></span>
                         <strong class="cifra">
-                          {{ enBs(diferenciaCentavos()) | currency: 'BOB' : 'symbol-narrow' }}
+                          {{ enBs(diferenciaCentavos()) | bs }}
                         </strong>
                       }
                       @case ('TIENDA') {
                         <span>Hay que <strong>entregar</strong></span>
                         <strong class="cifra">
-                          {{ enBs(-diferenciaCentavos()) | currency: 'BOB' : 'symbol-narrow' }}
+                          {{ enBs(-diferenciaCentavos()) | bs }}
                         </strong>
                       }
                       @default {

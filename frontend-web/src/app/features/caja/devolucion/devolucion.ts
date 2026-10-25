@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -29,6 +29,7 @@ import type {
   VentaDevolvible,
 } from '../../../core/models/devoluciones.models';
 import type { PrendaEnMostrador } from '../../../core/models/pos.models';
+import { BsPipe } from '../../../shared/bs.pipe';
 
 /** Qué está haciendo el cajero con la prenda que le trajeron. */
 export type Modo = 'DEVOLUCION' | 'CAMBIO';
@@ -67,7 +68,7 @@ export type Modo = 'DEVOLUCION' | 'CAMBIO';
 @Component({
   selector: 'app-devolucion',
   imports: [
-    CurrencyPipe,
+    BsPipe,
     DatePipe,
     RouterLink,
     ReactiveFormsModule,

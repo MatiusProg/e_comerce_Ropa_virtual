@@ -10,8 +10,9 @@ Que siembra:
   P3  categorias jerarquicas, tallas por tipo de prenda, colores,
       2 temporadas con sus colecciones,
       ~55 productos con sus variantes talla x color,
-      una imagen principal por producto y el PNG transparente del vestidor
-      virtual para las variantes de los productos destacados (supuesto S5)
+      una imagen principal y una foto por color de cada producto, y el PNG
+      transparente del vestidor virtual para las variantes de los productos
+      destacados (supuesto S5)
 
 HAY DOS CATALOGOS, Y LOS ELIGE LA BASE
 --------------------------------------
@@ -627,7 +628,7 @@ def _imagenes_de(
     paleta: list[Color],
     con_vestidor: set[str],
 ) -> None:
-    """Una imagen principal del producto y, si corresponde, los PNG del vestidor.
+    """La imagen principal, una foto por color y, si corresponde, los PNG del vestidor.
 
     El transparente va por VARIANTE, no por producto: el indice parcial
     uq_imagen_transparente_variante admite uno solo por variante, y el vestidor
@@ -647,11 +648,6 @@ def _imagenes_de(
         )
     )
 
-    if subcategoria not in con_vestidor:
-        return
-
-    # Una variante por color de la paleta, en la talla intermedia: alcanza para
-    # que el prototipo tenga con que probar y no llena el volumen de PNG.
     variantes = list(
         db.scalars(
             select(VarianteProducto).where(VarianteProducto.producto_id == producto.id)
@@ -663,7 +659,32 @@ def _imagenes_de(
     for variante in variantes:
         por_color.setdefault(variante.color_id, variante)
 
+    # Una foto de galeria por color, atada a una variante de ese color: es lo
+    # que hace que la ficha cambie de foto al elegir otro color. Sin ellas la
+    # galeria tenia solo la principal y elegir un color no cambiaba nada.
     for orden, (color_id, variante) in enumerate(por_color.items(), start=1):
+        color = db.get(Color, color_id)
+        ruta = _escribir(
+            _png_de_producto(color.hexadecimal, f"{producto.nombre} · {color.nombre}"),
+            producto.id,
+            f"color-{color_id}.jpg",
+        )
+        db.add(
+            ImagenProducto(
+                producto_id=producto.id,
+                variante_id=variante.id,
+                ruta=ruta,
+                es_principal=False,
+                orden=orden,
+            )
+        )
+
+    if subcategoria not in con_vestidor:
+        return
+
+    # Un PNG por color de la paleta: alcanza para que el prototipo tenga con
+    # que probar y no llena el volumen de PNG.
+    for orden, (color_id, variante) in enumerate(por_color.items(), start=len(por_color) + 1):
         color = db.get(Color, color_id)
         ruta = _escribir(
             _png_transparente_de_variante(color.hexadecimal),

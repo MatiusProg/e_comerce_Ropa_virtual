@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -19,6 +19,7 @@ import {
 import type { EstadoPedido, Pedido } from '../../../core/models/pedidos.models';
 import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion-cliente';
 import { UrlMediaPipe } from '../../../shared/url-media.pipe';
+import { BsPipe } from '../../../shared/bs.pipe';
 
 /** Los estados en los que la compra ya se cobró y tiene recibo. */
 const CON_COMPROBANTE: EstadoPedido[] = ['PAGADA', 'ENTREGADA'];
@@ -41,7 +42,7 @@ const CON_COMPROBANTE: EstadoPedido[] = ['PAGADA', 'ENTREGADA'];
   imports: [
     UrlMediaPipe,
     NavegacionCliente,
-    CurrencyPipe,
+    BsPipe,
     DatePipe,
     RouterLink,
     MatButtonModule,

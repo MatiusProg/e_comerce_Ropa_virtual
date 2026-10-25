@@ -10,6 +10,7 @@ import { RouterLink } from '@angular/router';
 import { TiendaService, type ErrorTienda } from '../../../core/services/tienda.service';
 import type { Recomendaciones } from '../../../core/models/tienda.models';
 import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion-cliente';
+import { BsPipe } from '../../../shared/bs.pipe';
 
 /**
  * CU-33 · Recibir recomendaciones de prendas — «boundary» PantallaParaVos.
@@ -46,6 +47,7 @@ import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion
 @Component({
   selector: 'app-para-vos',
   imports: [
+    BsPipe,
     NavegacionCliente,
     RouterLink,
     DatePipe,

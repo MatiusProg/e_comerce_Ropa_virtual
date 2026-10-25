@@ -10,6 +10,7 @@ import { Router, RouterLink } from '@angular/router';
 import { TiendaService, type ErrorTienda } from '../../../core/services/tienda.service';
 import type { PaginaFavoritos, ProductoVitrina } from '../../../core/models/tienda.models';
 import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion-cliente';
+import { formatoBs } from '../../../shared/bs.pipe';
 
 /**
  * CU-20 · Gestionar favoritos — «boundary» PantallaFavoritos.
@@ -74,9 +75,9 @@ export class Favoritos implements OnInit {
   protected precio(producto: ProductoVitrina): string {
     if (!producto.precio_desde) return 'Sin precio';
     if (producto.precio_hasta && producto.precio_hasta !== producto.precio_desde) {
-      return `desde Bs ${producto.precio_desde}`;
+      return `desde ${formatoBs(producto.precio_desde)}`;
     }
-    return `Bs ${producto.precio_desde}`;
+    return formatoBs(producto.precio_desde);
   }
 
   /**

@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { Component, OnInit, inject, input, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -14,6 +14,7 @@ import type { Pedido } from '../../../core/models/pedidos.models';
 import { CLAVE_PEDIDO_EN_CURSO } from '../checkout/checkout';
 import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion-cliente';
 import { UrlMediaPipe } from '../../../shared/url-media.pipe';
+import { BsPipe } from '../../../shared/bs.pipe';
 
 /**
  * CU-27 · Paso 5 — «boundary» PantallaRetornoDePago.
@@ -62,7 +63,7 @@ import { UrlMediaPipe } from '../../../shared/url-media.pipe';
   imports: [
     UrlMediaPipe,
     NavegacionCliente,
-    CurrencyPipe,
+    BsPipe,
     DatePipe,
     ReactiveFormsModule,
     RouterLink,

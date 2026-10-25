@@ -13,6 +13,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.dependencies import DbSession, requiere_roles
+from app.core.tenencia import ROL_PLATAFORMA
 from app.modules.organizacion import service
 from app.modules.organizacion.schemas import (
     CambioEstadoSucursalIn,
@@ -56,6 +57,20 @@ consulta_router = APIRouter(
     },
 )
 
+
+# 2do parcial: las ciudades son compartidas por todas las empresas, así que las
+# gestiona solo el administrador de la plataforma. Si las editara el
+# administrador de una empresa, renombrar «La Paz» les cambiaría la ciudad a
+# todas. Las empresas solo las eligen, por el router de consulta.
+ciudades_router = APIRouter(
+    prefix="/organizacion",
+    tags=["Organizacion"],
+    dependencies=[Depends(requiere_roles(ROL_PLATAFORMA))],
+    responses={
+        401: {"description": "Falta el token o ya no es válido."},
+        403: {"description": "El usuario no es administrador de la plataforma."},
+    },
+)
 
 def _traducir(error: service.ErrorDeOrganizacion) -> HTTPException:
     """Convierte los errores de negocio de CU-05 en respuestas HTTP."""
@@ -110,7 +125,7 @@ def listar_ciudades(
     return service.listar_ciudades(db, busqueda=busqueda)
 
 
-@router.post(
+@ciudades_router.post(
     "/ciudades",
     response_model=CiudadOut,
     status_code=status.HTTP_201_CREATED,
@@ -124,7 +139,7 @@ def crear_ciudad(datos: CiudadCrearIn, db: DbSession) -> CiudadOut:
         raise _traducir(error)
 
 
-@router.get(
+@ciudades_router.get(
     "/ciudades/{ciudad_id}", response_model=CiudadOut, summary="CU-05 Ver una ciudad"
 )
 def obtener_ciudad(ciudad_id: int, db: DbSession) -> CiudadOut:
@@ -134,7 +149,7 @@ def obtener_ciudad(ciudad_id: int, db: DbSession) -> CiudadOut:
         raise _traducir(error)
 
 
-@router.patch(
+@ciudades_router.patch(
     "/ciudades/{ciudad_id}", response_model=CiudadOut, summary="CU-05 Editar ciudad"
 )
 def editar_ciudad(ciudad_id: int, datos: CiudadEditarIn, db: DbSession) -> CiudadOut:
@@ -144,7 +159,7 @@ def editar_ciudad(ciudad_id: int, datos: CiudadEditarIn, db: DbSession) -> Ciuda
         raise _traducir(error)
 
 
-@router.delete(
+@ciudades_router.delete(
     "/ciudades/{ciudad_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="CU-05 Eliminar ciudad",

@@ -46,7 +46,7 @@
         <p class="rotulo">Plan contratado</p>
         <h2>{{ p.nombre }}</h2>
         <p class="precio">
-          {{ p.precio_mensual | currency: 'BOB' : 'Bs ' : '1.0-0' }} <span>por mes</span>
+          {{ p.precio_mensual | bs }} <span>por mes</span>
         </p>
       } @else {
         <p class="rotulo">Plan contratado</p>
@@ -143,7 +143,7 @@
               <th scope="row">Precio mensual</th>
               @for (p of planesComparados(); track p.id) {
                 <td [class.actual]="p.id === d.plan?.id">
-                  {{ p.precio_mensual | currency: 'BOB' : 'Bs ' : '1.0-0' }}
+                  {{ p.precio_mensual | bs }}
                 </td>
               }
             </tr>

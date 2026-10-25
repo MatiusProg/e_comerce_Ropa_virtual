@@ -19,6 +19,7 @@ import {
   type PlanOferta,
 } from '../../../core/models/plataforma.models';
 import type { Ciudad } from '../../../core/models/organizacion.models';
+import { BsPipe } from '../../../shared/bs.pipe';
 
 export interface DatosEmpresa {
   planes: PlanOferta[];
@@ -48,6 +49,7 @@ function sugerirSlug(nombre: string): string {
 @Component({
   selector: 'app-empresa-formulario',
   imports: [
+    BsPipe,
     ReactiveFormsModule,
     MatButtonModule,
     MatDialogModule,
