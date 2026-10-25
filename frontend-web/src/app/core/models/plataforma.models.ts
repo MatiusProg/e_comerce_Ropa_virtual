@@ -57,5 +57,49 @@ export interface PlanOferta {
   duracion_dias: number;
 }
 
+/** CU-02 · un plan con todo lo que define. `null` en un límite es ilimitado. */
+export interface Plan extends PlanOferta {
+  id: number;
+  max_sucursales: number | null;
+  max_empleados: number | null;
+  cupo_reportes_ia: number | null;
+  cupo_fotos_ia: number | null;
+  /** Días de bitácora que ve la empresa; `null` es todo el historial. */
+  bitacora_dias: number | null;
+  funciones: string[];
+  activo: boolean;
+  /** Empresas con una suscripción vigente o suspendida en este plan. */
+  empresas: number;
+}
+
+export interface PlanGuardar {
+  nombre: string;
+  precio_mensual: number;
+  duracion_dias: number;
+  max_sucursales: number | null;
+  max_empleados: number | null;
+  cupo_reportes_ia: number | null;
+  cupo_fotos_ia: number | null;
+  bitacora_dias: number | null;
+  funciones: string[];
+}
+
+/** Alternativo 5a: una empresa que ya pasa un límite del plan. No se le borra nada. */
+export interface EmpresaExcedida {
+  empresa: string;
+  recurso: string;
+  uso: number;
+  limite: number;
+}
+
+export interface PlanGuardado extends Plan {
+  excedidas: EmpresaExcedida[];
+}
+
+export interface FuncionDePlan {
+  clave: string;
+  nombre: string;
+}
+
 /** La misma regla que el CHECK de la tabla `empresa` (RN-14). */
 export const PATRON_SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;

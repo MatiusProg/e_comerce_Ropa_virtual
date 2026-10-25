@@ -19,6 +19,7 @@ que ser una base dedicada a pruebas y vacia.
 
 import os
 from datetime import date, timedelta
+import json
 from decimal import Decimal
 
 import pytest
@@ -143,24 +144,33 @@ TABLAS_VOLATILES = (
     "plan",
 )
 
-#: Los tres planes de la migracion 0022, copiados: las pruebas arman el
-#: esquema con `create_all`, que no siembra datos.
+def _migracion_0022():
+    """El módulo de la migración 0022, de donde salen las funciones de los planes."""
+    import importlib.util
+    from pathlib import Path
+
+    ruta = Path(__file__).resolve().parents[1] / "alembic" / "versions" / "0022_multitenant_base.py"
+    spec = importlib.util.spec_from_file_location("migracion_0022", ruta)
+    modulo = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(modulo)
+    return modulo
+
+
+_M0022 = _migracion_0022()
+
+#: Los tres planes de la migracion 0022: las pruebas arman el esquema con
+#: `create_all`, que no siembra datos. Las funciones se leen de la migración
+#: y no se copian: la copia se había quedado sin las claves del CU-40.
 PLANES = (
     dict(id=1, codigo="BASICO", nombre="Básico", precio_mensual=Decimal("300"),
          max_sucursales=2, max_empleados=10, cupo_reportes_ia=0, cupo_fotos_ia=0,
-         funciones={"reportes_ia": False, "correo": False, "ia_cliente": False,
-                    "marca_propia": False, "traspasos_sugeridos": False, "foto_ia": False,
-                    "analitica_ml": False, "exportar_datos": False, "bitacora_dias": 30}),
+         funciones=json.loads(_M0022.FUNCIONES_BASICO)),
     dict(id=2, codigo="PROFESIONAL", nombre="Profesional", precio_mensual=Decimal("750"),
          max_sucursales=10, max_empleados=60, cupo_reportes_ia=300, cupo_fotos_ia=10,
-         funciones={"reportes_ia": True, "correo": True, "ia_cliente": True,
-                    "marca_propia": True, "traspasos_sugeridos": True, "foto_ia": True,
-                    "analitica_ml": False, "exportar_datos": False, "bitacora_dias": 180}),
+         funciones=json.loads(_M0022.FUNCIONES_PROFESIONAL)),
     dict(id=3, codigo="EMPRESARIAL", nombre="Empresarial", precio_mensual=Decimal("1500"),
          max_sucursales=None, max_empleados=None, cupo_reportes_ia=None, cupo_fotos_ia=100,
-         funciones={"reportes_ia": True, "correo": True, "ia_cliente": True,
-                    "marca_propia": True, "traspasos_sugeridos": True, "foto_ia": True,
-                    "analitica_ml": True, "exportar_datos": True, "bitacora_dias": None}),
+         funciones=json.loads(_M0022.FUNCIONES_EMPRESARIAL)),
 )
 
 #: Credenciales del cliente de prueba. La contrasena cumple la regla del
@@ -284,7 +294,7 @@ def db(motor, fabrica_sesiones):
 
 def _sembrar_referencias(sesion) -> None:
     """Siembra la empresa de las pruebas, los roles y las ciudades. Es idempotente."""
-    from sqlalchemy import select
+    from sqlalchemy import select, text
 
     from app.modules.organizacion.models import Ciudad
     from app.modules.plataforma.models import Empresa, Plan, Suscripcion
@@ -293,6 +303,10 @@ def _sembrar_referencias(sesion) -> None:
     for datos in PLANES:
         if sesion.get(Plan, datos["id"]) is None:
             sesion.add(Plan(**datos))
+    sesion.flush()
+    # Los planes van con id fijo: la secuencia no se entera y el primer plan
+    # creado por la API (CU-02) chocaría con el 1. La migración hace lo mismo.
+    sesion.execute(text("SELECT setval(pg_get_serial_sequence('plan', 'id'), (SELECT max(id) FROM plan))"))
     if sesion.get(Empresa, EMPRESA_PRUEBAS) is None:
         empresa = Empresa(nombre="Violet Boutique", slug="violet-boutique")
         sesion.add(empresa)

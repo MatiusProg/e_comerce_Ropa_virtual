@@ -1,0 +1,23 @@
+.explicacion {
+  margin: -0.15rem 0 0.6rem;
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// Dos columnas de casillas; una en el teléfono.
+.funciones {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.1rem 1rem;
+  padding-bottom: 0.5rem;
+
+  @media (max-width: 560px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+// La etiqueta flotante del primer campo sube por encima del borde y el
+// contenido del diálogo, que se desplaza, la recortaba.
+form {
+  padding-top: 0.5rem;
+}

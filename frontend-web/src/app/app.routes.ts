@@ -153,6 +153,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/plataforma/empresas/empresas').then((m) => m.Empresas),
       },
+      // 2do parcial · CU-02 Gestionar planes.
+      {
+        path: 'planes',
+        title: 'Planes · Violet Boutique',
+        loadComponent: () => import('./features/plataforma/planes/planes').then((m) => m.Planes),
+      },
       {
         path: 'ciudades',
         title: 'Ciudades · Violet Boutique',

@@ -1,12 +1,14 @@
 """
 P12 - Plataforma SaaS  |  capa: esquemas (Pydantic)
 
-CU-01 Gestionar empresas.
+CU-01 Gestionar empresas y CU-02 Gestionar planes.
 """
 
 from datetime import date, datetime
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
+
+from app.modules.plataforma.verificador import FUNCIONES
 
 #: El slug va en el login y en la dirección de la tienda: minúsculas, números y
 #: guiones simples. Es la misma regla que el CHECK de la tabla `empresa`.
@@ -90,9 +92,80 @@ class EmpresaCreadaOut(EmpresaOut):
 
 
 class PlanOut(BaseModel):
-    """Para el selector de plan del formulario de alta."""
+    """Un plan con todo lo que define (CU-02, paso 2).
 
+    El selector del alta de empresas (CU-01) usa solo los primeros campos.
+    """
+
+    id: int
     codigo: str
     nombre: str
     precio_mensual: float
     duracion_dias: int
+    max_sucursales: int | None
+    max_empleados: int | None
+    cupo_reportes_ia: int | None
+    cupo_fotos_ia: int | None
+    funciones: list[str]
+    #: Cuántos días de bitácora ve la empresa; None es todo el historial.
+    bitacora_dias: int | None
+    activo: bool
+    #: Empresas con una suscripción vigente o suspendida en este plan.
+    empresas: int
+
+
+class PlanIn(BaseModel):
+    """Paso 3 del CU-02. Los límites vacíos son ilimitados (paso 4).
+
+    El código no se pide: sale del nombre en el alta y no cambia después,
+    porque lo usan el alta de empresas y la página de planes.
+    """
+
+    nombre: str = Field(min_length=1, max_length=40)
+    precio_mensual: float = Field(ge=0, le=99_999_999)
+    duracion_dias: int = Field(ge=1, le=366)
+    max_sucursales: int | None = Field(default=None, ge=1)
+    max_empleados: int | None = Field(default=None, ge=1)
+    # Un cupo en 0 es «no incluye»: el Básico viene así de la migración.
+    cupo_reportes_ia: int | None = Field(default=None, ge=0)
+    cupo_fotos_ia: int | None = Field(default=None, ge=0)
+    bitacora_dias: int | None = Field(default=None, ge=1)
+    funciones: list[str] = Field(default_factory=list)
+
+    @field_validator("nombre", mode="before")
+    @classmethod
+    def _sin_espacios(cls, valor):
+        return valor.strip() if isinstance(valor, str) else valor
+
+    @field_validator("funciones")
+    @classmethod
+    def _funciones_conocidas(cls, valor: list[str]) -> list[str]:
+        desconocidas = sorted(set(valor) - FUNCIONES.keys())
+        if desconocidas:
+            raise ValueError(f"Funciones desconocidas: {', '.join(desconocidas)}.")
+        return sorted(set(valor))
+
+
+class EmpresaExcedidaOut(BaseModel):
+    """Alternativo 5a: una empresa que ya tiene más de lo que el plan permite."""
+
+    empresa: str
+    recurso: str
+    uso: int
+    limite: int
+
+
+class PlanGuardadoOut(PlanOut):
+    """El plan guardado, con las empresas que quedaron por encima de un límite.
+
+    No se les borra nada: solo no pueden crear más (RN-04).
+    """
+
+    excedidas: list[EmpresaExcedidaOut] = []
+
+
+class FuncionOut(BaseModel):
+    """Una función que el plan puede incluir, para las casillas del formulario."""
+
+    clave: str
+    nombre: str

@@ -44,7 +44,6 @@ from app.modules.plataforma.schemas import (
     EmpresaCreadaOut,
     EmpresaEditarIn,
     EmpresaOut,
-    PlanOut,
     SuscripcionResumenOut,
 )
 from app.modules.seguridad.models import Rol, SesionToken, Usuario
@@ -164,18 +163,6 @@ def obtener_empresa(db: Session, empresa_id: int) -> EmpresaOut:
     if empresa is None:
         raise EmpresaInexistente(str(empresa_id))
     return _resumenes(db, [empresa])[0]
-
-
-def listar_planes(db: Session) -> list[PlanOut]:
-    return [
-        PlanOut(
-            codigo=p.codigo,
-            nombre=p.nombre,
-            precio_mensual=float(p.precio_mensual),
-            duracion_dias=p.duracion_dias,
-        )
-        for p in db.scalars(select(Plan).where(Plan.activo.is_(True)).order_by(Plan.precio_mensual))
-    ]
 
 
 # --------------------------------------------------------------------------

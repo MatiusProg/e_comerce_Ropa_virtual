@@ -1,0 +1,10 @@
+.pastilla-funciones {
+  cursor: help;
+  background: var(--vb-rosa-palido);
+  color: var(--vb-malva-oscuro);
+}
+
+// El detalle de las funciones va una por línea.
+::ng-deep .tooltip-lista {
+  white-space: pre-line;
+}
