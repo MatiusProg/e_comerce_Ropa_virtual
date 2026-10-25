@@ -286,3 +286,12 @@
     height: 0.9rem;
   }
 }
+
+// 2do parcial · CU-12: el logo de la empresa sobre el titulo.
+.logo-empresa {
+  display: block;
+  max-height: 3.5rem;
+  max-width: 12rem;
+  object-fit: contain;
+  margin-bottom: 0.5rem;
+}

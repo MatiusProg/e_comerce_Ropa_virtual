@@ -16,6 +16,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { AuthService } from '../../../core/services/auth.service';
 import { CarritoService } from '../../../core/services/carrito.service';
+import { MarcaService } from '../../../core/services/marca.service';
 import { TiendaService, type ErrorTienda } from '../../../core/services/tienda.service';
 import type {
   FiltrosDisponibles,
@@ -24,6 +25,7 @@ import type {
   ProductoVitrina,
 } from '../../../core/models/tienda.models';
 import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion-cliente';
+import { UrlMediaPipe } from '../../../shared/url-media.pipe';
 
 /**
  * CU-17 · Consultar catálogo — «boundary» PantallaCatalogo.
@@ -62,12 +64,15 @@ import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion
     MatProgressBarModule,
     MatSelectModule,
     MatTooltipModule,
+    UrlMediaPipe,
   ],
   templateUrl: './catalogo.html',
   styleUrl: './catalogo.scss',
 })
 export class Catalogo implements OnInit {
   private readonly api = inject(TiendaService);
+  /** CU-12: el logo de la empresa en el encabezado. */
+  protected readonly marca = inject(MarcaService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
