@@ -105,6 +105,8 @@ from app.modules.reportes.reportes_router import router as reportes_router
 # 2do parcial
 from app.modules.plataforma.router import router as plataforma_router
 from app.modules.plataforma.mi_plan.router import router as mi_plan_router
+from app.modules.plataforma.mi_tienda.router import router as mi_tienda_router
+from app.modules.plataforma.mi_tienda.router import tienda_router as marca_tienda_router
 from app.modules.plataforma.verificador import RechazoDelPlan
 
 
@@ -254,3 +256,6 @@ app.include_router(notificaciones_mantenimiento_router, prefix=API)
 # --- 2do parcial -----------------------------------------------------------
 # CU-04: el plan de la empresa y lo que ya usó de cada límite.
 app.include_router(mi_plan_router, prefix=API)
+# CU-12: la marca de la tienda (la pantalla del administrador y la publica).
+app.include_router(mi_tienda_router, prefix=API)
+app.include_router(marca_tienda_router, prefix=API)

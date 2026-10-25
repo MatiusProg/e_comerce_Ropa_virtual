@@ -186,6 +186,13 @@ export const routes: Routes = [
         title: 'Mi plan · Violet Boutique',
         loadComponent: () => import('./features/admin/mi-plan/mi-plan').then((m) => m.MiPlan),
       },
+      // --- 2do parcial · CU-12 Personalizar la tienda de la empresa ---
+      {
+        path: 'mi-tienda',
+        title: 'Mi tienda · Violet Boutique',
+        loadComponent: () =>
+          import('./features/admin/mi-tienda/mi-tienda').then((m) => m.MiTienda),
+      },
       {
         path: 'usuarios',
         title: 'Usuarios · Violet Boutique',

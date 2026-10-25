@@ -3,6 +3,10 @@
 
 <header class="encabezado">
   <div>
+    <!-- 2do parcial · CU-12 (1.11): el logo de la empresa, si su plan lo incluye. -->
+    @if (marca.logo(); as logo) {
+      <img class="logo-empresa" [src]="logo | urlMedia" [alt]="marca.empresa() ?? 'Logo'" />
+    }
     <h1 class="vb-titulo">Catálogo</h1>
     <p class="bajada">
       Todas las prendas de la temporada. Elija una para ver sus tallas, sus

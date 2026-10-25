@@ -1,11 +1,15 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { App } from './app';
 
 /**
  * El componente raíz de la aplicación.
  *
  * `App` no pinta nada propio: es la cáscara que hospeda el `<router-outlet>`,
- * y toda la interfaz entra por ahí. Por eso lo único que vale comprobar acá es
+ * y toda la interfaz entra por ahí. Desde el CU-12 además pide la marca de la
+ * tienda al arrancar: por eso lleva un `HttpClient` de pruebas. Por eso lo único que vale comprobar acá es
  * que el outlet esté — si alguien lo saca, la aplicación compila, arranca y
  * queda en blanco, sin un error que lo delate.
  *
@@ -19,6 +23,7 @@ describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     }).compileComponents();
   });
 

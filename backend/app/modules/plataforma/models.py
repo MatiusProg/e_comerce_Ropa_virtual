@@ -48,6 +48,8 @@ class Empresa(Auditoria, Base):
     __table_args__ = (
         CheckConstraint("slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'", name="slug_formato"),
         CheckConstraint("estado IN ('ACTIVA', 'BAJA')", name="estado"),
+        CheckConstraint("color_principal ~ '^#[0-9a-f]{6}$'", name="color_principal"),
+        CheckConstraint("color_secundario ~ '^#[0-9a-f]{6}$'", name="color_secundario"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -57,6 +59,11 @@ class Empresa(Auditoria, Base):
     slug: Mapped[str] = mapped_column(String(40), unique=True)
     correo_contacto: Mapped[str | None] = mapped_column(String(120))
     estado: Mapped[str] = mapped_column(String(10), server_default=text("'ACTIVA'"))
+    # CU-12 (0026): la marca de su tienda, si el plan incluye `marca_propia`.
+    # `logo` es la ruta relativa en MEDIA_ROOT; NULL es «el de Violet».
+    logo: Mapped[str | None] = mapped_column(String(255))
+    color_principal: Mapped[str | None] = mapped_column(String(7))
+    color_secundario: Mapped[str | None] = mapped_column(String(7))
 
     suscripciones: Mapped[list["Suscripcion"]] = relationship(back_populates="empresa")
 

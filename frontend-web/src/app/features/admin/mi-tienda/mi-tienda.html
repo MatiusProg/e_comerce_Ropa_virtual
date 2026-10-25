@@ -1,0 +1,161 @@
+<!-- CU-12 · Personalizar la tienda de la empresa — «boundary» PantallaMiTienda. -->
+<header class="encabezado">
+  <div>
+    <h1>Mi tienda</h1>
+    <p class="bajada">El logo y los colores con los que tus clientes ven la tienda en línea.</p>
+  </div>
+  @if (marca(); as m) {
+    <p class="empresa">
+      <mat-icon>storefront</mat-icon>
+      {{ m.empresa }} · <code>{{ m.slug }}</code>
+    </p>
+  }
+</header>
+
+@if (cargando()) {
+  <mat-progress-bar mode="indeterminate" />
+} @else if (error(); as e) {
+  <section class="tarjeta aviso error" role="alert">
+    <mat-icon>error_outline</mat-icon>
+    <p>{{ e.mensaje }}</p>
+  </section>
+} @else if (marca(); as m) {
+  @if (!incluida()) {
+    <!-- 1a: el plan no incluye la marca propia. -->
+    <section class="tarjeta aviso alerta" role="status">
+      <mat-icon>lock</mat-icon>
+      <p>
+        Tu plan no incluye la <strong>tienda con la marca de la empresa</strong>: tus clientes
+        la ven con la de Violet. Podés mirar cómo quedaría, pero para guardarla hace falta un plan
+        que la incluya.
+      </p>
+      <a matButton routerLink="/admin/mi-plan">Ver mi plan</a>
+    </section>
+  }
+
+  @if (guardando()) {
+    <mat-progress-bar mode="indeterminate" class="progreso" />
+  }
+
+  <div class="columnas">
+    <section class="tarjeta">
+      <h3>Logo</h3>
+      <div class="logo-actual">
+        @if (m.logo_url) {
+          <img [src]="m.logo_url | urlMedia" alt="Logo de {{ m.empresa }}" />
+        } @else {
+          <span class="sin-logo">Sin logo: se muestra el nombre</span>
+        }
+      </div>
+      @if (errorLogo(); as e) {
+        <p class="error-campo" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          {{ e }}
+        </p>
+      }
+      <div class="acciones">
+        <label class="boton-archivo" [class.deshabilitado]="!incluida() || guardando()">
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            [disabled]="!incluida() || guardando()"
+            (change)="elegirLogo($event)"
+          />
+          <mat-icon>upload</mat-icon>
+          {{ m.logo_url ? 'Cambiar logo' : 'Subir logo' }}
+        </label>
+        @if (m.logo_url) {
+          <button
+            matButton
+            type="button"
+            [disabled]="!incluida() || guardando()"
+            (click)="quitarLogo()"
+          >
+            Quitar
+          </button>
+        }
+      </div>
+      <p class="ayuda">PNG, JPEG o WEBP, hasta 5 MB. Mejor con fondo transparente.</p>
+
+      <h3 class="separado">Colores</h3>
+      <div class="color">
+        <input
+          type="color"
+          [value]="principal()"
+          (input)="elegirPrincipal($event)"
+          aria-label="Color principal"
+        />
+        <div>
+          <strong>Principal</strong>
+          <span>Encabezados, botones y enlaces · <code>{{ principal() }}</code></span>
+        </div>
+      </div>
+      <div class="color">
+        <input
+          type="color"
+          [value]="secundario()"
+          (input)="elegirSecundario($event)"
+          aria-label="Color secundario"
+        />
+        <div>
+          <strong>Secundario</strong>
+          <span>Detalles y el degradado · <code>{{ secundario() }}</code></span>
+        </div>
+      </div>
+      <div class="acciones">
+        <button
+          matButton="filled"
+          type="button"
+          class="vb-boton-marca"
+          [disabled]="!incluida() || !hayCambios() || guardando()"
+          (click)="guardarColores()"
+        >
+          Guardar colores
+        </button>
+        <button
+          matButton
+          type="button"
+          [disabled]="!incluida() || guardando() || (!m.color_principal && !m.color_secundario)"
+          (click)="restablecerColores()"
+        >
+          Volver a los de Violet
+        </button>
+      </div>
+    </section>
+
+    <!-- 1.6: la vista previa, con lo elegido aunque todavía no se guardó. -->
+    <section
+      class="tarjeta vista-previa"
+      aria-label="Vista previa de la tienda"
+      [style.--p]="principal()"
+      [style.--s]="secundario()"
+      [style.--p-oscuro]="oscuro()"
+      [style.--p-palido]="palido()"
+    >
+      <h3>Así la ven tus clientes</h3>
+      <div class="tienda">
+        <div class="barra">
+          @if (m.logo_url) {
+            <img [src]="m.logo_url | urlMedia" alt="" />
+          } @else {
+            <span class="nombre">{{ m.empresa }}</span>
+          }
+          <span class="menu">Catálogo · Mi carrito · Mi cuenta</span>
+        </div>
+        <div class="franja"></div>
+        <div class="contenido">
+          <h4>Catálogo</h4>
+          <div class="producto">
+            <div class="foto"></div>
+            <div>
+              <strong>Vestido de lino</strong>
+              <span class="precio">Bs 320</span>
+              <span class="chip">Nueva temporada</span>
+            </div>
+          </div>
+          <button type="button" class="boton" tabindex="-1">Agregar al carrito</button>
+        </div>
+      </div>
+    </section>
+  </div>
+}
