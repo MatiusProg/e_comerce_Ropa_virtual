@@ -1,0 +1,91 @@
+<!-- CU-11 · Contratar un plan desde la web — «boundary» PaginaPlanes. -->
+<header class="portada">
+  <nav class="barra">
+    <span class="logotipo">Violet Boutique</span>
+    <span class="enlaces">
+      <a matButton routerLink="/tienda" class="enlace-claro">Catálogo</a>
+      <a matButton routerLink="/login" class="enlace-claro">Iniciar sesión</a>
+    </span>
+  </nav>
+  <div class="titular">
+    <h1 class="vb-titulo">Tu tienda de ropa, en línea y en tus sucursales</h1>
+    <p>
+      Inventario por sucursal, reservas para probarse, ventas en caja y una tienda en línea
+      para tus clientes. Elegí un plan y empezá hoy.
+    </p>
+  </div>
+</header>
+
+<main class="contenido">
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  } @else if (error(); as e) {
+    <div class="estado" role="alert">
+      <mat-icon>cloud_off</mat-icon>
+      <p>No se pudieron cargar los planes. {{ e }}</p>
+      <button matButton="filled" type="button" class="vb-boton-marca" (click)="cargar()">
+        Reintentar
+      </button>
+    </div>
+  } @else {
+    <section class="planes" aria-label="Planes">
+      @for (p of planes(); track p.codigo; let i = $index) {
+        <article class="plan" [class.destacado]="destacado(i)">
+          @if (destacado(i)) {
+            <span class="cinta">Recomendado</span>
+          }
+          <h2 class="nombre">{{ p.nombre }}</h2>
+          <p class="precio">
+            <span class="monto">{{ p.precio_mensual | bs }}</span>
+            <span class="periodo">al mes</span>
+          </p>
+
+          <ul class="limites">
+            <li>
+              <mat-icon>storefront</mat-icon>
+              {{ limite(p.max_sucursales, 'sucursal', 'sucursales', 'Sucursales ilimitadas') }}
+            </li>
+            <li>
+              <mat-icon>badge</mat-icon>
+              {{ limite(p.max_empleados, 'empleado', 'empleados', 'Empleados ilimitados') }}
+            </li>
+            @if (cupo(p.cupo_reportes_ia, 'reportes con IA'); as c) {
+              <li><mat-icon>insights</mat-icon>{{ c }}</li>
+            }
+            @if (cupo(p.cupo_fotos_ia, 'fotos con IA'); as c) {
+              <li><mat-icon>photo_camera</mat-icon>{{ c }}</li>
+            }
+            <li>
+              <mat-icon>history</mat-icon>
+              {{ p.bitacora_dias === null ? 'Bitácora completa' : 'Bitácora de ' + p.bitacora_dias + ' días' }}
+            </li>
+          </ul>
+
+          <ul class="funciones">
+            @for (f of p.funciones; track f.clave) {
+              <li [class.no-incluida]="!f.incluida">
+                <mat-icon [attr.aria-label]="f.incluida ? 'Incluida' : 'No incluida'">
+                  {{ f.incluida ? 'check_circle' : 'remove' }}
+                </mat-icon>
+                {{ f.nombre }}
+              </li>
+            }
+          </ul>
+
+          <a
+            [matButton]="destacado(i) ? 'filled' : 'outlined'"
+            [class.vb-boton-marca]="destacado(i)"
+            class="elegir"
+            [routerLink]="['/contratar', p.codigo]"
+          >
+            Elegir {{ p.nombre }}
+          </a>
+        </article>
+      }
+    </section>
+    <p class="pie">
+      Precios simulados para la demostración. Cada plan dura {{ planes()[0]?.duracion_dias ?? 30 }}
+      días y se renueva desde el panel de la plataforma.
+    </p>
+  }
+</main>

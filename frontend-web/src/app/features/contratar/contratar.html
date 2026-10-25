@@ -1,0 +1,255 @@
+<!-- CU-11 · Contratar un plan desde la web — «boundary» FormularioContratacion. -->
+<div class="marco">
+  <nav class="barra">
+    <a routerLink="/planes" class="logotipo">Violet Boutique</a>
+    <a matButton routerLink="/planes">
+      <mat-icon>arrow_back</mat-icon>
+      Ver los planes
+    </a>
+  </nav>
+
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  } @else if (!plan()) {
+    <section class="tarjeta vacio">
+      <mat-icon>help_outline</mat-icon>
+      <h1 class="vb-titulo">Ese plan no se ofrece</h1>
+      <p>Elegí uno de los planes disponibles.</p>
+      <a matButton="filled" class="vb-boton-marca" routerLink="/planes">Ver los planes</a>
+    </section>
+  } @else if (resultado(); as r) {
+    <!-- Pasos 6 a 8: el comprobante y el acceso. -->
+    <section class="tarjeta listo vb-filete-superior">
+      <mat-icon class="icono-ok">check_circle</mat-icon>
+      <h1 class="vb-titulo">¡{{ r.empresa }} ya está en Violet Boutique!</h1>
+      <p>
+        Tu plan <strong>{{ r.plan }}</strong> vence el {{ r.vencimiento | date: 'dd/MM/yyyy' }}.
+        {{
+          r.correo_enviado
+            ? 'Te enviamos un correo de bienvenida a ' + r.administrador_correo + '.'
+            : 'No pudimos enviar el correo de bienvenida, pero tu cuenta ya funciona.'
+        }}
+      </p>
+
+      <dl class="comprobante">
+        <div><dt>Comprobante</dt><dd class="codigo">{{ r.pago.comprobante }}</dd></div>
+        <div><dt>Método</dt><dd>Pago por QR (simulado)</dd></div>
+        <div><dt>Monto</dt><dd>{{ r.pago.monto | bs }}</dd></div>
+        <div><dt>Fecha</dt><dd>{{ r.pago.pagado_en | date: 'dd/MM/yyyy HH:mm' }}</dd></div>
+      </dl>
+
+      <div class="acceso">
+        <p>Para entrar usá:</p>
+        <ul>
+          <li>Empresa: <strong>{{ r.slug }}</strong></li>
+          <li>Correo: <strong>{{ r.administrador_correo }}</strong></li>
+          <li>Contraseña: la que elegiste.</li>
+        </ul>
+      </div>
+
+      <button matButton="filled" type="button" class="vb-boton-marca" (click)="irALogin()">
+        Iniciar sesión
+      </button>
+    </section>
+  } @else {
+    @let p = plan()!;
+    <header class="encabezado">
+      <h1 class="vb-titulo">Contratar el plan {{ p.nombre }}</h1>
+      <p>{{ montoTexto() }} por {{ p.duracion_dias }} días. Completá los datos y pagá con QR.</p>
+    </header>
+
+    <section class="tarjeta vb-filete-superior">
+      @if (enviando()) {
+        <mat-progress-bar mode="indeterminate" />
+      }
+
+      <mat-stepper linear #pasos [orientation]="'vertical'" class="pasos">
+        <!-- Paso 4 (empresa) y paso 5 (slug). -->
+        <mat-step [stepControl]="empresa" label="Tu empresa">
+          <form [formGroup]="empresa" class="campos">
+            <mat-form-field appearance="outline" class="ancho-completo">
+              <mat-label>Nombre de la empresa</mat-label>
+              <input matInput formControlName="nombre" maxlength="120" autocomplete="organization" />
+              <mat-error>Indicá el nombre.</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="ancho-completo">
+              <mat-label>Slug (la dirección de tu tienda y tu inicio de sesión)</mat-label>
+              <input matInput formControlName="slug" maxlength="40" (input)="tocarSlug()" />
+              @switch (slug().estado) {
+                @case ('verificando') { <mat-hint>Verificando…</mat-hint> }
+                @case ('libre') { <mat-hint class="libre">Disponible</mat-hint> }
+                @case ('ocupado') { <mat-hint class="ocupado">Ese slug ya lo usa otra empresa.</mat-hint> }
+                @default { <mat-hint>Minúsculas, números y guiones. No se cambia después.</mat-hint> }
+              }
+              @if (empresa.controls.slug.hasError('ocupado')) {
+                <mat-error>Ese slug ya lo usa otra empresa.</mat-error>
+              } @else {
+                <mat-error>Minúsculas, números y guiones simples (2 a 40).</mat-error>
+              }
+            </mat-form-field>
+            @if (slug().estado === 'ocupado' && slug().sugerencias.length) {
+              <div class="sugerencias">
+                <span>Están libres:</span>
+                @for (s of slug().sugerencias; track s) {
+                  <button matButton="tonal" type="button" (click)="usarSlug(s)">{{ s }}</button>
+                }
+              </div>
+            }
+
+            <div class="fila">
+              <mat-form-field appearance="outline">
+                <mat-label>Razón social (opcional)</mat-label>
+                <input matInput formControlName="razon_social" maxlength="160" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>NIT (opcional)</mat-label>
+                <input matInput formControlName="nit" maxlength="30" />
+              </mat-form-field>
+            </div>
+            <mat-form-field appearance="outline" class="ancho-completo">
+              <mat-label>Correo de contacto (opcional)</mat-label>
+              <input matInput type="email" formControlName="correo_contacto" />
+              <mat-error>El correo no es válido.</mat-error>
+            </mat-form-field>
+
+            <div class="acciones">
+              <button
+                matButton="filled"
+                class="vb-boton-marca"
+                type="button"
+                matStepperNext
+                [disabled]="slug().estado === 'verificando'"
+              >
+                Siguiente
+              </button>
+            </div>
+          </form>
+        </mat-step>
+
+        <!-- Paso 4: la sucursal principal y el administrador. -->
+        <mat-step [stepControl]="cuenta" label="Sucursal y administrador">
+          <form [formGroup]="cuenta" class="campos">
+            <h3 class="seccion">Sucursal principal</h3>
+            <div class="fila">
+              <mat-form-field appearance="outline">
+                <mat-label>Ciudad</mat-label>
+                <mat-select formControlName="ciudad_id">
+                  @for (ciudad of ciudades(); track ciudad.id) {
+                    <mat-option [value]="ciudad.id">{{ ciudad.nombre }}</mat-option>
+                  }
+                </mat-select>
+                <mat-error>Elegí la ciudad.</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre de la sucursal</mat-label>
+                <input matInput formControlName="sucursal" maxlength="80" />
+                <mat-error>Indicá un nombre.</mat-error>
+              </mat-form-field>
+            </div>
+            <mat-form-field appearance="outline" class="ancho-completo">
+              <mat-label>Dirección</mat-label>
+              <input matInput formControlName="direccion" maxlength="200" autocomplete="street-address" />
+              <mat-error>Indicá la dirección.</mat-error>
+            </mat-form-field>
+
+            <h3 class="seccion">Administrador de la empresa</h3>
+            <div class="fila">
+              <mat-form-field appearance="outline">
+                <mat-label>Nombres</mat-label>
+                <input matInput formControlName="nombres" maxlength="80" autocomplete="given-name" />
+                <mat-error>Indicá los nombres.</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Apellidos</mat-label>
+                <input matInput formControlName="apellidos" maxlength="80" autocomplete="family-name" />
+                <mat-error>Indicá los apellidos.</mat-error>
+              </mat-form-field>
+            </div>
+            <mat-form-field appearance="outline" class="ancho-completo">
+              <mat-label>Correo</mat-label>
+              <input matInput type="email" formControlName="correo" autocomplete="email" />
+              <mat-error>Indicá un correo válido.</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="ancho-completo">
+              <mat-label>Contraseña</mat-label>
+              <input
+                matInput
+                [type]="verContrasena() ? 'text' : 'password'"
+                formControlName="contrasena"
+                autocomplete="new-password"
+              />
+              <button
+                matIconButton
+                type="button"
+                matSuffix
+                (click)="verContrasena.set(!verContrasena())"
+                [attr.aria-label]="verContrasena() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              >
+                <mat-icon>{{ verContrasena() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+              <mat-hint>Al menos 8 caracteres, con una letra y un número.</mat-hint>
+              <mat-error>Al menos 8 caracteres, con una letra y un número.</mat-error>
+            </mat-form-field>
+
+            <div class="acciones">
+              <button matButton type="button" matStepperPrevious>Atrás</button>
+              <button matButton="filled" class="vb-boton-marca" type="button" matStepperNext>
+                Siguiente
+              </button>
+            </div>
+          </form>
+        </mat-step>
+
+        <!-- Paso 6: el pago simulado. -->
+        <mat-step [stepControl]="pago" label="Pago">
+          <form [formGroup]="pago" class="campos" (ngSubmit)="contratar()">
+            @if (error(); as e) {
+              <div class="aviso" role="alert">
+                <mat-icon>error_outline</mat-icon>
+                <span>{{ e }}</span>
+              </div>
+            }
+            <div class="cobro">
+              <svg class="qr" viewBox="0 0 21 21" role="img" aria-label="Código QR de pago (simulado)">
+                <rect width="21" height="21" fill="#fff" />
+                @for (lleno of qr(); track $index) {
+                  @if (lleno) {
+                    <rect [attr.x]="$index % 21" [attr.y]="($index - ($index % 21)) / 21" width="1" height="1" fill="#2e1f28" />
+                  }
+                }
+              </svg>
+              <div>
+                <p class="total">{{ montoTexto() }}</p>
+                <p>Plan {{ p.nombre }} · {{ p.duracion_dias }} días</p>
+                <p class="pista">
+                  Escaneá el QR con la app de tu banco e ingresá el código de operación que te
+                  muestra. Es una simulación: no se cobra nada. Para simular un pago rechazado,
+                  usá {{ codigoRechazo }}.
+                </p>
+              </div>
+            </div>
+            <mat-form-field appearance="outline" class="ancho-completo">
+              <mat-label>Código de operación</mat-label>
+              <input
+                matInput
+                formControlName="codigo_operacion"
+                inputmode="numeric"
+                maxlength="6"
+                autocomplete="off"
+              />
+              <mat-error>Son 6 dígitos.</mat-error>
+            </mat-form-field>
+
+            <div class="acciones">
+              <button matButton type="button" matStepperPrevious [disabled]="enviando()">Atrás</button>
+              <button matButton="filled" class="vb-boton-marca" type="submit" [disabled]="enviando()">
+                Pagar y crear mi empresa
+              </button>
+            </div>
+          </form>
+        </mat-step>
+      </mat-stepper>
+    </section>
+  }
+</div>

@@ -44,6 +44,20 @@ export const routes: Routes = [
       import('./features/auth/restablecer/restablecer').then((m) => m.Restablecer),
   },
 
+  // 2do parcial · CU-11 Contratar un plan desde la web. Públicas: quien
+  // contrata todavía no tiene cuenta.
+  {
+    path: 'planes',
+    title: 'Planes · Violet Boutique',
+    loadComponent: () =>
+      import('./features/contratar/planes-publicos').then((m) => m.PlanesPublicos),
+  },
+  {
+    path: 'contratar/:codigo',
+    title: 'Contratar un plan · Violet Boutique',
+    loadComponent: () => import('./features/contratar/contratar').then((m) => m.Contratar),
+  },
+
   // --- Ciclo 2 · Karen · La vitrina, también sin sesión ------------------
   // CU-17 y CU-18 son públicos a propósito: el flujo principal no tiene
   // precondición de sesión y el RF07 pide que el cliente consulte el catálogo

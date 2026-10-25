@@ -189,12 +189,22 @@ def monto_de(plan: Plan) -> Decimal:
     return Decimal(monto).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
+def nuevo_comprobante() -> str:
+    return f"SIM-{tiempo.hoy():%Y%m%d}-{secrets.token_hex(3).upper()}"
+
+
 def registrar_pago(
-    db: Session, suscripcion: Suscripcion, plan: Plan, concepto: str
+    db: Session,
+    suscripcion: Suscripcion,
+    plan: Plan,
+    concepto: str,
+    *,
+    comprobante: str | None = None,
 ) -> PagoSimulado:
     """Deja el pago de la suscripción. No hace commit.
 
-    Lo usa también el alta del CU-01, que ya tiene fijada la empresa nueva.
+    Lo usa también el alta del CU-01, que ya tiene fijada la empresa nueva, y
+    la contratación del CU-11, que trae el comprobante del cobro ya aprobado.
     """
     pago = PagoSimulado(
         empresa_id=suscripcion.empresa_id,
@@ -202,7 +212,7 @@ def registrar_pago(
         plan_id=plan.id,
         concepto=concepto,
         monto=monto_de(plan),
-        comprobante=f"SIM-{tiempo.hoy():%Y%m%d}-{secrets.token_hex(3).upper()}",
+        comprobante=comprobante or nuevo_comprobante(),
     )
     db.add(pago)
     return pago
