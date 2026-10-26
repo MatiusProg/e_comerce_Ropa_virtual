@@ -1,6 +1,9 @@
 ﻿param(
     # Borra el paquete de este capítulo y lo vuelve a generar.
     [switch]$Rehacer,
+    # 2do parcial: dibuja los bloques $CASOS_P2 / $ACTORES_P2 en
+    # 'PARCIAL 2 - ICONIX > 3.3 Diagramas de ...' en vez de los del CAP. 3.
+    [switch]$Parcial2,
     # Genera solo este actor (p. ej. -Actor Administrador). Vacío = todos.
     [string]$Actor = '',
     # Genera solo este caso de uso (p. ej. -CU CU-27). Vacío = todos.
@@ -460,10 +463,116 @@ $ACTORES = @(
 )
 
 # =========================================================================
+# 2DO PARCIAL (CU-01 a CU-12): los mismos tres que llevan estado y tiempo,
+# POR CASO DE USO. Ver el comentario de $CASOS_P2 en ea-estado-3-2.ps1.
+#
+# Un elemento no puede estar dos veces en el mismo lienzo: por eso el eje
+# (menu) nunca se repite como vista de un area.
+# =========================================================================
+$ACTORES_P2 = @(
+    @{
+        actor  = 'Administrador de la plataforma'
+        cu     = 'CU-03'
+        nombre = '3.3 Diagrama de Navegacion - CU-03 Gestionar suscripciones'
+        guarda = '[sesion + ADMIN_PLATAFORMA]'
+        nota   = 'Navegacion de CU-03, POR CASO DE USO. Extension UWE (no es UML 2.5). Todo cuelga de /plataforma, que exige el rol ADMIN_PLATAFORMA. Desde la lista de empresas se entra a la ficha, y desde la ficha se asigna el plan (cambiar-plan.ts), se renueva, se suspende o se reactiva. Las cinco operaciones de la suscripcion son del mismo plataforma/router.py. Espejo de app.routes.ts.'
+        menu   = @{ n = 'plataforma-layout.ts'; ruta = '/plataforma'
+                    carpeta = 'features/plataforma/plataforma-layout'
+                    ops = @() }
+        areas = @(
+            @{
+                k = 'empresas'; cu = 'CU-03'
+                vista = @{ n = 'empresas.ts'; ruta = '/plataforma/empresas'
+                           carpeta = 'features/plataforma/empresas'
+                           attrs = @('busqueda') }
+                ctrl  = @{ n = 'plataforma/router.py'
+                           ops = @('listar_empresas', 'obtener_empresa', 'marcar_vencidas') }
+            },
+            @{
+                k = 'ficha'; cu = 'CU-03'
+                vista = @{ n = 'ficha-empresa.ts'; ruta = '/plataforma/empresas/:id'
+                           carpeta = 'features/plataforma/empresas'
+                           attrs = @('id') }
+                form  = @{ n = 'cambiar-plan.ts'
+                           carpeta = 'features/plataforma/empresas'
+                           attrs = @('plan_id', 'inicio') }
+                ctrl  = @{ n = 'plataforma/router.py'
+                           ops = @('obtener_suscripciones', 'asignar_plan', 'renovar_suscripcion',
+                                   'suspender_suscripcion', 'reactivar_suscripcion') }
+            }
+        )
+    },
+
+    @{
+        actor  = 'Usuario'
+        cu     = 'CU-06'
+        nombre = '3.3 Diagrama de Navegacion - CU-06 Iniciar sesion en una empresa'
+        guarda = '[publica]'
+        nota   = 'Navegacion de CU-06, POR CASO DE USO. Extension UWE (no es UML 2.5). La puerta es publica: /login no declara canActivate. El formulario agrega a CU-02 el campo empresa (el slug), que se recuerda en el navegador. Tras el login, destinoTrasLogin() manda al area del rol que trae el token: /plataforma, /admin, /sucursal, /caja o /tienda; se dibuja la del administrador de la empresa, desde donde tambien se cierra la sesion.'
+        menu   = @{ n = 'login.ts'; ruta = '/login'
+                    carpeta = 'features/auth/login'
+                    ops = @() }
+        areas = @(
+            @{
+                k = 'acceso'; cu = 'CU-06'
+                form  = @{ n = 'login.html'
+                           carpeta = 'features/auth/login'
+                           attrs = @('empresa', 'correo', 'contrasena') }
+                ctrl  = @{ n = 'seguridad/router.py'
+                           ops = @('iniciar_sesion', 'usuario_autenticado', 'cerrar_sesion') }
+            },
+            @{
+                k = 'area'; cu = 'CU-06'
+                vista = @{ n = 'admin-layout.ts'; ruta = '/admin'
+                           carpeta = 'features/admin/admin-layout'
+                           attrs = @('rol', 'empresa') }
+                ctrl  = @{ n = 'seguridad/router.py'
+                           ops = @('cerrar_sesion') }
+            }
+        )
+    },
+
+    @{
+        actor  = 'Empresa interesada'
+        cu     = 'CU-11'
+        nombre = '3.3 Diagrama de Navegacion - CU-11 Contratar un plan desde la web'
+        guarda = '[publica]'
+        nota   = 'Navegacion de CU-11, POR CASO DE USO. Extension UWE (no es UML 2.5). Todo el recorrido es publico: quien contrata todavia no tiene cuenta. /planes -> /contratar/:codigo (un asistente de tres pasos: empresa, cuenta y pago) -> el comprobante, que lleva a /login con el slug nuevo. El slug se verifica mientras se escribe con GET /contratar/slug.'
+        menu   = @{ n = 'planes-publicos.ts'; ruta = '/planes'
+                    carpeta = 'features/contratar'
+                    ops = @() }
+        areas = @(
+            @{
+                k = 'contratar'; cu = 'CU-11'
+                vista = @{ n = 'contratar.ts'; ruta = '/contratar/:codigo'
+                           carpeta = 'features/contratar'
+                           attrs = @('codigo') }
+                form  = @{ n = 'contratar.html'
+                           carpeta = 'features/contratar'
+                           attrs = @('nombre', 'razon_social', 'nit', 'correo_contacto', 'slug',
+                                     'ciudad_id', 'sucursal', 'direccion', 'nombres', 'apellidos',
+                                     'correo', 'contrasena', 'codigo_operacion') }
+                ctrl  = @{ n = 'plataforma/contratacion/router.py'
+                           ops = @('listar_planes', 'listar_ciudades', 'verificar_slug', 'contratar') }
+            }
+            # La vuelta a /login no se dibuja: login.ts y seguridad/router.py son
+            # los elementos de CU-06, y EA dibujaria en ESE diagrama el submit
+            # que se trazara aca (regla 3). Va dicho en la nota.
+        )
+    }
+)
+if ($Parcial2) { $ACTORES = $ACTORES_P2; $NOMBRE_PKG = '3.3 Diagramas de Navegacion' }
+
+# =========================================================================
 # PARTE 1 - Enterprise Architect por COM
 # =========================================================================
 
-$ea = New-Object -ComObject EA.Repository
+# Con la version de prueba de EA, un EA nuevo por COM falla
+# (CO_E_SERVER_EXEC_FAILURE) hasta que se acepta su cuadro de inicio. Si ya
+# hay un EA abierto se usa ese, y al final se cierra el archivo, no EA.
+$eaPropio = $false
+try { $ea = [Runtime.InteropServices.Marshal]::GetActiveObject('EA.App').Repository }
+catch { $ea = New-Object -ComObject EA.Repository; $eaPropio = $true }
 if (-not $ea.OpenFile($Modelo)) { throw "No se pudo abrir $Modelo" }
 
 function Get-OCrearPaquete($padre, $nombre) {
@@ -571,7 +680,9 @@ function Enlazar($ea, $desdeId, $hastaId, $rotulo, $estereotipo) {
 
 $root  = $ea.Models.GetAt(0)
 $pRaiz = Get-OCrearPaquete $root 'Violet Boutique'
-$pCap  = Get-OCrearPaquete $pRaiz 'CAP. 3 - Flujo de Trabajo: Diseno'
+# En el 2do parcial los tres van al lado de la secuencia, en el 3.3.
+$pCap  = if ($Parcial2) { Get-OCrearPaquete $pRaiz 'PARCIAL 2 - ICONIX' }
+         else { Get-OCrearPaquete $pRaiz 'CAP. 3 - Flujo de Trabajo: Diseno' }
 
 if ($Rehacer) {
     for ($i = $pCap.Packages.Count - 1; $i -ge 0; $i--) {
@@ -584,6 +695,11 @@ if ($Rehacer) {
 }
 
 $pkg = Get-OCrearPaquete $pCap $NOMBRE_PKG
+if ($Parcial2) {
+    $p25 = $null
+    foreach ($p in $pCap.Packages) { if ($p.Name -eq '2.5 Diagrama de Casos de Uso') { $p25 = $p } }
+    if (-not $p25) { throw 'No se encontro el 2.5 de casos de uso del 2do parcial' }
+}
 $hechos = 0
 
 foreach ($a in $ACTORES) {
@@ -596,7 +712,7 @@ foreach ($a in $ACTORES) {
     $BASE = if ($a.base) { $a.base } else { 'frontend-web/src/app' }
     # Sin -CU no se dibujan los bloques POR CASO DE USO: son muchos y
     # cada uno es su propio diagrama. Se piden de a uno, a proposito.
-    if (-not $CU -and $a.cu) { continue }
+    if (-not $CU -and $a.cu -and -not $Parcial2) { continue }
 
     # Un bloque puede nombrar su propio diagrama. Se agrego el 20/09 porque
     # el auxiliar pide la navegacion POR CASO DE USO y este generador estaba
@@ -616,7 +732,8 @@ foreach ($a in $ACTORES) {
     # ---- El actor: se REUTILIZA el del CAP. 1, no se copia. Si se renombra
     #      allá, se renombra acá. Es la misma regla que siguen los 2.2.
     $actorId = 0
-    $r = $ea.SQLQuery("SELECT TOP 1 Object_ID FROM t_object WHERE Object_Type='Actor' AND Name='$($a.actor)' ORDER BY Object_ID")
+    $dondeP2 = if ($Parcial2) { " AND Package_ID=$($p25.PackageID)" } else { '' }
+    $r = $ea.SQLQuery("SELECT TOP 1 Object_ID FROM t_object WHERE Object_Type='Actor' AND Name='$($a.actor)'$dondeP2 ORDER BY Object_ID")
     if ($r -match '<Object_ID>(\d+)</Object_ID>') {
         $actorId = [int]$Matches[1]
     } else {
@@ -739,7 +856,7 @@ foreach ($a in $ACTORES) {
 }
 
 Write-Output "  $hechos diagrama(s) generado(s)"
-$ea.CloseFile(); $ea.Exit()
+$ea.CloseFile(); if ($eaPropio) { $ea.Exit() }
 [System.Runtime.InteropServices.Marshal]::ReleaseComObject($ea) | Out-Null
 [GC]::Collect(); [GC]::WaitForPendingFinalizers()
 Write-Output 'OK'

@@ -1,6 +1,9 @@
 ﻿param(
     # Borra el paquete de este capítulo y lo vuelve a generar.
     [switch]$Rehacer,
+    # 2do parcial: dibuja los bloques $CASOS_P2 / $ACTORES_P2 en
+    # 'PARCIAL 2 - ICONIX > 3.3 Diagramas de ...' en vez de los del CAP. 3.
+    [switch]$Parcial2,
     # Genera solo este caso de uso (p. ej. -CU CU-03). Vacío = todos.
     [string]$CU = '',
     # Para probar sobre una copia sin tocar el modelo bueno.
@@ -567,10 +570,165 @@ $CASOS = @(
 )
 
 # =========================================================================
+# 2DO PARCIAL (CU-01 a CU-12): solo los tres que tienen algo que mostrar.
+#
+# Mismo criterio que el del Ciclo 3 (docs/diagramas/ciclo-3-que-cu-lleva-
+# cada-diagrama.md): una maquina de estados de verdad o un reloj. Quedan
+# fuera los de gestion (CU-01, 02, 08, 09, 10, 12), las consultas (CU-04) y
+# CU-05, que es una verificacion incluida en otros. CU-07 es un registro con
+# una sola rama extra.
+#
+#   CU-03: la suscripcion pasa por VIGENTE, SUSPENDIDA, VENCIDA y
+#          REEMPLAZADA, y vence sola con el proceso diario (E1).
+#   CU-06: la sesion caduca sola, y la empresa sin suscripcion vigente
+#          entra en modo solo consulta.
+#   CU-11: el proceso de pago (simulado) y el alta de todo en una sola
+#          transaccion.
+# =========================================================================
+$CASOS_P2 = @(
+    @{
+        cu = 'CU-03'; titulo = 'Gestionar suscripciones'
+        nota = 'Flujo transaccional de CU-03. Cada rama es un endpoint de plataforma/router.py y todas terminan en el commit de suscripciones.py. La de abajo, marcar vencidas, es el proceso diario E1: la puede disparar un planificador o el administrador desde la lista de empresas. Rutas sin el prefijo /api/v1.'
+        estados = @(
+            @{ n = 'Autenticar administrador de la plataforma'; col = 'auth'; fila = 1
+               nota = 'requiere_roles(ADMIN_PLATAFORMA) en el router /plataforma entero.' },
+            @{ n = 'Abrir la ficha de la empresa'; col = 'menu'; fila = 1
+               nota = 'ficha-empresa.ts. GET /plataforma/empresas/{id}/suscripciones: la actual, el historial y los pagos.' },
+            @{ n = 'Elegir plan e inicio'; col = 'oper'; fila = 0
+               nota = 'cambiar-plan.ts: plan_id e inicio, con el monto a cobrar antes de confirmar.' },
+            @{ n = 'Extender el vencimiento'; col = 'oper'; fila = 1
+               nota = 'Desde max(vencimiento, hoy): ni regala ni quita dias. Una VENCIDA vuelve a VIGENTE.' },
+            @{ n = 'Suspender o reactivar'; col = 'oper'; fila = 2
+               nota = 'VIGENTE <-> SUSPENDIDA. Suspendida, la empresa solo consulta (RN-03).' },
+            @{ n = 'Marcar las vencidas'; col = 'oper'; fila = 3
+               nota = 'E1. Un solo UPDATE ... RETURNING sobre VIGENTE y SUSPENDIDA con la fecha pasada. Idempotente.' },
+            @{ n = 'Validar plan e inicio'; col = 'vali'; fila = 0.5
+               nota = 'Los raise de asignar_plan, antes de escribir: empresa de baja, plan no ofrecido, inicio en el pasado.' },
+            @{ n = 'Transaccion completada'; col = 'fin'; fila = 2.5
+               nota = 'El commit de suscripciones.py. Al asignar, la anterior queda REEMPLAZADA y se registra el pago simulado en la misma transaccion; despues se avisa si el plan nuevo queda por debajo de lo usado (5a).' },
+            @{ n = 'Informar error'; col = 'vali'; fila = 3.5
+               nota = 'Sumidero de los rechazos: _traducir_suscripcion() del router.' }
+        )
+        transiciones = @(
+            @{ d = '(inicial)'; h = 'Autenticar administrador de la plataforma'; e = '' },
+            @{ d = 'Autenticar administrador de la plataforma'; h = 'Abrir la ficha de la empresa'
+               e = '[rol ADMIN_PLATAFORMA]' },
+            @{ d = 'Autenticar administrador de la plataforma'; h = '(final-rechazo)'; e = '[otro rol]  {403}' },
+            @{ d = 'Abrir la ficha de la empresa'; h = 'Elegir plan e inicio'
+               e = '[asignar o cambiar]  {POST .../suscripciones}' },
+            @{ d = 'Abrir la ficha de la empresa'; h = 'Extender el vencimiento'
+               e = '[renovar]  {POST .../renovar}' },
+            @{ d = 'Abrir la ficha de la empresa'; h = 'Suspender o reactivar'
+               e = '[suspender o reactivar]  {POST .../suspender}' },
+            @{ d = 'Abrir la ficha de la empresa'; h = 'Marcar las vencidas'
+               e = '[proceso diario E1]  {POST /plataforma/suscripciones/vencimiento}' },
+            @{ d = 'Elegir plan e inicio'; h = 'Validar plan e inicio'; e = '[confirmar]' },
+            @{ d = 'Validar plan e inicio'; h = 'Transaccion completada'
+               e = '[empresa activa, plan ofrecido e inicio no pasado]' },
+            @{ d = 'Validar plan e inicio'; h = 'Informar error'
+               e = '[empresa de baja, plan no ofrecido o inicio pasado]  {409/422}' },
+            @{ d = 'Extender el vencimiento'; h = 'Transaccion completada'; e = '{db.commit()}' },
+            @{ d = 'Suspender o reactivar'; h = 'Transaccion completada'; e = '[el estado cambia]' },
+            @{ d = 'Suspender o reactivar'; h = 'Informar error'
+               e = '[ya estaba asi o vencio suspendida]  {409}' },
+            @{ d = 'Marcar las vencidas'; h = 'Transaccion completada'; e = '{aunque no haya ninguna}' },
+            @{ d = 'Informar error'; h = 'Abrir la ficha de la empresa'; e = 'reintentar()' },
+            @{ d = 'Transaccion completada'; h = '(final)'; e = '' }
+        )
+    },
+
+    @{
+        cu = 'CU-06'; titulo = 'Iniciar sesion en una empresa'
+        nota = 'Flujo transaccional de CU-06, la evolucion de CU-02 al multitenant. Lo nuevo es el primer paso: el slug decide en que empresa se busca al usuario, y sin slug solo entra el administrador de la plataforma (1a). Lo que cambia de estado es el TOKEN, que caduca solo. Rutas sin el prefijo /api/v1.'
+        estados = @(
+            @{ n = 'Pedir empresa y credenciales'; col = 'auth'; fila = 1
+               nota = 'login.ts. El slug se recuerda en el navegador (empresa-recordada.ts). Publica.' },
+            @{ n = 'Buscar la empresa'; col = 'menu'; fila = 1.5
+               nota = 'obtener_empresa_por_slug y fijar_empresa(db, id): desde aca todo se lee con su RLS.' },
+            @{ n = 'Verificar identidad'; col = 'vali'; fila = 0.5
+               nota = 'El usuario dentro de esa empresa (o la cuenta de cliente, sin empresa), verify_password y que este activo.' },
+            @{ n = 'Emitir el token'; col = 'oper'; fila = 1.5
+               nota = 'Lleva el usuario, la EMPRESA y el rol. Un cliente queda asociado a la tienda en la que entro.' },
+            @{ n = 'Sesion vigente'; col = 'fin'; fila = 1.5
+               nota = 'Ocho horas. Sin suscripcion vigente se entra igual, en modo solo consulta (3a, RN-03).' },
+            @{ n = 'Revocar el token'; col = 'oper'; fila = 2.5
+               nota = 'Cerrar sesion: el jti queda revocado en sesion_token.' },
+            @{ n = 'Informar error'; col = 'oper'; fila = 4
+               nota = 'Mensaje generico para las credenciales: uno distinto permitiria averiguar que correos tienen cuenta.' },
+            @{ n = 'Sesion terminada'; col = 'fin'; fila = 2.5
+               nota = 'El token deja de ser aceptado, haya vencido o lo hayan revocado.' }
+        )
+        transiciones = @(
+            @{ d = '(inicial)'; h = 'Pedir empresa y credenciales'; e = '' },
+            @{ d = 'Pedir empresa y credenciales'; h = 'Buscar la empresa'
+               e = '[con slug]  {POST /auth/login}' },
+            @{ d = 'Pedir empresa y credenciales'; h = 'Verificar identidad'
+               e = '[sin slug: plataforma]  {1a}' },
+            @{ d = 'Buscar la empresa'; h = 'Verificar identidad'; e = '[empresa activa]' },
+            @{ d = 'Buscar la empresa'; h = 'Informar error'
+               e = '[slug inexistente o empresa de baja]  {404}' },
+            @{ d = 'Verificar identidad'; h = 'Emitir el token'
+               e = '[credenciales validas y cuenta activa]' },
+            @{ d = 'Verificar identidad'; h = 'Informar error'
+               e = '[credenciales invalidas o cuenta desactivada]  {401/403}' },
+            @{ d = 'Emitir el token'; h = 'Sesion vigente'; e = '{db.commit() -> 200}' },
+            @{ d = 'Sesion vigente'; h = 'Revocar el token'
+               e = '[el usuario cierra sesion]  {POST /auth/logout}' },
+            @{ d = 'Sesion vigente'; h = 'Sesion terminada'
+               e = '[se cumplen las 8 horas]  {nadie actua}' },
+            @{ d = 'Revocar el token'; h = 'Sesion terminada'; e = '{db.commit() -> 204}' },
+            @{ d = 'Informar error'; h = 'Pedir empresa y credenciales'; e = 'reintentar()' },
+            @{ d = 'Sesion terminada'; h = '(final)'; e = '' }
+        )
+    },
+
+    @{
+        cu = 'CU-11'; titulo = 'Contratar un plan desde la web'
+        nota = 'Flujo transaccional de CU-11. Publico de punta a punta: quien contrata todavia no tiene cuenta. El cobro va ANTES de escribir nada (6a), y el alta reusa la de CU-01: empresa, suscripcion, sucursal y administrador en una sola transaccion. Rutas sin el prefijo /api/v1.'
+        estados = @(
+            @{ n = 'Ver los planes'; col = 'auth'; fila = 1
+               nota = 'planes-publicos.ts, ruta /planes. Publica.' },
+            @{ n = 'Llenar empresa, sucursal y administrador'; col = 'menu'; fila = 1
+               nota = 'contratar.ts, ruta /contratar/:codigo. El slug se propone desde el nombre (RN-14).' },
+            @{ n = 'Verificar el slug'; col = 'vali'; fila = 0.5
+               nota = 'GET /contratar/slug mientras se escribe, y otra vez en el POST.' },
+            @{ n = 'Cobrar el plan'; col = 'oper'; fila = 0
+               nota = 'Pago simulado: el codigo de operacion 000000 se rechaza.' },
+            @{ n = 'Dar de alta la empresa'; col = 'oper'; fila = 2.5
+               nota = 'crear_empresa de CU-01 con la contrasena elegida y el comprobante del pago.' },
+            @{ n = 'Empresa contratada'; col = 'fin'; fila = 2.5
+               nota = 'Muestra el comprobante y el acceso con el slug; el correo de bienvenida sale despues del commit.' },
+            @{ n = 'Informar error'; col = 'menu'; fila = 3
+               nota = 'Slug ocupado (con sugerencias), pago rechazado o correo ya registrado.' }
+        )
+        transiciones = @(
+            @{ d = '(inicial)'; h = 'Ver los planes'; e = '' },
+            @{ d = 'Ver los planes'; h = 'Llenar empresa, sucursal y administrador'
+               e = '[elegir un plan]  {GET /contratar/planes}' },
+            @{ d = 'Llenar empresa, sucursal y administrador'; h = 'Verificar el slug'
+               e = '[contratar]  {POST /contratar}' },
+            @{ d = 'Verificar el slug'; h = 'Cobrar el plan'; e = '[slug libre]' },
+            @{ d = 'Verificar el slug'; h = 'Informar error'; e = '[slug ocupado]  {409 + sugerencias}' },
+            @{ d = 'Cobrar el plan'; h = 'Dar de alta la empresa'; e = '[pago aprobado]' },
+            @{ d = 'Cobrar el plan'; h = 'Informar error'; e = '[pago rechazado]  {402, no se crea nada}' },
+            @{ d = 'Dar de alta la empresa'; h = 'Empresa contratada'; e = '{db.commit() -> 201}' },
+            @{ d = 'Informar error'; h = 'Llenar empresa, sucursal y administrador'; e = 'corregir()' },
+            @{ d = 'Empresa contratada'; h = '(final)'; e = 'iniciar sesion()' }
+        )
+    }
+)
+if ($Parcial2) { $CASOS = $CASOS_P2; $NOMBRE_PKG = '3.3 Diagramas de Estado' }
+
+# =========================================================================
 # PARTE 1 - Enterprise Architect por COM
 # =========================================================================
 
-$ea = New-Object -ComObject EA.Repository
+# Con la version de prueba de EA, un EA nuevo por COM falla
+# (CO_E_SERVER_EXEC_FAILURE) hasta que se acepta su cuadro de inicio. Si ya
+# hay un EA abierto se usa ese, y al final se cierra el archivo, no EA.
+$eaPropio = $false
+try { $ea = [Runtime.InteropServices.Marshal]::GetActiveObject('EA.App').Repository }
+catch { $ea = New-Object -ComObject EA.Repository; $eaPropio = $true }
 if (-not $ea.OpenFile($Modelo)) { throw "No se pudo abrir $Modelo" }
 
 function Get-OCrearPaquete($padre, $nombre) {
@@ -594,7 +752,9 @@ function CoordY($fila) { return [int]($Y0 - ($fila * $PASO)) }
 
 $root  = $ea.Models.GetAt(0)
 $pRaiz = Get-OCrearPaquete $root 'Violet Boutique'
-$pCap  = Get-OCrearPaquete $pRaiz 'CAP. 3 - Flujo de Trabajo: Diseno'
+# En el 2do parcial los tres van al lado de la secuencia, en el 3.3.
+$pCap  = if ($Parcial2) { Get-OCrearPaquete $pRaiz 'PARCIAL 2 - ICONIX' }
+         else { Get-OCrearPaquete $pRaiz 'CAP. 3 - Flujo de Trabajo: Diseno' }
 
 if ($Rehacer) {
     for ($i = $pCap.Packages.Count - 1; $i -ge 0; $i--) {
@@ -612,7 +772,8 @@ $hechos = 0
 foreach ($caso in $CASOS) {
     if ($CU -and $caso.cu -ne $CU) { continue }
 
-    $NOMBRE_DIA = "3.2 Diagrama de Estado - $($caso.cu) $($caso.titulo) - CICLO $($caso.ciclo)"
+    $NOMBRE_DIA = if ($Parcial2) { "3.3 Diagrama de Estado - $($caso.cu) $($caso.titulo)" }
+                  else { "3.2 Diagrama de Estado - $($caso.cu) $($caso.titulo) - CICLO $($caso.ciclo)" }
     if (BuscarDiagrama $pkg $NOMBRE_DIA) {
         Write-Output "  $NOMBRE_DIA ya existe, no se toca"
         continue
@@ -695,7 +856,7 @@ foreach ($caso in $CASOS) {
 }
 
 Write-Output "  $hechos diagrama(s) generado(s)"
-$ea.CloseFile(); $ea.Exit()
+$ea.CloseFile(); if ($eaPropio) { $ea.Exit() }
 [System.Runtime.InteropServices.Marshal]::ReleaseComObject($ea) | Out-Null
 [GC]::Collect(); [GC]::WaitForPendingFinalizers()
 Write-Output 'OK'
