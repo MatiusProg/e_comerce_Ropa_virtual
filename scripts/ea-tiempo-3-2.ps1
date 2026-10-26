@@ -1,6 +1,9 @@
 ﻿param(
     # Borra el paquete de este capítulo y lo vuelve a generar.
     [switch]$Rehacer,
+    # 2do parcial: dibuja los bloques $CASOS_P2 / $ACTORES_P2 en
+    # 'PARCIAL 2 - ICONIX > 3.3 Diagramas de ...' en vez de los del CAP. 3.
+    [switch]$Parcial2,
     # Genera solo este caso de uso (p. ej. -CU CU-03). Vacío = todos.
     [string]$CU = '',
     # Para probar sobre una copia sin tocar el modelo bueno.
@@ -480,10 +483,113 @@ $CASOS = @(
 )
 
 # =========================================================================
+# 2DO PARCIAL (CU-01 a CU-12): los mismos tres que llevan estado.
+# Ver el comentario de $CASOS_P2 en ea-estado-3-2.ps1.
+# =========================================================================
+$LEYENDA_P2 = 'LEYENDA: {8 h} = ACCESS_TOKEN_EXPIRE_MINUTES (core/config.py:45), la vida del token; {duracion_dias} = la duracion del plan (plan.duracion_dias, 30 por omision); {RN-03} = sin suscripcion vigente la empresa solo consulta; {RNF11} = la fila queda bloqueada hasta el commit; {RNF02} = el tiempo de respuesta debe ser adecuado. La regla es RELATIVA: instantes del escenario, no milisegundos medidos.'
+$CASOS_P2 = @(
+    @{
+        cu = 'CU-03'; escenario = 'Asignar un plan y que la suscripcion venza'
+        nota = "Escenario: el administrador de la plataforma le asigna un plan a una empresa y nadie lo renueva. Lo que justifica el diagrama son las lineas 2 y 3: la suscripcion nace VIGENTE en el commit y pasa a VENCIDA cuando se cumple la duracion del plan, SIN QUE NADIE ACTUE (el proceso diario E1 solo la marca; estado_efectivo ya la ve vencida desde el dia siguiente). En ese instante la empresa pasa a solo consulta. Renovar la devuelve a VIGENTE. $LEYENDA_P2"
+        lineas = @(
+            (LineaTransaccion 'POST /plataforma/empresas/{id}/suscripciones' 'plan ofrecido e inicio no pasado' 'UPDATE anterior + INSERT nueva + pago' '201' '8 h'),
+            @{
+                k = 'suscripcion'; n = 'Suscripcion'; clasificador = 'Suscripcion'
+                estados = @('Inexistente', 'VIGENTE', 'VENCIDA')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Inexistente'; ev = '';                              tc = '' },
+                    @{ t = $T.commit; s = 'VIGENTE';     ev = 'db.commit()  ';                 tc = 'duracion_dias' },
+                    @{ t = 76;        s = 'VENCIDA';     ev = 'pasa la fecha  {E1}';           tc = 'nadie actua' },
+                    @{ t = 84;        s = 'VIGENTE';     ev = 'renovar  ';                     tc = '' }
+                )
+            },
+            @{
+                k = 'empresa'; n = 'Empresa'; clasificador = 'Empresa'
+                estados = @('Sin plan', 'Opera', 'Solo consulta')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Sin plan';      ev = '';                         tc = '' },
+                    @{ t = $T.commit; s = 'Opera';         ev = 'suscripcion vigente  ';    tc = '' },
+                    @{ t = 76;        s = 'Solo consulta'; ev = 'sin vigente  ';            tc = 'RN-03' },
+                    @{ t = 84;        s = 'Opera';         ev = 'renovada  ';               tc = '' }
+                )
+            }
+        )
+    },
+
+    @{
+        cu = 'CU-06'; escenario = 'Entrar a una empresa y que el token caduque'
+        nota = "Escenario: un empleado entra con el slug de su empresa. La linea 2 es la de CU-02: el token se emite en el commit y se apaga ocho horas despues sin que nadie haga nada. La linea 3 es lo nuevo del multitenant: lo que el token deja hacer depende de la suscripcion de la empresa, que puede vencer mientras la sesion sigue abierta. $LEYENDA_P2"
+        lineas = @(
+            (LineaTransaccion 'POST /auth/login' 'empresa activa y credenciales validas' 'INSERT sesion_token' '200' ''),
+            @{
+                k = 'token'; n = 'Token de acceso'; clasificador = 'SesionToken'
+                estados = @('Inexistente', 'Vigente', 'Revocado', 'Vencido')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Inexistente'; ev = '';                         tc = '' },
+                    @{ t = $T.commit; s = 'Vigente';     ev = 'emitir()  ';               tc = '8 h' },
+                    @{ t = 78;        s = 'Revocado';    ev = 'cerrar sesion  ';          tc = '' },
+                    @{ t = 84;        s = 'Vencido';     ev = 'se cumplen las 8 h  ';     tc = 'nadie actua' }
+                )
+            },
+            @{
+                k = 'escritura'; n = 'Escritura en la empresa'; clasificador = ''
+                estados = @('Sin sesion', 'Permitida', 'Solo consulta')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Sin sesion';    ev = '';                           tc = '' },
+                    @{ t = $T.commit; s = 'Permitida';     ev = 'suscripcion vigente  ';      tc = '' },
+                    @{ t = 74;        s = 'Solo consulta'; ev = 'vence  {CU-03}';             tc = 'RN-03' },
+                    @{ t = 84;        s = 'Sin sesion';    ev = 'token vencido  ';            tc = '' }
+                )
+            }
+        )
+    },
+
+    @{
+        cu = 'CU-11'; escenario = 'Contratar un plan y pagarlo'
+        nota = "Escenario: una empresa interesada contrata desde la web. El cobro simulado pasa ANTES de escribir nada, y por eso la linea 2 cambia en la fase de validacion: si se rechaza, la transaccion termina ahi sin crear nada (6a). Las lineas 3 y 4 nacen juntas en el mismo commit, y la suscripcion queda con su reloj corriendo: si nadie la renueva, vence sola (CU-03, E1). $LEYENDA_P2"
+        lineas = @(
+            (LineaTransaccion 'POST /contratar' 'slug libre y pago aprobado' 'INSERT empresa + suscripcion + sucursal + usuario' '201' ''),
+            @{
+                k = 'pago'; n = 'Pago simulado'; clasificador = 'PagoSimulado'
+                estados = @('Sin cobrar', 'Aprobado', 'Registrado')
+                marcas = @(
+                    @{ t = $T.inicio;  s = 'Sin cobrar'; ev = '';                          tc = '' },
+                    @{ t = 40;         s = 'Aprobado';   ev = 'codigo valido  ';           tc = '6a' },
+                    @{ t = $T.commit;  s = 'Registrado'; ev = 'con su comprobante  ';      tc = '' }
+                )
+            },
+            @{
+                k = 'empresa'; n = 'Empresa'; clasificador = 'Empresa'
+                estados = @('Inexistente', 'ACTIVA')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Inexistente'; ev = '';               tc = '' },
+                    @{ t = $T.commit; s = 'ACTIVA';      ev = 'db.commit()  ';  tc = 'RNF11' }
+                )
+            },
+            @{
+                k = 'suscripcion'; n = 'Suscripcion'; clasificador = 'Suscripcion'
+                estados = @('Inexistente', 'VIGENTE', 'VENCIDA')
+                marcas = @(
+                    @{ t = $T.inicio; s = 'Inexistente'; ev = '';                          tc = '' },
+                    @{ t = $T.commit; s = 'VIGENTE';     ev = 'db.commit()  ';             tc = 'duracion_dias' },
+                    @{ t = 84;        s = 'VENCIDA';     ev = 'nadie renueva  {CU-03}';    tc = '' }
+                )
+            }
+        )
+    }
+)
+if ($Parcial2) { $CASOS = $CASOS_P2; $NOMBRE_PKG = '3.3 Diagramas de Tiempo' }
+
+# =========================================================================
 # PARTE 1 - Enterprise Architect por COM
 # =========================================================================
 
-$ea = New-Object -ComObject EA.Repository
+# Con la version de prueba de EA, un EA nuevo por COM falla
+# (CO_E_SERVER_EXEC_FAILURE) hasta que se acepta su cuadro de inicio. Si ya
+# hay un EA abierto se usa ese, y al final se cierra el archivo, no EA.
+$eaPropio = $false
+try { $ea = [Runtime.InteropServices.Marshal]::GetActiveObject('EA.App').Repository }
+catch { $ea = New-Object -ComObject EA.Repository; $eaPropio = $true }
 if (-not $ea.OpenFile($Modelo)) { throw "No se pudo abrir $Modelo" }
 
 function Get-OCrearPaquete($padre, $nombre) {
@@ -505,7 +611,9 @@ function Poner($dia, $elid, $l, $t, $ancho, $alto) {
 
 $root  = $ea.Models.GetAt(0)
 $pRaiz = Get-OCrearPaquete $root 'Violet Boutique'
-$pCap  = Get-OCrearPaquete $pRaiz 'CAP. 3 - Flujo de Trabajo: Diseno'
+# En el 2do parcial los tres van al lado de la secuencia, en el 3.3.
+$pCap  = if ($Parcial2) { Get-OCrearPaquete $pRaiz 'PARCIAL 2 - ICONIX' }
+         else { Get-OCrearPaquete $pRaiz 'CAP. 3 - Flujo de Trabajo: Diseno' }
 
 if ($Rehacer) {
     for ($i = $pCap.Packages.Count - 1; $i -ge 0; $i--) {
@@ -518,12 +626,19 @@ if ($Rehacer) {
 }
 
 $pkg = Get-OCrearPaquete $pCap $NOMBRE_PKG
+# Las clases de la robustez del 2do parcial, para los clasificadores.
+if ($Parcial2) {
+    $pRob = $null
+    foreach ($p in $pCap.Packages) { if ($p.Name -eq '3.2 Diagramas de Robustez') { $pRob = $p } }
+    if (-not $pRob) { throw 'No se encontro el 3.2 de robustez del 2do parcial' }
+}
 $hechos = 0
 
 foreach ($caso in $CASOS) {
     if ($CU -and $caso.cu -ne $CU) { continue }
 
-    $NOMBRE_DIA = "3.2 Diagrama de Tiempo - $($caso.cu) $($caso.escenario) - CICLO $($caso.ciclo)"
+    $NOMBRE_DIA = if ($Parcial2) { "3.3 Diagrama de Tiempo - $($caso.cu) $($caso.escenario)" }
+                  else { "3.2 Diagrama de Tiempo - $($caso.cu) $($caso.escenario) - CICLO $($caso.ciclo)" }
     if (BuscarDiagrama $pkg $NOMBRE_DIA) {
         Write-Output "  $NOMBRE_DIA ya existe, no se toca"
         continue
@@ -542,7 +657,8 @@ foreach ($caso in $CASOS) {
     foreach ($nom in ($caso.lineas | ForEach-Object { $_.clasificador })) {
         if (-not $nom) { continue }
         if ($clasePorNombre.ContainsKey($nom)) { continue }
-        $r = $ea.SQLQuery("SELECT TOP 1 Object_ID FROM t_object WHERE Object_Type='Class' AND Name='$nom' ORDER BY Object_ID")
+        $dondeP2 = if ($Parcial2) { " AND Package_ID=$($pRob.PackageID)" } else { '' }
+        $r = $ea.SQLQuery("SELECT TOP 1 Object_ID FROM t_object WHERE Object_Type='Class' AND Name='$nom'$dondeP2 ORDER BY Object_ID")
         if ($r -match '<Object_ID>(\d+)</Object_ID>') { $clasePorNombre[$nom] = [int]$Matches[1] }
         else { Write-Output "  AVISO: no hay clase '$nom' en el modelo; la linea de vida va sin clasificador" }
     }
@@ -601,7 +717,7 @@ foreach ($caso in $CASOS) {
 }
 
 Write-Output "  $hechos diagrama(s) generado(s)"
-$ea.CloseFile(); $ea.Exit()
+$ea.CloseFile(); if ($eaPropio) { $ea.Exit() }
 [System.Runtime.InteropServices.Marshal]::ReleaseComObject($ea) | Out-Null
 [GC]::Collect(); [GC]::WaitForPendingFinalizers()
 Write-Output 'OK'

@@ -172,3 +172,43 @@ código, que es como se generó el de los Ciclos 1 y 2 con
 
 Es un artefacto del CAP. 2, no del 3, y hay que decidir quién lo hace antes
 de seguir.
+
+
+## 9. 2do parcial: CU-03, CU-06 y CU-11
+
+> **Escrito el 26/10/2026.** El mismo criterio de la §1 aplicado a los CU-01 a
+> CU-12 de la Presentación 1. Están en el paquete `PARCIAL 2 - ICONIX`, en
+> `3.3 Diagramas de Estado`, `3.3 Diagramas de Tiempo` y
+> `3.3 Diagramas de Navegacion`.
+
+| CU | Por qué entra | Qué mide el reloj |
+|---|---|---|
+| **CU-03** Gestionar suscripciones | La suscripción pasa por VIGENTE → VENCIDA → VIGENTE, y con ella la empresa queda en solo consulta (RN-03) | `duracion_dias` del plan |
+| **CU-06** Iniciar sesión en una empresa | El token se emite, se revoca o vence solo, sin que nadie actúe | `ACCESS_TOKEN_EXPIRE_MINUTES` (`core/config.py:45`), 8 h |
+| **CU-11** Contratar un plan desde la web | Es el único proceso de **pago** de la P1: cobro simulado, y la empresa solo nace si se aprueba | la transacción (RNF11, RNF02) |
+
+**Los otros nueve no entran.** CU-01, 02, 04, 05, 07, 08, 09, 10 y 12 son
+altas, bajas, cambios o consultas, o un límite que se comprueba en el momento
+(CU-05). No tienen ni máquina de estados ni reloj.
+
+**Tres diagramas por CU, nueve en total.** La secuencia ya está en los doce 3.3
+(ver `secuencia-y-codigo.md` §8).
+
+**Cómo se generan:** se corren los mismos generadores del Ciclo 3 con
+`-Parcial2`, de a uno y con EA abierto sin proyecto (se pegan al EA abierto
+por COM):
+
+```powershell
+$ps = "$env:windir\System32\WindowsPowerShell\v1.0\powershell.exe"   # 64 bits
+& $ps -File scripts\ea-estado-3-2.ps1 -Parcial2
+& $ps -File scripts\ea-tiempo-3-2.ps1 -Parcial2
+& $ps -File scripts\ea-navegacion-3-2.ps1 -Parcial2
+```
+
+Las líneas de vida del diagrama de tiempo apuntan a las clases de la
+robustez 3.2 de la P2, y los actores de navegación salen de su 2.5. En
+CU-11 se sacó el área de login, porque `login.ts` ya está en CU-06 y EA le
+habría traído a CU-06 los enlaces de CU-11 (regla 3).
+
+**Verificado el 26/10:** el modelo pasó de 261 a 270 diagramas, con nueve
+altas y ninguna baja ni cambio. Se revisaron las nueve imágenes exportadas.

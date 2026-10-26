@@ -265,3 +265,38 @@ El guion de cada caso de uso está al principio del script, en la variable `$CAS
 de líneas de vida y una lista de pasos (`nota`, `msg`, `alt`, `op`, `fin`) que se lee de
 arriba hacia abajo y es el orden vertical del diagrama. Agregar un mensaje es agregar una
 línea ahí.
+
+---
+
+## 8. 2do parcial: los 3.3 de CU-01 a CU-12
+
+Los genera `scripts/ea-secuencia-p2.ps1` en `PARCIAL 2 - ICONIX > 3.3 Diagramas de Secuencia`.
+Son la continuación de la robustez de Mateo (3.2), como pide ICONIX:
+
+- **Las líneas de vida** son los participantes del 3.2 del mismo caso de uso, enlazados por
+  `ClassifierID` a sus clases. Los actores se crean en el paquete 3.3.
+- **Los mensajes y su numeración** son los que están cargados en la robustez (`1`, `1.1`… `2`,
+  `2.1`…). Los retornos, que la robustez no tiene, son sub-nivel del mensaje que los provoca
+  (`1.3` → `1.3.1`).
+- **Los fragmentos** salen del código, con el catálogo de la sección 3:
+
+| Operador | Dónde | Sale de |
+|---|---|---|
+| `critical` | CU-01, CU-03, CU-07, CU-10, CU-11 | el alta en una sola transacción (`try … commit / except … rollback`) |
+| `break` | CU-05, CU-06, CU-08, CU-09, CU-10, CU-11, CU-12 | los `raise` que cortan antes de escribir: sin suscripción, `plan_limit`, empresa no encontrada, slug ocupado, pago rechazado |
+| `alt` | CU-01, CU-02, CU-06, CU-07, CU-08, CU-12 | decisiones con dos o más salidas |
+| `opt` | CU-02, CU-03, CU-04, CU-06, CU-08, CU-10 | avisos que solo aparecen a veces (empresas o recursos por encima del límite, modo solo consulta…) |
+| `loop` | CU-03 | el vencimiento diario: un `UPDATE` que recorre todas las suscripciones vencidas |
+
+**Cómo dibuja EA, medido el 25/10.** Al exportar estos diagramas, EA apiló los mensajes de 35 en
+35 y **no bajó ninguno**: ni por la cabecera de una caja ni por la guarda de un operando. La regla
+del 29/09 (§6.1) suponía que sí, y con un `alt` anidado los operandos quedaban corridos. Por eso
+este generador deja los mensajes fijos y pone cada borde (el de arriba, una divisoria o el de
+abajo) en el **hueco entre dos mensajes seguidos**. Igual que antes: **no se arrastra nada a mano
+en EA**.
+
+```powershell
+# EA abierto SIN el .eapx y con el cuadro de inicio aceptado; PowerShell de 64 bits.
+powershell -ExecutionPolicy Bypass -File scripts\ea-secuencia-p2.ps1 -Modelo copia.eapx -Imagenes png\
+powershell -ExecutionPolicy Bypass -File scripts\ea-secuencia-p2.ps1 -Rehacer -Solo 'CU-05'
+```
