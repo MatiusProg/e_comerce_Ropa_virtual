@@ -63,6 +63,12 @@ class Settings(BaseSettings):
     # planificar una visita y no congelar la vitrina (CU-22, excepcion E5).
     RESERVA_ANTICIPACION_MAXIMA_HORAS: int = 72
 
+    # 2do parcial, CU-13: cuánto vale el paquete que descarga el dispositivo.
+    # Pasado este tiempo la pantalla avisa que los precios y el stock pueden
+    # estar desactualizados (RF-13); no bloquea, porque el servidor igual
+    # confirma cada operación al sincronizar. Un turno de tienda.
+    OFFLINE_VIGENCIA_HORAS: int = 12
+
     # --- Pasarela de pago (P8, ciclo 3) ----------------------------------
     #
     # Los nombres NO llevan la marca adentro, por la misma leccion que la IA y

@@ -66,6 +66,7 @@ from app.modules.inventario import models as modelos_inventario  # noqa: E402,F4
 from app.modules.reservas import models as modelos_reservas  # noqa: E402,F401
 from app.modules.organizacion import models as modelos_organizacion  # noqa: E402,F401
 from app.modules.plataforma import models as modelos_plataforma  # noqa: E402,F401
+from app.modules.offline import models as modelos_offline  # noqa: E402,F401
 from app.modules.seguridad import models as modelos_seguridad  # noqa: E402,F401
 from app.modules.ventas import carrito_models as modelos_carrito  # noqa: E402,F401
 

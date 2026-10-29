@@ -184,6 +184,8 @@ TABLAS_DE_EMPRESA = (
     # cliente dentro de una empresa
     "favorito",
     "recomendacion",
+    # offline y sincronización (CU-13 a CU-19)
+    "operacion_offline",
     # avisos y bitácora
     "notificacion",
     "bitacora",

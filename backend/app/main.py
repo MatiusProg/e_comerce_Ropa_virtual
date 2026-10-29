@@ -110,6 +110,8 @@ from app.modules.plataforma.mi_tienda.router import tienda_router as marca_tiend
 # CU-11: público, la empresa interesada todavía no tiene cuenta.
 from app.modules.plataforma.contratacion.router import router as contratacion_router
 from app.modules.plataforma.verificador import RechazoDelPlan
+# CU-13 a CU-19: el trabajo sin conexión y su sincronización.
+from app.modules.offline.router import router as offline_router
 
 
 # Antes de construir la aplicacion: uvicorn deja el logger raiz sin manejador
@@ -262,3 +264,4 @@ app.include_router(mi_plan_router, prefix=API)
 app.include_router(mi_tienda_router, prefix=API)
 app.include_router(marca_tienda_router, prefix=API)
 app.include_router(contratacion_router, prefix=API)
+app.include_router(offline_router, prefix=API)
