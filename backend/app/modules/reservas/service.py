@@ -298,6 +298,38 @@ def crear_reserva(
     if cliente is None:
         raise ClienteSinFicha()
 
+    try:
+        reserva = registrar_reserva(
+            db, datos, cliente_id=cliente.id, usuario_id=usuario_id
+        )
+    except inventario.ErrorDeInventario:
+        # Se deshace TODO, incluida la cabecera. Dejar la reserva creada con
+        # media mercaderia apartada seria lo peor de los dos mundos: stock
+        # inmovilizado y una reserva que no se puede atender.
+        db.rollback()
+        raise
+
+    # CU-40 / RF11: el Encargado se entera de la reserva dirigida a SU local.
+    # Va ANTES del commit a proposito: el aviso tiene que nacer con la reserva.
+    # Si algo deshiciera la transaccion, el aviso se deshace con ella --- lo
+    # contrario seria avisar de una reserva que no existe. El correo sale
+    # despues, desde el despachador de P13.
+    notificaciones.avisar_reserva_en_sucursal(db, reserva)
+
+    db.commit()
+    return _armar_reserva(db, reserva.id)
+
+
+def registrar_reserva(
+    db: Session, datos: ReservaCrearIn, *, cliente_id: int, usuario_id: int
+):
+    """Valida la franja y aparta las prendas. **Sin commit ni rollback.**
+
+    2do parcial: la usa tambien la sincronizacion offline (CU-15 y CU-17), que
+    procesa cada operacion dentro de un SAVEPOINT y decide ella que deshacer.
+    Por eso este tramo no hace `rollback`: deshacer la transaccion entera se
+    llevaria puestas las operaciones ya confirmadas del mismo lote.
+    """
     sucursal = repository.obtener_sucursal(db, datos.sucursal_id)
     if sucursal is None:
         raise SucursalInexistente()
@@ -336,7 +368,7 @@ def crear_reserva(
     # --- A partir de aca se escribe -------------------------------------
     reserva = repository.agregar_reserva(
         db,
-        cliente_id=cliente.id,
+        cliente_id=cliente_id,
         sucursal_id=sucursal.id,
         franja_inicio=datos.franja_inicio,
         franja_fin=datos.franja_fin,
@@ -348,41 +380,25 @@ def crear_reserva(
 
     motivo = f"Reserva #{reserva.id} de {sucursal.nombre}"[:200]
 
-    try:
-        for linea in datos.lineas:
-            # Cada llamada toma el FOR UPDATE de SU existencia. Si la tercera
-            # no tiene stock, el `except` deshace las dos primeras y se sueltan
-            # los tres bloqueos juntos al terminar la transaccion.
-            inventario.apartar_para_reserva(
-                db,
-                variante_id=linea.variante_id,
-                sucursal_id=sucursal.id,
-                cantidad=linea.cantidad,
-                usuario_id=usuario_id,
-                motivo=motivo,
-            )
-            repository.agregar_detalle(
-                db,
-                reserva_id=reserva.id,
-                variante_id=linea.variante_id,
-                cantidad=linea.cantidad,
-            )
-    except inventario.ErrorDeInventario:
-        # Se deshace TODO, incluida la cabecera. Dejar la reserva creada con
-        # media mercaderia apartada seria lo peor de los dos mundos: stock
-        # inmovilizado y una reserva que no se puede atender.
-        db.rollback()
-        raise
-
-    # CU-40 / RF11: el Encargado se entera de la reserva dirigida a SU local.
-    # Va ANTES del commit a proposito: el aviso tiene que nacer con la reserva.
-    # Si algo deshiciera la transaccion, el aviso se deshace con ella --- lo
-    # contrario seria avisar de una reserva que no existe. El correo sale
-    # despues, desde el despachador de P13.
-    notificaciones.avisar_reserva_en_sucursal(db, reserva)
-
-    db.commit()
-    return _armar_reserva(db, reserva.id)
+    for linea in datos.lineas:
+        # Cada llamada toma el FOR UPDATE de SU existencia. Si la tercera no
+        # tiene stock, quien llama deshace las dos primeras y se sueltan los
+        # tres bloqueos juntos al terminar la transaccion.
+        inventario.apartar_para_reserva(
+            db,
+            variante_id=linea.variante_id,
+            sucursal_id=sucursal.id,
+            cantidad=linea.cantidad,
+            usuario_id=usuario_id,
+            motivo=motivo,
+        )
+        repository.agregar_detalle(
+            db,
+            reserva_id=reserva.id,
+            variante_id=linea.variante_id,
+            cantidad=linea.cantidad,
+        )
+    return reserva
 
 
 # =====================================================================
