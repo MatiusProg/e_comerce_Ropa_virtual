@@ -1,0 +1,97 @@
+:host {
+  display: block;
+  max-width: 64rem;
+  margin: 0 auto;
+}
+
+.encabezado {
+  margin-bottom: 1rem;
+
+  h1 {
+    margin: 0;
+  }
+
+  .bajada {
+    margin: 0.25rem 0 0;
+    opacity: 0.75;
+  }
+}
+
+.vista {
+  margin-bottom: 1rem;
+}
+
+.tarjeta {
+  margin-bottom: 0.75rem;
+}
+
+.fila {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+
+  .cuerpo {
+    flex: 1;
+    min-width: 0;
+
+    p {
+      margin: 0;
+    }
+  }
+
+  .ok {
+    color: #2e7d32;
+  }
+
+  .mal {
+    color: #c62828;
+  }
+}
+
+.titulo {
+  font-weight: 500;
+}
+
+.chip {
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.motivo {
+  margin-top: 0.25rem !important;
+  color: #8a1c1c;
+}
+
+.detalle {
+  margin-top: 0.25rem !important;
+  opacity: 0.85;
+}
+
+.devuelta {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #2e7d32;
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.nota {
+  opacity: 0.75;
+}

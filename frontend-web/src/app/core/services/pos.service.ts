@@ -4,6 +4,7 @@ import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { environment } from '../../../environments/environment';
+import { sinRespuesta } from '../sin-respuesta';
 import {
   PaginaDePrendas,
   ReservaPorCobrar,
@@ -26,6 +27,8 @@ export type ErrorPos =
   | { tipo: 'no-existe'; mensaje: string }
   | { tipo: 'sin-permiso'; mensaje: string }
   | { tipo: 'rechazado'; mensaje: string }
+  /** 2do parcial: no hubo respuesta. La venta puede seguir sin red (CU-14). */
+  | { tipo: 'sin-red'; mensaje: string }
   | { tipo: 'sistema'; mensaje: string };
 
 @Injectable({ providedIn: 'root' })
@@ -91,9 +94,9 @@ export class PosService {
     if (error.status === 422) {
       return { tipo: 'rechazado', mensaje: texto || 'Revise los datos del cobro.' };
     }
-    if (error.status === 0) {
+    if (sinRespuesta(error)) {
       return {
-        tipo: 'sistema',
+        tipo: 'sin-red',
         mensaje: 'No se pudo contactar al servidor. Verifique su conexión.',
       };
     }

@@ -104,6 +104,55 @@
   </mat-card>
 }
 
+<!-- ===================== VENTA GUARDADA SIN RED (CU-14) ===================== -->
+@if (cara() === 'cobrado' && ticketLocal(); as op) {
+  <mat-card class="tarjeta ticket vb-filete-superior" appearance="outlined">
+    <mat-card-content>
+      <header class="cabecera-ticket">
+        <mat-icon class="icono pendiente">cloud_off</mat-icon>
+        <div>
+          <h2>Venta guardada en el dispositivo</h2>
+          <p class="sub">
+            Pendiente de confirmar · {{ op.operacion.creada_en | date: 'dd/MM HH:mm' }} ·
+            {{ op.uuid.slice(0, 8) }}
+          </p>
+        </div>
+      </header>
+
+      <p class="nota">{{ op.resumen }}</p>
+
+      <dl class="cuentas">
+        <dt class="fuerte">Total</dt>
+        <dd class="fuerte">{{ op.total | bs }}</dd>
+        <dt>Cobrado con</dt>
+        <dd>{{ op.operacion.pago?.metodo }}</dd>
+        @if (op.operacion.pago?.referencia; as ref) {
+          <dt>Referencia del banco</dt>
+          <dd class="referencia">{{ ref }}</dd>
+        }
+      </dl>
+
+      <p class="nota">
+        <mat-icon class="chico">info</mat-icon>
+        Cobrar no confirma la venta: la confirma el servidor al sincronizar. Si
+        otra venta se llevó la última unidad antes, se rechaza y el encargado le
+        devuelve el dinero al cliente.
+      </p>
+
+      <div class="acciones">
+        <button matButton="filled" type="button" class="vb-boton-marca" (click)="nuevaVenta()">
+          <mat-icon>add_shopping_cart</mat-icon>
+          Nueva venta
+        </button>
+        <a matButton routerLink="/caja/pendientes">
+          <mat-icon>sync</mat-icon>
+          Ver pendientes
+        </a>
+      </div>
+    </mat-card-content>
+  </mat-card>
+}
+
 <!-- ===================== ARMANDO LA VENTA ===================== -->
 @if (cara() === 'armando' && hayTurno()) {
   <header class="encabezado">
@@ -119,6 +168,20 @@
     </div>
   </header>
 
+  @if (sinRed()) {
+    <p class="aviso-sin-red" role="status">
+      <mat-icon>cloud_off</mat-icon>
+      <span>
+        <strong>Sin conexión.</strong> Vendiendo con los datos descargados el
+        {{ offline.paquete()?.generado_en | date: 'dd/MM HH:mm' }}
+        @if (offline.vencido()) {
+          — <strong>pueden estar desactualizados</strong>
+        }
+        · {{ offline.pendientes().length }} pendiente(s) de sincronizar.
+      </span>
+    </p>
+  }
+
   <div class="rejilla">
     <!-- --- Lo que se puede vender --- -->
     <mat-card class="tarjeta catalogo" appearance="outlined">
@@ -133,7 +196,7 @@
             <mat-icon>search</mat-icon>
             Buscar prendas
           </mat-button-toggle>
-          <mat-button-toggle value="reservas">
+          <mat-button-toggle value="reservas" [disabled]="sinRed()">
             <mat-icon>event_available</mat-icon>
             Reservas ({{ reservas().length }})
           </mat-button-toggle>
@@ -326,7 +389,7 @@
 
         <h3>¿Cómo paga?</h3>
         <div class="metodos">
-          @for (m of metodos; track m) {
+          @for (m of metodos(); track m) {
             <button
               type="button"
               class="metodo"
@@ -367,7 +430,13 @@
             exacto y <strong>no entra al cajón</strong>: el arqueo del turno no lo
             cuenta como efectivo, pero sí lo lista aparte.
           </p>
-          @if (metodo() === 'QR') {
+          @if (metodo() === 'QR' && sinRed()) {
+            <mat-form-field appearance="outline" class="campo">
+              <mat-label>Referencia del QR</mat-label>
+              <input matInput [formControl]="referenciaManual" placeholder="Número de operación" />
+              <mat-hint>La que muestra el banco del cliente. Sin ella no se puede devolver.</mat-hint>
+            </mat-form-field>
+          } @else if (metodo() === 'QR') {
             <p class="nota">
               Al cobrar se muestra el código para que el cliente lo escanee. La venta
               se registra <strong>cuando el banco confirma el pago</strong>, no antes.
@@ -383,8 +452,12 @@
             [disabled]="!hayQueCobrar() || cobrando() || recibido.invalid || (vuelto() !== null && vuelto()! < 0)"
             (click)="cobrar()"
           >
-            <mat-icon>{{ metodo() === 'QR' ? 'qr_code_2' : 'point_of_sale' }}</mat-icon>
-            {{ cobrando() ? 'Cobrando…' : metodo() === 'QR' ? 'Generar QR' : 'Cobrar' }}
+            <mat-icon>{{ sinRed() ? 'save' : metodo() === 'QR' ? 'qr_code_2' : 'point_of_sale' }}</mat-icon>
+            {{
+              sinRed()
+                ? (cobrando() ? 'Guardando…' : 'Cobrar y guardar')
+                : cobrando() ? 'Cobrando…' : metodo() === 'QR' ? 'Generar QR' : 'Cobrar'
+            }}
           </button>
           @if (hayQueCobrar()) {
             <button matButton type="button" (click)="vaciar()">Vaciar</button>

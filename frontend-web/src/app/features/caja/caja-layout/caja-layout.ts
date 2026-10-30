@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { AuthService } from '../../../core/services/auth.service';
+import { OfflineService } from '../../../core/services/offline.service';
 
 /**
  * Cáscara del área de Caja.
@@ -37,6 +38,8 @@ export class CajaLayout {
   private readonly auth = inject(AuthService);
 
   protected readonly usuario = this.auth.usuario;
+  /** CU-18: cuántas ventas sin red faltan subir, a la vista en toda la caja. */
+  protected readonly offline = inject(OfflineService);
 
   protected readonly iniciales = computed(() => {
     const u = this.usuario();

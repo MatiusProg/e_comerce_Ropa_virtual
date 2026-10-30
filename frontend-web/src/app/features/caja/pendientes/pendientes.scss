@@ -1,0 +1,135 @@
+:host {
+  display: block;
+  max-width: 64rem;
+  margin: 0 auto;
+}
+
+.encabezado {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  h1 {
+    margin: 0;
+  }
+
+  .bajada {
+    margin: 0.25rem 0 0;
+    opacity: 0.75;
+  }
+}
+
+.estado-red {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: #e8f5e9;
+  color: #1b5e20;
+  font-weight: 500;
+
+  &.caida {
+    background: #fff4e5;
+    color: #6b3a00;
+  }
+}
+
+.tarjeta {
+  margin-bottom: 1rem;
+
+  h2 {
+    margin: 0 0 0.5rem;
+  }
+}
+
+.alerta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #8a4b00;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.fila-titulo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+
+  .acciones {
+    margin-top: 0;
+  }
+}
+
+.nota {
+  opacity: 0.75;
+}
+
+.cola {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+
+  li {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .cuerpo {
+    flex: 1;
+    min-width: 0;
+
+    p {
+      margin: 0;
+    }
+  }
+
+  .titulo {
+    font-weight: 500;
+  }
+
+  .detalle {
+    opacity: 0.75;
+    font-size: 0.9rem;
+  }
+
+  .motivo {
+    margin-top: 0.25rem !important;
+    font-size: 0.9rem;
+    color: #8a1c1c;
+  }
+
+  .chip {
+    margin-left: 0.5rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    background: rgba(0, 0, 0, 0.06);
+  }
+
+  .estado-confirmada mat-icon {
+    color: #2e7d32;
+  }
+
+  .estado-rechazada mat-icon,
+  .estado-en_conflicto mat-icon {
+    color: #c62828;
+  }
+
+  .estado-local mat-icon,
+  .estado-enviada mat-icon {
+    color: #b26a00;
+  }
+}

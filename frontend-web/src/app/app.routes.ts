@@ -406,6 +406,14 @@ export const routes: Routes = [
           ),
       },
       {
+        // 2do parcial · CU-19: las operaciones sin conexión rechazadas y la
+        // devolución del dinero.
+        path: 'sin-conexion',
+        title: 'Operaciones sin conexión · Violet Boutique',
+        loadComponent: () =>
+          import('./features/sucursal/rechazadas/rechazadas').then((m) => m.Rechazadas),
+      },
+      {
         path: 'disponibilidad',
         title: 'Disponibilidad · Violet Boutique',
         loadComponent: () =>
@@ -463,6 +471,14 @@ export const routes: Routes = [
         title: 'Devoluciones · Violet Boutique',
         loadComponent: () =>
           import('./features/caja/devolucion/devolucion').then((m) => m.Devolucion),
+      },
+      {
+        // 2do parcial · CU-13, CU-17 y CU-18: preparar el dispositivo y la
+        // cola de lo vendido sin red.
+        path: 'pendientes',
+        title: 'Sin conexión · Violet Boutique',
+        loadComponent: () =>
+          import('./features/caja/pendientes/pendientes').then((m) => m.Pendientes),
       },
     ],
   },

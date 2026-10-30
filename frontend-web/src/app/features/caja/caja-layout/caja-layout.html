@@ -31,6 +31,13 @@
     <mat-icon>assignment_return</mat-icon>
     Devoluciones
   </a>
+  <a routerLink="/caja/pendientes" routerLinkActive="activo">
+    <mat-icon>{{ offline.enLinea() ? 'cloud_sync' : 'cloud_off' }}</mat-icon>
+    Sin conexión
+    @if (offline.pendientes().length) {
+      <span class="contador">{{ offline.pendientes().length }}</span>
+    }
+  </a>
 </nav>
 
 <main class="contenido">

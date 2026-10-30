@@ -5,6 +5,7 @@ import { Observable, of, tap, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
 import { environment } from '../../../environments/environment';
+import { sinRespuesta } from '../sin-respuesta';
 import {
   ClienteRegistradoOut,
   ClienteRegistroIn,
@@ -47,6 +48,11 @@ export type ErrorRecuperacion =
   | { tipo: 'sistema'; mensaje: string };
 
 const CLAVE_TOKEN = 'fs.token';
+/**
+ * 2do parcial · CU-13: el último usuario que confirmó el servidor, solo para
+ * abrir la caja sin red. Ver `restaurarSesion`.
+ */
+const CLAVE_USUARIO_SIN_RED = 'fs.usuario-sin-red';
 
 /**
  * P1 · Seguridad y Usuarios — CU-01 y CU-02.
@@ -89,6 +95,7 @@ export class AuthService {
   private borrarToken(): void {
     try {
       localStorage.removeItem(CLAVE_TOKEN);
+      localStorage.removeItem(CLAVE_USUARIO_SIN_RED);
     } catch {
       /* nada que borrar */
     }
@@ -120,6 +127,7 @@ export class AuthService {
       tap((r) => {
         this.guardarToken(r.access_token);
         this._usuario.set(r.usuario);
+        this.recordarSinRed(r.usuario);
       }),
       map((r) => r.usuario),
       catchError((e: HttpErrorResponse) => throwError(() => this.traducirLogin(e))),
@@ -133,6 +141,7 @@ export class AuthService {
       tap((r) => {
         this.guardarToken(r.access_token);
         this._usuario.set(r.usuario);
+        this.recordarSinRed(r.usuario);
       }),
       map((r) => r.usuario),
       catchError((e: HttpErrorResponse) => throwError(() => this.traducirLogin(e))),
@@ -170,13 +179,46 @@ export class AuthService {
       return of(null);
     }
     return this.http.get<UsuarioAutenticado>(`${this.base}/yo`).pipe(
-      tap((u) => this._usuario.set(u)),
-      catchError(() => {
+      tap((u) => {
+        this._usuario.set(u);
+        this.recordarSinRed(u);
+      }),
+      catchError((e: HttpErrorResponse) => {
+        // 2do parcial · CU-13: sin red no hay a quién preguntar. El token NO
+        // se descarta —no se sabe si es inválido— y se usa el último usuario
+        // que el servidor confirmó, solo para poder abrir la caja sin
+        // conexión. Lo que se haga así lo vuelve a validar el servidor al
+        // sincronizar (CU-17), con este mismo token.
+        if (sinRespuesta(e)) {
+          const recordado = this.recordadoSinRed();
+          if (recordado) {
+            this._usuario.set(recordado);
+            return of(recordado);
+          }
+          return of(null);
+        }
         this.borrarToken();
         this._usuario.set(null);
         return of(null);
       }),
     );
+  }
+
+  private recordarSinRed(usuario: UsuarioAutenticado): void {
+    try {
+      localStorage.setItem(CLAVE_USUARIO_SIN_RED, JSON.stringify(usuario));
+    } catch {
+      /* sin persistencia: sin red no se podrá restaurar */
+    }
+  }
+
+  private recordadoSinRed(): UsuarioAutenticado | null {
+    try {
+      const texto = localStorage.getItem(CLAVE_USUARIO_SIN_RED);
+      return texto ? (JSON.parse(texto) as UsuarioAutenticado) : null;
+    } catch {
+      return null;
+    }
   }
 
   /** Descarta la sesión sin llamar al servidor. La usa el interceptor ante un 401. */
