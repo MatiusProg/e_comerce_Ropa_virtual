@@ -2,6 +2,7 @@ import {
   ApplicationConfig,
   LOCALE_ID,
   inject,
+  isDevMode,
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
@@ -11,6 +12,7 @@ import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/
 import { MatPaginatorIntl } from '@angular/material/paginator';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
+import { provideServiceWorker } from '@angular/service-worker';
 import { firstValueFrom } from 'rxjs';
 
 import { authInterceptor } from './core/interceptors/auth.interceptor';
@@ -56,6 +58,16 @@ export const appConfig: ApplicationConfig = {
     // arriba ya las formatea en es-BO. Los otros adaptadores existen para
     // trabajar con Luxon, date-fns o Moment, que este proyecto no usa.
     provideNativeDateAdapter(),
+    // 2do parcial · CU-13: la web como PWA. El service worker guarda la
+    // aplicación (HTML, JS, CSS, íconos y fuentes) para que la caja abra sin
+    // red. Los DATOS no pasan por acá: el paquete y la cola viven en IndexedDB
+    // (`almacen-local.ts`), y la API nunca se responde desde la caché, para
+    // no mostrar un precio o un stock viejo como si fuera de ahora.
+    // Solo en producción: en `ng serve` serviría código viejo al recargar.
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000',
+    }),
     // Chart.js NO se provee acá: ver la nota de la ruta 'admin/tablero' en
     // app.routes.ts. Ponerlo en esta lista sumaba 211 kB al arranque de TODAS
     // las pantallas, incluida la vitrina pública en un teléfono.

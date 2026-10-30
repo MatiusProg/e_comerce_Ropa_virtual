@@ -1,0 +1,118 @@
+<header class="encabezado">
+  <div>
+    <h1 class="vb-titulo">Sin conexión</h1>
+    <p class="bajada">Preparar el dispositivo y sincronizar lo que se vendió sin red</p>
+  </div>
+  <span class="estado-red" [class.caida]="!offline.enLinea()">
+    <mat-icon>{{ offline.enLinea() ? 'cloud_done' : 'cloud_off' }}</mat-icon>
+    {{ offline.enLinea() ? 'En línea' : 'Sin conexión' }}
+  </span>
+</header>
+
+<!-- ===================== CU-13 ===================== -->
+<mat-card class="tarjeta vb-filete-superior" appearance="outlined">
+  <mat-card-content>
+    <h2>Preparar el dispositivo</h2>
+    @if (offline.paquete(); as p) {
+      <p>
+        Datos descargados el <strong>{{ p.generado_en | date: 'dd/MM HH:mm' }}</strong> para
+        {{ p.caja_nombre }} · {{ p.sucursal.nombre }}: {{ p.prendas.length }} prendas y
+        {{ p.clientes.length }} clientes.
+      </p>
+      @if (offline.vencido()) {
+        <p class="alerta">
+          <mat-icon>schedule</mat-icon>
+          Pasaron más de unas horas: los precios y el stock pueden estar desactualizados.
+          Vuelva a prepararlo apenas tenga red.
+        </p>
+      }
+    } @else {
+      <p>
+        Todavía no se preparó. Hágalo con red, con su caja abierta: se guardan en este
+        navegador las prendas de su sucursal con su precio y su saldo, y el turno al que se
+        cargan las ventas.
+      </p>
+    }
+    @if (preparando()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    <div class="acciones">
+      <button
+        matButton="filled"
+        type="button"
+        class="vb-boton-marca"
+        [disabled]="preparando() || !offline.enLinea()"
+        (click)="preparar()"
+      >
+        <mat-icon>download_for_offline</mat-icon>
+        {{ offline.paquete() ? 'Actualizar datos' : 'Preparar dispositivo' }}
+      </button>
+    </div>
+  </mat-card-content>
+</mat-card>
+
+<!-- ===================== CU-18 + CU-17 ===================== -->
+<mat-card class="tarjeta" appearance="outlined">
+  <mat-card-content>
+    <div class="fila-titulo">
+      <h2>Operaciones ({{ offline.pendientes().length }} pendientes)</h2>
+      <div class="acciones">
+        @if (hayConfirmadas()) {
+          <button matButton type="button" (click)="limpiar()">
+            <mat-icon>cleaning_services</mat-icon>
+            Quitar confirmadas
+          </button>
+        }
+        <button
+          matButton="filled"
+          type="button"
+          class="vb-boton-marca"
+          [disabled]="offline.sincronizando() || offline.pendientes().length === 0"
+          (click)="sincronizar()"
+        >
+          <mat-icon>sync</mat-icon>
+          {{ offline.sincronizando() ? 'Sincronizando…' : 'Sincronizar ahora' }}
+        </button>
+      </div>
+    </div>
+
+    @if (offline.sincronizando()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+
+    @if (operaciones().length === 0) {
+      <p class="nota">No hay operaciones guardadas en este dispositivo.</p>
+    } @else {
+      <ul class="cola">
+        @for (op of operaciones(); track op.uuid) {
+          <li [class]="'estado-' + op.estado">
+            <mat-icon>{{ icono(op.estado) }}</mat-icon>
+            <div class="cuerpo">
+              <p class="titulo">
+                {{ op.operacion.tipo === 'VENTA' ? 'Venta' : 'Reserva' }} · {{ op.total | bs }}
+                <span class="chip">{{ etiqueta(op.estado) }}</span>
+              </p>
+              <p class="detalle">
+                {{ op.resumen }} · {{ op.operacion.creada_en | date: 'dd/MM HH:mm' }}
+                @if (op.venta_codigo) {
+                  · {{ op.venta_codigo }}
+                }
+                @if (op.intentos > 1) {
+                  · {{ op.intentos }} intentos
+                }
+              </p>
+              @if (op.motivo) {
+                <p class="motivo">{{ op.motivo }}</p>
+              }
+              @if (op.requiere_devolucion) {
+                <p class="motivo">
+                  Se cobró: el encargado tiene que devolverle {{ op.total | bs }} al cliente.
+                </p>
+              }
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  </mat-card-content>
+</mat-card>

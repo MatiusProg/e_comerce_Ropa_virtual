@@ -16,6 +16,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { CajaService } from '../../../core/services/caja.service';
+import { OfflineService } from '../../../core/services/offline.service';
+import type { OperacionGuardada } from '../../../core/models/offline.models';
 import { PosService, type ErrorPos } from '../../../core/services/pos.service';
 import type {
   LineaEnCurso,
@@ -54,6 +56,13 @@ type Cara = 'armando' | 'cobrado';
  * registra solo si vuelve aprobado. Rechazado o vencido, no queda nada: ni
  * venta, ni stock descontado, ni movimiento en el turno.
  *
+ * **5. Sin red, sigue vendiendo (2do parcial, CU-14 y CU-16).** Si el
+ * dispositivo se preparó (CU-13), las prendas salen del paquete guardado en el
+ * navegador y la venta se guarda en la cola local en vez de ir al servidor.
+ * Solo efectivo o QR anotando la referencia del banco (RN-05): la tarjeta
+ * necesita la pasarela. El ticket dice «pendiente de confirmar», porque
+ * cobrar no confirma: confirma el servidor al sincronizar (CU-17).
+ *
  * EL DINERO NO SE CONVIERTE A `number` PARA GUARDARLO
  * ----------------------------------------------------
  * Se suma en centavos enteros y se vuelve a texto con dos decimales. Sumar
@@ -84,6 +93,12 @@ export class Venta implements OnInit {
   private readonly caja = inject(CajaService);
   private readonly aviso = inject(MatSnackBar);
   private readonly dialogo = inject(MatDialog);
+  protected readonly offline = inject(OfflineService);
+
+  /** Sin red y con el dispositivo preparado: se vende contra el paquete. */
+  protected readonly sinRed = computed(
+    () => !this.offline.enLinea() && this.offline.paquete() !== null,
+  );
 
   protected readonly cara = signal<Cara>('armando');
   protected readonly cargando = signal(true);
@@ -112,7 +127,15 @@ export class Venta implements OnInit {
    * un `['EFECTIVO', …]` escrito ahí sería un arreglo nuevo en cada ciclo de
    * detección, y el `@for` volvería a dibujar los botones cada vez.
    */
-  protected readonly metodos: readonly MetodoDePago[] = ['EFECTIVO', 'TARJETA', 'QR'];
+  private readonly todosLosMetodos: readonly MetodoDePago[] = ['EFECTIVO', 'TARJETA', 'QR'];
+  private readonly metodosSinRed: readonly MetodoDePago[] = ['EFECTIVO', 'QR'];
+  protected readonly metodos = computed(() =>
+    this.sinRed() ? this.metodosSinRed : this.todosLosMetodos,
+  );
+  /** La venta guardada sin red, para el ticket provisional. */
+  protected readonly ticketLocal = signal<OperacionGuardada | null>(null);
+  /** Sin red no hay banco que confirme el QR: el cajero anota la referencia. */
+  protected readonly referenciaManual = new FormControl('', { nonNullable: true });
   protected readonly ticket = signal<Ticket | null>(null);
   /** La referencia que devolvió el banco, si la venta se cobró con QR. */
   protected readonly referenciaQr = signal<string | null>(null);
@@ -187,7 +210,17 @@ export class Venta implements OnInit {
           this.cargarReservas();
         }
       },
-      error: () => {
+      error: async () => {
+        // Sin respuesta del servidor: si el dispositivo se preparó, se vende
+        // contra el paquete. Si no, no hay con qué vender.
+        await this.offline.listo;
+        if (this.offline.paquete()) {
+          this.offline.marcarSinRed();
+          this.hayTurno.set(true);
+          this.cargando.set(false);
+          this.cargarPrendas('');
+          return;
+        }
         this.hayTurno.set(false);
         this.cargando.set(false);
       },
@@ -203,6 +236,20 @@ export class Venta implements OnInit {
 
   private cargarPrendas(texto: string): void {
     if (this.hayTurno() === false) return;
+    if (this.sinRed()) {
+      const buscado = texto.trim().toLowerCase();
+      this.prendas.set(
+        (this.offline.paquete()?.prendas ?? []).filter(
+          (p) =>
+            p.disponible > 0 &&
+            (!buscado ||
+              p.sku.toLowerCase().includes(buscado) ||
+              p.producto.toLowerCase().includes(buscado)),
+        ),
+      );
+      this.reservas.set([]);
+      return;
+    }
     this.buscando.set(true);
     this.api.prendas(texto, 1, 40).subscribe({
       next: (pagina) => {
@@ -312,11 +359,66 @@ export class Venta implements OnInit {
     if (!this.hayQueCobrar() || this.cobrando() || this.recibido.invalid) return;
     if (this.vuelto() !== null && this.vuelto()! < 0) return;
 
+    if (this.sinRed()) {
+      void this.registrarSinRed();
+      return;
+    }
     if (this.metodo() === 'QR') {
       this.cobrarConQr();
       return;
     }
     this.registrar(null);
+  }
+
+  /** CU-14 + CU-16: la venta queda en la cola del navegador. */
+  private async registrarSinRed(): Promise<void> {
+    const metodo = this.metodo();
+    if (metodo === 'TARJETA') return;
+    const referencia = this.referenciaManual.value.trim();
+    if (metodo === 'QR' && !referencia) {
+      this.aviso.open('Anote la referencia del QR que muestra el banco del cliente.', 'Entendido', {
+        duration: 5000,
+      });
+      return;
+    }
+    // Lo que se quedó la tienda, no lo que entregó el cliente: el vuelto ya
+    // se le dio. Si el servidor rechaza la venta, esto es lo que se devuelve.
+    const monto = this.totalCentavos();
+
+    this.cobrando.set(true);
+    try {
+      const guardada = await this.offline.registrarVenta(
+        {
+          lineas: this.lineas().map((l) => {
+            const unitario = this.unitarioCentavos(l.prenda);
+            const lista = this.aCentavos(l.prenda.precio);
+            return {
+              variante_id: l.prenda.variante_id,
+              cantidad: l.cantidad,
+              precio_unitario: this.aTexto(lista),
+              descuento_unitario: this.aTexto(lista - unitario),
+            };
+          }),
+          pago: { metodo, monto: this.aTexto(monto), referencia: referencia || null },
+        },
+        this.lineas()
+          .map((l) => `${l.cantidad}× ${l.prenda.producto} ${l.prenda.talla}`)
+          .join(', '),
+        this.total(),
+      );
+      this.ticketLocal.set(guardada);
+      this.cara.set('cobrado');
+      this.lineas.set([]);
+      this.recibido.setValue('');
+      this.referenciaManual.setValue('');
+    } catch (e) {
+      this.aviso.open(
+        `No se pudo guardar la venta en el dispositivo: ${(e as Error).message}`,
+        'Entendido',
+      );
+    } finally {
+      this.cobrando.set(false);
+    }
   }
 
   /**
@@ -401,6 +503,18 @@ export class Venta implements OnInit {
         },
         error: (e: ErrorPos) => {
           this.cobrando.set(false);
+          if (e.tipo === 'sin-red' && this.offline.paquete() && !referenciaQr) {
+            // Se cortó la red al cobrar. NO se guarda sola: el cajero tiene
+            // que ver que ahora queda pendiente y volver a confirmar.
+            this.offline.marcarSinRed();
+            this.cargarPrendas(this.busqueda.value);
+            this.aviso.open(
+              'Se perdió la conexión. Vuelva a cobrar: la venta se guardará en el dispositivo.',
+              'Entendido',
+              { duration: 8000 },
+            );
+            return;
+          }
           if (referenciaQr) {
             // El caso incómodo: el banco ya cobró y la venta no entró (se
             // acabó el stock, cambió un precio). El cajero tiene que saberlo
@@ -429,11 +543,12 @@ export class Venta implements OnInit {
 
   protected nuevaVenta(): void {
     this.ticket.set(null);
+    this.ticketLocal.set(null);
     this.referenciaQr.set(null);
     this.cara.set('armando');
     this.metodo.set('EFECTIVO');
     this.cargarPrendas(this.busqueda.value);
-    this.cargarReservas();
+    if (!this.sinRed()) this.cargarReservas();
   }
 
   protected imprimir(): void {

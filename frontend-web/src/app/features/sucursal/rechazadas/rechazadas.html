@@ -1,0 +1,133 @@
+<header class="encabezado">
+  <div>
+    <h1 class="vb-titulo">Operaciones sin conexión</h1>
+    <p class="bajada">
+      Ventas y reservas hechas sin red que el servidor rechazó. Si se cobraron, hay que
+      devolverle el dinero al cliente.
+    </p>
+  </div>
+</header>
+
+<mat-button-toggle-group
+  class="vista"
+  [value]="vista()"
+  (change)="cambiarVista($any($event).value)"
+  aria-label="Qué operaciones ver"
+>
+  <mat-button-toggle value="por-devolver">
+    <mat-icon>currency_exchange</mat-icon>
+    Por devolver
+  </mat-button-toggle>
+  <mat-button-toggle value="todas">
+    <mat-icon>list</mat-icon>
+    Todas
+  </mat-button-toggle>
+</mat-button-toggle-group>
+
+@if (cargando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+@if (!cargando() && filas().length === 0) {
+  <mat-card class="tarjeta" appearance="outlined">
+    <mat-card-content>
+      <p class="nota">
+        @if (vista() === 'por-devolver') {
+          No hay ninguna devolución pendiente en su sucursal.
+        } @else {
+          Todavía no llegó ninguna operación sin conexión a su sucursal.
+        }
+      </p>
+    </mat-card-content>
+  </mat-card>
+}
+
+@for (fila of filas(); track fila.uuid) {
+  <mat-card class="tarjeta" appearance="outlined">
+    <mat-card-content>
+      <div class="fila">
+        <mat-icon [class]="fila.estado === 'CONFIRMADA' ? 'ok' : 'mal'">
+          {{ fila.estado === 'CONFIRMADA' ? 'check_circle' : 'block' }}
+        </mat-icon>
+        <div class="cuerpo">
+          <p class="titulo">
+            {{ fila.tipo === 'VENTA' ? 'Venta' : 'Reserva' }} de {{ fila.usuario }} ·
+            {{ fila.creada_en_cliente | date: 'dd/MM HH:mm' }}
+            <span class="chip">{{ fila.estado === 'CONFIRMADA' ? 'Confirmada' : 'Rechazada' }}</span>
+          </p>
+          @if (fila.motivo) {
+            <p class="motivo">{{ fila.motivo }}</p>
+          }
+          @if (fila.monto_cobrado) {
+            <p class="detalle">
+              Se cobraron <strong>{{ fila.monto_cobrado | bs }}</strong> con {{ fila.metodo_pago }}
+              @if (fila.referencia_pago) {
+                · referencia {{ fila.referencia_pago }}
+              }
+            </p>
+          }
+          @if (fila.devuelto_en) {
+            <p class="detalle devuelta">
+              <mat-icon class="chico">done_all</mat-icon>
+              Devuelto el {{ fila.devuelto_en | date: 'dd/MM HH:mm' }} con {{ fila.metodo_devolucion }}
+              @if (fila.referencia_devolucion) {
+                · {{ fila.referencia_devolucion }}
+              }
+            </p>
+          }
+        </div>
+        @if (fila.requiere_devolucion && abierta() !== fila.uuid) {
+          <button matButton="filled" type="button" class="vb-boton-marca" (click)="abrir(fila)">
+            <mat-icon>currency_exchange</mat-icon>
+            Devolver
+          </button>
+        }
+      </div>
+
+      @if (abierta() === fila.uuid) {
+        <div class="formulario">
+          <mat-button-toggle-group
+            [value]="metodo()"
+            (change)="metodo.set($any($event).value)"
+            aria-label="Cómo se devuelve"
+          >
+            <mat-button-toggle value="EFECTIVO">
+              <mat-icon>payments</mat-icon>
+              Efectivo
+            </mat-button-toggle>
+            <mat-button-toggle value="QR">
+              <mat-icon>qr_code_2</mat-icon>
+              QR / transferencia
+            </mat-button-toggle>
+          </mat-button-toggle-group>
+
+          @if (metodo() === 'QR') {
+            <mat-form-field appearance="outline">
+              <mat-label>Referencia de la transferencia</mat-label>
+              <input matInput [formControl]="referencia" />
+            </mat-form-field>
+          }
+          <mat-form-field appearance="outline">
+            <mat-label>Observación</mat-label>
+            <input matInput [formControl]="observacion" maxlength="300" />
+            <mat-hint>Opcional. Por ejemplo, a quién se le entregó.</mat-hint>
+          </mat-form-field>
+
+          <div class="acciones">
+            <button
+              matButton="filled"
+              type="button"
+              class="vb-boton-marca"
+              [disabled]="guardando()"
+              (click)="devolver(fila)"
+            >
+              <mat-icon>check</mat-icon>
+              {{ guardando() ? 'Guardando…' : 'Registrar devolución de ' + (fila.monto_cobrado | bs) }}
+            </button>
+            <button matButton type="button" (click)="abierta.set(null)">Cancelar</button>
+          </div>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+}
