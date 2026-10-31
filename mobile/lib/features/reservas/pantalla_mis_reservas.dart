@@ -16,6 +16,7 @@ import '../../core/enrutado/router.dart';
 import '../../core/red/excepciones.dart';
 import '../../core/tema.dart';
 import '../../data/modelos/reservas.dart';
+import '../offline/estado_offline.dart';
 import 'estado_reservas.dart';
 import 'widgets_reservas.dart';
 
@@ -26,9 +27,26 @@ class PantallaMisReservas extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final vivas = ref.watch(misReservasProvider(true));
     final cerradas = ref.watch(misReservasProvider(false));
+    // 2do parcial · CU-18: cuantas reservas hechas sin red faltan subir.
+    final pendientes = ref.watch(
+      offlineProvider.select((e) => e.pendientes.length),
+    );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mis reservas')),
+      appBar: AppBar(
+        title: const Text('Mis reservas'),
+        actions: [
+          IconButton(
+            tooltip: 'Reservar sin conexión',
+            onPressed: () => context.push(Rutas.reservaSinRed),
+            icon: Badge(
+              isLabelVisible: pendientes > 0,
+              label: Text('$pendientes'),
+              child: const Icon(Icons.cloud_off_outlined),
+            ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push(Rutas.reservaNueva),
         backgroundColor: ColoresVB.malva,
@@ -78,9 +96,23 @@ class PantallaMisReservas extends ConsumerWidget {
               mensaje: fallo is ErrorApi
                   ? fallo.mensaje
                   : 'No se pudieron cargar sus reservas.',
-              accion: FilledButton(
-                onPressed: () => ref.invalidate(misReservasProvider(true)),
-                child: const Text('Reintentar'),
+              // 2do parcial · CU-15: sin red, se puede reservar igual con
+              // lo que el telefono tiene guardado.
+              accion: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.center,
+                children: [
+                  FilledButton(
+                    onPressed: () => ref.invalidate(misReservasProvider(true)),
+                    child: const Text('Reintentar'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () => context.push(Rutas.reservaSinRed),
+                    icon: const Icon(Icons.cloud_off_outlined),
+                    label: const Text('Reservar sin conexión'),
+                  ),
+                ],
               ),
             ),
           ),

@@ -106,10 +106,23 @@ class ControlSesion extends Notifier<EstadoSesion> {
     }
 
     try {
-      state = SesionAbierta(await _repositorio.usuarioActual());
-    } on ErrorApi {
-      // Token revocado, o el servidor no responde. En ambos casos se entra sin
-      // sesion; si fue lo segundo, el login lo dira al intentar conectarse.
+      final usuario = await _repositorio.usuarioActual();
+      await _almacen.recordarUsuario(usuario.aJson());
+      state = SesionAbierta(usuario);
+    } on ErrorApi catch (error) {
+      // 2do parcial · CU-13. Sin respuesta del servidor (sin codigo, o el 504
+      // de un intermediario) NO se sabe si el token es invalido: se conserva
+      // y se entra con el ultimo usuario confirmado, para poder reservar sin
+      // conexion (CU-15). Antes se borraba igual, y quien abria la app sin red
+      // quedaba afuera justo cuando no podia iniciar sesion.
+      if (error.codigo == null || error.codigo == 504) {
+        final recordado = await _almacen.usuarioRecordado();
+        if (recordado != null) {
+          state = SesionAbierta(UsuarioAutenticado.desdeJson(recordado));
+          return;
+        }
+      }
+      // Token revocado: se entra sin sesion.
       await _almacen.borrar();
       state = const SesionCerrada();
     }
@@ -128,6 +141,7 @@ class ControlSesion extends Notifier<EstadoSesion> {
       contrasena: contrasena,
     );
     await _almacen.guardarToken(token.accessToken, token.expiraEn);
+    await _almacen.recordarUsuario(token.usuario.aJson());
     state = SesionAbierta(token.usuario);
   }
 

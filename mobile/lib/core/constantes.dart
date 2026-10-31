@@ -65,4 +65,7 @@ class ClavesAlmacen {
 
   static const String token = 'vb_access_token';
   static const String expiraEn = 'vb_token_expira_en';
+
+  /// 2do parcial · CU-13: el ultimo usuario que confirmo el servidor.
+  static const String usuarioSinRed = 'vb_usuario_sin_red';
 }

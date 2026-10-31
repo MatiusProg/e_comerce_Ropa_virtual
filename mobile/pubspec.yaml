@@ -57,6 +57,12 @@ dependencies:
   # --- Utilidades --------------------------------------------------------
   intl: ^0.20.3 # formato de fechas y moneda
 
+  # --- Offline (2do parcial, CU-13, CU-15, CU-17 y CU-18) -----------------
+  # SQLite en el telefono: el paquete para reservar sin red y la cola de
+  # operaciones pendientes. Sobrevive a cerrar la app (RF-17).
+  sqflite: ^2.4.5
+  path: ^1.9.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

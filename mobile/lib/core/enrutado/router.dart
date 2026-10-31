@@ -20,6 +20,8 @@ import '../../features/compra/pantalla_checkout.dart';
 import '../../features/compra/pantalla_pedido.dart';
 import '../../features/inicio/pantalla_carga.dart';
 import '../../features/reservas/pantalla_detalle_reserva.dart';
+import '../../features/offline/pantalla_reserva_sin_red.dart';
+import '../../features/offline/pantalla_sin_conexion.dart';
 import '../../features/reservas/pantalla_mis_reservas.dart';
 import '../../features/reservas/pantalla_nueva_reserva.dart';
 import '../../features/catalogo/pantalla_favoritos.dart';
@@ -82,6 +84,13 @@ class Rutas {
   /// `:id`, porque `go_router` prueba las rutas en orden y `nueva` encajaria
   /// en el patron del identificador.
   static const String reservaNueva = '/reservas/nueva';
+
+  /// 2do parcial · CU-13, CU-17 y CU-18: preparar el telefono y la cola de
+  /// reservas hechas sin red. Antes que `:id`, por el mismo motivo que `nueva`.
+  static const String reservaSinRed = '/reservas/sin-conexion';
+
+  /// 2do parcial · CU-15: la reserva contra el paquete guardado.
+  static const String reservaSinRedNueva = '/reservas/sin-conexion/nueva';
 
   /// CU-23 · el detalle. Patron para el enrutador; para navegar se usa
   /// [reservaDetalle].
@@ -329,6 +338,16 @@ final routerProvider = Provider<GoRouter>((ref) {
             // «Reservar» abriria el detalle de una reserva inexistente.
             path: 'nueva',
             builder: (context, estado) => const PantallaNuevaReserva(),
+          ),
+          GoRoute(
+            path: 'sin-conexion',
+            builder: (context, estado) => const PantallaSinConexion(),
+            routes: [
+              GoRoute(
+                path: 'nueva',
+                builder: (context, estado) => const PantallaReservaSinRed(),
+              ),
+            ],
           ),
           GoRoute(
             // Anidada y no suelta, igual que la ficha: asi el boton de volver

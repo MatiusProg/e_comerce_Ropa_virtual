@@ -6,6 +6,8 @@
 /// no ofrece nada mejor; en el telefono si lo hay, y se usa.
 library;
 
+import 'dart:convert';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../constantes.dart';
@@ -50,8 +52,25 @@ class AlmacenSeguro {
     return expira.toUtc().isBefore(DateTime.now().toUtc());
   }
 
+  /// 2do parcial · CU-13. El ultimo usuario que confirmo el servidor, para
+  /// abrir la app sin red. Solo sirve para mostrar y navegar: lo que se haga
+  /// sin red lo vuelve a validar el servidor al sincronizar, con el token.
+  Future<void> recordarUsuario(Map<String, dynamic> usuario) =>
+      _almacen.write(key: ClavesAlmacen.usuarioSinRed, value: jsonEncode(usuario));
+
+  Future<Map<String, dynamic>?> usuarioRecordado() async {
+    final texto = await _almacen.read(key: ClavesAlmacen.usuarioSinRed);
+    if (texto == null) return null;
+    try {
+      return jsonDecode(texto) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> borrar() async {
     await _almacen.delete(key: ClavesAlmacen.token);
     await _almacen.delete(key: ClavesAlmacen.expiraEn);
+    await _almacen.delete(key: ClavesAlmacen.usuarioSinRed);
   }
 }

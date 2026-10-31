@@ -33,10 +33,20 @@ class AlmacenFalso implements AlmacenSeguro {
   Future<bool> tokenVencido() async =>
       _expira != null && _expira!.toUtc().isBefore(DateTime.now().toUtc());
 
+  Map<String, dynamic>? _usuario;
+
+  @override
+  Future<void> recordarUsuario(Map<String, dynamic> usuario) async =>
+      _usuario = usuario;
+
+  @override
+  Future<Map<String, dynamic>?> usuarioRecordado() async => _usuario;
+
   @override
   Future<void> borrar() async {
     _token = null;
     _expira = null;
+    _usuario = null;
   }
 }
 
