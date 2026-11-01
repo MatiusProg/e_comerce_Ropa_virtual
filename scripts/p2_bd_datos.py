@@ -374,6 +374,34 @@ for titulo, cols in PARTES:
     partes_json.append({"titulo": titulo, "propias": sorted(propias), "posiciones": pos,
                         "relaciones": [[r["destino"], r["origen"], r["columna"]] for r in rels]})
 
+
+# La versión completa (pedido de Luis, para comparar): las cuatro partes en una
+# cuadrícula de 2x2, sin las copias grises, con todas las relaciones salvo las
+# de empresa_id hacia EMPRESA (lo dice la nota, igual que en las partes).
+def _caja(pos):
+    xs = [p[0] for p in pos.values()] + [p[0] + p[2] for p in pos.values()]
+    ys = [p[1] for p in pos.values()] + [p[1] - p[3] for p in pos.values()]
+    return min(xs), max(xs), max(ys), min(ys)
+
+
+propias_pos = [{t: p for t, p in parte["posiciones"].items() if t in parte["propias"]} for parte in partes_json]
+cajas = [_caja(p) for p in propias_pos]
+ancho_izq = max(cajas[0][1] - cajas[0][0], cajas[2][1] - cajas[2][0])
+alto_arriba = max(cajas[0][2] - cajas[0][3], cajas[1][2] - cajas[1][3])
+pos_completo = {}
+for i, pos in enumerate(propias_pos):
+    l0, _, t0, _ = cajas[i]
+    dx = 30 - l0 + (ancho_izq + 300 if i % 2 else 0)
+    dy = -40 - t0 - (alto_arriba + 300 if i >= 2 else 0)
+    for t, (l, tp, w, h) in pos.items():
+        pos_completo[t] = [l + dx, tp + dy, w, h]
+partes_json.append({
+    "titulo": "3.5 Completo - Todas las tablas",
+    "propias": sorted(pos_completo),
+    "posiciones": pos_completo,
+    "relaciones": [[r["destino"], r["origen"], r["columna"]] for r in relaciones if r["destino"] != "empresa"],
+})
+
 salida = {
     "_generado_por": "scripts/p2_bd_datos.py — no editar a mano",
     "dominio": {"locales": sorted(DOMINIO_LOCALES), "posiciones": pos_dom,
