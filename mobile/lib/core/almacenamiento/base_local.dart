@@ -20,7 +20,8 @@ class BaseLocal {
 
   static final BaseLocal instancia = BaseLocal._();
 
-  static const _version = 1;
+  /// 2: la vitrina con fotos (producto, categoria e imagen de cada prenda).
+  static const _version = 2;
   Database? _db;
 
   Future<Database> get _base async {
@@ -44,7 +45,10 @@ class BaseLocal {
           CREATE TABLE prenda_local (
             variante_id INTEGER PRIMARY KEY,
             sku TEXT NOT NULL,
+            producto_id INTEGER NOT NULL,
             producto TEXT NOT NULL,
+            categoria TEXT NOT NULL,
+            imagen_url TEXT,
             talla TEXT NOT NULL,
             color TEXT NOT NULL,
             precio TEXT NOT NULL
@@ -67,6 +71,28 @@ class BaseLocal {
             motivo TEXT,
             reserva_id INTEGER
           )''');
+      },
+      onUpgrade: (db, anterior, _) async {
+        if (anterior < 2) {
+          // El paquete viejo no trae las fotos: se descarta y el cliente lo
+          // vuelve a preparar. La cola NO se toca (RNF06).
+          await db.execute('DROP TABLE prenda_local');
+          await db.execute('''
+            CREATE TABLE prenda_local (
+              variante_id INTEGER PRIMARY KEY,
+              sku TEXT NOT NULL,
+              producto_id INTEGER NOT NULL,
+              producto TEXT NOT NULL,
+              categoria TEXT NOT NULL,
+              imagen_url TEXT,
+              talla TEXT NOT NULL,
+              color TEXT NOT NULL,
+              precio TEXT NOT NULL
+            )''');
+          await db.delete('disponible_local');
+          await db.delete('sucursal_local');
+          await db.delete('metadato');
+        }
       },
     );
   }
@@ -94,7 +120,10 @@ class BaseLocal {
         lote.insert('prenda_local', {
           'variante_id': prenda.varianteId,
           'sku': prenda.sku,
+          'producto_id': prenda.productoId,
           'producto': prenda.producto,
+          'categoria': prenda.categoria,
+          'imagen_url': prenda.imagenUrl,
           'talla': prenda.talla,
           'color': prenda.color,
           'precio': prenda.precio,
@@ -107,14 +136,20 @@ class BaseLocal {
           });
         });
       }
-      lote.insert('metadato', {
-        'clave': 'generado_en',
-        'valor': paquete.generadoEn.toIso8601String(),
-      }, conflictAlgorithm: ConflictAlgorithm.replace);
-      lote.insert('metadato', {
-        'clave': 'vigente_hasta',
-        'valor': paquete.vigenteHasta.toIso8601String(),
-      }, conflictAlgorithm: ConflictAlgorithm.replace);
+      lote.insert(
+          'metadato',
+          {
+            'clave': 'generado_en',
+            'valor': paquete.generadoEn.toIso8601String(),
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace);
+      lote.insert(
+          'metadato',
+          {
+            'clave': 'vigente_hasta',
+            'valor': paquete.vigenteHasta.toIso8601String(),
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace);
       await lote.commit(noResult: true);
     });
   }
@@ -129,8 +164,8 @@ class BaseLocal {
 
     final disponibles = <int, Map<int, int>>{};
     for (final f in await db.query('disponible_local')) {
-      disponibles.putIfAbsent(f['variante_id'] as int, () => {})[f['sucursal_id']
-              as int] =
+      disponibles.putIfAbsent(
+              f['variante_id'] as int, () => {})[f['sucursal_id'] as int] =
           f['disponible'] as int;
     }
     return PaqueteCliente(
@@ -153,7 +188,10 @@ class BaseLocal {
           PrendaOffline(
             varianteId: f['variante_id'] as int,
             sku: f['sku'] as String,
+            productoId: f['producto_id'] as int,
             producto: f['producto'] as String,
+            categoria: f['categoria'] as String,
+            imagenUrl: f['imagen_url'] as String?,
             talla: f['talla'] as String,
             color: f['color'] as String,
             precio: f['precio'] as String,
@@ -182,16 +220,19 @@ class BaseLocal {
 
   Future<void> guardarOperacion(OperacionGuardada op) async {
     final db = await _base;
-    await db.insert('operacion_pendiente', {
-      'uuid': op.uuid,
-      'estado': op.estado.codigo,
-      'cuerpo': jsonEncode(op.cuerpo),
-      'resumen': op.resumen,
-      'creada_en': op.creadaEn.toIso8601String(),
-      'intentos': op.intentos,
-      'motivo': op.motivo,
-      'reserva_id': op.reservaId,
-    }, conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(
+        'operacion_pendiente',
+        {
+          'uuid': op.uuid,
+          'estado': op.estado.codigo,
+          'cuerpo': jsonEncode(op.cuerpo),
+          'resumen': op.resumen,
+          'creada_en': op.creadaEn.toIso8601String(),
+          'intentos': op.intentos,
+          'motivo': op.motivo,
+          'reserva_id': op.reservaId,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<List<OperacionGuardada>> operaciones() async {

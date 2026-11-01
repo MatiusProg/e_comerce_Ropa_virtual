@@ -34,7 +34,10 @@ class PrendaOffline {
   const PrendaOffline({
     required this.varianteId,
     required this.sku,
+    required this.productoId,
     required this.producto,
+    required this.categoria,
+    required this.imagenUrl,
     required this.talla,
     required this.color,
     required this.precio,
@@ -43,7 +46,14 @@ class PrendaOffline {
 
   final int varianteId;
   final String sku;
+
+  /// Las tallas y colores de un mismo producto van juntos en la vitrina.
+  final int productoId;
   final String producto;
+  final String categoria;
+
+  /// Ruta relativa, como la manda la API; la foto se guarda al preparar.
+  final String? imagenUrl;
   final String talla;
   final String color;
 
@@ -54,17 +64,21 @@ class PrendaOffline {
   String get nombre => '$producto · $talla · $color';
 
   factory PrendaOffline.desdeJson(Map<String, dynamic> json) => PrendaOffline(
-    varianteId: json['variante_id'] as int,
-    sku: json['sku'] as String,
-    producto: json['producto'] as String,
-    talla: json['talla'] as String,
-    color: json['color'] as String,
-    precio: json['precio'].toString(),
-    disponiblePorSucursal: {
-      for (final s in (json['sucursales'] as List).cast<Map<String, dynamic>>())
-        s['sucursal_id'] as int: s['disponible'] as int,
-    },
-  );
+        varianteId: json['variante_id'] as int,
+        sku: json['sku'] as String,
+        productoId: json['producto_id'] as int,
+        producto: json['producto'] as String,
+        categoria: json['categoria'] as String,
+        imagenUrl: json['imagen_url'] as String?,
+        talla: json['talla'] as String,
+        color: json['color'] as String,
+        precio: json['precio'].toString(),
+        disponiblePorSucursal: {
+          for (final s
+              in (json['sucursales'] as List).cast<Map<String, dynamic>>())
+            s['sucursal_id'] as int: s['disponible'] as int,
+        },
+      );
 }
 
 /// CU-13: lo que el cliente se lleva al telefono.
@@ -85,17 +99,17 @@ class PaqueteCliente {
   bool get vencido => DateTime.now().isAfter(vigenteHasta);
 
   factory PaqueteCliente.desdeJson(Map<String, dynamic> json) => PaqueteCliente(
-    generadoEn: DateTime.parse(json['generado_en'] as String).toLocal(),
-    vigenteHasta: DateTime.parse(json['vigente_hasta'] as String).toLocal(),
-    sucursales: (json['sucursales'] as List)
-        .cast<Map<String, dynamic>>()
-        .map(SucursalOffline.desdeJson)
-        .toList(),
-    prendas: (json['prendas'] as List)
-        .cast<Map<String, dynamic>>()
-        .map(PrendaOffline.desdeJson)
-        .toList(),
-  );
+        generadoEn: DateTime.parse(json['generado_en'] as String).toLocal(),
+        vigenteHasta: DateTime.parse(json['vigente_hasta'] as String).toLocal(),
+        sucursales: (json['sucursales'] as List)
+            .cast<Map<String, dynamic>>()
+            .map(SucursalOffline.desdeJson)
+            .toList(),
+        prendas: (json['prendas'] as List)
+            .cast<Map<String, dynamic>>()
+            .map(PrendaOffline.desdeJson)
+            .toList(),
+      );
 }
 
 /// Los estados de RF-20 del lado del telefono. `local` y `enviada` solo
@@ -104,7 +118,9 @@ class PaqueteCliente {
 /// fallo): queda a la vista y no se borra (RNF06).
 enum EstadoOperacion {
   local('local', 'Guardada'),
-  enviada('enviada', 'Enviada'),
+  // Se marca ANTES de mandar, por si la respuesta se pierde: decir «Enviada»
+  // hacia creer al cliente que el servidor ya la tenia, aunque no hubiera red.
+  enviada('enviada', 'Esperando al servidor'),
   confirmada('confirmada', 'Confirmada'),
   rechazada('rechazada', 'Rechazada'),
   enConflicto('en_conflicto', 'En conflicto');
@@ -114,8 +130,7 @@ enum EstadoOperacion {
   final String codigo;
   final String etiqueta;
 
-  bool get pendiente =>
-      this == local || this == enviada || this == enConflicto;
+  bool get pendiente => this == local || this == enviada || this == enConflicto;
 
   static EstadoOperacion desdeCodigo(String codigo) =>
       values.firstWhere((e) => e.codigo == codigo, orElse: () => local);
@@ -150,16 +165,17 @@ class OperacionGuardada {
     int? intentos,
     String? motivo,
     int? reservaId,
-  }) => OperacionGuardada(
-    uuid: uuid,
-    estado: estado ?? this.estado,
-    cuerpo: cuerpo,
-    resumen: resumen,
-    creadaEn: creadaEn,
-    intentos: intentos ?? this.intentos,
-    motivo: motivo ?? this.motivo,
-    reservaId: reservaId ?? this.reservaId,
-  );
+  }) =>
+      OperacionGuardada(
+        uuid: uuid,
+        estado: estado ?? this.estado,
+        cuerpo: cuerpo,
+        resumen: resumen,
+        creadaEn: creadaEn,
+        intentos: intentos ?? this.intentos,
+        motivo: motivo ?? this.motivo,
+        reservaId: reservaId ?? this.reservaId,
+      );
 }
 
 /// La respuesta del servidor por cada operacion (CU-17).

@@ -92,7 +92,12 @@ class DisponibleEnSucursalOut(BaseModel):
 class PrendaParaReservarOut(BaseModel):
     variante_id: int
     sku: str
+    #: Para agrupar las tallas y colores de un mismo producto en la vitrina.
+    producto_id: int
     producto: str
+    categoria: str
+    #: La foto principal del producto; el móvil la guarda al preparar.
+    imagen_url: str | None = None
     talla: str
     color: str
     precio: Decimal

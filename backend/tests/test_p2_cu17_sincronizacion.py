@@ -125,6 +125,30 @@ def test_el_cliente_descarga_sucursales_y_saldos(
     assert [s["id"] for s in paquete["sucursales"]] == [sucursal]
     prenda = next(p for p in paquete["prendas"] if p["variante_id"] == variantes[0])
     assert prenda["sucursales"] == [{"sucursal_id": sucursal, "disponible": 10}]
+    assert prenda["categoria"]
+    assert prenda["imagen_url"] is None
+
+
+def test_el_paquete_del_cliente_trae_la_foto_del_producto(
+    api: TestClient, cabeceras_cliente: dict, variantes: list[int], db
+) -> None:
+    """La vitrina offline del móvil muestra la misma foto que la web."""
+    from app.modules.catalogo.models import ImagenProducto, VarianteProducto
+
+    producto_id = db.get(VarianteProducto, variantes[0]).producto_id
+    db.add_all([
+        ImagenProducto(producto_id=producto_id, ruta="productos/x/principal.jpg",
+                       es_principal=True, orden=0),
+        # El PNG del vestidor no es una foto de vitrina.
+        ImagenProducto(producto_id=producto_id, ruta="productos/x/vestidor.png",
+                       es_transparente=True, orden=1),
+    ])
+    db.commit()
+
+    paquete = api.get(PAQUETE_CLIENTE, headers=cabeceras_cliente).json()
+    prenda = next(p for p in paquete["prendas"] if p["variante_id"] == variantes[0])
+    assert prenda["producto_id"] == producto_id
+    assert prenda["imagen_url"].endswith("/productos/x/principal.jpg")
 
 
 # =====================================================================

@@ -37,7 +37,9 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.tenencia import empresa_actual
 from app.modules.caja import repository as caja_repository
+from app.modules.catalogo import imagenes_almacen as almacen
 from app.modules.catalogo import promociones_service as promociones
+from app.modules.catalogo_publico import repository as catalogo_publico
 from app.modules.inventario import service as inventario
 from app.modules.notificaciones import service as notificaciones
 from app.modules.offline import repository
@@ -164,14 +166,22 @@ def paquete_de_mostrador(db: Session, usuario_id: int) -> PaqueteDeMostradorOut:
 def paquete_de_cliente(db: Session) -> PaqueteDeClienteOut:
     """Lo que el cliente descarga al móvil para reservar sin conexión (CU-15)."""
     sucursales = repository.sucursales_activas(db)
+    filas = repository.prendas_en_sucursales_activas(db)
+    # La misma foto que muestra la vitrina web, una consulta para todas.
+    imagenes = catalogo_publico.imagen_principal(db, list({f.producto_id for f in filas}))
     prendas: dict[int, PrendaParaReservarOut] = {}
-    for f in repository.prendas_en_sucursales_activas(db):
+    for f in filas:
         prenda = prendas.get(f.variante_id)
         if prenda is None:
             prenda = prendas[f.variante_id] = PrendaParaReservarOut(
                 variante_id=f.variante_id,
                 sku=f.sku,
+                producto_id=f.producto_id,
                 producto=f.producto,
+                categoria=f.categoria,
+                imagen_url=almacen.url_de(imagenes[f.producto_id])
+                if f.producto_id in imagenes
+                else None,
                 talla=f.talla,
                 color=f.color,
                 precio=f.precio,

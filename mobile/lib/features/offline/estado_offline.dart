@@ -13,12 +13,14 @@ library;
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/almacenamiento/base_local.dart';
 import '../../core/red/excepciones.dart';
 import '../../data/modelos/offline.dart';
 import '../../data/modelos/reservas.dart';
+import '../../data/repositorios/repositorio_catalogo.dart';
 import '../../data/repositorios/repositorio_offline.dart';
 import '../auth/estado_sesion.dart';
 import '../reservas/estado_reservas.dart';
@@ -117,7 +119,27 @@ class ControlOffline extends Notifier<EstadoOffline> {
     }
     final guardado = await _base.leerPaquete();
     state = state.copiarCon(paquete: guardado, enLinea: true);
-    return guardado!;
+    await _guardarFotos(guardado!);
+    return guardado;
+  }
+
+  /// Baja las fotos a la cache de `CachedNetworkImage` (la misma
+  /// `DefaultCacheManager`), para que la vitrina las muestre sin red.
+  ///
+  /// Una que falle no frena la preparacion: la prenda se ve con el icono y se
+  /// sigue pudiendo reservar. De a cuatro, para no saturar la red del cliente.
+  Future<void> _guardarFotos(PaqueteCliente paquete) async {
+    final urls = {
+      for (final p in paquete.prendas)
+        if (RepositorioCatalogo.urlDeImagen(p.imagenUrl) case final url?) url,
+    }.toList();
+    final cache = DefaultCacheManager();
+    for (var i = 0; i < urls.length; i += 4) {
+      await Future.wait([
+        for (final url in urls.skip(i).take(4))
+          cache.downloadFile(url).then((_) {}, onError: (_) {}),
+      ]);
+    }
   }
 
   // --- CU-15 ---------------------------------------------------------------

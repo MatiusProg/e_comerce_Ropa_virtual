@@ -17,7 +17,7 @@ class AlmacenSeguro {
   // `encryptedSharedPreferences` de las versiones 9 y 10 ya no existe porque
   // ahora es el unico comportamiento. Por eso no se pasan `AndroidOptions`.
   AlmacenSeguro([FlutterSecureStorage? almacen])
-    : _almacen = almacen ?? const FlutterSecureStorage();
+      : _almacen = almacen ?? const FlutterSecureStorage();
 
   final FlutterSecureStorage _almacen;
 
@@ -55,8 +55,8 @@ class AlmacenSeguro {
   /// 2do parcial · CU-13. El ultimo usuario que confirmo el servidor, para
   /// abrir la app sin red. Solo sirve para mostrar y navegar: lo que se haga
   /// sin red lo vuelve a validar el servidor al sincronizar, con el token.
-  Future<void> recordarUsuario(Map<String, dynamic> usuario) =>
-      _almacen.write(key: ClavesAlmacen.usuarioSinRed, value: jsonEncode(usuario));
+  Future<void> recordarUsuario(Map<String, dynamic> usuario) => _almacen.write(
+      key: ClavesAlmacen.usuarioSinRed, value: jsonEncode(usuario));
 
   Future<Map<String, dynamic>?> usuarioRecordado() async {
     final texto = await _almacen.read(key: ClavesAlmacen.usuarioSinRed);
