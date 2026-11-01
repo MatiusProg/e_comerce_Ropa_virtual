@@ -11,7 +11,7 @@ from uuid import UUID
 from sqlalchemy import Row, select
 from sqlalchemy.orm import Session
 
-from app.modules.catalogo.models import Color, Producto, Talla, VarianteProducto
+from app.modules.catalogo.models import Categoria, Color, Producto, Talla, VarianteProducto
 from app.modules.inventario.models import Existencia
 from app.modules.offline.models import OperacionOffline
 from app.modules.organizacion.models import Sucursal
@@ -51,7 +51,9 @@ def _prendas() -> select:
         select(
             VarianteProducto.id.label("variante_id"),
             VarianteProducto.sku,
+            Producto.id.label("producto_id"),
             Producto.nombre.label("producto"),
+            Categoria.nombre.label("categoria"),
             Talla.codigo.label("talla"),
             Color.nombre.label("color"),
             VarianteProducto.precio,
@@ -59,6 +61,7 @@ def _prendas() -> select:
             Existencia.cantidad_disponible.label("disponible"),
         )
         .join(Producto, Producto.id == VarianteProducto.producto_id)
+        .join(Categoria, Categoria.id == Producto.categoria_id)
         .join(Talla, Talla.id == VarianteProducto.talla_id)
         .join(Color, Color.id == VarianteProducto.color_id)
         .join(Existencia, Existencia.variante_id == VarianteProducto.id)

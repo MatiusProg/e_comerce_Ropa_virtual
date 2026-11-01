@@ -53,6 +53,16 @@ class UsuarioAutenticado {
       sucursalId: json['sucursal_id'] as int?,
     );
   }
+
+  /// 2do parcial · CU-13: para recordar al usuario y abrir la app sin red.
+  Map<String, dynamic> aJson() => {
+    'id': id,
+    'correo': correo,
+    'nombres': nombres,
+    'apellidos': apellidos,
+    'rol': rol,
+    'sucursal_id': sucursalId,
+  };
 }
 
 /// Espejo de `TokenOut`, la respuesta de `POST /auth/login`.

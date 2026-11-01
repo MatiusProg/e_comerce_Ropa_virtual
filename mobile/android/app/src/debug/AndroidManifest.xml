@@ -4,4 +4,9 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Solo en DEBUG: deja hablar por HTTP con el backend local
+         (`adb reverse tcp:8000 tcp:8000` y `API_URL=http://localhost:8000/...`)
+         para probar contra la base de QA y no contra produccion. El APK de
+         release no lo hereda y sigue exigiendo HTTPS. -->
+    <application android:usesCleartextTraffic="true"/>
 </manifest>
