@@ -146,6 +146,81 @@
     "CU-05"
    ],
    "notas": "Aporte propio. Logo y colores en la tienda en línea. RF-46."
+  },
+  {
+   "id": "CU-13",
+   "n": "Preparar el dispositivo para trabajar offline",
+   "actores": [
+    "Cajero",
+    "Cliente"
+   ],
+   "incluye": [],
+   "notas": "Descarga a IndexedDB (PWA) o SQLite (móvil) lo necesario para trabajar sin conexión, con 12 horas de vigencia. RF-10 a RF-13."
+  },
+  {
+   "id": "CU-14",
+   "n": "Registrar venta offline",
+   "actores": [
+    "Cajero"
+   ],
+   "incluye": [
+    "CU-16"
+   ],
+   "notas": "Evoluciona el CU-31 del primer parcial. La venta queda en la cola del navegador hasta que el servidor la confirma. RF-15."
+  },
+  {
+   "id": "CU-15",
+   "n": "Registrar reserva offline",
+   "actores": [
+    "Cliente"
+   ],
+   "incluye": [],
+   "notas": "Evoluciona el CU-22 del primer parcial. Vitrina con fotos guardada en el teléfono; la confirma el servidor al sincronizar. RF-14."
+  },
+  {
+   "id": "CU-16",
+   "n": "Registrar pago sin conexión",
+   "actores": [],
+   "incluye": [],
+   "notas": "Lo incluye la venta offline: efectivo o QR con su referencia. Cobrar no confirma la venta. RF-54, RN-05."
+  },
+  {
+   "id": "CU-17",
+   "n": "Sincronizar operaciones pendientes",
+   "actores": [
+    "Cajero",
+    "Cliente"
+   ],
+   "incluye": [],
+   "notas": "Lotes de hasta 50 operaciones con su UUID; gana la que llega primero al servidor. RF-18 a RF-21, RN-06, RN-07."
+  },
+  {
+   "id": "CU-18",
+   "n": "Consultar operaciones pendientes",
+   "actores": [
+    "Cajero",
+    "Cliente"
+   ],
+   "incluye": [],
+   "notas": "La cola local con el estado de cada operación y el motivo de las rechazadas. RF-16, RF-17, RF-20, RF-23."
+  },
+  {
+   "id": "CU-19",
+   "n": "Atender operaciones rechazadas y devolver el dinero",
+   "actores": [
+    "Encargado de sucursal"
+   ],
+   "incluye": [],
+   "notas": "Devolución del dinero de las operaciones cobradas que el servidor rechazó. RF-22, RF-55."
+  },
+  {
+   "id": "CU-20",
+   "n": "Abrir y cerrar caja con ventas offline",
+   "actores": [
+    "Cajero"
+   ],
+   "incluye": [],
+   "notas": "Evoluciona el CU-30 del primer parcial. El arqueo cuenta lo vendido sin conexión y el turno no se cierra con ventas sin subir. RF-15, RF-21."
   }
  ],
  "robustez": [
@@ -795,6 +870,446 @@
      "VerificadorPlan"
     ]
    ]
+  },
+  {
+   "cu": "CU-13",
+   "n": "Preparar el dispositivo para trabajar offline",
+   "a": [
+    "Cajero",
+    "Cliente"
+   ],
+   "f": [
+    "PantallaSinConexion"
+   ],
+   "c": [
+    "ControlOffline",
+    "GestorOffline",
+    "GestorAutenticacion"
+   ],
+   "e": [
+    "TurnoCaja",
+    "Existencia",
+    "Cliente",
+    "Sucursal",
+    "ImagenProducto",
+    "PaqueteLocal",
+    "OperacionLocal",
+    "FotoLocal"
+   ],
+   "pares": [
+    [
+     "A:Cajero",
+     "PantallaSinConexion"
+    ],
+    [
+     "A:Cliente",
+     "PantallaSinConexion"
+    ],
+    [
+     "Cliente",
+     "GestorOffline"
+    ],
+    [
+     "ControlOffline",
+     "FotoLocal"
+    ],
+    [
+     "ControlOffline",
+     "GestorOffline"
+    ],
+    [
+     "ControlOffline",
+     "OperacionLocal"
+    ],
+    [
+     "ControlOffline",
+     "PantallaSinConexion"
+    ],
+    [
+     "ControlOffline",
+     "PaqueteLocal"
+    ],
+    [
+     "Existencia",
+     "GestorOffline"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorOffline"
+    ],
+    [
+     "GestorOffline",
+     "ImagenProducto"
+    ],
+    [
+     "GestorOffline",
+     "Sucursal"
+    ],
+    [
+     "GestorOffline",
+     "TurnoCaja"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-14",
+   "n": "Registrar venta offline",
+   "a": [
+    "Cajero"
+   ],
+   "f": [
+    "PantallaVenta"
+   ],
+   "c": [
+    "ControlOffline"
+   ],
+   "e": [
+    "PaqueteLocal",
+    "OperacionLocal"
+   ],
+   "pares": [
+    [
+     "A:Cajero",
+     "PantallaVenta"
+    ],
+    [
+     "ControlOffline",
+     "OperacionLocal"
+    ],
+    [
+     "ControlOffline",
+     "PantallaVenta"
+    ],
+    [
+     "ControlOffline",
+     "PaqueteLocal"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-15",
+   "n": "Registrar reserva offline",
+   "a": [
+    "Cliente"
+   ],
+   "f": [
+    "PantallaReservaSinRed"
+   ],
+   "c": [
+    "ControlOffline"
+   ],
+   "e": [
+    "PaqueteLocal",
+    "OperacionLocal",
+    "FotoLocal"
+   ],
+   "pares": [
+    [
+     "A:Cliente",
+     "PantallaReservaSinRed"
+    ],
+    [
+     "ControlOffline",
+     "FotoLocal"
+    ],
+    [
+     "ControlOffline",
+     "OperacionLocal"
+    ],
+    [
+     "ControlOffline",
+     "PantallaReservaSinRed"
+    ],
+    [
+     "ControlOffline",
+     "PaqueteLocal"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-16",
+   "n": "Registrar pago sin conexión",
+   "a": [
+    "Cajero"
+   ],
+   "f": [
+    "PantallaVenta"
+   ],
+   "c": [
+    "ControlOffline"
+   ],
+   "e": [
+    "OperacionLocal"
+   ],
+   "pares": [
+    [
+     "A:Cajero",
+     "PantallaVenta"
+    ],
+    [
+     "ControlOffline",
+     "OperacionLocal"
+    ],
+    [
+     "ControlOffline",
+     "PantallaVenta"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-17",
+   "n": "Sincronizar operaciones pendientes",
+   "a": [
+    "Cajero",
+    "Cliente"
+   ],
+   "f": [
+    "PantallaSinConexion",
+    "EventoDeConexion"
+   ],
+   "c": [
+    "ControlOffline",
+    "GestorOffline",
+    "GestorAutenticacion",
+    "GestorInventario",
+    "GestorReservas",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "OperacionLocal",
+    "OperacionOffline",
+    "TurnoCaja",
+    "Existencia",
+    "Venta",
+    "Reserva",
+    "AsientoBitacora"
+   ],
+   "pares": [
+    [
+     "A:Cajero",
+     "PantallaSinConexion"
+    ],
+    [
+     "A:Cliente",
+     "PantallaSinConexion"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorOffline"
+    ],
+    [
+     "ControlOffline",
+     "EventoDeConexion"
+    ],
+    [
+     "ControlOffline",
+     "GestorOffline"
+    ],
+    [
+     "ControlOffline",
+     "OperacionLocal"
+    ],
+    [
+     "ControlOffline",
+     "PantallaSinConexion"
+    ],
+    [
+     "Existencia",
+     "GestorInventario"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorOffline"
+    ],
+    [
+     "GestorInventario",
+     "GestorOffline"
+    ],
+    [
+     "GestorOffline",
+     "GestorReservas"
+    ],
+    [
+     "GestorOffline",
+     "OperacionOffline"
+    ],
+    [
+     "GestorOffline",
+     "TurnoCaja"
+    ],
+    [
+     "GestorOffline",
+     "Venta"
+    ],
+    [
+     "GestorReservas",
+     "Reserva"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-18",
+   "n": "Consultar operaciones pendientes",
+   "a": [
+    "Cajero",
+    "Cliente"
+   ],
+   "f": [
+    "PantallaSinConexion"
+   ],
+   "c": [
+    "ControlOffline"
+   ],
+   "e": [
+    "OperacionLocal"
+   ],
+   "pares": [
+    [
+     "A:Cajero",
+     "PantallaSinConexion"
+    ],
+    [
+     "A:Cliente",
+     "PantallaSinConexion"
+    ],
+    [
+     "ControlOffline",
+     "OperacionLocal"
+    ],
+    [
+     "ControlOffline",
+     "PantallaSinConexion"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-19",
+   "n": "Atender operaciones rechazadas y devolver el dinero",
+   "a": [
+    "Encargado de sucursal"
+   ],
+   "f": [
+    "PantallaOperacionesSinConexion"
+   ],
+   "c": [
+    "GestorOffline",
+    "GestorAutenticacion",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "OperacionOffline",
+    "Usuario",
+    "AsientoBitacora"
+   ],
+   "pares": [
+    [
+     "A:Encargado de sucursal",
+     "PantallaOperacionesSinConexion"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorOffline"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorOffline"
+    ],
+    [
+     "GestorOffline",
+     "OperacionOffline"
+    ],
+    [
+     "GestorOffline",
+     "PantallaOperacionesSinConexion"
+    ],
+    [
+     "GestorOffline",
+     "Usuario"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-20",
+   "n": "Abrir y cerrar caja con ventas offline",
+   "a": [
+    "Cajero"
+   ],
+   "f": [
+    "PantallaTurno"
+   ],
+   "c": [
+    "GestorCaja",
+    "ControlOffline",
+    "GestorAutenticacion",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "Caja",
+    "TurnoCaja",
+    "Venta",
+    "Devolucion",
+    "OperacionOffline",
+    "OperacionLocal",
+    "AsientoBitacora"
+   ],
+   "pares": [
+    [
+     "A:Cajero",
+     "PantallaTurno"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorCaja"
+    ],
+    [
+     "Caja",
+     "GestorCaja"
+    ],
+    [
+     "ControlOffline",
+     "OperacionLocal"
+    ],
+    [
+     "ControlOffline",
+     "PantallaTurno"
+    ],
+    [
+     "Devolucion",
+     "GestorCaja"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorCaja"
+    ],
+    [
+     "GestorCaja",
+     "OperacionOffline"
+    ],
+    [
+     "GestorCaja",
+     "PantallaTurno"
+    ],
+    [
+     "GestorCaja",
+     "TurnoCaja"
+    ],
+    [
+     "GestorCaja",
+     "Venta"
+    ]
+   ]
   }
  ],
  "descripcion": {
@@ -826,6 +1341,30 @@
   "OperacionControlada": "Frontera técnica: cualquier endpoint que crea un recurso limitado o usa una función de pago.",
   "TareaProgramada": "Frontera sin persona: el proceso diario del backend.",
   "CanalDeCorreo": "Frontera de salida: el correo enviado por Brevo.",
-  "TiendaEnLinea": "La tienda pública de la empresa, que muestra su marca."
+  "TiendaEnLinea": "La tienda pública de la empresa, que muestra su marca.",
+  "PantallaSinConexion": "Pantalla «Sin conexión»: preparar el dispositivo, ver la cola y sincronizar (PWA y móvil).",
+  "PantallaVenta": "La caja del cajero; sin conexión vende contra los datos guardados en el navegador.",
+  "PantallaReservaSinRed": "Nueva reserva sin conexión del móvil, con la vitrina de fotos guardada.",
+  "PantallaOperacionesSinConexion": "Operaciones sin conexión de la sucursal: las rechazadas por devolver.",
+  "PantallaTurno": "Abrir y cerrar el turno de caja, con el arqueo.",
+  "EventoDeConexion": "Frontera técnica: el dispositivo avisa que volvió la conexión.",
+  "ControlOffline": "Control del dispositivo: OfflineService en la PWA y ControlOffline en el móvil. Arma la cola y la sincroniza.",
+  "GestorOffline": "Control del backend para CU-13 a CU-19: paquetes, sincronización y devoluciones (offline/service.py).",
+  "GestorCaja": "Control del backend de CU-20: abrir y cerrar el turno con el arqueo (caja/service.py).",
+  "GestorInventario": "Descuenta la existencia con bloqueo de fila: gana el que llega primero (RN-06).",
+  "GestorReservas": "Crea la reserva con las mismas reglas que en línea: horario, probadores y existencia.",
+  "BitacoraMiddleware": "Escribe un asiento de bitácora por cada petición que modifica datos (CU-42 del primer parcial).",
+  "OperacionOffline": "Operación sin conexión recibida por el servidor: UUID, estado, motivo y devolución.",
+  "OperacionLocal": "La operación en la cola del dispositivo (IndexedDB o SQLite), con su estado local.",
+  "PaqueteLocal": "Lo descargado al preparar: sucursales, prendas, existencia y clientes, con su vigencia.",
+  "FotoLocal": "Las fotos de la vitrina guardadas en la caché del teléfono.",
+  "TurnoCaja": "Turno de una caja: apertura, monto esperado y contado al cierre.",
+  "Caja": "Caja de una sucursal; un solo turno abierto a la vez.",
+  "Existencia": "Cantidad disponible de una variante en una sucursal.",
+  "ImagenProducto": "Fotos del producto; la principal va a la vitrina.",
+  "Venta": "Venta en caja o en línea, colgada de un turno si es presencial.",
+  "Reserva": "Reserva de prendas para probarse en una sucursal y una franja.",
+  "Devolucion": "Devolución o cambio registrado en caja; mueve el cajón.",
+  "AsientoBitacora": "Registro inmutable de quién hizo qué, cuándo y desde dónde."
  }
 }
