@@ -12,6 +12,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { CajaService, type ErrorCaja } from '../../../core/services/caja.service';
+import { OfflineService } from '../../../core/services/offline.service';
 import type { Caja, Turno as TurnoModelo } from '../../../core/models/caja.models';
 import { BsPipe } from '../../../shared/bs.pipe';
 
@@ -31,6 +32,14 @@ import { BsPipe } from '../../../shared/bs.pipe';
  *
  * Lo que sí hace la pantalla es **mostrar la diferencia antes de confirmar**,
  * para que quien cierra vea lo que está por declarar y no se entere después.
+ *
+ * CU-20: NO SE CIERRA CON VENTAS SIN CONEXIÓN SIN SUBIR
+ * ------------------------------------------------------
+ * Una venta hecha sin red de este turno entra al arqueo recién cuando llega al
+ * servidor. Si llegara después del cierre, el arqueo guardado ya no la vería y
+ * el turno quedaría con un faltante que no existe. Por eso, al cerrar, primero
+ * se sincroniza: si algo no sube, no se cierra; si sube, el esperado cambia y
+ * se le muestra al cajero antes de que confirme.
  */
 @Component({
   selector: 'app-turno',
@@ -52,6 +61,7 @@ import { BsPipe } from '../../../shared/bs.pipe';
 export class Turno implements OnInit {
   private readonly api = inject(CajaService);
   private readonly aviso = inject(MatSnackBar);
+  private readonly offline = inject(OfflineService);
 
   protected readonly cargando = signal(true);
   protected readonly ocupado = signal(false);
@@ -61,6 +71,15 @@ export class Turno implements OnInit {
   protected readonly cerrado = signal<TurnoModelo | null>(null);
 
   protected readonly turno = this.api.turno;
+
+  /** CU-20: las ventas de ESTE turno hechas sin red que todavía no subieron. */
+  protected readonly sinSubir = computed(() => {
+    const t = this.turno();
+    if (!t) return [];
+    return this.offline
+      .pendientes()
+      .filter((o) => o.operacion.tipo === 'VENTA' && o.operacion.turno_caja_id === t.id);
+  });
 
   protected readonly cajaElegida = signal<number | null>(null);
   protected readonly montoApertura = new FormControl('0', {
@@ -168,9 +187,34 @@ export class Turno implements OnInit {
       });
   }
 
-  protected cerrar(): void {
+  protected async cerrar(): Promise<void> {
     const t = this.turno();
     if (!t || this.montoCierre.invalid || this.ocupado()) return;
+
+    // CU-20: primero se suben las ventas sin conexión de este turno.
+    if (this.sinSubir().length) {
+      this.ocupado.set(true);
+      await this.offline.sincronizar();
+      this.ocupado.set(false);
+      const quedan = this.sinSubir().length;
+      if (quedan) {
+        this.aviso.open(
+          `Hay ${quedan} ${quedan === 1 ? 'venta' : 'ventas'} sin conexión de este turno ` +
+            'que todavía no llegaron al servidor. Recupere la conexión antes de cerrar.',
+          'Entendido',
+          { duration: 8000 },
+        );
+        return;
+      }
+      // Subieron: el esperado cambió. Se muestra antes de dejar confirmar.
+      this.api.miTurno().subscribe();
+      this.aviso.open(
+        'Se subieron las ventas sin conexión y el arqueo cambió. Revíselo y vuelva a cerrar.',
+        'Entendido',
+        { duration: 8000 },
+      );
+      return;
+    }
 
     this.ocupado.set(true);
     this.error.set(null);

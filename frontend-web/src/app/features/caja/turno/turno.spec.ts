@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 
 import { Turno } from './turno';
 import { CajaService } from '../../../core/services/caja.service';
+import { OfflineService } from '../../../core/services/offline.service';
 import type { Turno as TurnoModelo } from '../../../core/models/caja.models';
 
 /**
@@ -36,6 +37,10 @@ const TURNO: TurnoModelo = {
   monto_apertura: '100.00',
   efectivo_cobrado: '500.00',
   devoluciones: '0.00',
+  por_devolver: '0.00',
+  por_devolver_cantidad: 0,
+  ventas_offline: 0,
+  ventas_offline_total: '0.00',
   monto_esperado: '600.00',
   monto_cierre: null,
   diferencia: null,
@@ -44,15 +49,32 @@ const TURNO: TurnoModelo = {
 
 describe('El arqueo del turno (CU-30)', () => {
   let componente: any;
+  let cerrados: number;
+  /** La cola offline del navegador. Cada prueba decide qué tiene. */
+  let pendientes: ReturnType<typeof signal<any[]>>;
+  let alSincronizar: () => void;
 
   beforeEach(async () => {
+    cerrados = 0;
+    pendientes = signal<any[]>([]);
+    alSincronizar = () => {};
+    const offline = {
+      pendientes: pendientes.asReadonly(),
+      sincronizar: async () => {
+        alSincronizar();
+        return null;
+      },
+    };
     const turno = signal<TurnoModelo | null>(TURNO);
     const caja = {
       turno: turno.asReadonly(),
       miTurno: () => of(TURNO),
       cajas: () => of([]),
       abrir: () => of(TURNO),
-      cerrar: () => of(TURNO),
+      cerrar: () => {
+        cerrados++;
+        return of(TURNO);
+      },
     };
 
     await TestBed.configureTestingModule({
@@ -61,6 +83,7 @@ describe('El arqueo del turno (CU-30)', () => {
         provideZonelessChangeDetection(),
         provideHttpClient(),
         { provide: CajaService, useValue: caja },
+        { provide: OfflineService, useValue: offline },
       ],
     }).compileComponents();
 
@@ -104,5 +127,39 @@ describe('El arqueo del turno (CU-30)', () => {
 
     componente.montoCierre.setValue('600.');
     expect(componente.diferencia()).toBeNull();
+  });
+
+  // --- CU-20 ---------------------------------------------------------------
+
+  const ventaSinSubir = (turno: number) => ({
+    uuid: 'u-1',
+    estado: 'local',
+    operacion: { tipo: 'VENTA', turno_caja_id: turno },
+  });
+
+  it('CU-20: con ventas de este turno que no suben, no se cierra', async () => {
+    pendientes.set([ventaSinSubir(TURNO.id)]);
+    componente.montoCierre.setValue('600.00');
+    await componente.cerrar();
+    expect(cerrados).toBe(0);
+  });
+
+  it('CU-20: si suben, tampoco cierra de una: el esperado cambió', async () => {
+    pendientes.set([ventaSinSubir(TURNO.id)]);
+    alSincronizar = () => pendientes.set([]);
+    componente.montoCierre.setValue('600.00');
+    await componente.cerrar();
+    expect(cerrados).toBe(0);
+
+    // La segunda vez ya no hay nada que subir.
+    await componente.cerrar();
+    expect(cerrados).toBe(1);
+  });
+
+  it('CU-20: las de otro turno no frenan el cierre', async () => {
+    pendientes.set([ventaSinSubir(99)]);
+    componente.montoCierre.setValue('600.00');
+    await componente.cerrar();
+    expect(cerrados).toBe(1);
   });
 });

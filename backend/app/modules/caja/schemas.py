@@ -57,8 +57,16 @@ class TurnoOut(BaseModel):
     #: clientes pusieron diferencia, negativo si la tienda la devolvio. Es el
     #: unico numero del arqueo que puede venir en negativo.
     cambios: Decimal = Decimal("0.00")
-    #: `apertura + efectivo - devoluciones + cambios`. Lo que el sistema dice
-    #: que tiene que haber en el cajon.
+    #: CU-20: efectivo de ventas offline RECHAZADAS que sigue en el cajon
+    #: hasta que el encargado se lo devuelva al cliente (CU-19).
+    por_devolver: Decimal = Decimal("0.00")
+    por_devolver_cantidad: int = 0
+    #: CU-20: las ventas sin conexion ya confirmadas. Ya estan dentro de
+    #: `efectivo_cobrado` y de `por_metodo`: es un desglose, no un sumando.
+    ventas_offline: int = 0
+    ventas_offline_total: Decimal = Decimal("0.00")
+    #: `apertura + efectivo - devoluciones + cambios + por_devolver`. Lo que
+    #: el sistema dice que tiene que haber en el cajon.
     monto_esperado: Decimal
 
     #: Lo que la persona conto. Nulo mientras el turno sigue abierto.

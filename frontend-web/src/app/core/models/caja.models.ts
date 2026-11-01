@@ -46,7 +46,17 @@ export interface Turno {
    * con tarjeta nunca entró al cajón y no puede salir de él.
    */
   devoluciones: string;
-  /** `apertura + efectivo − devoluciones`. Lo que el sistema dice que hay. */
+  /**
+   * CU-20: efectivo de ventas sin conexión que el servidor RECHAZÓ. No hay
+   * venta, pero el billete está en el cajón hasta que el encargado se lo
+   * devuelve al cliente.
+   */
+  por_devolver: string;
+  por_devolver_cantidad: number;
+  /** CU-20: ventas sin conexión ya confirmadas. Ya están en `efectivo_cobrado`. */
+  ventas_offline: number;
+  ventas_offline_total: string;
+  /** `apertura + efectivo − devoluciones + cambios + por devolver`. */
   monto_esperado: string;
 
   /** Lo que la persona contó. Nulo mientras el turno sigue abierto. */
