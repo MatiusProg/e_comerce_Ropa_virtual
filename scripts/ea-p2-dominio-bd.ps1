@@ -10,7 +10,7 @@
 # sus asociaciones nombradas y la multiplicidad. Las del dispositivo (PWA y
 # movil) van en otro color.
 #
-# 3.5, completo: las 51 tablas en cuatro partes, cada una con su nombre en
+# 3.5: las tablas que usa el 2do parcial (32), cada una con su nombre en
 # MAYUSCULAS, todas sus columnas con el tipo de la base y «PK»/«FK», y las
 # relaciones con un verbo en MAYUSCULAS y la cardinalidad que obliga la base
 # (la convencion del 3.3.1 del 1er parcial, seccion 7.9 de la guia). Una tabla
@@ -139,7 +139,7 @@ foreach ($parte in $datos.partes) {
         $derecha = [Math]::Max($derecha, $p[0] + $p[2])
     }
     $nota = $pkg.Elements.AddNew('', 'Note')
-    $nota.Notes = "«rls»: la tabla filtra por empresa con Row Level Security; su empresa_id apunta a EMPRESA (parte 1).`r`nEn gris: tabla de otra parte, solo con su clave primaria.`r`nCardinalidad según la base: 1 si la FK es NOT NULL, 0..1 si admite nulo; 0..1 del otro lado si la FK es UNIQUE."
+    $nota.Notes = "Solo las tablas que usan CU-01 a CU-20; las demás son del 1er parcial (Anexo). Una FK hacia ellas queda marcada «FK» en su columna, sin línea.`r`n«rls»: la tabla filtra por empresa con Row Level Security; su empresa_id apunta a EMPRESA (la línea se dibuja solo desde las tablas de la plataforma).`r`nCardinalidad según la base: 1 si la FK es NOT NULL, 0..1 si admite nulo; 0..1 del otro lado si la FK es UNIQUE."
     [void]$nota.Update(); Poner $d $nota ($derecha + 60) -40 260 120
 
     # Dos FK entre las mismas tablas (usuario_id y devuelto_por; venta_id y

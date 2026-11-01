@@ -90,42 +90,31 @@ DOMINIO_ASOCIACIONES = [
 ]
 
 # ---------------------------------------------------------------- 3.5 --------
-# Cada parte: su título y sus columnas. Un nombre con '~' es una tabla de OTRA
-# parte que se dibuja en gris y solo con su clave primaria, para cerrar la FK.
+# SOLO LAS TABLAS QUE USA EL 2DO PARCIAL (pedido de Luis, 01/11): las de CU-01 a
+# CU-20 según el diseño de clases (3.4), más las que su código lee o escribe sin
+# que aparezcan como entidad: el paquete del dispositivo (producto, talla, color,
+# categoria, imagen_producto, promocion) y la venta confirmada al sincronizar
+# (detalle_venta, movimiento_inventario, comprobante). Las demás son del 1er
+# parcial y están en el Anexo; una FK hacia ellas queda marcada «FK» en su
+# columna, sin línea.
+# Columnas de partida para la disposición (p2_bd_layout las reacomoda).
 PARTES = [
-    ("3.5 Parte 1 - Plataforma, empresas y seguridad", [
-        ["plan", "pago_simulado"],
-        ["suscripcion", "consumo_cupo"],
-        ["empresa", "cliente_empresa", "~cliente"],
-        ["usuario", "sesion_token", "token_recuperacion"],
-        ["rol", "rol_permiso", "permiso"],
-        ["bitacora", "notificacion"],
-    ]),
-    ("3.5 Parte 2 - Organización y clientes", [
-        ["ciudad", "direccion_cliente"],
-        ["sucursal", "caja"],
-        ["empleado", "~usuario", "proveedor"],
-        ["cliente", "medida_cliente"],
-        ["cliente_categoria", "~categoria"],
-    ]),
-    ("3.5 Parte 3 - Catálogo e inventario", [
-        ["temporada", "coleccion"],
-        ["categoria", "promocion"],
-        ["producto", "medida_talla", "favorito"],
-        ["talla", "color", "imagen_producto"],
-        ["variante_producto", "abastecimiento"],
-        ["existencia", "movimiento_inventario"],
-        ["~sucursal", "~proveedor", "~usuario", "~cliente", "recomendacion"],
-    ]),
-    ("3.5 Parte 4 - Ventas, caja, reservas y sin conexión", [
-        ["~caja", "turno_caja", "~usuario"],
-        ["venta", "pago", "transaccion_pasarela"],
-        ["detalle_venta", "comprobante", "devolucion", "detalle_devolucion"],
-        ["operacion_offline", "~sucursal", "~direccion_cliente"],
-        ["reserva", "reserva_detalle", "~cliente"],
-        ["carrito", "carrito_detalle", "~variante_producto"],
+    ("3.5 Diseño de la base de datos - Tablas del 2do parcial", [
+        ["plan", "suscripcion", "pago_simulado", "consumo_cupo"],
+        ["empresa", "cliente_empresa", "cliente"],
+        ["usuario", "rol", "sesion_token", "bitacora"],
+        ["ciudad", "sucursal", "caja", "empleado"],
+        ["turno_caja", "venta", "detalle_venta", "comprobante", "devolucion"],
+        ["operacion_offline", "reserva", "reserva_detalle"],
+        ["existencia", "movimiento_inventario", "variante_producto"],
+        ["producto", "categoria", "talla", "color", "imagen_producto", "promocion"],
     ]),
 ]
+# Las FK a EMPRESA se dibujan solo desde estas tablas (la plataforma); las demás
+# tablas del tenant llevan «rls» y lo explica la nota, para no tener 25 líneas
+# a la misma caja.
+EMPRESA_DIBUJADA = {"suscripcion", "pago_simulado", "consumo_cupo", "cliente_empresa",
+                    "usuario", "bitacora", "sucursal"}
 
 # Verbos, escritos a mano porque la base no los tiene. Clave: (destino, origen,
 # columna); se lee «DESTINO VERBO ORIGEN». Los del 1er parcial se conservan.
@@ -286,9 +275,7 @@ for titulo, cols in PARTES:
             if not t.startswith("~"):
                 assert t not in duenia, f"{t} está en dos partes"
                 duenia[t] = titulo
-faltan = set(tablas) - set(duenia)
-if faltan:
-    raise SystemExit(f"Tablas sin parte: {sorted(faltan)}")
+print("  fuera del 3.5 (1er parcial, en el Anexo):", ", ".join(sorted(set(tablas) - set(duenia))))
 
 tabla_json = {}
 for t in tablas:
@@ -340,7 +327,7 @@ def tam_tabla(t, solo_pk):
 
 
 def relaciones_de_la_parte(propias, presentes):
-    """Las que se dibujan: al menos un extremo propio; las de EMPRESA, solo entre propias."""
+    """Las que se dibujan: al menos un extremo propio; las de EMPRESA, solo desde EMPRESA_DIBUJADA."""
     out = []
     for r in relaciones:
         d, o = r["destino"], r["origen"]
@@ -348,7 +335,7 @@ def relaciones_de_la_parte(propias, presentes):
             continue
         if d not in propias and o not in propias:
             continue
-        if d == "empresa" and not (d in propias and o in propias):
+        if d == "empresa" and o not in EMPRESA_DIBUJADA:
             continue
         out.append(r)
     return out
@@ -368,39 +355,12 @@ for titulo, cols in PARTES:
     tam = {t: tam_tabla(t, t not in propias) for t in presentes}
     rels = relaciones_de_la_parte(propias, presentes)
     pos, c = maquetar_mejor(tam, [(r["destino"], r["origen"]) for r in rels],
-                      n_columnas=len(cols) + 1, max_por_columna=4, iteraciones=8000,
+                      n_columnas=len(cols) + 1, max_por_columna=6, iteraciones=8000,
                       inicial=[[t.lstrip("~") for t in col] for col in cols])
     print(f"  {titulo}: costo de la disposición {round(c, 1)}")
     partes_json.append({"titulo": titulo, "propias": sorted(propias), "posiciones": pos,
                         "relaciones": [[r["destino"], r["origen"], r["columna"]] for r in rels]})
 
-
-# La versión completa (pedido de Luis, para comparar): las cuatro partes en una
-# cuadrícula de 2x2, sin las copias grises, con todas las relaciones salvo las
-# de empresa_id hacia EMPRESA (lo dice la nota, igual que en las partes).
-def _caja(pos):
-    xs = [p[0] for p in pos.values()] + [p[0] + p[2] for p in pos.values()]
-    ys = [p[1] for p in pos.values()] + [p[1] - p[3] for p in pos.values()]
-    return min(xs), max(xs), max(ys), min(ys)
-
-
-propias_pos = [{t: p for t, p in parte["posiciones"].items() if t in parte["propias"]} for parte in partes_json]
-cajas = [_caja(p) for p in propias_pos]
-ancho_izq = max(cajas[0][1] - cajas[0][0], cajas[2][1] - cajas[2][0])
-alto_arriba = max(cajas[0][2] - cajas[0][3], cajas[1][2] - cajas[1][3])
-pos_completo = {}
-for i, pos in enumerate(propias_pos):
-    l0, _, t0, _ = cajas[i]
-    dx = 30 - l0 + (ancho_izq + 300 if i % 2 else 0)
-    dy = -40 - t0 - (alto_arriba + 300 if i >= 2 else 0)
-    for t, (l, tp, w, h) in pos.items():
-        pos_completo[t] = [l + dx, tp + dy, w, h]
-partes_json.append({
-    "titulo": "3.5 Completo - Todas las tablas",
-    "propias": sorted(pos_completo),
-    "posiciones": pos_completo,
-    "relaciones": [[r["destino"], r["origen"], r["columna"]] for r in relaciones if r["destino"] != "empresa"],
-})
 
 salida = {
     "_generado_por": "scripts/p2_bd_datos.py — no editar a mano",

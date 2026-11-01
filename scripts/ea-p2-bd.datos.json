@@ -469,120 +469,280 @@
  },
  "partes": [
   {
-   "titulo": "3.5 Parte 1 - Plataforma, empresas y seguridad",
+   "titulo": "3.5 Diseño de la base de datos - Tablas del 2do parcial",
    "propias": [
     "bitacora",
+    "caja",
+    "categoria",
+    "ciudad",
+    "cliente",
     "cliente_empresa",
+    "color",
+    "comprobante",
     "consumo_cupo",
+    "detalle_venta",
+    "devolucion",
+    "empleado",
     "empresa",
-    "notificacion",
+    "existencia",
+    "imagen_producto",
+    "movimiento_inventario",
+    "operacion_offline",
     "pago_simulado",
-    "permiso",
     "plan",
+    "producto",
+    "promocion",
+    "reserva",
+    "reserva_detalle",
     "rol",
-    "rol_permiso",
     "sesion_token",
+    "sucursal",
     "suscripcion",
-    "token_recuperacion",
-    "usuario"
+    "talla",
+    "turno_caja",
+    "usuario",
+    "variante_producto",
+    "venta"
    ],
    "posiciones": {
-    "plan": [
-     30,
-     -40,
-     224,
-     271
-    ],
-    "pago_simulado": [
-     47,
-     -391,
-     190,
-     211
-    ],
-    "consumo_cupo": [
-     60,
-     -682,
-     163,
-     151
-    ],
     "suscripcion": [
-     391,
+     30,
      -40,
      210,
      211
     ],
-    "empresa": [
-     384,
+    "pago_simulado": [
+     40,
      -331,
-     224,
-     256
-    ],
-    "bitacora": [
-     401,
-     -667,
      190,
-     331
+     211
     ],
-    "notificacion": [
-     738,
+    "consumo_cupo": [
+     54,
+     -622,
+     163,
+     151
+    ],
+    "plan": [
+     394,
      -40,
-     231,
-     301
-    ],
-    "usuario": [
-     742,
-     -421,
      224,
-     241
-    ],
-    "cliente": [
-     778,
-     -742,
-     150,
-     76
+     271
     ],
     "cliente_empresa": [
-     766,
-     -898,
+     418,
+     -391,
      176,
      121
     ],
-    "rol_permiso": [
-     1120,
-     -40,
-     163,
-     91
+    "empresa": [
+     394,
+     -592,
+     224,
+     256
     ],
-    "rol": [
-     1102,
-     -211,
+    "caja": [
+     424,
+     -928,
+     163,
+     166
+    ],
+    "empleado": [
+     401,
+     -1174,
+     210,
+     256
+    ],
+    "operacion_offline": [
+     370,
+     -1510,
+     272,
+     436
+    ],
+    "ciudad": [
+     772,
+     -40,
+     210,
+     151
+    ],
+    "movimiento_inventario": [
+     778,
+     -271,
      197,
-     121
+     241
+    ],
+    "existencia": [
+     1119,
+     -40,
+     217,
+     226
+    ],
+    "sucursal": [
+     1112,
+     -346,
+     231,
+     271
+    ],
+    "comprobante": [
+     1486,
+     -40,
+     204,
+     211
+    ],
+    "reserva": [
+     1484,
+     -331,
+     210,
+     241
+    ],
+    "venta": [
+     1473,
+     -652,
+     231,
+     346
+    ],
+    "cliente": [
+     1484,
+     -1078,
+     210,
+     211
+    ],
+    "usuario": [
+     1476,
+     -1369,
+     224,
+     241
+    ],
+    "bitacora": [
+     1494,
+     -1690,
+     190,
+     331
+    ],
+    "color": [
+     1854,
+     -40,
+     210,
+     196
+    ],
+    "reserva_detalle": [
+     1848,
+     -316,
+     224,
+     211
+    ],
+    "detalle_venta": [
+     1834,
+     -607,
+     251,
+     211
+    ],
+    "turno_caja": [
+     1848,
+     -898,
+     224,
+     226
     ],
     "sesion_token": [
-     1106,
-     -412,
+     1864,
+     -1204,
      190,
      181
     ],
-    "token_recuperacion": [
-     1099,
-     -673,
-     204,
-     181
-    ],
-    "permiso": [
-     1433,
-     -40,
+    "rol": [
+     1861,
+     -1465,
      197,
      121
+    ],
+    "producto": [
+     2226,
+     -40,
+     210,
+     286
+    ],
+    "variante_producto": [
+     2226,
+     -406,
+     210,
+     241
+    ],
+    "devolucion": [
+     2215,
+     -727,
+     231,
+     256
+    ],
+    "talla": [
+     2226,
+     -1063,
+     210,
+     211
+    ],
+    "imagen_producto": [
+     2576,
+     -40,
+     217,
+     256
+    ],
+    "categoria": [
+     2580,
+     -376,
+     210,
+     211
+    ],
+    "promocion": [
+     2580,
+     -667,
+     210,
+     286
     ]
    },
    "relaciones": [
     [
+     "caja",
+     "turno_caja",
+     "caja_id"
+    ],
+    [
+     "categoria",
+     "categoria",
+     "categoria_padre_id"
+    ],
+    [
+     "categoria",
+     "producto",
+     "categoria_id"
+    ],
+    [
+     "categoria",
+     "promocion",
+     "categoria_id"
+    ],
+    [
+     "ciudad",
+     "sucursal",
+     "ciudad_id"
+    ],
+    [
      "cliente",
      "cliente_empresa",
      "cliente_id"
+    ],
+    [
+     "cliente",
+     "reserva",
+     "cliente_id"
+    ],
+    [
+     "cliente",
+     "venta",
+     "cliente_id"
+    ],
+    [
+     "color",
+     "variante_producto",
+     "color_id"
     ],
     [
      "empresa",
@@ -601,12 +761,12 @@
     ],
     [
      "empresa",
-     "notificacion",
+     "pago_simulado",
      "empresa_id"
     ],
     [
      "empresa",
-     "pago_simulado",
+     "sucursal",
      "empresa_id"
     ],
     [
@@ -618,373 +778,6 @@
      "empresa",
      "usuario",
      "empresa_id"
-    ],
-    [
-     "permiso",
-     "rol_permiso",
-     "permiso_id"
-    ],
-    [
-     "plan",
-     "pago_simulado",
-     "plan_id"
-    ],
-    [
-     "plan",
-     "suscripcion",
-     "plan_id"
-    ],
-    [
-     "rol",
-     "rol_permiso",
-     "rol_id"
-    ],
-    [
-     "rol",
-     "usuario",
-     "rol_id"
-    ],
-    [
-     "suscripcion",
-     "pago_simulado",
-     "suscripcion_id"
-    ],
-    [
-     "usuario",
-     "bitacora",
-     "usuario_id"
-    ],
-    [
-     "usuario",
-     "cliente",
-     "usuario_id"
-    ],
-    [
-     "usuario",
-     "notificacion",
-     "destinatario_id"
-    ],
-    [
-     "usuario",
-     "sesion_token",
-     "usuario_id"
-    ],
-    [
-     "usuario",
-     "token_recuperacion",
-     "usuario_id"
-    ]
-   ]
-  },
-  {
-   "titulo": "3.5 Parte 2 - Organización y clientes",
-   "propias": [
-    "caja",
-    "ciudad",
-    "cliente",
-    "cliente_categoria",
-    "direccion_cliente",
-    "empleado",
-    "medida_cliente",
-    "proveedor",
-    "sucursal"
-   ],
-   "posiciones": {
-    "categoria": [
-     98,
-     -40,
-     150,
-     76
-    ],
-    "medida_cliente": [
-     68,
-     -196,
-     210,
-     211
-    ],
-    "proveedor": [
-     30,
-     -487,
-     285,
-     271
-    ],
-    "cliente_categoria": [
-     465,
-     -40,
-     170,
-     91
-    ],
-    "cliente": [
-     445,
-     -211,
-     210,
-     211
-    ],
-    "usuario": [
-     475,
-     -502,
-     150,
-     76
-    ],
-    "empleado": [
-     445,
-     -658,
-     210,
-     256
-    ],
-    "direccion_cliente": [
-     796,
-     -40,
-     210,
-     226
-    ],
-    "ciudad": [
-     796,
-     -346,
-     210,
-     151
-    ],
-    "sucursal": [
-     785,
-     -577,
-     231,
-     271
-    ],
-    "caja": [
-     819,
-     -928,
-     163,
-     166
-    ]
-   },
-   "relaciones": [
-    [
-     "categoria",
-     "cliente_categoria",
-     "categoria_id"
-    ],
-    [
-     "ciudad",
-     "direccion_cliente",
-     "ciudad_id"
-    ],
-    [
-     "ciudad",
-     "sucursal",
-     "ciudad_id"
-    ],
-    [
-     "cliente",
-     "cliente_categoria",
-     "cliente_id"
-    ],
-    [
-     "cliente",
-     "direccion_cliente",
-     "cliente_id"
-    ],
-    [
-     "cliente",
-     "medida_cliente",
-     "cliente_id"
-    ],
-    [
-     "sucursal",
-     "caja",
-     "sucursal_id"
-    ],
-    [
-     "sucursal",
-     "empleado",
-     "sucursal_id"
-    ],
-    [
-     "usuario",
-     "cliente",
-     "usuario_id"
-    ],
-    [
-     "usuario",
-     "empleado",
-     "usuario_id"
-    ],
-    [
-     "usuario",
-     "proveedor",
-     "usuario_id"
-    ]
-   ]
-  },
-  {
-   "titulo": "3.5 Parte 3 - Catálogo e inventario",
-   "propias": [
-    "abastecimiento",
-    "categoria",
-    "coleccion",
-    "color",
-    "existencia",
-    "favorito",
-    "imagen_producto",
-    "medida_talla",
-    "movimiento_inventario",
-    "producto",
-    "promocion",
-    "recomendacion",
-    "talla",
-    "temporada",
-    "variante_producto"
-   ],
-   "posiciones": {
-    "temporada": [
-     30,
-     -40,
-     210,
-     226
-    ],
-    "promocion": [
-     30,
-     -346,
-     210,
-     286
-    ],
-    "categoria": [
-     30,
-     -712,
-     210,
-     211
-    ],
-    "coleccion": [
-     370,
-     -40,
-     210,
-     211
-    ],
-    "producto": [
-     370,
-     -331,
-     210,
-     286
-    ],
-    "medida_talla": [
-     370,
-     -697,
-     210,
-     241
-    ],
-    "cliente": [
-     723,
-     -40,
-     150,
-     76
-    ],
-    "favorito": [
-     710,
-     -196,
-     176,
-     151
-    ],
-    "recomendacion": [
-     1020,
-     -40,
-     210,
-     211
-    ],
-    "proveedor": [
-     1050,
-     -331,
-     150,
-     76
-    ],
-    "imagen_producto": [
-     1016,
-     -487,
-     217,
-     256
-    ],
-    "talla": [
-     1020,
-     -823,
-     210,
-     211
-    ],
-    "movimiento_inventario": [
-     1370,
-     -40,
-     197,
-     241
-    ],
-    "abastecimiento": [
-     1363,
-     -361,
-     210,
-     271
-    ],
-    "variante_producto": [
-     1363,
-     -712,
-     210,
-     241
-    ],
-    "color": [
-     1363,
-     -1033,
-     210,
-     196
-    ],
-    "usuario": [
-     1736,
-     -40,
-     150,
-     76
-    ],
-    "sucursal": [
-     1736,
-     -196,
-     150,
-     76
-    ],
-    "existencia": [
-     1703,
-     -352,
-     217,
-     226
-    ]
-   },
-   "relaciones": [
-    [
-     "categoria",
-     "categoria",
-     "categoria_padre_id"
-    ],
-    [
-     "categoria",
-     "producto",
-     "categoria_id"
-    ],
-    [
-     "categoria",
-     "promocion",
-     "categoria_id"
-    ],
-    [
-     "cliente",
-     "favorito",
-     "cliente_id"
-    ],
-    [
-     "cliente",
-     "recomendacion",
-     "cliente_id"
-    ],
-    [
-     "coleccion",
-     "producto",
-     "coleccion_id"
-    ],
-    [
-     "color",
-     "variante_producto",
-     "color_id"
     ],
     [
      "existencia",
@@ -992,863 +785,6 @@
      "existencia_id"
     ],
     [
-     "producto",
-     "favorito",
-     "producto_id"
-    ],
-    [
-     "producto",
-     "imagen_producto",
-     "producto_id"
-    ],
-    [
-     "producto",
-     "medida_talla",
-     "producto_id"
-    ],
-    [
-     "producto",
-     "promocion",
-     "producto_id"
-    ],
-    [
-     "producto",
-     "variante_producto",
-     "producto_id"
-    ],
-    [
-     "proveedor",
-     "abastecimiento",
-     "proveedor_id"
-    ],
-    [
-     "proveedor",
-     "movimiento_inventario",
-     "proveedor_id"
-    ],
-    [
-     "proveedor",
-     "producto",
-     "proveedor_id"
-    ],
-    [
-     "sucursal",
-     "existencia",
-     "sucursal_id"
-    ],
-    [
-     "talla",
-     "medida_talla",
-     "talla_id"
-    ],
-    [
-     "talla",
-     "variante_producto",
-     "talla_id"
-    ],
-    [
-     "temporada",
-     "coleccion",
-     "temporada_id"
-    ],
-    [
-     "temporada",
-     "producto",
-     "temporada_id"
-    ],
-    [
-     "temporada",
-     "promocion",
-     "temporada_id"
-    ],
-    [
-     "usuario",
-     "movimiento_inventario",
-     "usuario_id"
-    ],
-    [
-     "variante_producto",
-     "abastecimiento",
-     "variante_id"
-    ],
-    [
-     "variante_producto",
-     "existencia",
-     "variante_id"
-    ],
-    [
-     "variante_producto",
-     "imagen_producto",
-     "variante_id"
-    ]
-   ]
-  },
-  {
-   "titulo": "3.5 Parte 4 - Ventas, caja, reservas y sin conexión",
-   "propias": [
-    "carrito",
-    "carrito_detalle",
-    "comprobante",
-    "detalle_devolucion",
-    "detalle_venta",
-    "devolucion",
-    "operacion_offline",
-    "pago",
-    "reserva",
-    "reserva_detalle",
-    "transaccion_pasarela",
-    "turno_caja",
-    "venta"
-   ],
-   "posiciones": {
-    "turno_caja": [
-     40,
-     -40,
-     224,
-     226
-    ],
-    "comprobante": [
-     50,
-     -346,
-     204,
-     211
-    ],
-    "pago": [
-     30,
-     -637,
-     244,
-     226
-    ],
-    "transaccion_pasarela": [
-     57,
-     -943,
-     190,
-     211
-    ],
-    "caja": [
-     404,
-     -40,
-     150,
-     76
-    ],
-    "usuario": [
-     404,
-     -196,
-     150,
-     76
-    ],
-    "operacion_offline": [
-     684,
-     -40,
-     272,
-     436
-    ],
-    "venta": [
-     704,
-     -556,
-     231,
-     346
-    ],
-    "devolucion": [
-     704,
-     -982,
-     231,
-     256
-    ],
-    "reserva": [
-     1086,
-     -40,
-     210,
-     241
-    ],
-    "sucursal": [
-     1116,
-     -361,
-     150,
-     76
-    ],
-    "reserva_detalle": [
-     1440,
-     -40,
-     224,
-     211
-    ],
-    "cliente": [
-     1476,
-     -331,
-     150,
-     76
-    ],
-    "detalle_venta": [
-     1426,
-     -487,
-     251,
-     211
-    ],
-    "direccion_cliente": [
-     1466,
-     -778,
-     170,
-     76
-    ],
-    "carrito": [
-     1807,
-     -40,
-     210,
-     166
-    ],
-    "carrito_detalle": [
-     1807,
-     -286,
-     210,
-     196
-    ],
-    "variante_producto": [
-     1827,
-     -562,
-     170,
-     76
-    ],
-    "detalle_devolucion": [
-     1824,
-     -718,
-     176,
-     181
-    ]
-   },
-   "relaciones": [
-    [
-     "caja",
-     "turno_caja",
-     "caja_id"
-    ],
-    [
-     "carrito",
-     "carrito_detalle",
-     "carrito_id"
-    ],
-    [
-     "cliente",
-     "carrito",
-     "cliente_id"
-    ],
-    [
-     "cliente",
-     "reserva",
-     "cliente_id"
-    ],
-    [
-     "cliente",
-     "venta",
-     "cliente_id"
-    ],
-    [
-     "devolucion",
-     "detalle_devolucion",
-     "devolucion_id"
-    ],
-    [
-     "direccion_cliente",
-     "venta",
-     "direccion_id"
-    ],
-    [
-     "pago",
-     "transaccion_pasarela",
-     "pago_id"
-    ],
-    [
-     "reserva",
-     "operacion_offline",
-     "reserva_id"
-    ],
-    [
-     "reserva",
-     "reserva_detalle",
-     "reserva_id"
-    ],
-    [
-     "reserva",
-     "venta",
-     "reserva_id"
-    ],
-    [
-     "sucursal",
-     "operacion_offline",
-     "sucursal_id"
-    ],
-    [
-     "sucursal",
-     "reserva",
-     "sucursal_id"
-    ],
-    [
-     "sucursal",
-     "venta",
-     "sucursal_id"
-    ],
-    [
-     "turno_caja",
-     "devolucion",
-     "turno_caja_id"
-    ],
-    [
-     "turno_caja",
-     "venta",
-     "turno_caja_id"
-    ],
-    [
-     "usuario",
-     "operacion_offline",
-     "devuelto_por"
-    ],
-    [
-     "usuario",
-     "operacion_offline",
-     "usuario_id"
-    ],
-    [
-     "usuario",
-     "turno_caja",
-     "usuario_id"
-    ],
-    [
-     "variante_producto",
-     "carrito_detalle",
-     "variante_id"
-    ],
-    [
-     "variante_producto",
-     "detalle_devolucion",
-     "variante_id"
-    ],
-    [
-     "variante_producto",
-     "detalle_venta",
-     "variante_id"
-    ],
-    [
-     "variante_producto",
-     "reserva_detalle",
-     "variante_id"
-    ],
-    [
-     "venta",
-     "comprobante",
-     "venta_id"
-    ],
-    [
-     "venta",
-     "detalle_venta",
-     "venta_id"
-    ],
-    [
-     "venta",
-     "devolucion",
-     "venta_cambio_id"
-    ],
-    [
-     "venta",
-     "devolucion",
-     "venta_id"
-    ],
-    [
-     "venta",
-     "operacion_offline",
-     "venta_id"
-    ],
-    [
-     "venta",
-     "pago",
-     "venta_id"
-    ]
-   ]
-  },
-  {
-   "titulo": "3.5 Completo - Todas las tablas",
-   "propias": [
-    "abastecimiento",
-    "bitacora",
-    "caja",
-    "carrito",
-    "carrito_detalle",
-    "categoria",
-    "ciudad",
-    "cliente",
-    "cliente_categoria",
-    "cliente_empresa",
-    "coleccion",
-    "color",
-    "comprobante",
-    "consumo_cupo",
-    "detalle_devolucion",
-    "detalle_venta",
-    "devolucion",
-    "direccion_cliente",
-    "empleado",
-    "empresa",
-    "existencia",
-    "favorito",
-    "imagen_producto",
-    "medida_cliente",
-    "medida_talla",
-    "movimiento_inventario",
-    "notificacion",
-    "operacion_offline",
-    "pago",
-    "pago_simulado",
-    "permiso",
-    "plan",
-    "producto",
-    "promocion",
-    "proveedor",
-    "recomendacion",
-    "reserva",
-    "reserva_detalle",
-    "rol",
-    "rol_permiso",
-    "sesion_token",
-    "sucursal",
-    "suscripcion",
-    "talla",
-    "temporada",
-    "token_recuperacion",
-    "transaccion_pasarela",
-    "turno_caja",
-    "usuario",
-    "variante_producto",
-    "venta"
-   ],
-   "posiciones": {
-    "plan": [
-     30,
-     -40,
-     224,
-     271
-    ],
-    "pago_simulado": [
-     47,
-     -391,
-     190,
-     211
-    ],
-    "consumo_cupo": [
-     60,
-     -682,
-     163,
-     151
-    ],
-    "suscripcion": [
-     391,
-     -40,
-     210,
-     211
-    ],
-    "empresa": [
-     384,
-     -331,
-     224,
-     256
-    ],
-    "bitacora": [
-     401,
-     -667,
-     190,
-     331
-    ],
-    "notificacion": [
-     738,
-     -40,
-     231,
-     301
-    ],
-    "usuario": [
-     742,
-     -421,
-     224,
-     241
-    ],
-    "cliente_empresa": [
-     766,
-     -898,
-     176,
-     121
-    ],
-    "rol_permiso": [
-     1120,
-     -40,
-     163,
-     91
-    ],
-    "rol": [
-     1102,
-     -211,
-     197,
-     121
-    ],
-    "sesion_token": [
-     1106,
-     -412,
-     190,
-     181
-    ],
-    "token_recuperacion": [
-     1099,
-     -673,
-     204,
-     181
-    ],
-    "permiso": [
-     1433,
-     -40,
-     197,
-     121
-    ],
-    "medida_cliente": [
-     2258,
-     -196,
-     210,
-     211
-    ],
-    "proveedor": [
-     2220,
-     -487,
-     285,
-     271
-    ],
-    "cliente_categoria": [
-     2655,
-     -40,
-     170,
-     91
-    ],
-    "cliente": [
-     2635,
-     -211,
-     210,
-     211
-    ],
-    "empleado": [
-     2635,
-     -658,
-     210,
-     256
-    ],
-    "direccion_cliente": [
-     2986,
-     -40,
-     210,
-     226
-    ],
-    "ciudad": [
-     2986,
-     -346,
-     210,
-     151
-    ],
-    "sucursal": [
-     2975,
-     -577,
-     231,
-     271
-    ],
-    "caja": [
-     3009,
-     -928,
-     163,
-     166
-    ],
-    "temporada": [
-     30,
-     -1394,
-     210,
-     226
-    ],
-    "promocion": [
-     30,
-     -1700,
-     210,
-     286
-    ],
-    "categoria": [
-     30,
-     -2066,
-     210,
-     211
-    ],
-    "coleccion": [
-     370,
-     -1394,
-     210,
-     211
-    ],
-    "producto": [
-     370,
-     -1685,
-     210,
-     286
-    ],
-    "medida_talla": [
-     370,
-     -2051,
-     210,
-     241
-    ],
-    "favorito": [
-     710,
-     -1550,
-     176,
-     151
-    ],
-    "recomendacion": [
-     1020,
-     -1394,
-     210,
-     211
-    ],
-    "imagen_producto": [
-     1016,
-     -1841,
-     217,
-     256
-    ],
-    "talla": [
-     1020,
-     -2177,
-     210,
-     211
-    ],
-    "movimiento_inventario": [
-     1370,
-     -1394,
-     197,
-     241
-    ],
-    "abastecimiento": [
-     1363,
-     -1715,
-     210,
-     271
-    ],
-    "variante_producto": [
-     1363,
-     -2066,
-     210,
-     241
-    ],
-    "color": [
-     1363,
-     -2387,
-     210,
-     196
-    ],
-    "existencia": [
-     1703,
-     -1706,
-     217,
-     226
-    ],
-    "turno_caja": [
-     2230,
-     -1394,
-     224,
-     226
-    ],
-    "comprobante": [
-     2240,
-     -1700,
-     204,
-     211
-    ],
-    "pago": [
-     2220,
-     -1991,
-     244,
-     226
-    ],
-    "transaccion_pasarela": [
-     2247,
-     -2297,
-     190,
-     211
-    ],
-    "operacion_offline": [
-     2874,
-     -1394,
-     272,
-     436
-    ],
-    "venta": [
-     2894,
-     -1910,
-     231,
-     346
-    ],
-    "devolucion": [
-     2894,
-     -2336,
-     231,
-     256
-    ],
-    "reserva": [
-     3276,
-     -1394,
-     210,
-     241
-    ],
-    "reserva_detalle": [
-     3630,
-     -1394,
-     224,
-     211
-    ],
-    "detalle_venta": [
-     3616,
-     -1841,
-     251,
-     211
-    ],
-    "carrito": [
-     3997,
-     -1394,
-     210,
-     166
-    ],
-    "carrito_detalle": [
-     3997,
-     -1640,
-     210,
-     196
-    ],
-    "detalle_devolucion": [
-     4014,
-     -2072,
-     176,
-     181
-    ]
-   },
-   "relaciones": [
-    [
-     "caja",
-     "turno_caja",
-     "caja_id"
-    ],
-    [
-     "carrito",
-     "carrito_detalle",
-     "carrito_id"
-    ],
-    [
-     "categoria",
-     "categoria",
-     "categoria_padre_id"
-    ],
-    [
-     "categoria",
-     "cliente_categoria",
-     "categoria_id"
-    ],
-    [
-     "categoria",
-     "producto",
-     "categoria_id"
-    ],
-    [
-     "categoria",
-     "promocion",
-     "categoria_id"
-    ],
-    [
-     "ciudad",
-     "direccion_cliente",
-     "ciudad_id"
-    ],
-    [
-     "ciudad",
-     "sucursal",
-     "ciudad_id"
-    ],
-    [
-     "cliente",
-     "carrito",
-     "cliente_id"
-    ],
-    [
-     "cliente",
-     "cliente_categoria",
-     "cliente_id"
-    ],
-    [
-     "cliente",
-     "cliente_empresa",
-     "cliente_id"
-    ],
-    [
-     "cliente",
-     "direccion_cliente",
-     "cliente_id"
-    ],
-    [
-     "cliente",
-     "favorito",
-     "cliente_id"
-    ],
-    [
-     "cliente",
-     "medida_cliente",
-     "cliente_id"
-    ],
-    [
-     "cliente",
-     "recomendacion",
-     "cliente_id"
-    ],
-    [
-     "cliente",
-     "reserva",
-     "cliente_id"
-    ],
-    [
-     "cliente",
-     "venta",
-     "cliente_id"
-    ],
-    [
-     "coleccion",
-     "producto",
-     "coleccion_id"
-    ],
-    [
-     "color",
-     "variante_producto",
-     "color_id"
-    ],
-    [
-     "devolucion",
-     "detalle_devolucion",
-     "devolucion_id"
-    ],
-    [
-     "direccion_cliente",
-     "venta",
-     "direccion_id"
-    ],
-    [
-     "existencia",
-     "movimiento_inventario",
-     "existencia_id"
-    ],
-    [
-     "pago",
-     "transaccion_pasarela",
-     "pago_id"
-    ],
-    [
-     "permiso",
-     "rol_permiso",
-     "permiso_id"
-    ],
-    [
      "plan",
      "pago_simulado",
      "plan_id"
@@ -1860,17 +796,7 @@
     ],
     [
      "producto",
-     "favorito",
-     "producto_id"
-    ],
-    [
-     "producto",
      "imagen_producto",
-     "producto_id"
-    ],
-    [
-     "producto",
-     "medida_talla",
      "producto_id"
     ],
     [
@@ -1882,21 +808,6 @@
      "producto",
      "variante_producto",
      "producto_id"
-    ],
-    [
-     "proveedor",
-     "abastecimiento",
-     "proveedor_id"
-    ],
-    [
-     "proveedor",
-     "movimiento_inventario",
-     "proveedor_id"
-    ],
-    [
-     "proveedor",
-     "producto",
-     "proveedor_id"
     ],
     [
      "reserva",
@@ -1912,11 +823,6 @@
      "reserva",
      "venta",
      "reserva_id"
-    ],
-    [
-     "rol",
-     "rol_permiso",
-     "rol_id"
     ],
     [
      "rol",
@@ -1960,28 +866,8 @@
     ],
     [
      "talla",
-     "medida_talla",
-     "talla_id"
-    ],
-    [
-     "talla",
      "variante_producto",
      "talla_id"
-    ],
-    [
-     "temporada",
-     "coleccion",
-     "temporada_id"
-    ],
-    [
-     "temporada",
-     "producto",
-     "temporada_id"
-    ],
-    [
-     "temporada",
-     "promocion",
-     "temporada_id"
     ],
     [
      "turno_caja",
@@ -2015,11 +901,6 @@
     ],
     [
      "usuario",
-     "notificacion",
-     "destinatario_id"
-    ],
-    [
-     "usuario",
      "operacion_offline",
      "devuelto_por"
     ],
@@ -2030,38 +911,13 @@
     ],
     [
      "usuario",
-     "proveedor",
-     "usuario_id"
-    ],
-    [
-     "usuario",
      "sesion_token",
-     "usuario_id"
-    ],
-    [
-     "usuario",
-     "token_recuperacion",
      "usuario_id"
     ],
     [
      "usuario",
      "turno_caja",
      "usuario_id"
-    ],
-    [
-     "variante_producto",
-     "abastecimiento",
-     "variante_id"
-    ],
-    [
-     "variante_producto",
-     "carrito_detalle",
-     "variante_id"
-    ],
-    [
-     "variante_producto",
-     "detalle_devolucion",
-     "variante_id"
     ],
     [
      "variante_producto",
@@ -2106,11 +962,6 @@
     [
      "venta",
      "operacion_offline",
-     "venta_id"
-    ],
-    [
-     "venta",
-     "pago",
      "venta_id"
     ]
    ]
