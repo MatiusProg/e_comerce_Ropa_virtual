@@ -17,7 +17,18 @@ cobro de menos o si falta plata.
 
 QUE ENTRA AL ESPERADO
 ---------------------
-`apertura + efectivo cobrado - devoluciones`.
+`apertura + efectivo cobrado - devoluciones + cambios + por devolver`.
+
+LAS VENTAS SIN CONEXION (CU-20)
+-------------------------------
+Una venta offline confirmada ya es una fila de `venta` de este turno: entra
+sola al efectivo cobrado. La que el servidor RECHAZO no deja venta, pero el
+billete esta en el cajon hasta que el encargado se lo devuelva al cliente
+(CU-19): eso es `por devolver`, y sin sumarlo el turno cerraria con sobrante.
+
+Por eso la pantalla sincroniza ANTES de cerrar y no deja cerrar con ventas de
+este turno sin subir: una venta que llega despues del cierre ya no entra al
+arqueo guardado.
 
 Tarjeta y QR **no**: no entran al cajon. Sumarlos haria que todo turno con un
 pago con tarjeta apareciera descuadrado, y un arqueo que siempre descuadra
@@ -62,6 +73,12 @@ class EstadoDelTurno:
     #: Lo que los cambios de CU-32 movieron en el cajon, CON SIGNO. Positivo:
     #: los clientes pusieron diferencia. Negativo: la tienda la devolvio.
     cambios: Decimal
+    #: CU-20: efectivo de ventas offline rechazadas que sigue en el cajon.
+    por_devolver: Decimal
+    por_devolver_cantidad: int
+    #: CU-20: las ventas offline confirmadas (ya incluidas en `efectivo`).
+    ventas_offline: int
+    ventas_offline_total: Decimal
     esperado: Decimal
     por_metodo: list[LineaDeArqueo]
 
@@ -71,10 +88,11 @@ class EstadoDelTurno:
 
 def _esperado(
     db: Session, turno: TurnoCaja
-) -> tuple[Decimal, Decimal, Decimal, Decimal]:
-    """Los tres sumandos del arqueo y el total.
+) -> tuple[Decimal, Decimal, Decimal, Decimal, Decimal]:
+    """Los cuatro sumandos del arqueo y el total.
 
         esperado = apertura + efectivo cobrado - devoluciones + cambios
+                   + por devolver
 
     `cambios` **suma** aunque represente una salida de plata, porque ya viene
     con signo desde el repositorio. Restarlo seria invertir el caso mas comun
@@ -84,18 +102,22 @@ def _esperado(
     efectivo = repository.efectivo_cobrado(db, turno.id)
     devoluciones = repository.devoluciones_del_turno(db, turno.id)
     cambios = repository.diferencias_de_cambios(db, turno.id)
+    _, por_devolver = repository.efectivo_por_devolver(db, turno.id)
     return (
         efectivo,
         devoluciones,
         cambios,
-        turno.monto_apertura + efectivo - devoluciones + cambios,
+        por_devolver,
+        turno.monto_apertura + efectivo - devoluciones + cambios + por_devolver,
     )
 
 
 def _armar(
     db: Session, turno: TurnoCaja, diferencia: Decimal | None = None
 ) -> EstadoDelTurno:
-    efectivo, devoluciones, cambios, esperado = _esperado(db, turno)
+    efectivo, devoluciones, cambios, por_devolver, esperado = _esperado(db, turno)
+    cantidad_por_devolver, _ = repository.efectivo_por_devolver(db, turno.id)
+    ventas_offline, ventas_offline_total = repository.ventas_offline_del_turno(db, turno.id)
     caja = repository.caja_por_id(db, turno.caja_id)
     sucursal = repository.sucursal_activa(db, caja.sucursal_id) if caja else None
     return EstadoDelTurno(
@@ -105,6 +127,10 @@ def _armar(
         efectivo=efectivo,
         devoluciones=devoluciones,
         cambios=cambios,
+        por_devolver=por_devolver,
+        por_devolver_cantidad=cantidad_por_devolver,
+        ventas_offline=ventas_offline,
+        ventas_offline_total=ventas_offline_total,
         esperado=esperado,
         por_metodo=[
             LineaDeArqueo(metodo=m or "—", ventas=n, total=t)

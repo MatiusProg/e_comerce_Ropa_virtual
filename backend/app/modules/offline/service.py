@@ -336,7 +336,8 @@ def _confirmar_venta(
         raise Rechazo("El turno de caja de la venta no es suyo.")
     caja = caja_repository.caja_por_id(db, turno.caja_id)
     # Se acepta aunque el turno ya se haya cerrado: el dinero entró a esa
-    # caja mientras estaba abierta. Cómo entra al arqueo es del CU-20.
+    # caja mientras estaba abierta. Para que no pase, la pantalla de caja
+    # sincroniza antes de cerrar y no cierra con ventas pendientes (CU-20).
     sucursal_id = caja.sucursal_id
 
     prendas = pos_repository.prendas_por_id(

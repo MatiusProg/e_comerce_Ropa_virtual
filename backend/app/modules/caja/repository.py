@@ -1,14 +1,15 @@
 """
-P7 - Ventas y POS / CU-30  |  capa: repositorio (consultas, sin logica ni commit)
+P7 - Ventas y POS / CU-30 y CU-20  |  capa: repositorio (consultas, sin logica ni commit)
 """
 
 from __future__ import annotations
 
 from decimal import Decimal
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
+from app.modules.offline.models import OperacionOffline
 from app.modules.organizacion.models import Sucursal
 from app.modules.ventas.models import Caja, Devolucion, TurnoCaja, Venta
 
@@ -137,6 +138,54 @@ def diferencias_de_cambios(db: Session, turno_id: int) -> Decimal:
         )
     )
     return Decimal(total or 0)
+
+
+def ventas_offline_del_turno(db: Session, turno_id: int) -> tuple[int, Decimal]:
+    """Las ventas sin conexion de este turno que el servidor ya confirmo (CU-20).
+
+    Ya estan sumadas en `efectivo_cobrado` y en `ventas_del_turno`: al
+    confirmarse dejaron su fila en `venta`, colgada de este turno. Aca solo se
+    cuentan aparte, para que el cajero vea que parte del turno entro sin red.
+    """
+    cantidad, total = db.execute(
+        select(func.count(), func.coalesce(func.sum(Venta.total), 0))
+        .select_from(OperacionOffline)
+        .join(Venta, Venta.id == OperacionOffline.venta_id)
+        .where(
+            OperacionOffline.tipo == "VENTA",
+            OperacionOffline.estado == "CONFIRMADA",
+            Venta.turno_caja_id == turno_id,
+        )
+    ).one()
+    return cantidad, Decimal(total or 0)
+
+
+def efectivo_por_devolver(db: Session, turno_id: int) -> tuple[int, Decimal]:
+    """El efectivo de ventas offline RECHAZADAS que sigue en el cajon (CU-20).
+
+    Una venta rechazada no deja fila en `venta`, pero el billete si entro al
+    cajon: el cliente pago y se fue. Sin esta cifra el arqueo diria que sobra
+    plata. Sale del cajon cuando el encargado se la devuelve en efectivo
+    (CU-19); si se la devuelve por QR, el billete se queda.
+
+    El turno no tiene columna en `operacion_offline`: viaja en la `carga`, que
+    es la operacion tal como la mando el dispositivo.
+    """
+    cantidad, total = db.execute(
+        select(
+            func.count(), func.coalesce(func.sum(OperacionOffline.monto_cobrado), 0)
+        ).where(
+            OperacionOffline.tipo == "VENTA",
+            OperacionOffline.estado == "RECHAZADA",
+            OperacionOffline.metodo_pago == "EFECTIVO",
+            OperacionOffline.carga["turno_caja_id"].as_integer() == turno_id,
+            or_(
+                OperacionOffline.devuelto_en.is_(None),
+                OperacionOffline.metodo_devolucion != "EFECTIVO",
+            ),
+        )
+    ).one()
+    return cantidad, Decimal(total or 0)
 
 
 def ventas_del_turno(db: Session, turno_id: int) -> list[tuple[str, int, Decimal]]:

@@ -88,9 +88,29 @@
             >
           </dt>
           <dd>− {{ t.devoluciones | bs }}</dd>
+          @if (t.por_devolver_cantidad) {
+            <dt>
+              Por devolver ({{ t.por_devolver_cantidad }})
+              <mat-icon
+                class="ayuda"
+                matTooltip="Ventas sin conexión que el servidor rechazó porque otra se llevó la prenda. Se cobraron, así que el dinero está en el cajón hasta que el encargado se lo devuelva al cliente."
+                >help_outline</mat-icon
+              >
+            </dt>
+            <dd>+ {{ t.por_devolver | bs }}</dd>
+          }
           <dt class="fuerte">Debería haber</dt>
           <dd class="fuerte">{{ t.monto_esperado | bs }}</dd>
         </dl>
+
+        @if (t.ventas_offline) {
+          <p class="nota">
+            <mat-icon class="ayuda">cloud_off</mat-icon>
+            {{ t.ventas_offline }}
+            {{ t.ventas_offline === 1 ? 'venta se hizo' : 'ventas se hicieron' }}
+            sin conexión ({{ t.ventas_offline_total | bs }}). Ya están sumadas arriba.
+          </p>
+        }
 
         @if (t.por_metodo.length) {
           <h3>Cobrado por método</h3>
@@ -123,6 +143,15 @@
     <mat-card class="tarjeta" appearance="outlined">
       <mat-card-content>
         <h2>Cerrar el turno</h2>
+        @if (sinSubir().length) {
+          <p class="anticipo">
+            <mat-icon>cloud_upload</mat-icon>
+            Hay {{ sinSubir().length }}
+            {{ sinSubir().length === 1 ? 'venta' : 'ventas' }} sin conexión de este
+            turno sin subir. Al cerrar se suben primero; sin conexión no se puede
+            cerrar.
+          </p>
+        }
         <p class="nota">
           Cuente lo que hay en el cajón y escríbalo. <strong>Anote lo que contó,
           no lo que debería haber</strong>: la diferencia es justamente lo que el
