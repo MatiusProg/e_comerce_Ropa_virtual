@@ -1,5 +1,5 @@
 ﻿# =========================================================================
-# 2DO PARCIAL - 3.3 Diagramas de Secuencia: uno por caso de uso (CU-01 a CU-12).
+# 2DO PARCIAL - 3.3 Diagramas de Secuencia: uno por caso de uso (CU-01 a CU-20).
 #
 # ---- DE DONDE SALE ESTE FORMATO ----
 # ICONIX: la secuencia sale de la robustez. Por eso:
@@ -631,6 +631,444 @@ $CASOS = @(
     @{ t='msg'; o='gst'; d='tie'; n='1.10: aplicarMarca(marca)' },
     @{ t='op'; g='no es una imagen válida' },
     @{ t='msg'; o='gst'; d='pan'; n='3: imagenInvalida()' },
+    @{ t='fin' }
+  )
+},
+
+# ---------------------------------------------------------------- CU-13 --
+# Fragmentos: alt de offline/service.py:120 (SinTurnoAbierto -> 409); el
+# paquete del movil se guarda en una transaccion (base_local.dart:106) y las
+# fotos se bajan una por una.
+@{
+  cu = 'CU-13'; nombre = '3.3 CU-13 Preparar el dispositivo para trabajar offline'
+  lineas = @(
+    @{ k = 'caj'; actor = 'Cajero' },
+    @{ k = 'acl'; actor = 'Cliente' },
+    @{ k = 'pan'; clase = 'PantallaSinConexion' },
+    @{ k = 'ctl'; clase = 'ControlOffline' },
+    @{ k = 'paq'; clase = 'PaqueteLocal' },
+    @{ k = 'ope'; clase = 'OperacionLocal' },
+    @{ k = 'fot'; clase = 'FotoLocal' },
+    @{ k = 'gst'; clase = 'GestorOffline' },
+    @{ k = 'aut'; clase = 'GestorAutenticacion' },
+    @{ k = 'tur'; clase = 'TurnoCaja' },
+    @{ k = 'exi'; clase = 'Existencia' },
+    @{ k = 'cli'; clase = 'Cliente' },
+    @{ k = 'suc'; clase = 'Sucursal' },
+    @{ k = 'img'; clase = 'ImagenProducto' }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nEl cajero prepara la PWA" },
+    @{ t='msg'; o='caj'; d='pan'; n='1: preparar()' },
+    @{ t='msg'; o='pan'; d='ctl'; n='1.1: preparar()' },
+    @{ t='msg'; o='ctl'; d='gst'; n='1.2: paqueteDeMostrador()' },
+    @{ t='msg'; o='gst'; d='aut'; n='1.3: autorizar("CAJERO")' },
+    @{ t='msg'; o='gst'; d='tur'; n='1.4: turnoAbiertoDe(usuario)' },
+    @{ t='msg'; o='tur'; d='gst'; n='1.4.1: TurnoCaja | None'; ret=$true },
+    @{ t='alt' },
+    @{ t='op'; g='tiene un turno abierto' },
+    @{ t='msg'; o='gst'; d='exi'; n='1.5: prendasDeSucursal(sucursal)' },
+    @{ t='msg'; o='exi'; d='gst'; n='1.5.1: List<Existencia>'; ret=$true },
+    @{ t='msg'; o='gst'; d='cli'; n='1.6: clientesDeLaEmpresa()' },
+    @{ t='msg'; o='cli'; d='gst'; n='1.6.1: List<Cliente>'; ret=$true },
+    @{ t='msg'; o='gst'; d='ctl'; n='1.7: paquete(prendas, clientes, turno, vigencia)'; ret=$true },
+    @{ t='msg'; o='ctl'; d='paq'; n='1.8: guardar(paquete)' },
+    @{ t='msg'; o='ctl'; d='pan'; n='1.9: mostrarResumen(fecha, prendas)' },
+    @{ t='op'; g='no tiene turno abierto' },
+    @{ t='msg'; o='gst'; d='ctl'; n='3: turnoNoAbierto() -> 409'; ret=$true },
+    @{ t='msg'; o='ctl'; d='pan'; n='3.1: pedirAbrirTurno()' },
+    @{ t='fin' },
+    @{ t='nota'; txt = "FLUJO 2`nEl cliente prepara el teléfono" },
+    @{ t='msg'; o='acl'; d='pan'; n='2: prepararTelefono()' },
+    @{ t='msg'; o='pan'; d='ctl'; n='2.1: preparar()' },
+    @{ t='alt' },
+    @{ t='op'; g='hay conexión' },
+    @{ t='msg'; o='ctl'; d='gst'; n='2.2: paqueteDeCliente()' },
+    @{ t='msg'; o='gst'; d='aut'; n='2.3: autorizar("CLIENTE")' },
+    @{ t='msg'; o='gst'; d='suc'; n='2.4: sucursalesActivas()' },
+    @{ t='msg'; o='suc'; d='gst'; n='2.4.1: List<Sucursal>'; ret=$true },
+    @{ t='msg'; o='gst'; d='exi'; n='2.5: prendasEnSucursalesActivas()' },
+    @{ t='msg'; o='exi'; d='gst'; n='2.5.1: List<Existencia>'; ret=$true },
+    @{ t='msg'; o='gst'; d='img'; n='2.6: imagenPrincipal(productos)' },
+    @{ t='msg'; o='img'; d='gst'; n='2.6.1: Map<producto, url>'; ret=$true },
+    @{ t='msg'; o='gst'; d='ctl'; n='2.7: paquete(sucursales, prendas, vigencia)'; ret=$true },
+    @{ t='critical'; g='' },
+    @{ t='msg'; o='ctl'; d='paq'; n='2.8: guardarPaquete(paquete)' },
+    @{ t='fin' },
+    @{ t='msg'; o='ctl'; d='ope'; n='2.9: pendientes()' },
+    @{ t='msg'; o='ope'; d='ctl'; n='2.9.1: List<OperacionLocal>'; ret=$true },
+    @{ t='msg'; o='ctl'; d='paq'; n='2.10: descontar(sucursal, cantidades)' },
+    @{ t='loop'; g='por cada foto del paquete' },
+    @{ t='msg'; o='ctl'; d='fot'; n='2.11: guardarFotos(urls)' },
+    @{ t='fin' },
+    @{ t='msg'; o='ctl'; d='pan'; n='2.12: mostrarResumen(fecha, sucursales, prendas)' },
+    @{ t='op'; g='sin conexión' },
+    @{ t='msg'; o='ctl'; d='paq'; n='4: leerPaquete()' },
+    @{ t='msg'; o='ctl'; d='pan'; n='4.1: avisarSinConexion()' },
+    @{ t='fin' }
+  )
+},
+
+# ---------------------------------------------------------------- CU-14 --
+# Todo pasa en el navegador: no hay llamada al servidor ni bitacora hasta
+# que se sincroniza (CU-17). El alt de afuera es el metodo de pago; el de
+# adentro, si IndexedDB pudo guardar la operacion.
+@{
+  cu = 'CU-14'; nombre = '3.3 CU-14 Registrar venta offline'
+  lineas = @(
+    @{ k = 'caj'; actor = 'Cajero' },
+    @{ k = 'pan'; clase = 'PantallaVenta' },
+    @{ k = 'ctl'; clase = 'ControlOffline' },
+    @{ k = 'paq'; clase = 'PaqueteLocal' },
+    @{ k = 'ope'; clase = 'OperacionLocal' }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nVender sin conexión" },
+    @{ t='msg'; o='caj'; d='pan'; n='1: buscarPrenda(texto)' },
+    @{ t='msg'; o='pan'; d='ctl'; n='1.1: prendasGuardadas(texto)' },
+    @{ t='msg'; o='ctl'; d='paq'; n='1.2: leerPrendas()' },
+    @{ t='msg'; o='paq'; d='ctl'; n='1.2.1: List<PrendaOffline>'; ret=$true },
+    @{ t='msg'; o='ctl'; d='pan'; n='1.3: mostrarPrendas(prendas)' },
+    @{ t='msg'; o='caj'; d='pan'; n='1.4: agregar(prenda, cantidad)' },
+    @{ t='msg'; o='caj'; d='pan'; n='1.5: cobrar(metodo, recibido)' },
+    @{ t='alt' },
+    @{ t='op'; g='efectivo o QR' },
+    @{ t='msg'; o='pan'; d='ctl'; n='1.6: registrarVenta(lineas, pago)' },
+    @{ t='msg'; o='ctl'; d='ctl'; n='1.7: generarUuid()' },
+    @{ t='alt' },
+    @{ t='op'; g='el navegador guardó la operación' },
+    @{ t='msg'; o='ctl'; d='ope'; n='1.8: guardar(operacion, "guardada")' },
+    @{ t='msg'; o='ctl'; d='paq'; n='1.9: descontar(cantidades)' },
+    @{ t='msg'; o='ctl'; d='pan'; n='1.10: mostrarComprobanteProvisional(operacion)' },
+    @{ t='op'; g='no se pudo guardar en el navegador' },
+    @{ t='msg'; o='ctl'; d='pan'; n='3: noSePudoGuardar(error)' },
+    @{ t='fin' },
+    @{ t='op'; g='tarjeta' },
+    @{ t='msg'; o='ctl'; d='pan'; n='2: metodosSinRed(EFECTIVO, QR)' },
+    @{ t='fin' }
+  )
+},
+
+# ---------------------------------------------------------------- CU-15 --
+# Movil. Los maximos y el horario se validan en el telefono antes de
+# guardar; descontar() corre en una transaccion de SQLite (base_local.dart:208).
+@{
+  cu = 'CU-15'; nombre = '3.3 CU-15 Registrar reserva offline'
+  lineas = @(
+    @{ k = 'acl'; actor = 'Cliente' },
+    @{ k = 'pan'; clase = 'PantallaReservaSinRed' },
+    @{ k = 'ctl'; clase = 'ControlOffline' },
+    @{ k = 'paq'; clase = 'PaqueteLocal' },
+    @{ k = 'fot'; clase = 'FotoLocal' },
+    @{ k = 'ope'; clase = 'OperacionLocal' }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nReservar sin conexión" },
+    @{ t='msg'; o='acl'; d='pan'; n='1: abrirNuevaReserva()' },
+    @{ t='msg'; o='pan'; d='ctl'; n='1.1: paquete()' },
+    @{ t='msg'; o='ctl'; d='paq'; n='1.2: leerPaquete()' },
+    @{ t='msg'; o='paq'; d='ctl'; n='1.2.1: PaqueteCliente'; ret=$true },
+    @{ t='msg'; o='ctl'; d='pan'; n='1.3: mostrarSucursales(sucursales)' },
+    @{ t='msg'; o='acl'; d='pan'; n='1.4: elegirSucursal(sucursal)' },
+    @{ t='msg'; o='acl'; d='pan'; n='1.5: elegirFranja(dia, hora, duracion)' },
+    @{ t='msg'; o='pan'; d='ctl'; n='1.6: vitrina(sucursal, categoria, texto)' },
+    @{ t='msg'; o='ctl'; d='paq'; n='1.7: prendasConSaldo(sucursal)' },
+    @{ t='msg'; o='paq'; d='ctl'; n='1.7.1: List<PrendaCliente>'; ret=$true },
+    @{ t='loop'; g='por cada producto de la vitrina' },
+    @{ t='msg'; o='ctl'; d='fot'; n='1.8: foto(producto)' },
+    @{ t='msg'; o='fot'; d='ctl'; n='1.8.1: File | null'; ret=$true },
+    @{ t='fin' },
+    @{ t='msg'; o='ctl'; d='pan'; n='1.9: mostrarVitrina(productos)' },
+    @{ t='msg'; o='acl'; d='pan'; n='1.10: elegirVariante(talla, color, cantidad)' },
+    @{ t='msg'; o='acl'; d='pan'; n='1.11: guardar()' },
+    @{ t='msg'; o='pan'; d='ctl'; n='1.12: reservar(sucursal, prendas, inicio, fin)' },
+    @{ t='alt' },
+    @{ t='op'; g='dentro de los máximos y del horario' },
+    @{ t='msg'; o='ctl'; d='ctl'; n='1.13: generarUuid()' },
+    @{ t='msg'; o='ctl'; d='ope'; n='1.14: guardarOperacion(operacion)' },
+    @{ t='critical'; g='' },
+    @{ t='msg'; o='ctl'; d='paq'; n='1.15: descontar(sucursal, cantidades)' },
+    @{ t='fin' },
+    @{ t='msg'; o='ctl'; d='pan'; n='1.16: reservaGuardada(operacion)' },
+    @{ t='op'; g='se alcanzó un máximo' },
+    @{ t='msg'; o='ctl'; d='pan'; n='2: limiteAlcanzado()' },
+    @{ t='op'; g='la hora ya pasó o cae fuera del horario' },
+    @{ t='msg'; o='ctl'; d='pan'; n='3: fueraDeHorario(apertura, cierre)' },
+    @{ t='fin' }
+  )
+},
+
+# ---------------------------------------------------------------- CU-16 --
+@{
+  cu = 'CU-16'; nombre = '3.3 CU-16 Registrar pago sin conexión'
+  lineas = @(
+    @{ k = 'caj'; actor = 'Cajero' },
+    @{ k = 'pan'; clase = 'PantallaVenta' },
+    @{ k = 'ctl'; clase = 'ControlOffline' },
+    @{ k = 'ope'; clase = 'OperacionLocal' }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nCobrar en efectivo" },
+    @{ t='msg'; o='caj'; d='pan'; n='1: elegirMetodo("EFECTIVO")' },
+    @{ t='msg'; o='pan'; d='ctl'; n='1.1: metodosSinRed()' },
+    @{ t='msg'; o='ctl'; d='pan'; n='1.2: mostrarMetodos(EFECTIVO, QR)' },
+    @{ t='msg'; o='caj'; d='pan'; n='1.3: ingresarRecibido(monto)' },
+    @{ t='msg'; o='pan'; d='ctl'; n='1.4: calcularVuelto(total, recibido)' },
+    @{ t='alt' },
+    @{ t='op'; g='recibido >= total' },
+    @{ t='msg'; o='ctl'; d='pan'; n='1.5: mostrarVuelto(vuelto)' },
+    @{ t='msg'; o='pan'; d='ctl'; n='1.6: registrarPago(metodo, monto, referencia)' },
+    @{ t='msg'; o='ctl'; d='ope'; n='1.7: guardarPago(operacion, pago)' },
+    @{ t='op'; g='recibido < total' },
+    @{ t='msg'; o='ctl'; d='pan'; n='3: recibidoInsuficiente()' },
+    @{ t='fin' },
+    @{ t='nota'; txt = "FLUJO 2`nCobrar con QR" },
+    @{ t='msg'; o='caj'; d='pan'; n='2: anotarReferencia(referencia)' },
+    @{ t='msg'; o='pan'; d='ctl'; n='2.1: registrarPago("QR", monto, referencia)' },
+    @{ t='opt'; g='falta la referencia' },
+    @{ t='msg'; o='ctl'; d='pan'; n='2.2: pedirReferencia()' },
+    @{ t='fin' }
+  )
+},
+
+# ---------------------------------------------------------------- CU-17 --
+# offline/service.py: el for de sincronizar() (:212) es el loop del lote;
+# el alt de :241 separa la operacion repetida (RNF05); el begin_nested de
+# :262 (abrirPuntoDeGuardado) es el critical, con el if VENTA/else RESERVA adentro; y el except
+# Rechazo de :275 da los dos rechazos. Sin red, la PWA deja la operacion en
+# 'enviada' y reintenta al minuto (offline.service.ts:256).
+@{
+  cu = 'CU-17'; nombre = '3.3 CU-17 Sincronizar operaciones pendientes'
+  lineas = @(
+    @{ k = 'caj'; actor = 'Cajero' },
+    @{ k = 'acl'; actor = 'Cliente' },
+    @{ k = 'evt'; clase = 'EventoDeConexion' },
+    @{ k = 'pan'; clase = 'PantallaSinConexion' },
+    @{ k = 'ctl'; clase = 'ControlOffline' },
+    @{ k = 'ope'; clase = 'OperacionLocal' },
+    @{ k = 'gst'; clase = 'GestorOffline' },
+    @{ k = 'aut'; clase = 'GestorAutenticacion' },
+    @{ k = 'inv'; clase = 'GestorInventario' },
+    @{ k = 'grs'; clase = 'GestorReservas' },
+    @{ k = 'bit'; clase = 'BitacoraMiddleware' },
+    @{ k = 'oof'; clase = 'OperacionOffline' },
+    @{ k = 'tur'; clase = 'TurnoCaja' },
+    @{ k = 'exi'; clase = 'Existencia' },
+    @{ k = 'ven'; clase = 'Venta' },
+    @{ k = 'rsv'; clase = 'Reserva' },
+    @{ k = 'asi'; clase = 'AsientoBitacora' }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nEl servidor confirma" },
+    @{ t='msg'; o='evt'; d='ctl'; n='1: conexionRecuperada()' },
+    @{ t='msg'; o='caj'; d='pan'; n='1.1: sincronizarAhora()' },
+    @{ t='msg'; o='acl'; d='pan'; n='1.2: sincronizarAhora()' },
+    @{ t='msg'; o='pan'; d='ctl'; n='1.3: sincronizar()' },
+    @{ t='msg'; o='ctl'; d='ope'; n='1.4: pendientes()' },
+    @{ t='msg'; o='ope'; d='ctl'; n='1.4.1: List<OperacionGuardada>'; ret=$true },
+    @{ t='loop'; g='por cada operación pendiente' },
+    @{ t='msg'; o='ctl'; d='ope'; n='1.5: marcar(uuid, "enviada")' },
+    @{ t='fin' },
+    @{ t='alt' },
+    @{ t='op'; g='el servidor responde' },
+    @{ t='msg'; o='ctl'; d='gst'; n='1.6: sincronizar(lote)' },
+    @{ t='msg'; o='gst'; d='aut'; n='1.7: autorizar(rol)' },
+    @{ t='loop'; g='por cada operación del lote' },
+    @{ t='msg'; o='gst'; d='oof'; n='1.8: operacionPorUuid(uuid)' },
+    @{ t='msg'; o='oof'; d='gst'; n='1.8.1: OperacionOffline | None'; ret=$true },
+    @{ t='alt' },
+    @{ t='op'; g='la operación es nueva' },
+    @{ t='msg'; o='gst'; d='gst'; n='1.8.2: abrirPuntoDeGuardado()' },
+    @{ t='critical'; g='' },
+    @{ t='alt' },
+    @{ t='op'; g='es una venta' },
+    @{ t='msg'; o='gst'; d='tur'; n='1.9: turnoPorId(turno)' },
+    @{ t='msg'; o='tur'; d='gst'; n='1.9.1: TurnoCaja'; ret=$true },
+    @{ t='msg'; o='gst'; d='inv'; n='1.10: descontar(sucursal, lineas)' },
+    @{ t='msg'; o='inv'; d='exi'; n='1.11: bloquearYDescontar(variante, cantidad)' },
+    @{ t='msg'; o='gst'; d='ven'; n='1.12: crear(venta)' },
+    @{ t='op'; g='es una reserva' },
+    @{ t='msg'; o='gst'; d='grs'; n='1.13: crear(reserva)' },
+    @{ t='msg'; o='grs'; d='rsv'; n='1.14: crear(reserva)' },
+    @{ t='fin' },
+    @{ t='fin' },
+    @{ t='alt' },
+    @{ t='op'; g='sin rechazo' },
+    @{ t='msg'; o='gst'; d='oof'; n='1.15: guardar(operacion, "CONFIRMADA")' },
+    @{ t='op'; g='ya no alcanza la existencia' },
+    @{ t='msg'; o='inv'; d='gst'; n='4: existenciaInsuficiente()'; ret=$true },
+    @{ t='msg'; o='gst'; d='gst'; n='4a: deshacerPuntoDeGuardado()' },
+    @{ t='msg'; o='gst'; d='oof'; n='4.1: guardar(operacion, "RECHAZADA", motivo)' },
+    @{ t='msg'; o='gst'; d='ctl'; n='4.2: rechazada(uuid, motivo, requiereDevolucion)'; ret=$true },
+    @{ t='op'; g='turno ajeno o reserva fuera de horario' },
+    @{ t='msg'; o='gst'; d='oof'; n='5: guardar(operacion, "RECHAZADA", motivo)' },
+    @{ t='msg'; o='gst'; d='ctl'; n='5.1: rechazada(uuid, motivo)'; ret=$true },
+    @{ t='fin' },
+    @{ t='op'; g='ya estaba registrada' },
+    @{ t='msg'; o='gst'; d='oof'; n='3: resultadoRegistrado(uuid)' },
+    @{ t='msg'; o='gst'; d='ctl'; n='3.1: resultado(uuid, repetida)'; ret=$true },
+    @{ t='fin' },
+    @{ t='fin' },
+    @{ t='msg'; o='gst'; d='bit'; n='1.16: registrar(peticion)' },
+    @{ t='msg'; o='bit'; d='asi'; n='1.17: agregar(accion, usuario, ip)' },
+    @{ t='msg'; o='gst'; d='ctl'; n='1.18: resultados(lote)'; ret=$true },
+    @{ t='msg'; o='ctl'; d='ope'; n='1.19: actualizar(uuid, estado, motivo)' },
+    @{ t='msg'; o='ctl'; d='pan'; n='1.20: mostrarResultado(confirmadas, rechazadas)' },
+    @{ t='op'; g='el servidor no responde' },
+    @{ t='msg'; o='ctl'; d='ope'; n='2: marcar(uuid, "enviada")' },
+    @{ t='msg'; o='ctl'; d='ctl'; n='2.1: reintentarEnUnMinuto()' },
+    @{ t='fin' }
+  )
+},
+
+# ---------------------------------------------------------------- CU-18 --
+# Solo local: nadie llama a GET /operaciones/mias.
+@{
+  cu = 'CU-18'; nombre = '3.3 CU-18 Consultar operaciones pendientes'
+  lineas = @(
+    @{ k = 'caj'; actor = 'Cajero' },
+    @{ k = 'acl'; actor = 'Cliente' },
+    @{ k = 'pan'; clase = 'PantallaSinConexion' },
+    @{ k = 'ctl'; clase = 'ControlOffline' },
+    @{ k = 'ope'; clase = 'OperacionLocal' }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nVer la cola" },
+    @{ t='msg'; o='caj'; d='pan'; n='1: abrirSinConexion()' },
+    @{ t='msg'; o='acl'; d='pan'; n='1.1: abrirSinConexion()' },
+    @{ t='msg'; o='pan'; d='ctl'; n='1.2: operaciones()' },
+    @{ t='msg'; o='ctl'; d='ope'; n='1.3: listar()' },
+    @{ t='msg'; o='ope'; d='ctl'; n='1.3.1: List<OperacionGuardada>'; ret=$true },
+    @{ t='msg'; o='ctl'; d='pan'; n='1.4: mostrarCola(operaciones, pendientes, enLinea)' },
+    @{ t='nota'; txt = "FLUJO 2`nSincronizar ahora" },
+    @{ t='msg'; o='caj'; d='pan'; n='2: sincronizarAhora()' },
+    @{ t='msg'; o='pan'; d='ctl'; n='2.1: sincronizar()' },
+    @{ t='nota'; txt = "FLUJO 3`nLimpiar el historial" },
+    @{ t='msg'; o='caj'; d='pan'; n='3: limpiarHistorial()' },
+    @{ t='msg'; o='pan'; d='ctl'; n='3.1: limpiarDecididas()' },
+    @{ t='loop'; g='por cada operación confirmada o devuelta' },
+    @{ t='msg'; o='ctl'; d='ope'; n='3.2: borrarDecididas()' },
+    @{ t='fin' },
+    @{ t='msg'; o='ctl'; d='pan'; n='3.3: mostrarCola(operaciones)' }
+  )
+},
+
+# ---------------------------------------------------------------- CU-19 --
+# offline/service.py:534 registrar_devolucion: la referencia del QR la pide
+# el esquema (422) antes de leer; los raise de :552 a :559 son 'nada que
+# devolver' (404/409). Un solo commit (:566).
+@{
+  cu = 'CU-19'; nombre = '3.3 CU-19 Atender operaciones rechazadas y devolver el dinero'
+  lineas = @(
+    @{ k = 'enc'; actor = 'Encargado de sucursal' },
+    @{ k = 'pan'; clase = 'PantallaOperacionesSinConexion' },
+    @{ k = 'gst'; clase = 'GestorOffline' },
+    @{ k = 'aut'; clase = 'GestorAutenticacion' },
+    @{ k = 'bit'; clase = 'BitacoraMiddleware' },
+    @{ k = 'oof'; clase = 'OperacionOffline' },
+    @{ k = 'usu'; clase = 'Usuario' },
+    @{ k = 'asi'; clase = 'AsientoBitacora' }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nRegistrar la devolución" },
+    @{ t='msg'; o='enc'; d='pan'; n='1: abrirOperaciones()' },
+    @{ t='msg'; o='pan'; d='gst'; n='1.1: operacionesDeSucursal(porDevolver)' },
+    @{ t='msg'; o='gst'; d='aut'; n='1.2: autorizar("ENCARGADO")' },
+    @{ t='msg'; o='gst'; d='oof'; n='1.3: operaciones(sucursal, porDevolver)' },
+    @{ t='msg'; o='oof'; d='gst'; n='1.3.1: List<OperacionOffline>'; ret=$true },
+    @{ t='loop'; g='por cada operación' },
+    @{ t='msg'; o='gst'; d='usu'; n='1.4: nombreDe(usuario)' },
+    @{ t='fin' },
+    @{ t='msg'; o='gst'; d='pan'; n='1.5: mostrarPorDevolver(operaciones)' },
+    @{ t='msg'; o='enc'; d='pan'; n='1.6: registrarDevolucion(uuid, metodo, referencia, observacion)' },
+    @{ t='msg'; o='pan'; d='gst'; n='1.7: registrarDevolucion(uuid, datos)' },
+    @{ t='break'; g='devuelve por QR sin referencia' },
+    @{ t='msg'; o='gst'; d='pan'; n='3: pedirReferencia() -> 422' },
+    @{ t='fin' },
+    @{ t='msg'; o='gst'; d='oof'; n='1.8: operacionPorUuid(uuid, bloquear)' },
+    @{ t='msg'; o='oof'; d='gst'; n='1.8.1: OperacionOffline'; ret=$true },
+    @{ t='alt' },
+    @{ t='op'; g='rechazada, cobrada y sin devolver' },
+    @{ t='msg'; o='gst'; d='oof'; n='1.9: marcarDevuelta(usuario, metodo, referencia)' },
+    @{ t='msg'; o='gst'; d='bit'; n='1.10: registrar(peticion)' },
+    @{ t='msg'; o='bit'; d='asi'; n='1.11: agregar(accion, usuario, entidad)' },
+    @{ t='msg'; o='gst'; d='pan'; n='1.12: devolucionRegistrada(monto)' },
+    @{ t='op'; g='confirmada, sin cobro o ya devuelta' },
+    @{ t='msg'; o='gst'; d='pan'; n='4: nadaQueDevolver(motivo) -> 409' },
+    @{ t='fin' },
+    @{ t='nota'; txt = "FLUJO 2`nVer todas" },
+    @{ t='msg'; o='enc'; d='pan'; n='2: verTodas()' },
+    @{ t='msg'; o='pan'; d='gst'; n='2.1: operacionesDeSucursal(porDevolver)' }
+  )
+},
+
+# ---------------------------------------------------------------- CU-20 --
+# caja/service.py:162 abrir: bloquea la caja y el alt de 'caja ocupada'.
+# La web sincroniza antes de cerrar y no cierra si quedan ventas sin subir
+# (features/caja/turno). caja/service.py:198 cerrar: el esperado suma las
+# ventas offline y lo que falta devolver.
+@{
+  cu = 'CU-20'; nombre = '3.3 CU-20 Abrir y cerrar caja con ventas offline'
+  lineas = @(
+    @{ k = 'caj'; actor = 'Cajero' },
+    @{ k = 'pan'; clase = 'PantallaTurno' },
+    @{ k = 'ctl'; clase = 'ControlOffline' },
+    @{ k = 'ope'; clase = 'OperacionLocal' },
+    @{ k = 'gst'; clase = 'GestorCaja' },
+    @{ k = 'aut'; clase = 'GestorAutenticacion' },
+    @{ k = 'bit'; clase = 'BitacoraMiddleware' },
+    @{ k = 'cja'; clase = 'Caja' },
+    @{ k = 'tur'; clase = 'TurnoCaja' },
+    @{ k = 'ven'; clase = 'Venta' },
+    @{ k = 'dev'; clase = 'Devolucion' },
+    @{ k = 'oof'; clase = 'OperacionOffline' },
+    @{ k = 'asi'; clase = 'AsientoBitacora' }
+  )
+  guion = @(
+    @{ t='nota'; txt = "FLUJO 1`nAbrir el turno" },
+    @{ t='msg'; o='caj'; d='pan'; n='1: abrirTurno(caja, montoApertura)' },
+    @{ t='msg'; o='pan'; d='gst'; n='1.1: abrir(caja, monto)' },
+    @{ t='msg'; o='gst'; d='aut'; n='1.2: autorizar("CAJERO")' },
+    @{ t='msg'; o='gst'; d='cja'; n='1.3: bloquearCaja(caja)' },
+    @{ t='alt' },
+    @{ t='op'; g='la caja está libre' },
+    @{ t='msg'; o='gst'; d='tur'; n='1.4: abrir(caja, usuario, monto)' },
+    @{ t='msg'; o='tur'; d='gst'; n='1.4.1: TurnoCaja'; ret=$true },
+    @{ t='msg'; o='gst'; d='pan'; n='1.5: mostrarTurno(turno)' },
+    @{ t='op'; g='todas las cajas están ocupadas' },
+    @{ t='msg'; o='gst'; d='cja'; n='2: cajasDeSucursal(sucursal)' },
+    @{ t='msg'; o='gst'; d='pan'; n='2.1: cajasOcupadas(cajas)' },
+    @{ t='fin' },
+    @{ t='nota'; txt = "FLUJO 1`nCerrar el turno" },
+    @{ t='msg'; o='caj'; d='pan'; n='1.6: cerrarTurno(montoContado)' },
+    @{ t='msg'; o='pan'; d='ctl'; n='1.7: pendientesDelTurno(turno)' },
+    @{ t='msg'; o='ctl'; d='ope'; n='1.8: pendientes()' },
+    @{ t='msg'; o='ope'; d='ctl'; n='1.8.1: List<OperacionGuardada>'; ret=$true },
+    @{ t='opt'; g='hay ventas sin conexión en la cola' },
+    @{ t='msg'; o='ctl'; d='ctl'; n='3: sincronizar()' },
+    @{ t='fin' },
+    @{ t='break'; g='siguen quedando ventas sin subir' },
+    @{ t='msg'; o='ctl'; d='pan'; n='3.1: quedanSinSubir(cantidad)' },
+    @{ t='msg'; o='pan'; d='gst'; n='3.2: miTurno()' },
+    @{ t='msg'; o='gst'; d='pan'; n='3.3: mostrarArqueo(esperado)' },
+    @{ t='fin' },
+    @{ t='msg'; o='pan'; d='gst'; n='1.9: cerrar(turno, montoContado)' },
+    @{ t='msg'; o='gst'; d='ven'; n='1.10: efectivoCobrado(turno)' },
+    @{ t='msg'; o='ven'; d='gst'; n='1.10.1: Decimal'; ret=$true },
+    @{ t='msg'; o='gst'; d='dev'; n='1.11: devolucionesDelTurno(turno)' },
+    @{ t='msg'; o='dev'; d='gst'; n='1.11.1: Decimal'; ret=$true },
+    @{ t='msg'; o='gst'; d='dev'; n='1.12: diferenciasDeCambios(turno)' },
+    @{ t='msg'; o='dev'; d='gst'; n='1.12.1: Decimal'; ret=$true },
+    @{ t='msg'; o='gst'; d='oof'; n='1.13: efectivoPorDevolver(turno)' },
+    @{ t='msg'; o='oof'; d='gst'; n='1.13.1: (cantidad, Decimal)'; ret=$true },
+    @{ t='msg'; o='gst'; d='oof'; n='1.14: ventasOfflineDelTurno(turno)' },
+    @{ t='msg'; o='oof'; d='gst'; n='1.14.1: (cantidad, Decimal)'; ret=$true },
+    @{ t='msg'; o='gst'; d='tur'; n='1.15: guardarCierre(esperado, contado)' },
+    @{ t='msg'; o='gst'; d='bit'; n='1.16: registrar(peticion)' },
+    @{ t='msg'; o='bit'; d='asi'; n='1.17: agregar(accion, usuario, entidad)' },
+    @{ t='msg'; o='gst'; d='pan'; n='1.18: mostrarArqueo(esperado, contado, diferencia)' },
+    @{ t='opt'; g='lo contado no coincide con lo esperado' },
+    @{ t='msg'; o='gst'; d='pan'; n='4: registrarDiferencia(diferencia)' },
     @{ t='fin' }
   )
 }

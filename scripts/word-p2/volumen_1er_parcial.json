@@ -1,0 +1,2744 @@
+{
+ "USUARIO": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "CORREO": [
+   "CORREO",
+   "CADENA",
+   "120",
+   "Correo electrónico, con el que inicia sesión",
+   "ÚNICA",
+   "NO"
+  ],
+  "HASH_CONTRASENA": [
+   "HASH_CONTRASENA",
+   "CADENA",
+   "255",
+   "Contraseña cifrada con bcrypt; nunca en claro",
+   "",
+   "NO"
+  ],
+  "NOMBRES": [
+   "NOMBRES",
+   "CADENA",
+   "80",
+   "Nombres de pila",
+   "",
+   "NO"
+  ],
+  "APELLIDOS": [
+   "APELLIDOS",
+   "CADENA",
+   "80",
+   "Apellidos del usuario",
+   "",
+   "NO"
+  ],
+  "ROL_ID": [
+   "ROL_ID",
+   "ENTERO CORTO",
+   "-",
+   "Rol asignado",
+   "FORÁNEA",
+   "NO"
+  ],
+  "ACTIVO": [
+   "ACTIVO",
+   "BOOLEANO",
+   "-",
+   "Si la cuenta sigue habilitada",
+   "",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ],
+  "NOMBRE": [
+   "NOMBRE",
+   "CADENA",
+   "100",
+   "NOMBRE DEL USUARIO",
+   "",
+   "NO"
+  ],
+  "EMAIL": [
+   "EMAIL",
+   "CADENA",
+   "100",
+   "EMAIL DEL USUARIO",
+   "",
+   "NO"
+  ],
+  "CONTRASEÑA": [
+   "CONTRASEÑA",
+   "CADENA",
+   "255",
+   "CONTRASEÑA DEL USUARIO",
+   "",
+   "NO"
+  ],
+  "ROL": [
+   "ROL",
+   "CADENA",
+   "30",
+   "TIPO DE ROL DEL USUARIO",
+   "",
+   "NO"
+  ],
+  "TELEFONO": [
+   "TELEFONO",
+   "CADENA",
+   "20",
+   "TELEFONO DEL USUARIO",
+   "",
+   "SI"
+  ]
+ },
+ "ROL": {
+  "ID": [
+   "ID",
+   "ENTERO CORTO",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "NOMBRE": [
+   "NOMBRE",
+   "CADENA",
+   "30",
+   "CLIENTE, ADMINISTRADOR, ENCARGADO, CAJERO o PROVEEDOR",
+   "ÚNICA",
+   "NO"
+  ],
+  "DESCRIPCION": [
+   "DESCRIPCION",
+   "CADENA",
+   "150",
+   "Para qué sirve el rol",
+   "",
+   "SÍ"
+  ]
+ },
+ "PERMISO": {
+  "ID": [
+   "ID",
+   "ENTERO CORTO",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "CODIGO": [
+   "CODIGO",
+   "CADENA",
+   "60",
+   "Clave técnica que comprueba el backend",
+   "ÚNICA",
+   "NO"
+  ],
+  "DESCRIPCION": [
+   "DESCRIPCION",
+   "CADENA",
+   "150",
+   "Qué habilita el permiso",
+   "",
+   "SÍ"
+  ]
+ },
+ "ROL_PERMISO": {
+  "ROL_ID": [
+   "ROL_ID",
+   "ENTERO CORTO",
+   "-",
+   "Rol al que se le concede",
+   "PRIMARIA",
+   "NO"
+  ],
+  "PERMISO_ID": [
+   "PERMISO_ID",
+   "ENTERO CORTO",
+   "-",
+   "Permiso concedido",
+   "PRIMARIA",
+   "NO"
+  ]
+ },
+ "SESION_TOKEN": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "USUARIO_ID": [
+   "USUARIO_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Usuario dueño de la sesión",
+   "FORÁNEA",
+   "NO"
+  ],
+  "JTI": [
+   "JTI",
+   "UUID",
+   "-",
+   "Identificador único del token, el que permite revocarlo",
+   "ÚNICA",
+   "NO"
+  ],
+  "EMITIDO_EN": [
+   "EMITIDO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se emitió",
+   "",
+   "NO"
+  ],
+  "EXPIRA_EN": [
+   "EXPIRA_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo deja de valer; hoy son 8 horas",
+   "",
+   "NO"
+  ],
+  "REVOCADO_EN": [
+   "REVOCADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se revocó; nulo si sigue vigente",
+   "",
+   "SÍ"
+  ]
+ },
+ "TOKEN_RECUPERATION": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "USUARIO_ID": [
+   "USUARIO_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Usuario que pidió recuperar",
+   "FORÁNEA",
+   "NO"
+  ],
+  "HASH_TOKEN": [
+   "HASH_TOKEN",
+   "CADENA",
+   "64",
+   "Hash del enlace de un solo uso",
+   "ÚNICA",
+   "NO"
+  ],
+  "SOLICITADO_EN": [
+   "SOLICITADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se pidió",
+   "",
+   "NO"
+  ],
+  "EXPIRA_EN": [
+   "EXPIRA_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo caduca el enlace",
+   "",
+   "NO"
+  ],
+  "USADO_EN": [
+   "USADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se usó; nulo si todavía sirve",
+   "",
+   "SÍ"
+  ]
+ },
+ "BITACORA": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "OCURRIDO_EN": [
+   "OCURRIDO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo pasó",
+   "",
+   "NO"
+  ],
+  "USUARIO_ID": [
+   "USUARIO_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Quién actuó; queda nulo si después lo dan de baja",
+   "FORÁNEA",
+   "SÍ"
+  ],
+  "ACTOR": [
+   "ACTOR",
+   "CADENA",
+   "160",
+   "Su correo, copiado: sobrevive a que lo borren",
+   "",
+   "SÍ"
+  ],
+  "ROL": [
+   "ROL",
+   "CADENA",
+   "40",
+   "Su rol, también copiado",
+   "",
+   "SÍ"
+  ],
+  "ACCION": [
+   "ACCION",
+   "CADENA",
+   "40",
+   "INICIAR_SESION, CREAR, EDITAR, DESCARGAR_REPORTE…",
+   "",
+   "NO"
+  ],
+  "ENTIDAD": [
+   "ENTIDAD",
+   "CADENA",
+   "60",
+   "Sobre qué recurso actuó",
+   "",
+   "SÍ"
+  ],
+  "ENTIDAD_ID": [
+   "ENTIDAD_ID",
+   "CADENA",
+   "60",
+   "Cuál de ellos",
+   "",
+   "SÍ"
+  ],
+  "METODO": [
+   "METODO",
+   "CADENA",
+   "10",
+   "Verbo HTTP: POST, PATCH, DELETE…",
+   "",
+   "NO"
+  ],
+  "RUTA": [
+   "RUTA",
+   "CADENA",
+   "300",
+   "Ruta de la API que se llamó",
+   "",
+   "NO"
+  ],
+  "ESTADO_HTTP": [
+   "ESTADO_HTTP",
+   "ENTERO",
+   "-",
+   "Código con el que respondió el servidor",
+   "",
+   "NO"
+  ],
+  "EXITO": [
+   "EXITO",
+   "BOOLEANO",
+   "-",
+   "Si salió bien; los intentos fallidos también se anotan",
+   "",
+   "NO"
+  ],
+  "IP": [
+   "IP",
+   "CADENA",
+   "60",
+   "Desde dónde se conectó",
+   "",
+   "SÍ"
+  ],
+  "AGENTE": [
+   "AGENTE",
+   "CADENA",
+   "200",
+   "Navegador o aplicación desde la que se hizo",
+   "",
+   "SÍ"
+  ],
+  "DETALLE": [
+   "DETALLE",
+   "JSON",
+   "-",
+   "Cuerpo de la petición, con contraseñas y tokens ya filtrados",
+   "",
+   "SÍ"
+  ]
+ },
+ "CIUDAD": {
+  "ID": [
+   "ID",
+   "ENTERO",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "NOMBRE": [
+   "NOMBRE",
+   "CADENA",
+   "60",
+   "Nombre de la ciudad",
+   "ÚNICA",
+   "NO"
+  ],
+  "DEPARTAMENTO": [
+   "DEPARTAMENTO",
+   "CADENA",
+   "60",
+   "Departamento al que pertenece",
+   "",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "SUCURSAL": {
+  "ID": [
+   "ID",
+   "ENTERO",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "CIUDAD_ID": [
+   "CIUDAD_ID",
+   "ENTERO",
+   "-",
+   "Ciudad donde está; única junto al nombre",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "NOMBRE": [
+   "NOMBRE",
+   "CADENA",
+   "80",
+   "Nombre de la sucursal",
+   "ÚNICA",
+   "NO"
+  ],
+  "DIRECCION": [
+   "DIRECCION",
+   "CADENA",
+   "200",
+   "Dirección de la sucursal",
+   "",
+   "NO"
+  ],
+  "TELEFONO": [
+   "TELEFONO",
+   "CADENA",
+   "20",
+   "Teléfono de contacto",
+   "",
+   "SÍ"
+  ],
+  "HORARIO_APERTURA": [
+   "HORARIO_APERTURA",
+   "HORA",
+   "-",
+   "A qué hora abre",
+   "",
+   "NO"
+  ],
+  "HORARIO_CIERRE": [
+   "HORARIO_CIERRE",
+   "HORA",
+   "-",
+   "A qué hora cierra",
+   "",
+   "NO"
+  ],
+  "CAPACIDAD_VESTIDORES": [
+   "CAPACIDAD_VESTIDORES",
+   "ENTERO CORTO",
+   "-",
+   "Cuántos probadores tiene; acota las reservas por franja",
+   "",
+   "NO"
+  ],
+  "ACTIVA": [
+   "ACTIVA",
+   "BOOLEANO",
+   "-",
+   "Si sigue operando",
+   "",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "EMPLEADO": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "USUARIO_ID": [
+   "USUARIO_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Su cuenta; uno a uno con usuario",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "SUCURSAL_ID": [
+   "SUCURSAL_ID",
+   "ENTERO",
+   "-",
+   "Sucursal donde trabaja; acota su ámbito de datos",
+   "FORÁNEA",
+   "NO"
+  ],
+  "DOCUMENTO": [
+   "DOCUMENTO",
+   "CADENA",
+   "20",
+   "Documento de identidad",
+   "ÚNICA",
+   "NO"
+  ],
+  "TELEFONO": [
+   "TELEFONO",
+   "CADENA",
+   "20",
+   "Teléfono de contacto",
+   "",
+   "SÍ"
+  ],
+  "CARGO": [
+   "CARGO",
+   "CADENA",
+   "30",
+   "Puesto que ocupa en la sucursal",
+   "",
+   "NO"
+  ],
+  "FECHA_INGRESO": [
+   "FECHA_INGRESO",
+   "FECHA",
+   "-",
+   "Cuándo entró a trabajar",
+   "",
+   "NO"
+  ],
+  "FECHA_BAJA": [
+   "FECHA_BAJA",
+   "FECHA",
+   "-",
+   "Cuándo dejó de trabajar; nulo si sigue activo",
+   "",
+   "SÍ"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "PROVEEDOR": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "USUARIO_ID": [
+   "USUARIO_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Su cuenta; nulo mientras no se le habilite el portal",
+   "FORÁNEA / ÚNICA",
+   "SÍ"
+  ],
+  "RAZON_SOCIAL": [
+   "RAZON_SOCIAL",
+   "CADENA",
+   "120",
+   "Razón social para la factura",
+   "",
+   "NO"
+  ],
+  "IDENTIFICACION_TRIBUTARIA": [
+   "IDENTIFICACION_TRIBUTARIA",
+   "CADENA",
+   "30",
+   "Número de identificación tributaria",
+   "ÚNICA",
+   "NO"
+  ],
+  "CONTACTO": [
+   "CONTACTO",
+   "CADENA",
+   "80",
+   "Persona con la que se habla",
+   "",
+   "SÍ"
+  ],
+  "TELEFONO": [
+   "TELEFONO",
+   "CADENA",
+   "20",
+   "Teléfono de contacto",
+   "",
+   "SÍ"
+  ],
+  "CORREO": [
+   "CORREO",
+   "CADENA",
+   "120",
+   "Correo de contacto",
+   "",
+   "SÍ"
+  ],
+  "DIRECCION": [
+   "DIRECCION",
+   "CADENA",
+   "200",
+   "Dirección del proveedor",
+   "",
+   "SÍ"
+  ],
+  "ACTIVO": [
+   "ACTIVO",
+   "BOOLEANO",
+   "-",
+   "Si sigue abasteciendo",
+   "",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "CLIENTE": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "USUARIO_ID": [
+   "USUARIO_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Su cuenta; uno a uno con usuario",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "DOCUMENTO": [
+   "DOCUMENTO",
+   "CADENA",
+   "20",
+   "Documento de identidad",
+   "ÚNICA",
+   "SÍ"
+  ],
+  "TELEFONO": [
+   "TELEFONO",
+   "CADENA",
+   "20",
+   "Teléfono de contacto",
+   "",
+   "SÍ"
+  ],
+  "TALLA_SUPERIOR": [
+   "TALLA_SUPERIOR",
+   "CADENA",
+   "10",
+   "Talla habitual de la parte de arriba",
+   "",
+   "SÍ"
+  ],
+  "TALLA_INFERIOR": [
+   "TALLA_INFERIOR",
+   "CADENA",
+   "10",
+   "Talla habitual de la parte de abajo",
+   "",
+   "SÍ"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "DIRECCION_CLIENTE": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "CLIENTE_ID": [
+   "CLIENTE_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Cliente dueño de la dirección",
+   "FORÁNEA",
+   "NO"
+  ],
+  "CIUDAD_ID": [
+   "CIUDAD_ID",
+   "ENTERO",
+   "-",
+   "Ciudad de envío; decide qué sucursal despacha",
+   "FORÁNEA",
+   "NO"
+  ],
+  "ALIAS": [
+   "ALIAS",
+   "CADENA",
+   "40",
+   "Cómo la llama el cliente: casa, trabajo…",
+   "",
+   "NO"
+  ],
+  "DIRECCION": [
+   "DIRECCION",
+   "CADENA",
+   "200",
+   "Calle y número",
+   "",
+   "NO"
+  ],
+  "REFERENCIA": [
+   "REFERENCIA",
+   "CADENA",
+   "200",
+   "Cómo llegar: entre calles, color del portón…",
+   "",
+   "SÍ"
+  ],
+  "PREDETERMINADA": [
+   "PREDETERMINADA",
+   "BOOLEANO",
+   "-",
+   "Si es la que se propone por omisión",
+   "",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "MEDIDA_CLIENTE": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "CLIENTE_ID": [
+   "CLIENTE_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Cliente medido; una sola fila por cliente",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "BUSTO_CM": [
+   "BUSTO_CM",
+   "DECIMAL",
+   "5, 1",
+   "Busto en centímetros, que el cliente escribe a mano",
+   "",
+   "NO"
+  ],
+  "CINTURA_CM": [
+   "CINTURA_CM",
+   "DECIMAL",
+   "5, 1",
+   "Cintura en centímetros",
+   "",
+   "NO"
+  ],
+  "CADERA_CM": [
+   "CADERA_CM",
+   "DECIMAL",
+   "5, 1",
+   "Cadera en centímetros",
+   "",
+   "NO"
+  ],
+  "ALTURA_CM": [
+   "ALTURA_CM",
+   "DECIMAL",
+   "5, 1",
+   "Altura en centímetros",
+   "",
+   "SÍ"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "CLIENTE_CATEGORIA": {
+  "CLIENTE_ID": [
+   "CLIENTE_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Cliente interesado",
+   "PRIMARIA",
+   "NO"
+  ],
+  "CATEGORIA_ID": [
+   "CATEGORIA_ID",
+   "ENTERO",
+   "-",
+   "Categoría que le interesa; alimenta al recomendador (CU-33)",
+   "PRIMARIA",
+   "NO"
+  ]
+ },
+ "CATEGORIA": {
+  "ID": [
+   "ID",
+   "ENTERO",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "CATEGORIA_PADRE_ID": [
+   "CATEGORIA_PADRE_ID",
+   "ENTERO",
+   "-",
+   "Categoría que la contiene; las promociones bajan por aquí",
+   "FORÁNEA / ÚNICA",
+   "SÍ"
+  ],
+  "NOMBRE": [
+   "NOMBRE",
+   "CADENA",
+   "60",
+   "Nombre de la categoría, único dentro de su madre",
+   "ÚNICA",
+   "NO"
+  ],
+  "ORDEN": [
+   "ORDEN",
+   "ENTERO CORTO",
+   "-",
+   "Posición en la que se muestra",
+   "",
+   "NO"
+  ],
+  "ACTIVA": [
+   "ACTIVA",
+   "BOOLEANO",
+   "-",
+   "Si sigue en uso",
+   "",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "TALLA": {
+  "ID": [
+   "ID",
+   "ENTERO",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "TIPO_PRENDA": [
+   "TIPO_PRENDA",
+   "CADENA",
+   "30",
+   "Superior, Inferior o Única; único junto al código",
+   "ÚNICA",
+   "NO"
+  ],
+  "CODIGO": [
+   "CODIGO",
+   "CADENA",
+   "10",
+   "XS, S, M, L, XL…",
+   "ÚNICA",
+   "NO"
+  ],
+  "ORDEN": [
+   "ORDEN",
+   "ENTERO CORTO",
+   "-",
+   "Para ordenarlas de menor a mayor, no alfabéticamente",
+   "",
+   "NO"
+  ],
+  "ACTIVA": [
+   "ACTIVA",
+   "BOOLEANO",
+   "-",
+   "Si sigue en uso",
+   "",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "COLOR": {
+  "ID": [
+   "ID",
+   "ENTERO",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "NOMBRE": [
+   "NOMBRE",
+   "CADENA",
+   "40",
+   "Nombre del color tal como se le dice al cliente",
+   "ÚNICA",
+   "NO"
+  ],
+  "HEXADECIMAL": [
+   "HEXADECIMAL",
+   "CADENA FIJA",
+   "7",
+   "Notación #RRGGBB, para pintar la muestra",
+   "",
+   "NO"
+  ],
+  "ACTIVO": [
+   "ACTIVO",
+   "BOOLEANO",
+   "-",
+   "Si sigue en uso",
+   "",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "TEMPORADA": {
+  "ID": [
+   "ID",
+   "ENTERO",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "NOMBRE": [
+   "NOMBRE",
+   "CADENA",
+   "60",
+   "Nombre de la temporada",
+   "ÚNICA",
+   "NO"
+  ],
+  "DESCRIPCION": [
+   "DESCRIPCION",
+   "CADENA",
+   "200",
+   "De qué va la temporada",
+   "",
+   "SÍ"
+  ],
+  "FECHA_INICIO": [
+   "FECHA_INICIO",
+   "FECHA",
+   "-",
+   "Cuándo empieza",
+   "",
+   "NO"
+  ],
+  "FECHA_FIN": [
+   "FECHA_FIN",
+   "FECHA",
+   "-",
+   "Cuándo termina",
+   "",
+   "NO"
+  ],
+  "ACTIVA": [
+   "ACTIVA",
+   "BOOLEANO",
+   "-",
+   "Si sigue en uso",
+   "",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "COLECCIÓN": {
+  "ID": [
+   "ID",
+   "ENTERO",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "TEMPORADA_ID": [
+   "TEMPORADA_ID",
+   "ENTERO",
+   "-",
+   "Temporada a la que pertenece; única junto al nombre",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "NOMBRE": [
+   "NOMBRE",
+   "CADENA",
+   "60",
+   "Nombre de la colección",
+   "ÚNICA",
+   "NO"
+  ],
+  "DESCRIPCION": [
+   "DESCRIPCION",
+   "CADENA",
+   "200",
+   "De qué va la colección",
+   "",
+   "SÍ"
+  ],
+  "ACTIVA": [
+   "ACTIVA",
+   "BOOLEANO",
+   "-",
+   "Si sigue en uso",
+   "",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "PRODUCTO": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "CODIGO": [
+   "CODIGO",
+   "CADENA",
+   "30",
+   "Código interno, único en todo el catálogo",
+   "ÚNICA",
+   "NO"
+  ],
+  "NOMBRE": [
+   "NOMBRE",
+   "CADENA",
+   "120",
+   "Nombre de la prenda",
+   "",
+   "NO"
+  ],
+  "DESCRIPCION": [
+   "DESCRIPCION",
+   "CADENA",
+   "500",
+   "Texto que ve el cliente en la ficha",
+   "",
+   "SÍ"
+  ],
+  "CATEGORIA_ID": [
+   "CATEGORIA_ID",
+   "ENTERO",
+   "-",
+   "Categoría a la que pertenece",
+   "FORÁNEA",
+   "NO"
+  ],
+  "PROVEEDOR_ID": [
+   "PROVEEDOR_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Proveedor que la abastece",
+   "FORÁNEA",
+   "SÍ"
+  ],
+  "TEMPORADA_ID": [
+   "TEMPORADA_ID",
+   "ENTERO",
+   "-",
+   "Temporada a la que pertenece",
+   "FORÁNEA",
+   "SÍ"
+  ],
+  "COLECCION_ID": [
+   "COLECCION_ID",
+   "ENTERO",
+   "-",
+   "Colección a la que pertenece",
+   "FORÁNEA",
+   "SÍ"
+  ],
+  "PRECIO_BASE": [
+   "PRECIO_BASE",
+   "DECIMAL",
+   "10, 2",
+   "Precio de referencia; el que se cobra es el de la variante",
+   "",
+   "NO"
+  ],
+  "ACTIVO": [
+   "ACTIVO",
+   "BOOLEANO",
+   "-",
+   "Si se sigue ofreciendo",
+   "",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "VARIANTE_PRODUCTO": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "PRODUCTO_ID": [
+   "PRODUCTO_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Producto del que es variante",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "TALLA_ID": [
+   "TALLA_ID",
+   "ENTERO",
+   "-",
+   "Talla de esta variante",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "COLOR_ID": [
+   "COLOR_ID",
+   "ENTERO",
+   "-",
+   "Color de esta variante",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "SKU": [
+   "SKU",
+   "CADENA",
+   "40",
+   "Código único de la combinación",
+   "ÚNICA",
+   "NO"
+  ],
+  "PRECIO": [
+   "PRECIO",
+   "DECIMAL",
+   "10, 2",
+   "El precio que se cobra, en bolivianos",
+   "",
+   "NO"
+  ],
+  "ACTIVA": [
+   "ACTIVA",
+   "BOOLEANO",
+   "-",
+   "Si se sigue ofreciendo",
+   "",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "IMAGEN_PRODUCTO": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "PRODUCTO_ID": [
+   "PRODUCTO_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Producto al que pertenece",
+   "FORÁNEA",
+   "NO"
+  ],
+  "VARIANTE_ID": [
+   "VARIANTE_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Variante concreta; nulo si vale para todo el producto",
+   "FORÁNEA",
+   "SÍ"
+  ],
+  "RUTA": [
+   "RUTA",
+   "CADENA",
+   "255",
+   "Ruta con la que se sirve el archivo",
+   "",
+   "NO"
+  ],
+  "ES_PRINCIPAL": [
+   "ES_PRINCIPAL",
+   "BOOLEANO",
+   "-",
+   "Si es la que representa al producto en la vitrina",
+   "",
+   "NO"
+  ],
+  "ES_TRANSPARENTE": [
+   "ES_TRANSPARENTE",
+   "BOOLEANO",
+   "-",
+   "Si es el PNG recortado que usa el vestidor (CU-21)",
+   "",
+   "NO"
+  ],
+  "ORDEN": [
+   "ORDEN",
+   "ENTERO CORTO",
+   "-",
+   "Posición en la galería",
+   "",
+   "NO"
+  ],
+  "ES_SILUETA_GENERADA": [
+   "ES_SILUETA_GENERADA",
+   "BOOLEANO",
+   "-",
+   "Si el PNG lo dibujó el sembrado y no es una foto real",
+   "",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "PROMOCION": {
+  "ID": [
+   "ID",
+   "ENTERO",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "NOMBRE": [
+   "NOMBRE",
+   "CADENA",
+   "80",
+   "Cómo se llama; viaja al cliente junto al descuento",
+   "",
+   "NO"
+  ],
+  "ALCANCE": [
+   "ALCANCE",
+   "CADENA",
+   "10",
+   "PRODUCTO, CATEGORIA o TEMPORADA",
+   "",
+   "NO"
+  ],
+  "PRODUCTO_ID": [
+   "PRODUCTO_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Objetivo, si el alcance es PRODUCTO",
+   "FORÁNEA",
+   "SÍ"
+  ],
+  "CATEGORIA_ID": [
+   "CATEGORIA_ID",
+   "ENTERO",
+   "-",
+   "Objetivo, si el alcance es CATEGORIA",
+   "FORÁNEA",
+   "SÍ"
+  ],
+  "TEMPORADA_ID": [
+   "TEMPORADA_ID",
+   "ENTERO",
+   "-",
+   "Objetivo, si el alcance es TEMPORADA",
+   "FORÁNEA",
+   "SÍ"
+  ],
+  "PORCENTAJE": [
+   "PORCENTAJE",
+   "DECIMAL",
+   "5, 2",
+   "Cuánto descuenta, en el intervalo (0, 100]",
+   "",
+   "NO"
+  ],
+  "DESDE": [
+   "DESDE",
+   "FECHA",
+   "-",
+   "Desde qué día descuenta",
+   "",
+   "NO"
+  ],
+  "HASTA": [
+   "HASTA",
+   "FECHA",
+   "-",
+   "Hasta qué día; nulo es sin fecha de fin",
+   "",
+   "SÍ"
+  ],
+  "ACTIVA": [
+   "ACTIVA",
+   "BOOLEANO",
+   "-",
+   "Si está encendida; distinto de estar vigente",
+   "",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "MEDIDA_TALLA": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "PRODUCTO_ID": [
+   "PRODUCTO_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Producto medido; único junto a la talla",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "TALLA_ID": [
+   "TALLA_ID",
+   "ENTERO",
+   "-",
+   "Talla que se describe",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "BUSTO_CM": [
+   "BUSTO_CM",
+   "DECIMAL",
+   "5, 1",
+   "Busto en centímetros que corresponde a esa talla",
+   "",
+   "NO"
+  ],
+  "CINTURA_CM": [
+   "CINTURA_CM",
+   "DECIMAL",
+   "5, 1",
+   "Cintura en centímetros",
+   "",
+   "NO"
+  ],
+  "CADERA_CM": [
+   "CADERA_CM",
+   "DECIMAL",
+   "5, 1",
+   "Cadera en centímetros",
+   "",
+   "NO"
+  ],
+  "LARGO_CM": [
+   "LARGO_CM",
+   "DECIMAL",
+   "5, 1",
+   "Largo de la prenda en centímetros",
+   "",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "EXISTENCIA": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "VARIANTE_ID": [
+   "VARIANTE_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Variante contada; única junto a la sucursal",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "SUCURSAL_ID": [
+   "SUCURSAL_ID",
+   "ENTERO",
+   "-",
+   "Sucursal donde está",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "CANTIDAD_DISPONIBLE": [
+   "CANTIDAD_DISPONIBLE",
+   "ENTERO",
+   "-",
+   "Unidades que se pueden vender ahora",
+   "",
+   "NO"
+  ],
+  "CANTIDAD_RESERVADA": [
+   "CANTIDAD_RESERVADA",
+   "ENTERO",
+   "-",
+   "Unidades apartadas por una reserva o un pedido sin pagar",
+   "",
+   "NO"
+  ],
+  "STOCK_MINIMO": [
+   "STOCK_MINIMO",
+   "ENTERO",
+   "-",
+   "Por debajo de esto salta la alerta de stock bajo",
+   "",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "MOVIMIENTO_INVENTARIO": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "EXISTENCIA_ID": [
+   "EXISTENCIA_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Existencia sobre la que se movió",
+   "FORÁNEA",
+   "NO"
+  ],
+  "TIPO": [
+   "TIPO",
+   "CADENA",
+   "15",
+   "INGRESO, SALIDA, AJUSTE, TRANSFERENCIA, RESERVA o LIBERACION",
+   "",
+   "NO"
+  ],
+  "CANTIDAD": [
+   "CANTIDAD",
+   "ENTERO",
+   "-",
+   "Cuántas unidades se movieron",
+   "",
+   "NO"
+  ],
+  "MOTIVO": [
+   "MOTIVO",
+   "CADENA",
+   "200",
+   "Por qué se hizo",
+   "",
+   "SÍ"
+  ],
+  "PROVEEDOR_ID": [
+   "PROVEEDOR_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Quién abasteció, en un ingreso",
+   "FORÁNEA",
+   "SÍ"
+  ],
+  "REFERENCIA": [
+   "REFERENCIA",
+   "CADENA",
+   "40",
+   "Documento que lo originó: venta, reserva, devolución",
+   "",
+   "SÍ"
+  ],
+  "USUARIO_ID": [
+   "USUARIO_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Quién lo hizo; nulo cuando lo hace el planificador",
+   "FORÁNEA",
+   "SÍ"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo ocurrió",
+   "",
+   "NO"
+  ]
+ },
+ "ABASTECIMIENTO": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "PROVEEDOR_ID": [
+   "PROVEEDOR_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Proveedor que lo anuncia",
+   "FORÁNEA",
+   "NO"
+  ],
+  "VARIANTE_ID": [
+   "VARIANTE_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Variante que promete abastecer",
+   "FORÁNEA",
+   "NO"
+  ],
+  "CANTIDAD": [
+   "CANTIDAD",
+   "ENTERO",
+   "-",
+   "Cuántas unidades anuncia",
+   "",
+   "NO"
+  ],
+  "DIAS_PLAZO": [
+   "DIAS_PLAZO",
+   "ENTERO",
+   "-",
+   "En cuántos días promete entregarlo",
+   "",
+   "NO"
+  ],
+  "OBSERVACION": [
+   "OBSERVACION",
+   "CADENA",
+   "200",
+   "Anotación libre del proveedor",
+   "",
+   "SÍ"
+  ],
+  "ESTADO": [
+   "ESTADO",
+   "CADENA",
+   "20",
+   "Si el aviso sigue en pie, se cumplió o se canceló",
+   "",
+   "NO"
+  ],
+  "CANTIDAD_RECIBIDA": [
+   "CANTIDAD_RECIBIDA",
+   "ENTERO",
+   "-",
+   "Cuántas llegaron de verdad",
+   "",
+   "NO"
+  ],
+  "RECIBIDO_EN": [
+   "RECIBIDO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se recibió; nulo mientras no llegue",
+   "",
+   "SÍ"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "FAVORITO": {
+  "CLIENTE_ID": [
+   "CLIENTE_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Cliente que la marcó",
+   "PRIMARIA",
+   "NO"
+  ],
+  "PRODUCTO_ID": [
+   "PRODUCTO_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Prenda marcada; es por producto, no por variante",
+   "PRIMARIA",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo la marcó",
+   "",
+   "NO"
+  ]
+ },
+ "RECOMENDACIÓN": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "CLIENTE_ID": [
+   "CLIENTE_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Cliente al que se le sugiere; una fila por cliente",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "GENERADA_EN": [
+   "GENERADA_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo la produjo el modelo",
+   "",
+   "NO"
+  ],
+  "MOTOR": [
+   "MOTOR",
+   "CADENA",
+   "30",
+   "Qué proveedor de IA la generó",
+   "",
+   "NO"
+  ],
+  "SUGERENCIAS": [
+   "SUGERENCIAS",
+   "JSON",
+   "-",
+   "Lo que devolvió el modelo, ya validado contra el catálogo",
+   "",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "RESERVA": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "CLIENTE_ID": [
+   "CLIENTE_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Cliente que reservó",
+   "FORÁNEA",
+   "NO"
+  ],
+  "SUCURSAL_ID": [
+   "SUCURSAL_ID",
+   "ENTERO",
+   "-",
+   "Dónde va a probarse",
+   "FORÁNEA",
+   "NO"
+  ],
+  "FRANJA_INICIO": [
+   "FRANJA_INICIO",
+   "FECHA Y HORA",
+   "-",
+   "Comienzo de la franja horaria elegida",
+   "",
+   "NO"
+  ],
+  "FRANJA_FIN": [
+   "FRANJA_FIN",
+   "FECHA Y HORA",
+   "-",
+   "Fin de la franja; pasada esta hora puede expirar",
+   "",
+   "NO"
+  ],
+  "ESTADO": [
+   "ESTADO",
+   "CADENA",
+   "10",
+   "PENDIENTE, PREPARADA, ATENDIDA, CANCELADA o EXPIRADA",
+   "",
+   "NO"
+  ],
+  "OBSERVACION": [
+   "OBSERVACION",
+   "CADENA",
+   "200",
+   "Anotación del encargado al atenderla",
+   "",
+   "SÍ"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "RESERVA_DETALLE": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "RESERVA_ID": [
+   "RESERVA_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Reserva a la que pertenece; única junto a la variante",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "VARIANTE_ID": [
+   "VARIANTE_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Prenda reservada",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "CANTIDAD": [
+   "CANTIDAD",
+   "ENTERO",
+   "-",
+   "Cuántas unidades se apartaron",
+   "",
+   "NO"
+  ],
+  "RESULTADO_PRUEBA": [
+   "RESULTADO_PRUEBA",
+   "CADENA",
+   "10",
+   "Cómo le quedó: LLEVA, NO_LLEVA o SIN_PROBAR",
+   "",
+   "SÍ"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "CARRITO": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "CLIENTE_ID": [
+   "CLIENTE_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Dueño del carrito; hay uno solo por cliente",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "CARRITO_DETALLE": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "CARRITO_ID": [
+   "CARRITO_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Carrito al que pertenece; único junto a la variante",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "VARIANTE_ID": [
+   "VARIANTE_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Prenda elegida",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "CANTIDAD": [
+   "CANTIDAD",
+   "ENTERO",
+   "-",
+   "Unidades de esa variante",
+   "",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "VENTA": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "CODIGO": [
+   "CODIGO",
+   "CADENA",
+   "20",
+   "Código que ve el cliente",
+   "ÚNICA",
+   "NO"
+  ],
+  "CANAL": [
+   "CANAL",
+   "CADENA",
+   "12",
+   "DIGITAL o PRESENCIAL",
+   "",
+   "NO"
+  ],
+  "ESTADO": [
+   "ESTADO",
+   "CADENA",
+   "20",
+   "PENDIENTE_PAGO, PAGADA, CANCELADA o EXPIRADA",
+   "",
+   "NO"
+  ],
+  "CLIENTE_ID": [
+   "CLIENTE_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Cliente; nulo en una venta de mostrador sin registrar",
+   "FORÁNEA",
+   "SÍ"
+  ],
+  "SUCURSAL_ID": [
+   "SUCURSAL_ID",
+   "ENTERO",
+   "-",
+   "Sucursal que despacha o cobra",
+   "FORÁNEA",
+   "NO"
+  ],
+  "TURNO_CAJA_ID": [
+   "TURNO_CAJA_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Turno en que se cobró; nulo en venta digital",
+   "FORÁNEA",
+   "SÍ"
+  ],
+  "RESERVA_ID": [
+   "RESERVA_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Reserva que se cobró; única, una reserva se cobra una vez",
+   "FORÁNEA / ÚNICA",
+   "SÍ"
+  ],
+  "MODALIDAD_ENTREGA": [
+   "MODALIDAD_ENTREGA",
+   "CADENA",
+   "10",
+   "RETIRO o ENVIO; nulo en venta presencial",
+   "",
+   "SÍ"
+  ],
+  "DIRECCION_ID": [
+   "DIRECCION_ID",
+   "ENTERO GRANDE",
+   "-",
+   "A dónde se envía; solo si la modalidad es ENVIO",
+   "FORÁNEA",
+   "SÍ"
+  ],
+  "METODO_PAGO": [
+   "METODO_PAGO",
+   "CADENA",
+   "20",
+   "EFECTIVO, TARJETA o la pasarela en línea",
+   "",
+   "SÍ"
+  ],
+  "SUBTOTAL": [
+   "SUBTOTAL",
+   "DECIMAL",
+   "10, 2",
+   "Antes de descuentos",
+   "",
+   "NO"
+  ],
+  "DESCUENTO": [
+   "DESCUENTO",
+   "DECIMAL",
+   "10, 2",
+   "Descuento aplicado",
+   "",
+   "NO"
+  ],
+  "TOTAL": [
+   "TOTAL",
+   "DECIMAL",
+   "10, 2",
+   "Lo que se cobra",
+   "",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "DETALLE_VENTA": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "VENTA_ID": [
+   "VENTA_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Venta a la que pertenece; única junto a la variante",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "VARIANTE_ID": [
+   "VARIANTE_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Prenda vendida",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "CANTIDAD": [
+   "CANTIDAD",
+   "ENTERO",
+   "-",
+   "Cuántas unidades",
+   "",
+   "NO"
+  ],
+  "PRECIO_UNITARIO": [
+   "PRECIO_UNITARIO",
+   "DECIMAL",
+   "10, 2",
+   "Precio congelado al confirmar; no cambia si después sube",
+   "",
+   "NO"
+  ],
+  "DESCUENTO_UNITARIO": [
+   "DESCUENTO_UNITARIO",
+   "DECIMAL",
+   "10, 2",
+   "Descuento congelado por unidad",
+   "",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ]
+ },
+ "COMPROBANTE": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "VENTA_ID": [
+   "VENTA_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Venta que documenta; uno por venta",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "TIPO": [
+   "TIPO",
+   "CADENA",
+   "10",
+   "RECIBO o FACTURA",
+   "",
+   "NO"
+  ],
+  "NUMERO": [
+   "NUMERO",
+   "CADENA",
+   "20",
+   "Número correlativo",
+   "ÚNICA",
+   "NO"
+  ],
+  "NIT_CI": [
+   "NIT_CI",
+   "CADENA",
+   "20",
+   "NIT o cédula a nombre de quien se emite",
+   "",
+   "SÍ"
+  ],
+  "RAZON_SOCIAL": [
+   "RAZON_SOCIAL",
+   "CADENA",
+   "120",
+   "Razón social para la factura",
+   "",
+   "SÍ"
+  ],
+  "EMITIDO_EN": [
+   "EMITIDO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se emitió",
+   "",
+   "NO"
+  ]
+ },
+ "DEVOLUCION": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "VENTA_ID": [
+   "VENTA_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Venta que se devuelve; puede haber varias parciales",
+   "FORÁNEA",
+   "NO"
+  ],
+  "TURNO_CAJA_ID": [
+   "TURNO_CAJA_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Turno en el que se registró",
+   "FORÁNEA",
+   "NO"
+  ],
+  "MOTIVO": [
+   "MOTIVO",
+   "CADENA",
+   "200",
+   "Por qué se devolvió",
+   "",
+   "NO"
+  ],
+  "MONTO": [
+   "MONTO",
+   "DECIMAL",
+   "10, 2",
+   "Lo que se reintegra, sobre el precio congelado",
+   "",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo ocurrió",
+   "",
+   "NO"
+  ]
+ },
+ "DETALLE_DEVOLUCION": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "DEVOLUCION_ID": [
+   "DEVOLUCION_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Devolución a la que pertenece; única junto a la variante",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "VARIANTE_ID": [
+   "VARIANTE_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Prenda devuelta",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "CANTIDAD": [
+   "CANTIDAD",
+   "ENTERO",
+   "-",
+   "Cuántas unidades vuelven al inventario",
+   "",
+   "NO"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ]
+ },
+ "CAJA": {
+  "ID": [
+   "ID",
+   "ENTERO",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "SUCURSAL_ID": [
+   "SUCURSAL_ID",
+   "ENTERO",
+   "-",
+   "Sucursal donde está; única junto al nombre",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "NOMBRE": [
+   "NOMBRE",
+   "CADENA",
+   "50",
+   "Cómo se llama la caja dentro de la sucursal",
+   "ÚNICA",
+   "NO"
+  ],
+  "ACTIVA": [
+   "ACTIVA",
+   "BOOLEANO",
+   "-",
+   "Si sigue en uso",
+   "",
+   "NO"
+  ]
+ },
+ "TURNO_CAJA": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "CAJA_ID": [
+   "CAJA_ID",
+   "ENTERO",
+   "-",
+   "Caja que se abrió",
+   "FORÁNEA",
+   "NO"
+  ],
+  "USUARIO_ID": [
+   "USUARIO_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Cajero que lo abrió; solo él puede cerrarlo",
+   "FORÁNEA",
+   "NO"
+  ],
+  "ABIERTO_EN": [
+   "ABIERTO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se abrió",
+   "",
+   "NO"
+  ],
+  "CERRADO_EN": [
+   "CERRADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se cerró; nulo si sigue abierto",
+   "",
+   "SÍ"
+  ],
+  "MONTO_APERTURA": [
+   "MONTO_APERTURA",
+   "DECIMAL",
+   "10, 2",
+   "Efectivo con el que se abrió",
+   "",
+   "NO"
+  ],
+  "MONTO_CIERRE": [
+   "MONTO_CIERRE",
+   "DECIMAL",
+   "10, 2",
+   "Efectivo contado al cerrar",
+   "",
+   "SÍ"
+  ],
+  "MONTO_ESPERADO": [
+   "MONTO_ESPERADO",
+   "DECIMAL",
+   "10, 2",
+   "Lo que debería haber según las ventas del turno",
+   "",
+   "SÍ"
+  ]
+ },
+ "PAGO": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "VENTA_ID": [
+   "VENTA_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Venta que se cobra; uno por venta",
+   "FORÁNEA / ÚNICA",
+   "NO"
+  ],
+  "METODO": [
+   "METODO",
+   "CADENA",
+   "12",
+   "Medio con el que se cobró",
+   "",
+   "NO"
+  ],
+  "ESTADO": [
+   "ESTADO",
+   "CADENA",
+   "12",
+   "Estado del cobro informado por la pasarela",
+   "",
+   "NO"
+  ],
+  "MONTO": [
+   "MONTO",
+   "DECIMAL",
+   "10, 2",
+   "Importe cobrado",
+   "",
+   "NO"
+  ],
+  "REFERENCIA_EXTERNA": [
+   "REFERENCIA_EXTERNA",
+   "CADENA",
+   "100",
+   "Identificador del cobro en la pasarela",
+   "ÚNICA",
+   "SÍ"
+  ],
+  "CREADO_EN": [
+   "CREADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se creó la fila",
+   "",
+   "NO"
+  ],
+  "ACTUALIZADO_EN": [
+   "ACTUALIZADO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuándo se modificó por última vez",
+   "",
+   "NO"
+  ]
+ },
+ "TRANSACCION_PASARELA": {
+  "ID": [
+   "ID",
+   "ENTERO GRANDE",
+   "-",
+   "Identificador de la fila",
+   "PRIMARIA",
+   "NO"
+  ],
+  "PAGO_ID": [
+   "PAGO_ID",
+   "ENTERO GRANDE",
+   "-",
+   "Pago al que corresponde; nulo si el aviso no se pudo asociar",
+   "FORÁNEA",
+   "SÍ"
+  ],
+  "EVENTO_ID": [
+   "EVENTO_ID",
+   "CADENA",
+   "100",
+   "Identificador del aviso; único, y es lo que evita cobrar dos veces",
+   "ÚNICA",
+   "NO"
+  ],
+  "TIPO_EVENTO": [
+   "TIPO_EVENTO",
+   "CADENA",
+   "50",
+   "Qué aviso mandó la pasarela",
+   "",
+   "NO"
+  ],
+  "FIRMA_VALIDA": [
+   "FIRMA_VALIDA",
+   "BOOLEANO",
+   "-",
+   "Si la firma verificó; sin esto cualquiera marcaría pedidos como pagados",
+   "",
+   "NO"
+  ],
+  "CARGA_UTIL": [
+   "CARGA_UTIL",
+   "TEXTO",
+   "-",
+   "Cuerpo crudo de la notificación, para poder auditarla",
+   "",
+   "NO"
+  ],
+  "RECIBIDO_EN": [
+   "RECIBIDO_EN",
+   "FECHA Y HORA",
+   "-",
+   "Cuando llegó",
+   "",
+   "NO"
+  ]
+ }
+}
