@@ -41,6 +41,8 @@ Trial en Windows, escribiendo sobre archivos `.eapx` reales.
 10. [Lo que no se puede automatizar](#10-lo-que-no-se-puede-automatizar)
 11. [Checklist de verificación](#11-checklist-de-verificación)
 12. [Cómo llevar esto a otro proyecto](#12-cómo-llevar-esto-a-otro-proyecto)
+- [Anexo (20/10/2026): robustez ICONIX del 2do parcial](#anexo-20102026-robustez-iconix-del-2do-parcial-32)
+- [Anexo (01/11/2026): el 2do parcial completo con ICONIX](#anexo-01112026-el-2do-parcial-completo-con-iconix-de-la-robustez-al-despliegue)
 
 ---
 
@@ -2083,3 +2085,169 @@ Exportar             $ea.GetProjectInterface().PutDiagramImageToFile($dia.Diagra
   apilado en la esquina. Se llama `$colX`.
 - Para revisar sin exportar al repo: `$ea.GetProjectInterface().PutDiagramImageToFile(guid, ruta, 1)`
   hacia una carpeta temporal. El script se lanza con `-Command`, nunca con `-File`.
+
+---
+
+## Anexo (01/11/2026): el 2do parcial completo con ICONIX, de la robustez al despliegue
+
+Todo lo de la 2da presentación (CU-01 a CU-20) en el paquete `Violet Boutique > PARCIAL 2 - ICONIX`.
+Este anexo es **la receta para llevar a otro proyecto**: qué se dibuja, de dónde sale cada dato y las
+trampas que costó encontrar. Los detalles de la secuencia contra el código están además en
+`docs/diagramas/secuencia-y-codigo.md` (§8).
+
+### A. Qué generador hace cada diagrama
+
+| Sección | Diagrama | Generador | Datos |
+|---|---|---|---|
+| 2.5 | Casos de uso por CU y el general | `ea-p2-presentacion2.ps1` (32 bits) | `p2_datos.py` → `ea-p2.datos.json` |
+| 3.1 | Modelo de dominio | `ea-p2-dominio-bd.ps1` (32 bits) | `p2_bd_datos.py` → `ea-p2-bd.datos.json` |
+| 3.2 | Robustez | `ea-p2-presentacion2.ps1` | `ea-p2.datos.json`; los mensajes, a mano desde `docs/diagramas/2do Parcial/3.2-robustez-mensajes.md` |
+| 3.3 | Secuencia | `ea-secuencia-p2.ps1` (64 bits) | el guion `$CASOS` dentro del script |
+| 3.4 | Diseño de clases por CU | `ea-p2-clases.ps1` (32 bits) | `p2_clases_datos*.py` → `ea-p2-clases*.datos.json` |
+| 3.5 | Diseño de la base de datos | `ea-p2-dominio-bd.ps1` | `p2_bd_datos.py` (lee `information_schema`) + `p2_bd_layout.py` |
+| 4.2.1 / 4.2.2 | Despliegue y capas | `ea-p2-arquitectura.ps1` (64 bits) | en el script |
+
+Todos son **aditivos** (regla 1): crean lo que falta y no tocan lo que existe. El `-Rehacer` de cada uno
+borra **solo su paquete**. Una vez que alguien acomodó algo a mano en EA, **no se vuelve a correr
+`-Rehacer`**, porque pisa ese trabajo. El cambio se hace agregando un diagrama nuevo.
+
+### B. Secuencia (3.3): ICONIX de verdad, de la robustez al código
+
+El método es de Karen, y salió muy bien. Estas son las cinco reglas:
+
+1. **Las líneas de vida son los participantes de la robustez del mismo CU, ni uno más.** Cada línea de
+   vida es un elemento `Sequence` con `ClassifierID` = la clase del paquete 3.2, así que EA la rotula
+   `:Clase` y el vínculo es real. Los actores se crean en el paquete 3.3. Si falta una clase, el script
+   corta (`falta la clase 'X' en el 3.2`): es la señal de que la robustez y la secuencia no cuadran.
+2. **Los mensajes y su numeración son los de la robustez.** EA numera un diagrama de comunicación así:
+   el primer mensaje del grupo `g` es `g` y los siguientes son `g.1`, `g.2`… En la tabla de mensajes de
+   la robustez, donde se cuenta desde 1, `g.k` pasa a ser `g` si k = 1 y `g.(k-1)` si no. Así el mismo
+   mensaje tiene el mismo número en los dos diagramas.
+3. **Los retornos son subnivel del mensaje que los provoca** (`1.4` → `1.4.1`), van punteados
+   (`PDATA3 = 'Return'`) y llevan **el tipo real** que devuelve el código (`List<Existencia>`,
+   `TurnoCaja | None`, `(cantidad, Decimal)`). Un mensaje de primer nivel (`4`) no lleva retorno: su
+   subnivel `4.1` choca con el mensaje siguiente. Si hace falta uno, se rotula `4a`.
+4. **Cada fragmento sale de una estructura de control del código**, con la guarda en castellano y la
+   misma condición del `if`:
+
+   | Operador | En el código | Ejemplo (CU-17, `offline/service.py`) |
+   |---|---|---|
+   | `loop` | `for` | `for operacion in lote.operaciones` → `[por cada operación del lote]` |
+   | `alt` | `if/else`, `raise` excluyentes, ramas de `except` | operación nueva / ya registrada (RNF05); venta / reserva |
+   | `critical` | `begin_nested()` o `try: commit / except: rollback` | el punto de guardado de cada operación |
+   | `break` | `raise` temprano | CU-19: QR sin referencia → 422 |
+   | `opt` | `if` sin `else` | CU-20: hay ventas sin conexión en la cola |
+
+5. **F3 (pedido de la ing): un control visible y la bitácora.** Los CU que escriben en el servidor llevan
+   las líneas `BitacoraMiddleware` → `AsientoBitacora`, con el mensaje `registrar(peticion)` y
+   `agregar(accion, usuario, …)`.
+
+**Cómo maqueta EA, medido.** EA apila los mensajes por `SeqNo` de 35 en 35 desde −135 e **ignora la
+altura guardada**. Las cajas y las notas, en cambio, quedan donde se guardaron. Por eso el generador
+deja los mensajes fijos y pone cada borde de caja (arriba, divisoria, abajo) **en el hueco entre dos
+mensajes seguidos**. Tres consecuencias:
+
+- **Dos o tres cabeceras en el mismo hueco se pisan.** Pasa cuando se abre un fragmento justo adentro de
+  otro, como `alt` + `critical` + `alt`. El arreglo es poner **un mensaje real** entre ellos, y casi
+  siempre existe. En CU-17 fue `1.8.2: abrirPuntoDeGuardado()`, que es el `db.begin_nested()` del código,
+  y del otro lado `4a: deshacerPuntoDeGuardado()`. El diagrama queda más fiel y deja de pisarse.
+- **Una nota de flujo mide 50 px.** Un flujo de dos mensajes ocupa 70, así que una nota de tres líneas
+  se pisa con la del flujo siguiente. Hay que dejarla en dos líneas.
+- **No se arrastra nada a mano en EA.** Mover una caja corre todos los mensajes de abajo.
+
+**Cómo se trabaja.** Primero sobre una copia, y se miran las imágenes:
+
+```powershell
+# 64 bits (ACE.OLEDB.16.0) y -Command: con -File, el arreglo de -Solo llega como UN texto
+powershell -NoProfile -ExecutionPolicy Bypass -Command "& 'scripts\ea-secuencia-p2.ps1' -Modelo 'copia.eapx' -Solo 'CU-13','CU-17' -Imagenes 'png'"
+```
+
+### C. Diseño de clases (3.4): un subpaquete por CU
+
+- **Un subpaquete por caso de uso, con sus propias copias de las clases.** Así cada diagrama muestra
+  solo las operaciones que usa ese CU (`operaciones_en_cu`), y las relaciones de un CU no aparecen en
+  otro (reglas 2 y 3).
+- **Estereotipos en castellano** (`interfaz`, `controlador`, `entidad`). Los de robustez en inglés
+  harían que EA dibuje círculos en vez de la tabla con atributos y operaciones (§5.9).
+- **Interfaz:** todas las acciones de la pantalla. **Control:** los métodos reales del `service.py` y
+  del servicio del dispositivo. **Entidad:** las columnas con el tipo de la base y las funciones del
+  `repository.py`. Entre entidades, las FK reales con su multiplicidad.
+- **Los datos los junta un agente leyendo el código**, en un JSON validado, y el `.ps1` solo dibuja. El
+  agente devuelve además lo que no cuadra entre las fichas y el código, que sirve para la defensa.
+
+### D. Modelo de dominio (3.1) contra diseño de la base (3.5)
+
+- **El dominio va corto:** entidades sin atributos, asociaciones con un verbo y la multiplicidad. Son
+  **las mismas entidades que usa la robustez**, más las mínimas para que se entienda (aquí, `Producto` y
+  `VarianteProducto`). Las tablas de detalle o puente (`detalle_venta`, `rol_permiso`…) **no son
+  conceptos**: se dibujan como asociación («Venta *vende* VarianteProducto»). Lo que vive en el
+  dispositivo (IndexedDB, SQLite) va en otro color.
+- **La base solo con las tablas que usa la presentación**, como pidió la ing. Son las entidades del 3.4
+  más las que el código lee o escribe sin nombrarlas: aquí, el paquete del dispositivo y lo que graba la
+  venta al confirmarse, `movimiento_inventario` y `comprobante`. Una FK hacia una tabla de fuera queda
+  marcada «FK» en su columna, sin línea, y una nota remite al Anexo.
+- **Por qué no coinciden las cantidades** (pregunta segura en la defensa): el dominio no tiene tablas
+  de detalle ni puente, y sí tiene los conceptos del dispositivo. La cuenta se puede mostrar.
+
+### E. La base desde `information_schema`, y una disposición que se lee
+
+- **Nada se transcribe a mano.** Las columnas, el tipo, PK/FK y las cardinalidades salen de
+  `information_schema`: 1 o 0..1 según NOT NULL; 0..1 o 0..* según si hay UNIQUE **de una sola
+  columna** (§7.9). Solo los verbos se escriben a mano, con la clave `(destino, origen, columna)`,
+  porque hay **dos FK entre las mismas tablas** (`usuario_id` y `devuelto_por`).
+- **Esas FK dobles se dibujan una encima de la otra.** A la segunda se le da un quiebre:
+  `DiagramLinks.AddNew` + `ConnectorID` + `Path = "x:y;"`, corrido del centro.
+- **Las FK a `empresa_id` (multitenant) se dibujan solo desde las tablas de la plataforma.** Si no, son
+  25 líneas hacia la misma caja. Las demás tablas llevan el estereotipo `rls` y lo explica una nota.
+- **EA agrupa los atributos por estereotipo** («PK», «FK», sin estereotipo). `Attribute.Pos` ordena
+  dentro de cada grupo, pero no rompe la agrupación.
+- **La disposición la decide un optimizador** (`scripts/p2_bd_layout.py`). EA dibuja cada asociación
+  como una recta entre centros, así que con cajas puestas a mano en columnas las rectas atraviesan
+  otras cajas. El optimizador reparte las cajas en columnas apiladas y, por recocido simulado con
+  varias semillas, minimiza tres cosas: rectas que atraviesan una caja ajena (60), cruces (6) y largo.
+  Es determinista: los mismos datos dan el mismo dibujo. Sirve para cualquier diagrama de clases o de
+  datos. Lo que queda (algún cruce) se acomoda a mano.
+
+### F. Arquitectura (4.2): capas y despliegue que se rastrean
+
+Las correcciones de la ing para el 2do parcial:
+
+- **Capas:** la capa 3 se llama **«Capa intermedia»** (el software sobre el que se ejecuta cada
+  aplicación: Gunicorn, SQLAlchemy, nginx, el Service Worker, Flutter, PgBouncer, PostgreSQL) y la capa
+  4, **«Capa de software»** (el sistema sobre el que corre: los contenedores Linux, Android, el sistema
+  operativo y el navegador del cliente).
+- **«Se tiene que poder rastrear lo de cada nodo».** Cada elemento de las capas 3 y 4 lleva **como
+  estereotipo el nodo** del despliegue (`«nodo: Railway · API»`), **el mismo color** que ese nodo, y una
+  relación **`Abstraction` «trace»** hacia él en el modelo. No se dibuja, porque el nodo no está en ese
+  diagrama, pero aparece en la ventana de trazabilidad de EA. El color va con
+  `SetAppearance(1, 0, BGR)` desde COM, sin segunda pasada.
+- **Docker en el despliegue:** cada contenedor es un `ExecutionEnvironment` **dentro** del nodo
+  (`Docker · contenedor violetboutique-api (python:3.13-slim)`), con el servidor de aplicaciones anidado
+  y la imagen como artefacto. Se lee de `railway.json` (`builder: DOCKERFILE`), de los `Dockerfile` y de
+  `docker-compose.yml` (el `postgres:16-alpine` de desarrollo).
+- Lo demás, como en §7.6 y §7.7: Device / ExecutionEnvironment / Artifact, CommunicationPath con su
+  protocolo, `[*]` en los clientes, el bundle afuera con «deploy», y `ParentID` y orden Z por OLEDB.
+
+### G. Exportar y llevar al Word
+
+- **Exportar siempre desde una copia del `.eapx`:** `PutDiagramImageToFile(guid, ruta, 1)`, en JPG. Sale
+  sin la marca de agua del trial. Por COM se puede exportar **aunque haya un EA abierto** con otro
+  archivo, pero **nunca se escribe en el `.eapx` que alguien tiene abierto**: se pisan.
+- **El Word se edita con scripts de python-docx** (`scripts/word-p2/editar_*.py`), uno por tanda, sobre
+  una copia. Antes de copiarlo a OneDrive hay que comprobar con `cmp` que nadie lo cambió desde que se
+  tomó y que no existe el `~$archivo.docx` (el bloqueo de Word). Después se exporta a PDF con Word por
+  COM y se miran las páginas.
+- **Imágenes a 15,5 cm de ancho como máximo**, centradas y con `keep_with_next` en la leyenda. Un
+  diagrama muy ancho queda chico en papel, pero se lee con zoom porque va a resolución completa.
+
+### H. Trampas nuevas
+
+| Síntoma | Causa | Arreglo |
+|---|---|---|
+| `-Solo 'CU-13','CU-14'` no hace nada («Nada nuevo») | con `-File`, el arreglo llega como un solo texto | lanzar con `-Command "& 'script.ps1' -Solo 'CU-13','CU-14'"` |
+| `Error de sintaxis … Object_ID =` en la segunda pasada | se leyó `ElementID` de un objeto COM **después** de cerrar EA | guardar los ID en un hashtable **antes** de `CloseFile()` |
+| El export por COM se cuelga sin escribir nada | un EA zombi de una corrida anterior | `taskkill` del EA propio y volver a correr con `timeout` |
+| Acentos rotos en el diagrama | el `.ps1` sin BOM | guardarlo en UTF-8 con BOM (regla 11); el texto que sale del JSON no tiene el problema |
+| Cabeceras de fragmentos pisadas | dos o tres fragmentos abren en el mismo hueco | un mensaje real entre ellos (§B) |
+| Una relación «desaparece» | dos FK entre las mismas tablas, superpuestas | quiebre con `DiagramLink.Path` (§E) |
+| Cajas tapadas en el despliegue | un nodo externo dentro del rectángulo de otro nodo | columna propia para los servicios externos |
