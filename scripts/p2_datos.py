@@ -32,10 +32,11 @@ ACTORES = {
     'Proveedor': {'padre': 'Usuario', 'notas': 'Consulta y actualiza sus productos.'},
     'Cliente': {'padre': 'Usuario', 'notas': 'Una sola cuenta en la plataforma, que usa en varias empresas (RN-13).'},
     'Empresa interesada': {'notas': 'Visitante de la página pública que contrata un plan (CU-11).'},
+    'Sistema': {'notas': 'Procesos automáticos: el dispositivo que sincroniza solo al volver la conexión (CU-17).'},
 }
 
 CASOS = [
-    # (id, nombre, actores, incluye, notas)
+    # (id, nombre, actores, incluye, notas[, extiende]); extiende = los casos a los que este extiende
     ('CU-01', 'Gestionar empresas', ['Administrador de la plataforma'], [],
      'Registrar, editar y dar de baja empresas, con su administrador. RF-01, RF-02, RF-03.'),
     ('CU-02', 'Gestionar planes', ['Administrador de la plataforma'], [],
@@ -70,11 +71,14 @@ CASOS = [
     ('CU-15', 'Registrar reserva offline', ['Cliente'], [],
      'Evoluciona el CU-22 del primer parcial. Vitrina con fotos guardada en el teléfono; la confirma el servidor '
      'al sincronizar. RF-14.'),
-    ('CU-16', 'Registrar pago sin conexión', [], [],
+    ('CU-16', 'Registrar pago sin conexión', ['Cajero'], [],
      'Lo incluye la venta offline: efectivo o QR con su referencia. Cobrar no confirma la venta. RF-54, RN-05.'),
-    ('CU-17', 'Sincronizar operaciones pendientes', ['Cajero', 'Cliente'], [],
+    ('CU-17', 'Sincronizar operaciones pendientes', ['Sistema', 'Cajero', 'Cliente'], [],
      'Lotes de hasta 50 operaciones con su UUID; gana la que llega primero al servidor. RF-18 a RF-21, RN-06, '
-     'RN-07.'),
+     'RN-07.',
+     # «Sincronizar ahora» de la cola (3a de CU-18), el cierre con ventas sin subir (7a de CU-20) y el móvil,
+     # que sincroniza solo apenas guarda una reserva.
+     ['CU-15', 'CU-18', 'CU-20']),
     ('CU-18', 'Consultar operaciones pendientes', ['Cajero', 'Cliente'], [],
      'La cola local con el estado de cada operación y el motivo de las rechazadas. RF-16, RF-17, RF-20, RF-23.'),
     ('CU-19', 'Atender operaciones rechazadas y devolver el dinero', ['Encargado de sucursal'], [],
@@ -696,7 +700,8 @@ if __name__ == '__main__':
     escribir_md()
     salida = {
         'actores': ACTORES,
-        'casos': [dict(id=i, n=n, actores=a, incluye=inc, notas=nt) for i, n, a, inc, nt in CASOS],
+        'casos': [dict(id=c[0], n=c[1], actores=c[2], incluye=c[3], notas=c[4],
+                       extiende=c[5] if len(c) > 5 else []) for c in CASOS],
         'robustez': [dict(cu=r['cu'], n=r['n'], a=r['a'], f=r['f'], c=r['c'], e=r['e'],
                           pares=sorted({tuple(sorted((de, a))) for _, de, a, _ in r['m'] if de != a}))
                      for r in ROBUSTEZ],

@@ -4,7 +4,7 @@
 )
 
 # =========================================================================
-# 2DO PARCIAL - 3.4 DISENO DE CLASES (CU-13 a CU-20)
+# 2DO PARCIAL - 3.4 DISENO DE CLASES (CU-01 a CU-20)
 #
 # Lo que pide la ing (22/10 y 01/11):
 #   - interfaz: todas las acciones de la pantalla;
@@ -22,13 +22,16 @@
 # en ingles harian que EA dibuje circulos en vez de la tabla con atributos y
 # operaciones (seccion 5.9 de la guia).
 #
-# Datos: scripts/ea-p2-clases.datos.json (scripts/p2_clases_datos.py).
+# Datos: scripts/ea-p2-clases-p1.datos.json (CU-01..12, p2_clases_datos_p1.py) y
+# scripts/ea-p2-clases.datos.json (CU-13..20, p2_clases_datos.py).
 # PowerShell de 32 bits, EA cerrado.
 # =========================================================================
 
 $ErrorActionPreference = 'Stop'
 $modelo = 'D:\UNI\Si2\PRIMER_PARCIAL\docs\diagramas\VioletBoutique.eapx'
-$datos  = Get-Content (Join-Path $PSScriptRoot 'ea-p2-clases.datos.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+# Un archivo de datos por presentacion; cada uno trae sus propias clases.
+$archivos = @('ea-p2-clases-p1.datos.json', 'ea-p2-clases.datos.json') |
+    ForEach-Object { Join-Path $PSScriptRoot $_ } | Where-Object { Test-Path $_ }
 $casos  = (Get-Content (Join-Path $PSScriptRoot 'ea-p2.datos.json') -Raw -Encoding UTF8 | ConvertFrom-Json).casos
 $N34 = '3.4 Diagramas de Clases'
 $ESTEREOTIPO = @{ 'interfaz' = 'interfaz'; 'control' = 'controlador'; 'entidad' = 'entidad' }
@@ -119,6 +122,8 @@ if ($Rehacer -and (Get-Paquete $pP2 $N34)) {
 $p34 = Get-Paquete $pP2 $N34
 if (-not $p34) { $p34 = $pP2.Packages.AddNew($N34, 'Package'); [void]$p34.Update(); $pP2.Packages.Refresh() }
 
+foreach ($archivo in $archivos) {
+$datos = Get-Content $archivo -Raw -Encoding UTF8 | ConvertFrom-Json
 foreach ($prop in $datos.cus.PSObject.Properties) {
     $cu = $prop.Name; $def = $prop.Value
     $nombreCu = ($casos | Where-Object { $_.id -eq $cu }).n
@@ -173,6 +178,7 @@ foreach ($prop in $datos.cus.PSObject.Properties) {
         [void]$con.Update()
     }
     Write-Output ("  {0,-60} {1,2} clases, {2,2} relaciones" -f $d.Name, @($def.clases).Count, @($def.relaciones).Count)
+}
 }
 
 $ea.CloseFile(); $ea.Exit()

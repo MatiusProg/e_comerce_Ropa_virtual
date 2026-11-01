@@ -163,6 +163,8 @@ foreach ($prop in $datos.actores.PSObject.Properties) {
 foreach ($c in $datos.casos) {
     foreach ($ac in $c.actores) { $relaciones[[int](New-Conector $A[$ac] $U[$c.id] 'Association' $null)] = $true }
     foreach ($inc in $c.incluye) { $relaciones[[int](New-Conector $U[$c.id] $U[$inc] 'Dependency' 'include')] = $true }
+    # «extend»: la flecha va del caso que extiende al caso base.
+    foreach ($ext in @($c.extiende)) { if ($ext) { $relaciones[[int](New-Conector $U[$c.id] $U[$ext] 'Dependency' 'extend')] = $true } }
 }
 
 # --- uno por caso de uso nuevo ---
@@ -171,15 +173,24 @@ foreach ($c in $datos.casos) {
     $nombre = "2.5 $($c.id) $($c.n)"
     if (Get-Diagrama $p25 $nombre) { Write-Output "  $nombre ya existe, no se toca"; continue }
     $d = $p25.Diagrams.AddNew($nombre, 'UseCase'); [void]$d.Update(); $p25.Diagrams.Refresh()
-    $y = -60
-    foreach ($ac in $c.actores) { Poner $d $A[$ac] 40 $y 90 110; $y -= 160 }
-    Poner $d $U[$c.id] 290 -80 260 90
-    $y = -80
-    foreach ($inc in $c.incluye) { Poner $d $U[$inc] 680 $y 260 90; $y -= 140 }
-    $d.DiagramObjects.Refresh()
     $propios = @{}
-    foreach ($ac in $c.actores) { $propios[[int](New-Conector $A[$ac] $U[$c.id] 'Association' $null)] = $true }
-    foreach ($inc in $c.incluye) { $propios[[int](New-Conector $U[$c.id] $U[$inc] 'Dependency' 'include')] = $true }
+    $y = -60
+    foreach ($ac in $c.actores) {
+        Poner $d $A[$ac] 40 $y 90 110; $y -= 160
+        $propios[[int](New-Conector $A[$ac] $U[$c.id] 'Association' $null)] = $true
+    }
+    Poner $d $U[$c.id] 300 -80 280 90
+    # Los relacionados: los que incluye, a los que extiende, y los que lo extienden o lo incluyen.
+    $rel = @()
+    foreach ($inc in @($c.incluye)) { if ($inc) { $rel += , @($inc, [int](New-Conector $U[$c.id] $U[$inc] 'Dependency' 'include')) } }
+    foreach ($ext in @($c.extiende)) { if ($ext) { $rel += , @($ext, [int](New-Conector $U[$c.id] $U[$ext] 'Dependency' 'extend')) } }
+    foreach ($otro in $datos.casos) {
+        if (@($otro.extiende) -contains $c.id) { $rel += , @($otro.id, [int](New-Conector $U[$otro.id] $U[$c.id] 'Dependency' 'extend')) }
+        if (@($otro.incluye) -contains $c.id) { $rel += , @($otro.id, [int](New-Conector $U[$otro.id] $U[$c.id] 'Dependency' 'include')) }
+    }
+    $y = -60
+    foreach ($r in $rel) { Poner $d $U[$r[0]] 760 $y 280 90; $propios[$r[1]] = $true; $y -= 140 }
+    $d.DiagramObjects.Refresh()
     $ocultos = Ocultar-Ajenos $d $propios
     Write-Output ("  {0,-60} {1} objetos, {2} ocultos" -f $d.Name, $d.DiagramObjects.Count, $ocultos)
 }
@@ -218,6 +229,7 @@ if (Get-Diagrama $p25 $GENERAL) {
     Poner $d $A['Usuario'] 40 ([int]($y / 2)) 90 110
     Poner $d $U['CU-05'] 1160 $alto['CU-09'] 280 80
     Poner $d $U['CU-16'] 1160 $alto['CU-14'] 280 80
+    Poner $d $A['Sistema'] 1250 ($alto['CU-17'] + 20) 90 110
     $d.DiagramObjects.Refresh()
     [void](Ocultar-Ajenos $d $relaciones)
     Write-Output "  $($d.Name): $($d.DiagramObjects.Count) objetos"
