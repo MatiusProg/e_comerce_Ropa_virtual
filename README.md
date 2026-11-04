@@ -1,10 +1,16 @@
 # Violet Boutique
 
-Plataforma inteligente de comercio electrónico para una cadena de tiendas de
-ropa, con **vestidores virtuales vía realidad aumentada**, reservas para prueba
-en sucursal, inventario multisucursal, punto de venta e inteligencia artificial.
+Plataforma inteligente de comercio electrónico para tiendas de ropa, con
+**vestidores virtuales vía realidad aumentada**, reservas para prueba en
+sucursal, inventario multisucursal, punto de venta e inteligencia artificial.
 
-Proyecto académico — Examen 1, Sistemas de Información II, S2-2026.
+Desde el 2do parcial es un **SaaS multitenant**: cada boutique es una
+**empresa** con su propio catálogo, sus sucursales y su plan (Básico,
+Profesional o Empresarial). Además, la caja, las reservas y el inventario
+**funcionan sin conexión** y se sincronizan cuando vuelve la red.
+
+Proyecto académico de Sistemas de Información II, S2-2026, **Grupo 15**.
+Examen 1 (1er parcial) y **Examen 2 (2do parcial, metodología ICONIX)**.
 Docente: MSc. Ing. Angélica Garzón Cuéllar.
 
 > **Datos ficticios.** No se cargan datos de personas ni de empresas reales en
@@ -73,9 +79,13 @@ del primer cuadro. Ver la nota en `mobile/android/app/build.gradle.kts`.
 | Realidad aumentada | `camera` + ML Kit Pose Detection | procesamiento en el dispositivo |
 | Inteligencia artificial | Gemini | **modelo gratuito** · el SDK se fija al construir P10 |
 | Pasarela de pago | Stripe | **modo de pruebas** |
+| Correo | Brevo (API HTTP) | el SMTP de Gmail no sale de Railway; en local, `CORREO_PROVEEDOR=consola` |
+| Multitenant | PostgreSQL RLS con `FORCE` + `SET ROLE violet_app` | una sola base, aislada por `empresa_id` |
+| Sin conexión (web) | PWA (`@angular/service-worker`) + IndexedDB | caja, reservas e inventario |
+| Sin conexión (móvil) | SQLite (`sqflite`) | reservas del cliente e inventario del encargado |
 | Base de datos gestionada | Supabase | PostgreSQL **17**, por *session pooler* |
 | Hospedaje | Railway | API y web, en un solo proyecto |
-| Metodología | PUDS + UML 2.5+ | 3 ciclos |
+| Metodología | PUDS (1er parcial) · **ICONIX** (2do parcial) | UML 2.5+ en Enterprise Architect |
 
 ### ⚠️ Python 3.13, no 3.14
 
@@ -116,12 +126,21 @@ python3.13 -m venv .venv                 # macOS / Linux
 source .venv/bin/activate                # macOS / Linux
 
 pip install -r requirements.txt
-alembic upgrade head
+alembic upgrade head                     # crea también el rol violet_app y los planes
 python -m app.db.seed                    # roles, ciudades y administrador
 python -m app.db.seed_catalogo           # sucursales, maestros y ~60 productos
 python -m app.db.seed_operacion          # personas, inventario y reservas
+python -m app.db.seed_plataforma         # el administrador de la plataforma (CU-01)
 uvicorn app.main:app --reload
 ```
+
+**`APP_DB_ROLE=violet_app` tiene que estar en el `.env`.** Sin él, la API se
+conecta como dueña de las tablas, la RLS no se aplica y **no hay aislamiento
+entre empresas**: todo parece andar y una empresa ve los datos de otra. Las
+migraciones sí corren sin ese rol.
+
+**Para iniciar sesión, el login pide el *slug* de la empresa** (por ejemplo,
+`violet-boutique`). Solo el administrador de la plataforma entra sin slug.
 
 En otra terminal:
 
@@ -148,12 +167,12 @@ Documentación interactiva de la API: <http://localhost:8000/docs>
 
 ---
 
-## Las cuatro reglas que sostienen el sistema
+## Las reglas que sostienen el sistema
 
-Salen del flujo de Análisis y están justificadas en
-[docs/04-analisis-arquitectura.md](docs/04-analisis-arquitectura.md) §4.2.1.
-Romper cualquiera de ellas produce datos incorrectos **sin generar ningún
-error visible**.
+Las cuatro primeras salen del flujo de Análisis del 1er parcial y están
+justificadas en [docs/04-analisis-arquitectura.md](docs/04-analisis-arquitectura.md)
+§4.2.1. Las dos últimas son del 2do parcial. Romper cualquiera de ellas
+produce datos incorrectos **sin generar ningún error visible**.
 
 **1. La variante (SKU), no el producto, es la unidad de negocio.**
 `Producto` describe la prenda ("Camisa Oxford manga larga"). `VarianteProducto`
@@ -188,9 +207,41 @@ pagado al recibir el webhook **con la firma verificada**, y ese procesamiento
 es **idempotente**: si la pasarela reenvía la notificación, el inventario no se
 descuenta dos veces.
 
+**5. El aislamiento entre empresas lo hace la base, no el código.**
+Cada tabla de empresa lleva `empresa_id` con un `DEFAULT` que sale del contexto
+de la petición, y una política RLS con `FORCE`. Por eso las consultas **no
+filtran por empresa a mano**: si una se olvidara de filtrar, igual no vería
+datos ajenos. El contexto lo fija `app/core/tenencia.py` a partir del JWT.
+
+**6. Lo hecho sin conexión lo confirma el servidor, una sola vez.**
+El dispositivo crea el UUID de cada operación, y el servidor es idempotente
+por ese UUID: un reintento devuelve lo que ya se decidió. Cobrar o registrar
+sin red **no confirma nada**. Si dos operaciones compiten por la misma unidad,
+gana la que llega primero al servidor; la otra queda **rechazada** con su
+motivo, y el dinero cobrado se marca para devolver. Un conteo físico hecho sin
+red se aplica como **diferencia** contra lo que el equipo veía, así no pisa las
+ventas que llegaron mientras tanto.
+
 ---
 
-## Los tres ciclos
+## 2do parcial: presentaciones
+
+Los casos de uso se renumeraron desde CU-01 para el 2do parcial. El detalle
+está en el Word de la entrega, `SI2 Ex2 Grupo 15.docx`.
+
+| Presentación | Fecha | CU | Contenido | Estado |
+|---|---|---|---|---|
+| **1** | dom 25/10 | CU-01 a CU-12 | Empresas, planes y suscripciones · login por empresa · cuenta única del cliente · usuarios y empleados por empresa · contratar un plan · personalizar la tienda | ✅ |
+| **2** | dom 01/11 | CU-13 a CU-20 | Preparar el dispositivo · venta, reserva y pago sin conexión · sincronizar · operaciones pendientes y rechazadas · caja con ventas sin conexión | ✅ |
+| **3** | dom 08/11 | CU-21 a CU-43 | Inventario de la sucursal · cambios y devoluciones (en caja y por la web) · avisos por correo según el plan · reportes con IA y voz · analítica con ML · ofertas · traspasos · probador por talla · exportación y copias de seguridad · roles · avisos push | 🚧 CU-21 hecho |
+
+**Defensa: martes 10/11/2026, 7:00.** El reparto de la 3ra presentación es por
+bloques: devoluciones, IA, ML, probador y avisos van por un lado; traspasos,
+ofertas, roles, exportación y copias de seguridad, por el otro.
+
+---
+
+## 1er parcial: los tres ciclos
 
 Uno por cada presentación obligatoria. El Ciclo 1 es deliberadamente el más
 corto: son cuatro días y su contenido es CRUD y autenticación.
@@ -201,8 +252,8 @@ corto: son cuatro días y su contenido es CRUD y autenticación.
 | **2 · Núcleo del negocio** | 13/09 | 8 | 13 | Productos y **variantes** · **Inventario multisucursal** con movimientos trazables · Catálogo público y disponibilidad · **Reservas** para prueba en sucursal |
 | **3 · Comercio e inteligencia** | 20/09 | 7 | 19 | **Vestidor virtual (RA)** · Carrito y **pago en línea** · **Punto de venta** · **IA**: recomendador, asistente y reportes por voz · Tablero de KPIs · Los cuatro del refinamiento (CU-38 a CU-41) |
 
-Defensa: **martes 22/09**. Cada ciclo cierra con software **desplegado en la
-nube**, no con código sin desplegar.
+Defensa del 1er parcial: **martes 29/09** (se aplazó desde el 22/09). Cada ciclo
+cierra con software **desplegado en la nube**, no con código sin desplegar.
 
 ---
 
@@ -212,24 +263,31 @@ nube**, no con código sin desplegar.
 backend/
   app/core/         config, seguridad (JWT + bcrypt), dependencias de autorización
   app/db/           base declarativa, sesión, seed
+  app/core/tenencia.py  el contexto de empresa (multitenant) que lee la RLS
   app/modules/      UN SUBPAQUETE POR PAQUETE DE ANÁLISIS
                     seguridad · organizacion · catalogo · inventario ·
-                    catalogo_publico · reservas · ventas · pagos ·
-                    vestidor_virtual · ia · reportes
+                    catalogo_publico · reservas · ventas · pos · caja ·
+                    pagos · abastecimiento · medidas · vestidor_virtual ·
+                    ia · reportes · notificaciones · bitacora
+                    2do parcial: plataforma (empresas, planes, suscripciones)
+                    · offline (paquetes y sincronización)
   app/integrations/ adaptadores de Stripe y de la API de IA
-  alembic/          migraciones versionadas
-  tests/            pytest
+  alembic/          migraciones versionadas (0022 en adelante: 2do parcial)
+  tests/            pytest; los del 2do parcial empiezan con test_p2_
 frontend-web/
-  src/app/core/     interceptor JWT, guardas por rol, servicios de API
+  src/app/core/     interceptor JWT, guardas por rol, servicios de API,
+                    y la cola offline (offline.service.ts + IndexedDB)
   src/app/shared/   componentes reutilizables
-  src/app/features/ auth · admin · tienda · sucursal · caja · reportes · asistente
+  src/app/features/ auth · admin · tienda · sucursal · caja · reportes ·
+                    asistente · plataforma · contratar · proveedor · cliente
 mobile/
-  lib/core/         cliente HTTP (Dio), tema, enrutado
+  lib/core/         cliente HTTP (Dio), tema, enrutado, SQLite (base_local.dart)
   lib/data/         modelos del contrato y repositorios
-  lib/features/     auth · inicio · catalogo · perfil · reservas · vestidor
-                    (compra, asistente y vestidor_virtual son carpetas
-                     reservadas para el Ciclo 3)
+  lib/features/     auth · inicio · catalogo · perfil · reservas · vestidor ·
+                    compra · asistente · gestion · reportes · offline ·
+                    inventario
 scripts/            generadores de los diagramas UML sobre el .eapx
+                    (ea-p2-*.ps1 para el 2do parcial) y del Word (word-p2/)
 docs/
   00                índice oficial de la ingeniera y mapeo del entregable
   01 a 07           documentación PUDS
@@ -251,7 +309,8 @@ la defensa no hay que traducir entre uno y otro.
 | **armar el documento de entrega** | **[docs/00-indice-oficial.md](docs/00-indice-oficial.md)** — el índice que dio la ingeniera, qué sección sale de qué archivo y qué falta |
 | **desarrollar un caso de uso del Ciclo 1** | **[docs/entregas/ciclo-1/](docs/entregas/ciclo-1/)** — las 9 tablas de detalle, el análisis y el diseño de datos |
 | **desarrollar un caso de uso del Ciclo 2** | **[docs/entregas/ciclo-2/](docs/entregas/ciclo-2/)** — una ficha por caso de uso con el «por qué» de cada decisión, y los seis documentos del acuerdo del ciclo |
-| **generar o tocar un diagrama UML** | **[GUIA-DIAGRAMAS-EA.md](GUIA-DIAGRAMAS-EA.md)** — el manual completo: los catorce tipos, las nueve reglas y el catálogo de errores. Leerlo **antes** de correr cualquier `scripts/ea-*.ps1` |
+| **generar o tocar un diagrama UML** | **[GUIA-DIAGRAMAS-EA.md](GUIA-DIAGRAMAS-EA.md)** — el manual completo: los catorce tipos, las nueve reglas, el catálogo de errores y el anexo del 2do parcial con ICONIX. Leerlo **antes** de correr cualquier `scripts/ea-*.ps1`. El `.eapx` es binario: lo toca **una sola persona a la vez** |
+| **trabajar sin conexión** (web o móvil) | `backend/app/modules/offline/` — el contrato de sincronización (CU-17) es el mismo para la web y el móvil, y el módulo explica la idempotencia y quién gana una unidad en disputa |
 | **implementar CU-02 (login)** | **[docs/entregas/ciclo-1/guia-cu-02-iniciar-y-cerrar-sesion.md](docs/entregas/ciclo-1/guia-cu-02-iniciar-y-cerrar-sesion.md)** — qué falta en el código y cómo saber que está terminado |
 | **montar tu entorno por primera vez** | **[docs/entorno/versiones.md](docs/entorno/versiones.md)** — qué instalar, en qué orden, con las versiones exactas |
 | **levantar el backend** | **[backend/README.md](backend/README.md)** — de cero a `/health` respondiendo |
@@ -271,7 +330,8 @@ la defensa no hay que traducir entre uno y otro.
 ## Cómo contribuir
 
 Nunca se hace *commit* directo sobre `main`: es la rama que Railway despliega.
-Cada integrante trabaja en **una rama por ciclo** —`MateoCiclo2`, `KarenCiclo2`—
+Cada caso de uso va en **su propia rama** —`feat/cu21-inventario-offline`;
+en el 1er parcial eran ramas por ciclo, como `MateoCiclo2`—
 creada desde `main`, y todo entra por Pull Request hacia `main` con revisión del
 otro. Un arreglo puntual que no es de un caso de uso va en su propia rama corta
 —`fix/…`— y se mergea aparte.
