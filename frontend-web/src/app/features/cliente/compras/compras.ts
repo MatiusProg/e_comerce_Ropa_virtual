@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -10,6 +10,9 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
+import { MisSolicitudes } from './mis-solicitudes';
+import { SolicitarDevolucion } from './solicitar-devolucion';
 
 import {
   ComprasService,
@@ -53,6 +56,7 @@ const CON_COMPROBANTE: EstadoPedido[] = ['PAGADA', 'ENTREGADA'];
     MatPaginatorModule,
     MatProgressBarModule,
     MatTooltipModule,
+    MisSolicitudes,
   ],
   templateUrl: './compras.html',
   styleUrl: './compras.scss',
@@ -60,6 +64,8 @@ const CON_COMPROBANTE: EstadoPedido[] = ['PAGADA', 'ENTREGADA'];
 export class Compras implements OnInit {
   private readonly api = inject(ComprasService);
   private readonly aviso = inject(MatSnackBar);
+  private readonly dialogo = inject(MatDialog);
+  @ViewChild(MisSolicitudes) private misSolicitudes?: MisSolicitudes;
 
   protected readonly cargando = signal(true);
   protected readonly error = signal<string | null>(null);
@@ -95,6 +101,18 @@ export class Compras implements OnInit {
     this.indice = evento.pageIndex;
     this.tamano = evento.pageSize;
     this.cargar();
+  }
+
+  /** CU-24: pedir el cambio o la devolución de un pedido entregado. */
+  protected pedirDevolucion(compra: Pedido): void {
+    this.dialogo
+      .open(SolicitarDevolucion, { data: compra.codigo, width: '640px', maxWidth: '95vw' })
+      .afterClosed()
+      .subscribe((solicitud) => {
+        if (!solicitud) return;
+        this.aviso.open('Listo: la tienda va a revisar tu solicitud.', 'Cerrar', { duration: 5000 });
+        this.misSolicitudes?.recargar();
+      });
   }
 
   protected tieneComprobante(compra: Pedido): boolean {

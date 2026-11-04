@@ -272,6 +272,7 @@ def _seleccion_pedido() -> Select:
             Venta.descuento,
             Venta.total,
             Venta.creado_en,
+            Venta.entregado_en,
             Sucursal.nombre.label("sucursal_nombre"),
             Pago.estado.label("estado_pago"),
         )

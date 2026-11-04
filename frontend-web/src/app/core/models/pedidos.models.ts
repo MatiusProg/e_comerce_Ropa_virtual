@@ -117,6 +117,8 @@ export interface LineaPedido {
 }
 
 export interface Pedido {
+  /** 2do parcial (CU-24): cuándo se entregó. Desde ahí corre la ventana de devolución. */
+  entregado_en?: string | null;
   codigo: string;
   estado: EstadoPedido;
   canal: string;

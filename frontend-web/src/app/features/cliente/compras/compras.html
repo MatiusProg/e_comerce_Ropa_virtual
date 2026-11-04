@@ -87,6 +87,13 @@
                 </dl>
 
                 <mat-action-row>
+                  @if (compra.estado === 'ENTREGADA') {
+                    <!-- CU-24 -->
+                    <button matButton type="button" (click)="pedirDevolucion(compra)">
+                      <mat-icon>assignment_return</mat-icon>
+                      Cambio o devolución
+                    </button>
+                  }
                   @if (tieneComprobante(compra)) {
                     <button
                       matButton
@@ -127,4 +134,6 @@
       }
     </mat-card-content>
   </mat-card>
+  <!-- CU-24 · lo pedido por la web y en qué quedó. -->
+  <app-mis-solicitudes />
 </main>

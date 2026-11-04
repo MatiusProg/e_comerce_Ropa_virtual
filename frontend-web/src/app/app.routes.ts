@@ -424,6 +424,14 @@ export const routes: Routes = [
       {
         // Reusa la pantalla del Administrador: el alcance no lo decide la ruta
         // sino el ambito que viaja en el token.
+        // 2do parcial · entregar los pedidos web y ver los cambios y
+        // devoluciones pedidos por la web (CU-24, CU-25).
+        path: 'pedidos-web',
+        title: 'Pedidos web · Violet Boutique',
+        loadComponent: () =>
+          import('./features/sucursal/pedidos-web/pedidos-web').then((m) => m.PedidosWeb),
+      },
+      {
         path: 'inventario',
         title: 'Inventario de la sucursal · Violet Boutique',
         loadComponent: () =>

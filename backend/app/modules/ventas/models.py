@@ -293,6 +293,9 @@ class Venta(DeEmpresa, Base):
 
     #: Indexada porque TODO el tablero de CU-36 corta por fecha: ventas del dia,
     #: del mes y ticket promedio del periodo son tres consultas sobre esto.
+    #: 2do parcial (CU-24): cuándo se entregó el pedido web. Desde acá corre
+    #: la ventana de devolución (RF-35). Nula mientras no se entregó.
+    entregado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     creado_en: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), index=True
     )

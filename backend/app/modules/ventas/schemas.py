@@ -187,6 +187,8 @@ class PedidoOut(BaseModel):
 
     #: Estado del pago, de la tabla `pago`. Nulo si todavia no se creo.
     estado_pago: str | None
+    #: 2do parcial (CU-24): cuándo se entregó. Nula si todavía no.
+    entregado_en: datetime | None = None
 
 
 class CrearPedidoOut(BaseModel):
