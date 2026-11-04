@@ -5,6 +5,8 @@
   <span class="separador"></span>
 
   @if (usuario(); as u) {
+    <!-- CU-42: el resumen de cada sincronización le llega al cajero acá. -->
+    <app-campanita />
     <span class="identidad">
       <span class="avatar">{{ iniciales() }}</span>
       <span class="datos">

@@ -96,6 +96,8 @@ TABLAS_VOLATILES = (
     # `empleado`: depender de un detalle del esquema para la limpieza hace que
     # las pruebas que CUENTAN avisos dependan de el sin decirlo.
     "notificacion",
+    # CU-42: apunta a `usuario` con CASCADE; se nombra por lo mismo.
+    "suscripcion_push",
     # CU-39: cuelga de proveedor y de variante, que estan mas abajo.
     "abastecimiento",
     # CU-33: apunta a los movimientos, la variante, la sucursal y el usuario.

@@ -69,7 +69,12 @@
           @if (fila.devuelto_en) {
             <p class="detalle devuelta">
               <mat-icon class="chico">done_all</mat-icon>
-              Devuelto el {{ fila.devuelto_en | date: 'dd/MM HH:mm' }} con {{ fila.metodo_devolucion }}
+              @if (fila.devolucion_automatica) {
+                Reintegrado automáticamente por el sistema el
+                {{ fila.devuelto_en | date: 'dd/MM HH:mm' }} ({{ fila.metodo_devolucion }})
+              } @else {
+                Devuelto el {{ fila.devuelto_en | date: 'dd/MM HH:mm' }} con {{ fila.metodo_devolucion }}
+              }
               @if (fila.referencia_devolucion) {
                 · {{ fila.referencia_devolucion }}
               }

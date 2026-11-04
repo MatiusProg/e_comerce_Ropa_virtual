@@ -17,7 +17,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { CajaService } from '../../../core/services/caja.service';
 import { OfflineService } from '../../../core/services/offline.service';
-import type { OperacionGuardada } from '../../../core/models/offline.models';
+import type { ClienteOffline, OperacionGuardada } from '../../../core/models/offline.models';
 import { PosService, type ErrorPos } from '../../../core/services/pos.service';
 import type {
   EscalonMayorista,
@@ -137,6 +137,29 @@ export class Venta implements OnInit {
   protected readonly ticketLocal = signal<OperacionGuardada | null>(null);
   /** Sin red no hay banco que confirme el QR: el cajero anota la referencia. */
   protected readonly referenciaManual = new FormControl('', { nonNullable: true });
+
+  /**
+   * CU-43: el cliente (opcional) de la venta sin conexión. Si el servidor la
+   * rechaza, a él le llega el aviso de la devolución del dinero. Se busca en
+   * la lista que trajo el paquete de CU-13: sin red no hay a quién preguntar.
+   */
+  protected readonly buscarCliente = new FormControl('', { nonNullable: true });
+  protected readonly clienteOffline = signal<ClienteOffline | null>(null);
+  private readonly textoCliente = toSignal(this.buscarCliente.valueChanges, { initialValue: '' });
+  protected readonly sugerenciasCliente = computed(() => {
+    const normalizar = (t: string) =>
+      t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+    const texto = normalizar(this.textoCliente());
+    if (texto.length < 2 || this.clienteOffline()) return [];
+    return (this.offline.paquete()?.clientes ?? [])
+      .filter((c) => normalizar(c.nombre).includes(texto) || (c.documento ?? '').includes(texto))
+      .slice(0, 5);
+  });
+
+  protected elegirCliente(c: ClienteOffline | null): void {
+    this.clienteOffline.set(c);
+    this.buscarCliente.setValue(c ? c.nombre : '');
+  }
   protected readonly ticket = signal<Ticket | null>(null);
   /** La referencia que devolvió el banco, si la venta se cobró con QR. */
   protected readonly referenciaQr = signal<string | null>(null);
@@ -401,6 +424,7 @@ export class Venta implements OnInit {
             };
           }),
           pago: { metodo, monto: this.aTexto(monto), referencia: referencia || null },
+          cliente_id: this.clienteOffline()?.id ?? null,
         },
         this.lineas()
           .map((l) => `${l.cantidad}× ${l.prenda.producto} ${l.prenda.talla}`)
@@ -412,6 +436,7 @@ export class Venta implements OnInit {
       this.lineas.set([]);
       this.recibido.setValue('');
       this.referenciaManual.setValue('');
+      this.elegirCliente(null);
     } catch (e) {
       this.aviso.open(
         `No se pudo guardar la venta en el dispositivo: ${(e as Error).message}`,

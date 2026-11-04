@@ -161,10 +161,30 @@ export class AuthService {
       this._usuario.set(null);
       this.router.navigate(['/login']);
     };
-    this.http.post<void>(`${this.base}/logout`, {}).subscribe({
-      next: terminar,
-      error: terminar,
-    });
+    const salir = () =>
+      this.http.post<void>(`${this.base}/logout`, {}).subscribe({
+        next: terminar,
+        error: terminar,
+      });
+
+    // CU-42: primero este navegador deja de recibir los avisos de la cuenta
+    // —necesita el token, por eso va antes del logout—; si falla, se sale igual.
+    let endpoint: string | null = null;
+    try {
+      endpoint = localStorage.getItem('vb.push.endpoint');
+      localStorage.removeItem('vb.push.endpoint');
+    } catch {
+      /* sin almacenamiento */
+    }
+    if (!endpoint) {
+      salir();
+      return;
+    }
+    this.http
+      .post<void>(`${environment.apiUrl}/notificaciones/push/dispositivos/baja`, {
+        direccion: endpoint,
+      })
+      .subscribe({ next: salir, error: salir });
   }
 
   /**

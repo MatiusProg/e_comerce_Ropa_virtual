@@ -8,6 +8,9 @@ CU-18 Consultar pendientes     ->  `operaciones_mias` (la cola local la muestra
 CU-19 Atender rechazadas       ->  `operaciones_de_sucursal`, `registrar_devolucion`
 CU-21 Inventario sin conexión  ->  `paquete_de_inventario`, y los tipos INGRESO y
                                     AJUSTE en `sincronizar`
+CU-42 Avisos push              ->  `_avisar_resultado` y `_avisar_lote`; salen
+                                    por push al terminar el lote
+CU-43 Devolución automática    ->  `_devolver_automaticamente`
 CU-14, CU-15 y CU-16 se hacen en el dispositivo y llegan acá por CU-17.
 
 CADA OPERACIÓN VA EN SU PROPIO SAVEPOINT, Y SE CONFIRMA SOLA
@@ -30,6 +33,7 @@ dispositivo, que es un reloj que nadie controla.
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
@@ -43,6 +47,7 @@ from app.modules.catalogo import imagenes_almacen as almacen
 from app.modules.catalogo import promociones_service as promociones
 from app.modules.catalogo_publico import repository as catalogo_publico
 from app.modules.inventario import service as inventario
+from app.modules.notificaciones import push_service
 from app.modules.notificaciones import service as notificaciones
 from app.modules.offline import repository
 from app.modules.inventario.schemas import IngresoIn, LineaIngresoIn
@@ -74,6 +79,8 @@ from app.modules.ventas import historial_service
 from app.modules.ventas.models import Venta
 
 CERO = Decimal("0.00")
+
+log = logging.getLogger(__name__)
 
 #: Los roles del personal que trabajan en un mostrador.
 ROLES_DE_MOSTRADOR = ("CAJERO", "ENCARGADO")
@@ -240,6 +247,7 @@ def sincronizar(
 ) -> LoteOut:
     """Decide cada operación del lote. **Hace commit por operación.**"""
     resultados: list[ResultadoOut] = []
+    avisos: list[int] = []
     for operacion in lote.operaciones:
         resultados.append(
             _sincronizar_una(
@@ -249,8 +257,19 @@ def sincronizar(
                 rol=rol,
                 sucursal_del_usuario=sucursal_del_usuario,
                 dispositivo=lote.dispositivo,
+                avisos=avisos,
             )
         )
+    # CU-42: el resumen para el personal que sincronizó, y después el push de
+    # todo lo que nació en el lote. Las dos cosas DESPUÉS de que cada
+    # operación ya quedó confirmada: un fallo acá no deshace ninguna.
+    try:
+        avisos.extend(_avisar_lote(db, resultados, usuario_id=usuario_id, rol=rol))
+        db.commit()
+    except Exception:  # noqa: BLE001  pragma: no cover
+        db.rollback()
+        log.exception("CU-42: no se pudo dejar el resumen del lote")
+    push_service.despachar_sin_fallar(db, avisos)
     return LoteOut(
         resultados=resultados,
         confirmadas=sum(r.estado == "CONFIRMADA" for r in resultados),
@@ -266,6 +285,7 @@ def _sincronizar_una(
     rol: str,
     sucursal_del_usuario: int | None,
     dispositivo: str | None,
+    avisos: list[int],
 ) -> ResultadoOut:
     # RNF05: si ya llegó, se devuelve lo que se decidió la primera vez.
     previa = repository.operacion_por_uuid(db, op.uuid, bloquear=True)
@@ -303,8 +323,12 @@ def _sincronizar_una(
                 movimientos=movimientos,
             )
         elif op.tipo == "VENTA":
-            fila.sucursal_id, fila.venta_id = _confirmar_venta(db, op, usuario_id=usuario_id)
+            fila.cliente_id = _cliente_de_la_venta(db, op)
+            fila.sucursal_id, fila.venta_id = _confirmar_venta(
+                db, op, usuario_id=usuario_id, cliente_id=fila.cliente_id
+            )
         else:
+            fila.cliente_id = _cliente_de_la_reserva(db, op, usuario_id=usuario_id, rol=rol)
             fila.sucursal_id, fila.reserva_id = _confirmar_reserva(
                 db,
                 op,
@@ -324,17 +348,24 @@ def _sincronizar_una(
         fila.sucursal_id = _sucursal_declarada(
             db, op, usuario_id=usuario_id, sucursal_del_usuario=sucursal_del_usuario
         )
+        # CU-43: lo cobrado de una rechazada se devuelve por el mismo medio.
+        if fila.monto_cobrado is not None:
+            _devolver_automaticamente(fila)
     else:
         punto.commit()
 
     db.add(fila)
+    nuevos: list = []
     try:
-        if movimientos:
-            # El movimiento apunta a la operación: el kardex lo marca «sin
-            # conexión». Se escribe en la misma transacción que la fila.
-            db.flush()
-            for movimiento in movimientos:
-                movimiento.operacion_offline_id = fila.id
+        db.flush()
+        # El movimiento apunta a la operación: el kardex lo marca «sin
+        # conexión». Se escribe en la misma transacción que la fila.
+        for movimiento in movimientos:
+            movimiento.operacion_offline_id = fila.id
+        # CU-42 y CU-43: los avisos nacen con la operación; si se deshace,
+        # se deshacen con ella.
+        nuevos = _avisar_resultado(db, fila)
+        db.flush()
         db.commit()
     except IntegrityError:
         # Dos pedidos con el mismo UUID a la vez: el otro ganó el UNIQUE.
@@ -344,6 +375,7 @@ def _sincronizar_una(
         if previa is None or previa.usuario_id != usuario_id:  # pragma: no cover
             raise
         return _resultado(db, previa, repetida=True)
+    avisos.extend(n.id for n in nuevos)
     db.refresh(fila)
     return _resultado(db, fila, repetida=False)
 
@@ -433,8 +465,29 @@ def _confirmar_inventario(
     return sucursal_id
 
 
+def _cliente_de_la_venta(db: Session, op: OperacionOfflineIn) -> int | None:
+    """CU-43: el cliente que el cajero eligió (opcional) para la venta.
+
+    Uno que no es de esta tienda se ignora en vez de rechazar la venta: el
+    cliente ya pagó y ya se fue, y el dato solo sirve para avisarle.
+    """
+    if op.cliente_id is None or not repository.cliente_de_la_empresa(db, op.cliente_id):
+        return None
+    return op.cliente_id
+
+
+def _cliente_de_la_reserva(
+    db: Session, op: OperacionOfflineIn, *, usuario_id: int, rol: str
+) -> int | None:
+    """El cliente de la reserva aunque se rechace: es a quien se le avisa."""
+    if rol in ROLES_DE_MOSTRADOR:
+        return _cliente_de_la_venta(db, op)
+    cliente = reservas_repository.obtener_cliente_de_usuario(db, usuario_id)
+    return cliente.id if cliente else None
+
+
 def _confirmar_venta(
-    db: Session, op: OperacionOfflineIn, *, usuario_id: int
+    db: Session, op: OperacionOfflineIn, *, usuario_id: int, cliente_id: int | None = None
 ) -> tuple[int, int]:
     """CU-14 confirmada en el servidor. Devuelve (sucursal, venta).
 
@@ -473,7 +526,7 @@ def _confirmar_venta(
     venta = pos_repository.agregar_venta_presencial(
         db,
         codigo=codigo,
-        cliente_id=None,
+        cliente_id=cliente_id,
         sucursal_id=sucursal_id,
         turno_caja_id=turno.id,
         reserva_id=None,
@@ -590,6 +643,8 @@ def _resultado(db: Session, fila: OperacionOffline, *, repetida: bool) -> Result
         else None,
         requiere_devolucion=_por_devolver(fila),
         devuelta=fila.devuelto_en is not None,
+        devolucion_automatica=fila.devolucion_automatica,
+        referencia_devolucion=fila.referencia_devolucion,
         repetida=repetida,
         recibida_en=fila.recibida_en,
     )
@@ -601,6 +656,178 @@ def _por_devolver(fila: OperacionOffline) -> bool:
         and fila.monto_cobrado is not None
         and fila.devuelto_en is None
     )
+
+
+# =====================================================================
+# CU-43 Devolver automáticamente el pago de una operación rechazada
+# =====================================================================
+
+def _reintegrar_qr(fila: OperacionOffline) -> str:
+    """El reintegro del QR al banco del cliente. **Simulado** (RF-66).
+
+    Un QR boliviano no pasa por una pasarela que exponga reembolsos: es una
+    transferencia del banco del cliente al de la tienda. Esta es la costura
+    donde iría la API del banco; hoy devuelve una referencia propia, que
+    queda en la operación y se le muestra al cliente para reclamar.
+    """
+    return f"REINT-QR-{fila.uuid.hex[:10].upper()}"
+
+
+def _devolver_automaticamente(fila: OperacionOffline) -> None:
+    """CU-43, al momento de rechazar. Por el mismo medio con que se cobró:
+
+    - **QR**: se reintegra solo. La operación nace ya devuelta, sin nadie
+      detrás (`devolucion_automatica`), y CU-19 ya no tiene nada que hacer.
+    - **Efectivo**: el sistema no puede sacar billetes del cajón. Queda
+      registrada para entregarse en la sucursal: es la lista de CU-19, y al
+      encargado le llega el aviso (ver `_avisar_resultado`).
+    """
+    if fila.metodo_pago != "QR":
+        return
+    fila.devuelto_en = _ahora()
+    fila.devuelto_por = None
+    fila.devolucion_automatica = True
+    fila.metodo_devolucion = "QR"
+    fila.referencia_devolucion = _reintegrar_qr(fila)
+    fila.observacion_devolucion = (
+        f"Reintegro automático al rechazarse la operación (ref. del cobro: "
+        f"{fila.referencia_pago or 's/r'})."
+    )[:300]
+
+
+# =====================================================================
+# CU-42 Enviar avisos push de las operaciones sin conexión
+# =====================================================================
+
+def _que_es(fila: OperacionOffline) -> str:
+    return {
+        "VENTA": "La venta sin conexión",
+        "RESERVA": "La reserva sin conexión",
+        "INGRESO": "El ingreso sin conexión",
+    }.get(fila.tipo, "El conteo sin conexión")
+
+
+def _avisar_resultado(db: Session, fila: OperacionOffline) -> list:
+    """Los avisos de UNA operación recién decidida: al cliente, y si hay
+    dinero en efectivo para devolver, a los encargados de la sucursal.
+
+    Al cajero no se le manda uno por operación: recibe el resumen del lote
+    (`_avisar_lote`). Un lote de 30 ventas no puede ser 30 vibraciones.
+    """
+    avisos: list = []
+    cliente = notificaciones.usuario_del_cliente(db, fila.cliente_id)
+    entidad = {"entidad": "operacion_offline", "entidad_id": fila.id}
+
+    if cliente is not None and fila.tipo in ("VENTA", "RESERVA"):
+        enlace = "/mi-cuenta/reservas" if fila.tipo == "RESERVA" else "/mi-cuenta/compras"
+        if fila.estado == "CONFIRMADA":
+            if fila.tipo == "RESERVA":
+                titulo = f"Su reserva #{fila.reserva_id} quedó confirmada"
+                cuerpo = (
+                    "La reserva que hizo sin conexión ya se registró en la tienda. "
+                    "Le avisaremos cuando esté lista para retirar."
+                )
+            else:
+                venta = db.get(Venta, fila.venta_id)
+                titulo = f"Su compra {venta.codigo} quedó registrada"
+                cuerpo = f"Registramos su compra de Bs {venta.total}. ¡Gracias!"
+        else:
+            titulo = (
+                "No pudimos confirmar su reserva"
+                if fila.tipo == "RESERVA"
+                else "No pudimos confirmar su compra"
+            )
+            cuerpo = f"Motivo: {fila.motivo_rechazo}"
+        avisos += notificaciones.avisar_a(
+            db, [cliente], tipo="OPERACION_OFFLINE", titulo=titulo, cuerpo=cuerpo,
+            enlace=enlace, **entidad,
+        )
+
+    if fila.estado != "RECHAZADA" or fila.monto_cobrado is None:
+        return avisos
+
+    # CU-43: el dinero.
+    monto = f"Bs {fila.monto_cobrado}"
+    if fila.devolucion_automatica:
+        if cliente is not None:
+            avisos += notificaciones.avisar_a(
+                db, [cliente], tipo="DEVOLUCION_PAGO",
+                titulo=f"Le devolvimos {monto} por QR",
+                cuerpo=(
+                    f"Como no pudimos confirmar su operación, le reintegramos {monto} "
+                    f"a la cuenta del QR. Referencia: {fila.referencia_devolucion}."
+                ),
+                enlace="/mi-cuenta/compras", **entidad,
+            )
+        return avisos
+
+    sucursal = repository.sucursal(db, fila.sucursal_id)
+    donde = sucursal.nombre if sucursal else "la sucursal"
+    avisos += notificaciones.avisar_a(
+        db, notificaciones.encargados_de(db, fila.sucursal_id), tipo="DEVOLUCION_PAGO",
+        titulo=f"Hay {monto} en efectivo para devolver",
+        cuerpo=(
+            f"{_que_es(fila)} se rechazó al sincronizar: {fila.motivo_rechazo} "
+            f"Entregue {monto} al cliente y regístrelo en «Sin conexión»."
+        ),
+        enlace="/sucursal/sin-conexion", **entidad,
+    )
+    if cliente is not None:
+        avisos += notificaciones.avisar_a(
+            db, [cliente], tipo="DEVOLUCION_PAGO",
+            titulo=f"Su dinero ({monto}) lo espera en {donde}",
+            cuerpo=(
+                f"Como no pudimos confirmar su operación, le devolvemos {monto} en "
+                f"efectivo. Pase a retirarlo por {donde}."
+            ),
+            enlace="/mi-cuenta/compras", **entidad,
+        )
+    return avisos
+
+
+def _avisar_lote(
+    db: Session, resultados: list[ResultadoOut], *, usuario_id: int, rol: str
+) -> list[int]:
+    """El resumen del lote para el personal que sincronizó (RF-65: «al cajero»).
+
+    Al cliente que sincroniza sus propias reservas no se le manda resumen:
+    ya recibió el aviso de cada una. Lo repetido (reintentos) no cuenta:
+    ya se avisó la primera vez.
+    """
+    if rol not in (*ROLES_DE_MOSTRADOR, "ADMINISTRADOR"):
+        return []
+    nuevos = [r for r in resultados if not r.repetida]
+    if not nuevos:
+        return []
+    from app.modules.seguridad.models import Usuario
+
+    usuario = db.get(Usuario, usuario_id)
+    if usuario is None or not usuario.activo:
+        return []
+    confirmadas = sum(r.estado == "CONFIRMADA" for r in nuevos)
+    rechazadas = [r for r in nuevos if r.estado == "RECHAZADA"]
+    if rechazadas:
+        titulo = f"Sincronización: {len(rechazadas)} rechazada(s), {confirmadas} confirmada(s)"
+    else:
+        titulo = f"Sincronización: {confirmadas} operación(es) confirmada(s)"
+    partes = []
+    for r in rechazadas[:3]:
+        dinero = ""
+        if r.devolucion_automatica:
+            dinero = f" Se reintegró por QR ({r.referencia_devolucion})."
+        elif r.requiere_devolucion:
+            dinero = " Hay que devolver el efectivo."
+        partes.append(f"• {r.tipo.capitalize()}: {r.motivo}{dinero}")
+    if len(rechazadas) > 3:
+        partes.append(f"… y {len(rechazadas) - 3} más.")
+    cuerpo = "\n".join(partes) if partes else "Todo lo que registró sin conexión quedó en el sistema."
+    enlace = "/caja/pendientes" if rol == "CAJERO" else "/sucursal/sin-conexion"
+    fila = repository.operacion_por_uuid(db, nuevos[0].uuid)
+    avisos = notificaciones.avisar_a(
+        db, [usuario], tipo="OPERACION_OFFLINE", titulo=titulo[:160], cuerpo=cuerpo,
+        enlace=enlace, entidad="operacion_offline", entidad_id=fila.id if fila else 0,
+    )
+    return [a.id for a in avisos]
 
 
 # =====================================================================
@@ -620,7 +847,6 @@ def _operacion_out(db: Session, fila: OperacionOffline, usuario) -> OperacionOut
         referencia_pago=fila.referencia_pago,
         devuelto_en=fila.devuelto_en,
         metodo_devolucion=fila.metodo_devolucion,
-        referencia_devolucion=fila.referencia_devolucion,
     )
 
 
@@ -670,6 +896,10 @@ def registrar_devolucion(
         raise ErrorOffline("La operación se confirmó: no hay nada que devolver.", 409)
     if fila.monto_cobrado is None:
         raise ErrorOffline("La operación no se había cobrado: no hay nada que devolver.", 409)
+    if fila.devolucion_automatica:
+        raise ErrorOffline(
+            f"El sistema ya la reintegró por QR (ref. {fila.referencia_devolucion}).", 409
+        )
     if fila.devuelto_en is not None:
         raise ErrorOffline("Esa devolución ya se registró.", 409)
 

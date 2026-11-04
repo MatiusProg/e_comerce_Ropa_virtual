@@ -63,6 +63,7 @@ from sqlalchemy import (
     Index,
     String,
     Text,
+    UniqueConstraint,
     func,
     text,
 )
@@ -81,6 +82,10 @@ TIPOS_NOTIFICACION = (
     # 3ra presentación: CU-33 y CU-34. Al origen le piden mercadería y al
     # destino le avisan que ya va en camino.
     "TRASPASO",
+    # 3ra presentación: CU-42 y CU-43. El resultado de una operación hecha sin
+    # conexión, y la devolución del dinero de una que se rechazó.
+    "OPERACION_OFFLINE",
+    "DEVOLUCION_PAGO",
 )
 
 #: OMITIDO es para el aviso que nace sin destinatario de correo ---un usuario
@@ -88,6 +93,10 @@ TIPOS_NOTIFICACION = (
 #: mismo que FALLIDO, y mezclarlos haria que el reintento persiguiera para
 #: siempre correos que nunca hubo que mandar.
 ESTADOS_CORREO = ("OMITIDO", "PENDIENTE", "ENVIADO", "FALLIDO")
+
+#: CU-42: el push usa los mismos cuatro estados que el correo. OMITIDO = la
+#: persona no tiene ningún dispositivo suscrito cuando nace el aviso.
+ESTADOS_PUSH = ESTADOS_CORREO
 
 
 class Notificacion(DeEmpresa, Base):
@@ -144,10 +153,21 @@ class Notificacion(DeEmpresa, Base):
     #: distingue «el proveedor rechazo la direccion» de «no habia proveedor».
     correo_error: Mapped[str | None] = mapped_column(String(300))
 
+    #: CU-42: el aviso push. Uno por notificación aunque la persona tenga
+    #: varios dispositivos: ENVIADO = llegó al menos a uno. El detalle por
+    #: dispositivo no se guarda porque no responde ninguna pregunta: el que
+    #: falló porque se desinstaló la app se borra, y el resto llegó.
+    push_estado: Mapped[str] = mapped_column(
+        String(20), nullable=False, server_default="OMITIDO"
+    )
+    push_enviado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    push_error: Mapped[str | None] = mapped_column(String(300))
+
     __table_args__ = (
         CheckConstraint(
             "tipo IN ('RESERVA_EN_SUCURSAL', 'RESERVA_PREPARADA', "
-            "'PEDIDO_PAGADO', 'STOCK_BAJO', 'TRASPASO')",
+            "'PEDIDO_PAGADO', 'STOCK_BAJO', 'TRASPASO', "
+            "'OPERACION_OFFLINE', 'DEVOLUCION_PAGO')",
             name="tipo_valido",
         ),
         CheckConstraint(
@@ -161,6 +181,14 @@ class Notificacion(DeEmpresa, Base):
             "(correo_estado = 'ENVIADO') = (correo_enviado_en IS NOT NULL)",
             name="enviado_tiene_fecha",
         ),
+        CheckConstraint(
+            "push_estado IN ('OMITIDO', 'PENDIENTE', 'ENVIADO', 'FALLIDO')",
+            name="push_estado_valido",
+        ),
+        CheckConstraint(
+            "(push_estado = 'ENVIADO') = (push_enviado_en IS NOT NULL)",
+            name="push_enviado_tiene_fecha",
+        ),
         # La consulta real es «las mias, de la mas nueva a la mas vieja». Sin el
         # indice compuesto hay que leer todas las de la persona antes de poder
         # ordenarlas.
@@ -172,6 +200,11 @@ class Notificacion(DeEmpresa, Base):
             "creada_en",
             postgresql_where=text("correo_estado = 'PENDIENTE'"),
         ),
+        Index(
+            "ix_notificacion_push_pendientes",
+            "creada_en",
+            postgresql_where=text("push_estado = 'PENDIENTE'"),
+        ),
     )
 
     def __repr__(self) -> str:  # pragma: no cover
@@ -179,3 +212,41 @@ class Notificacion(DeEmpresa, Base):
             f"<Notificacion {self.id} {self.tipo} -> {self.destinatario_id} "
             f"correo={self.correo_estado}>"
         )
+
+
+class SuscripcionPush(DeEmpresa, Base):
+    """CU-42: un dispositivo que acepta avisos push de una persona.
+
+    Un teléfono con la app (FCM) o un navegador con la web instalada (Web
+    Push). Una persona puede tener varios; un dispositivo es de una sola
+    persona a la vez: si otra inicia sesión en él, la suscripción pasa a ella
+    (no se le pueden seguir mandando a la primera los avisos de su caja).
+
+    La unicidad es por empresa y no global por el RLS: un mismo navegador
+    puede entrar a dos tiendas, y la fila de la otra es invisible desde acá.
+    """
+
+    __tablename__ = "suscripcion_push"
+    __table_args__ = (
+        CheckConstraint("canal IN ('FCM', 'WEBPUSH')", name="canal"),
+        CheckConstraint(
+            "canal <> 'WEBPUSH' OR (clave_p256dh IS NOT NULL AND clave_auth IS NOT NULL)",
+            name="webpush_con_claves",
+        ),
+        UniqueConstraint("empresa_id", "direccion", name="uq_suscripcion_push_direccion"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    usuario_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("usuario.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    canal: Mapped[str] = mapped_column(String(10), nullable=False)
+    #: El token de FCM o el endpoint de Web Push.
+    direccion: Mapped[str] = mapped_column(Text, nullable=False)
+    clave_p256dh: Mapped[str | None] = mapped_column(String(200))
+    clave_auth: Mapped[str | None] = mapped_column(String(100))
+    dispositivo: Mapped[str | None] = mapped_column(String(120))
+    creada_en: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    usada_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

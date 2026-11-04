@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
+import { Campanita } from '../../../shared/campanita/campanita';
 import { AuthService } from '../../../core/services/auth.service';
 import { OfflineService } from '../../../core/services/offline.service';
 
@@ -30,6 +31,7 @@ import { OfflineService } from '../../../core/services/offline.service';
     MatButtonModule,
     MatIconModule,
     MatToolbarModule,
+    Campanita,
   ],
   templateUrl: './caja-layout.html',
   styleUrl: './caja-layout.scss',

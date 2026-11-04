@@ -12,8 +12,9 @@ hecho ocurrio.
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
 
 
 class NotificacionOut(BaseModel):
@@ -40,6 +41,8 @@ class NotificacionOut(BaseModel):
     #: pantalla del Administrador. Para el destinatario comun es informativo:
     #: el aviso ya le llego, lo este leyendo donde lo este leyendo.
     correo_estado: str
+    #: CU-42: si el aviso salió también por push.
+    push_estado: str = "OMITIDO"
 
 
 class PaginaNotificacionesOut(BaseModel):
@@ -81,3 +84,51 @@ class DespachoOut(BaseModel):
     intentadas: int
     enviadas: int
     fallidas: int
+
+
+# =====================================================================
+# CU-42: los dispositivos que reciben push
+# =====================================================================
+
+
+class SuscripcionPushIn(BaseModel):
+    """Un dispositivo que acepta avisos push.
+
+    FCM manda el token que Firebase le dio a la app. WEBPUSH manda lo que
+    devuelve `PushManager.subscribe()` en el navegador: el endpoint y las dos
+    claves con que se cifra el mensaje.
+    """
+
+    canal: Literal["FCM", "WEBPUSH"]
+    direccion: str = Field(min_length=10, max_length=2000)
+    clave_p256dh: str | None = Field(default=None, max_length=200)
+    clave_auth: str | None = Field(default=None, max_length=100)
+    dispositivo: str | None = Field(default=None, max_length=120)
+
+    @model_validator(mode="after")
+    def _webpush_con_claves(self) -> "SuscripcionPushIn":
+        if self.canal == "WEBPUSH":
+            if not (self.clave_p256dh and self.clave_auth):
+                raise ValueError("Una suscripción web necesita sus claves p256dh y auth.")
+            if not self.direccion.startswith("https://"):
+                raise ValueError("El endpoint de Web Push tiene que ser https.")
+        return self
+
+
+class SuscripcionPushOut(BaseModel):
+    id: int
+    canal: str
+    dispositivo: str | None
+    creada_en: datetime
+
+
+class BajaPushIn(BaseModel):
+    direccion: str = Field(min_length=10, max_length=2000)
+
+
+class ConfiguracionPushOut(BaseModel):
+    """Lo que la web necesita para suscribirse. Sin clave pública, el botón no
+    se muestra: Web Push no está configurado en este servidor."""
+
+    clave_publica_vapid: str | None
+    simulado: bool

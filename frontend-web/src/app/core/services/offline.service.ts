@@ -345,6 +345,7 @@ export class OfflineService {
           motivo: res.motivo,
           venta_codigo: res.venta_codigo,
           requiere_devolucion: res.requiere_devolucion,
+          reintegro_qr: res.devolucion_automatica ? (res.referencia_devolucion ?? '') : null,
         });
       }
       cuenta.confirmadas += r.confirmadas;

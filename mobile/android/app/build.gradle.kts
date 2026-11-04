@@ -15,6 +15,8 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // CU-42: flutter_local_notifications usa java.time en Android < 8.
+        isCoreLibraryDesugaringEnabled = true
     }
 
     defaultConfig {
@@ -78,4 +80,18 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+}
+
+// CU-42 · Avisos push con FCM.
+//
+// google-services.json NO se versiona (identifica al proyecto de Firebase) y
+// sin el la app tiene que seguir compilando: el plugin se aplica solo si el
+// archivo esta. Sin el, `Firebase.initializeApp()` falla al arrancar, la app
+// lo atrapa y sigue sin push (ver lib/core/push/servicio_push.dart).
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
 }

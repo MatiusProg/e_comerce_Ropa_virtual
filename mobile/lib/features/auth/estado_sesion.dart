@@ -4,7 +4,11 @@
 /// consulta para redirigir y las pantallas para saber a quien saludar.
 library;
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/push/servicio_push.dart';
 
 import '../../core/almacenamiento/almacen_seguro.dart';
 import '../../core/red/cliente_api.dart';
@@ -109,6 +113,7 @@ class ControlSesion extends Notifier<EstadoSesion> {
       final usuario = await _repositorio.usuarioActual();
       await _almacen.recordarUsuario(usuario.aJson());
       state = SesionAbierta(usuario);
+      _registrarPush();
     } on ErrorApi catch (error) {
       // 2do parcial · CU-13. Sin respuesta del servidor (sin codigo, o el 504
       // de un intermediario) NO se sabe si el token es invalido: se conserva
@@ -143,10 +148,19 @@ class ControlSesion extends Notifier<EstadoSesion> {
     await _almacen.guardarToken(token.accessToken, token.expiraEn);
     await _almacen.recordarUsuario(token.usuario.aJson());
     state = SesionAbierta(token.usuario);
+    _registrarPush();
+  }
+
+  /// CU-42: este telefono recibe los avisos push de la cuenta. Sin esperar:
+  /// pedir el permiso y hablar con Firebase no puede demorar la entrada.
+  void _registrarPush() {
+    unawaited(ref.read(servicioPushProvider).registrar(ref.read(clienteApiProvider)));
   }
 
   /// CU-02 · Cerrar sesion.
   Future<void> cerrarSesion() async {
+    // CU-42: primero se da de baja el push (necesita el token todavia vivo).
+    await ref.read(servicioPushProvider).darDeBaja(ref.read(clienteApiProvider));
     try {
       await _repositorio.cerrarSesion();
     } on ErrorApi {

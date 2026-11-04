@@ -27,6 +27,7 @@ from decimal import Decimal
 
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -95,6 +96,11 @@ class OperacionOffline(DeEmpresa, Base):
             name="devolucion_solo_si_rechazada",
         ),
         CheckConstraint("intentos >= 1", name="intentos"),
+        # CU-43: la automática no tiene a nadie detrás; la manual (CU-19), sí.
+        CheckConstraint(
+            "devuelto_en IS NULL OR devolucion_automatica OR devuelto_por IS NOT NULL",
+            name="devolucion_con_responsable",
+        ),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -145,3 +151,16 @@ class OperacionOffline(DeEmpresa, Base):
     metodo_devolucion: Mapped[str | None] = mapped_column(String(10))
     referencia_devolucion: Mapped[str | None] = mapped_column(String(60))
     observacion_devolucion: Mapped[str | None] = mapped_column(String(300))
+
+    # --- CU-43: la devolución automática --------------------------------
+    #: El cliente de la operación: el de la reserva, o el que el cajero eligió
+    #: (opcional) en la venta sin conexión. A él le llega el aviso de que se
+    #: le devolvió el dinero. Nulo = venta anónima: el aviso va al personal.
+    cliente_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("cliente.id"), index=True
+    )
+    #: Verdadero cuando la devolvió el sistema solo, al rechazarla (un QR se
+    #: reintegra sin que nadie intervenga). Entonces `devuelto_por` es nulo.
+    devolucion_automatica: Mapped[bool] = mapped_column(
+        Boolean, server_default="false", nullable=False
+    )

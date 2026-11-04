@@ -282,7 +282,11 @@ def test_reserva_offline_fuera_de_horario_se_rechaza_con_el_motivo(
     [resultado] = _sincronizar(api, cabeceras_cliente, op).json()["resultados"]
     assert resultado["estado"] == "RECHAZADA"
     assert "atiende" in resultado["motivo"]
-    assert resultado["requiere_devolucion"] is True
+    # CU-43 (3ra presentación): lo cobrado por QR se reintegra solo al
+    # rechazarse; ya no queda para que el encargado lo devuelva a mano.
+    assert resultado["requiere_devolucion"] is False
+    assert resultado["devolucion_automatica"] is True
+    assert resultado["devuelta"] is True
 
 
 # =====================================================================
