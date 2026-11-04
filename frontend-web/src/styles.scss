@@ -170,3 +170,11 @@ h2,
   scrollbar-width: thin;
   scrollbar-color: var(--vb-malva-claro) transparent;
 }
+
+// CU-22: al imprimir la nota de devolución, solo la nota.
+@media print {
+  body * { visibility: hidden; }
+  .cdk-overlay-container .nota,
+  .cdk-overlay-container .nota * { visibility: visible; }
+  .cdk-overlay-container .nota { position: absolute; inset: 0; overflow: visible; max-height: none; }
+}

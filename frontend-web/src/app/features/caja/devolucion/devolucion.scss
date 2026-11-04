@@ -449,3 +449,11 @@
     }
   }
 }
+
+// CU-22: la conformidad del cliente.
+.conformidad {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}

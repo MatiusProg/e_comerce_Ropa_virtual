@@ -26,6 +26,7 @@ from app.modules.pos.devolucion_schemas import (
     CambioOut,
     DevolucionIn,
     DevolucionOut,
+    NotaDevolucionOut,
     VentaDevolvibleOut,
 )
 from app.modules.pos.service import ErrorDeMostrador
@@ -89,3 +90,28 @@ def registrar_cambio(datos: CambioIn, db: DbSession, usuario: Usuario):
         return service.registrar_cambio(db, usuario.id, datos)
     except ErrorDeMostrador as e:
         raise HTTPException(e.codigo, detail=e.mensaje) from e
+
+
+# =====================================================================
+# CU-22: la nota de devolución, para ver e imprimir
+# =====================================================================
+
+notas_router = APIRouter(
+    prefix="/pos/notas-devolucion",
+    tags=["CU-22 · Nota de devolución"],
+    dependencies=[Depends(requiere_roles("CAJERO", "ENCARGADO", "ADMINISTRADOR"))],
+)
+
+
+@notas_router.get("/{devolucion_id}", response_model=NotaDevolucionOut,
+                  summary="CU-22 La nota de una devolución o un cambio")
+def nota_de_devolucion(devolucion_id: int, db: DbSession, usuario: Usuario):
+    """El administrador ve las de todas las sucursales; el cajero y el
+    encargado, las de la suya."""
+    sucursal = None if usuario.rol == "ADMINISTRADOR" else usuario.sucursal_id
+    if sucursal is None and usuario.rol != "ADMINISTRADOR":
+        raise HTTPException(403, "Su cuenta no está asignada a ninguna sucursal.")
+    try:
+        return service.nota(db, devolucion_id, sucursal_id=sucursal)
+    except service.NotaInexistente as e:
+        raise HTTPException(e.codigo, e.mensaje) from e

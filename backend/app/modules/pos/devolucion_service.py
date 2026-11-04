@@ -58,6 +58,7 @@ from sqlalchemy.orm import Session
 
 from app.core import tiempo
 from app.core.config import settings
+from app.core.tenencia import empresa_actual
 from app.modules.catalogo import promociones_service as promociones
 from app.modules.inventario import service as inventario
 from app.modules.pos import devolucion_repository as repository
@@ -70,6 +71,7 @@ from app.modules.pos.devolucion_schemas import (
     LineaDevolvibleOut,
     LineaDevueltaOut,
     LineaLlevadaOut,
+    NotaDevolucionOut,
     VentaDevolvibleOut,
 )
 from app.modules.pos.service import (
@@ -138,12 +140,11 @@ class FueraDePlazo(ErrorDeMostrador):
     que `DevuelveDeMas`, por el mismo motivo.
     """
 
-    def __init__(self, vencio_en: datetime, plazo_dias: int) -> None:
+    def __init__(self, vencio_en: datetime, plazo_horas: int) -> None:
         self.vencio_en = vencio_en
-        self.plazo_dias = plazo_dias
-        dias = "1 día" if plazo_dias == 1 else f"{plazo_dias} días"
+        self.plazo_horas = plazo_horas
         super().__init__(
-            f"El plazo para devolver o cambiar es de {dias} desde la compra,"
+            f"El plazo para devolver o cambiar es de {_texto_de_plazo(plazo_horas)} desde la compra,"
             f" y venció el {tiempo.en_bolivia(vencio_en):%d/%m/%Y a las %H:%M}.",
             409,
         )
@@ -199,7 +200,29 @@ class DiferenciaCambiada(ErrorDeMostrador):
         )
 
 
-def _vence_en(venta) -> datetime:
+def _texto_de_plazo(horas: int) -> str:
+    if horas % 24 == 0:
+        dias = horas // 24
+        return "1 día" if dias == 1 else f"{dias} días"
+    return "1 hora" if horas == 1 else f"{horas} horas"
+
+
+def ventana_en_horas(db: Session) -> int:
+    """CU-23 (RN-08): la ventana de la empresa de la sesión, en horas.
+
+    Si por algún motivo no hay empresa en el contexto, vale el plazo del 1er
+    parcial: nunca se devuelve sin plazo.
+    """
+    from app.modules.plataforma.models import Empresa
+
+    empresa_id = empresa_actual(db)
+    empresa = db.get(Empresa, empresa_id) if empresa_id is not None else None
+    if empresa is None or not empresa.ventana_devolucion_horas:
+        return settings.DEVOLUCION_PLAZO_DIAS * 24
+    return empresa.ventana_devolucion_horas
+
+
+def _vence_en(venta, horas: int) -> datetime:
     """Hasta cuando se acepta que esta venta vuelva.
 
     Se cuenta en HORAS desde el cobro y no en fechas de calendario: con fechas,
@@ -210,13 +233,15 @@ def _vence_en(venta) -> datetime:
     creado = venta.creado_en
     if creado.tzinfo is None:  # pragma: no cover - la columna es timestamptz
         creado = creado.replace(tzinfo=timezone.utc)
-    return creado + timedelta(days=settings.DEVOLUCION_PLAZO_DIAS)
+    return creado + timedelta(hours=horas)
 
 
-def _exigir_plazo(venta) -> None:
-    vence = _vence_en(venta)
+def _exigir_plazo(db: Session, venta) -> None:
+    """RN-08: fuera de la ventana de la empresa, se rechaza."""
+    horas = ventana_en_horas(db)
+    vence = _vence_en(venta, horas)
     if tiempo.ahora() > vence:
-        raise FueraDePlazo(vence, settings.DEVOLUCION_PLAZO_DIAS)
+        raise FueraDePlazo(vence, horas)
 
 
 def _nombre(fila) -> str:
@@ -300,7 +325,8 @@ def buscar_venta(db: Session, usuario_id: int, codigo: str) -> VentaDevolvibleOu
     # El plazo se INFORMA aca y se EXIGE al registrar. Buscar una venta vencida
     # no es un error: el cajero necesita poder mirarla para explicarle al
     # cliente por que no se puede, y con que fecha.
-    vence = _vence_en(venta)
+    horas = ventana_en_horas(db)
+    vence = _vence_en(venta, horas)
 
     return VentaDevolvibleOut(
         codigo=venta.codigo,
@@ -312,7 +338,8 @@ def buscar_venta(db: Session, usuario_id: int, codigo: str) -> VentaDevolvibleOu
         total=venta.total,
         sale_del_cajon=_sale_del_cajon(venta),
         lineas=lineas,
-        plazo_dias=settings.DEVOLUCION_PLAZO_DIAS,
+        plazo_dias=horas // 24,
+        plazo_horas=horas,
         vence_en=vence,
         dentro_de_plazo=tiempo.ahora() <= vence,
     )
@@ -337,7 +364,7 @@ def registrar(db: Session, usuario_id: int, datos: DevolucionIn) -> DevolucionOu
     if venta is None:
         raise VentaNoDevolvible(datos.venta_codigo)
 
-    _exigir_plazo(venta)
+    _exigir_plazo(db, venta)
 
     # Serializa las devoluciones de esta venta ANTES de leer lo ya devuelto: sin
     # el bloqueo, dos devoluciones simultaneas leen el mismo saldo y las dos
@@ -358,6 +385,7 @@ def registrar(db: Session, usuario_id: int, datos: DevolucionIn) -> DevolucionOu
         # devolucion de una venta con tarjeta dejaria el cajon con un faltante
         # de plata que nunca entro.
         monto=valor if sale else CERO,
+        observacion_cliente=datos.conformidad.observacion,
     )
 
     for variante_id, cantidad, _precio, nombre in lineas:
@@ -383,6 +411,7 @@ def registrar(db: Session, usuario_id: int, datos: DevolucionIn) -> DevolucionOu
 
     return DevolucionOut(
         id=devolucion.id,
+        numero_nota=devolucion.numero_nota,
         venta_codigo=venta.codigo,
         caja_nombre=mostrador.caja_nombre,
         motivo=devolucion.motivo,
@@ -433,7 +462,7 @@ def registrar_cambio(db: Session, usuario_id: int, datos: CambioIn) -> CambioOut
     if venta is None:
         raise VentaNoDevolvible(datos.venta_codigo)
 
-    _exigir_plazo(venta)
+    _exigir_plazo(db, venta)
     repository.bloquear_venta(db, venta.id)
 
     # --- Lo que vuelve, al precio que se pago ----------------------------
@@ -532,6 +561,7 @@ def registrar_cambio(db: Session, usuario_id: int, datos: CambioIn) -> CambioOut
         venta_cambio_id=venta_nueva.id,
         diferencia=diferencia,
         metodo_diferencia=datos.metodo_diferencia,
+        observacion_cliente=datos.conformidad.observacion,
     )
 
     # 1) entra lo viejo
@@ -578,6 +608,7 @@ def registrar_cambio(db: Session, usuario_id: int, datos: CambioIn) -> CambioOut
 
     return CambioOut(
         id=devolucion.id,
+        numero_nota=devolucion.numero_nota,
         venta_codigo=venta.codigo,
         venta_nueva_codigo=codigo,
         comprobante_numero=comprobante.numero,
@@ -646,7 +677,95 @@ def _a_favor_de(diferencia: Decimal) -> str:
     return "NADIE"
 
 
+# =====================================================================
+# CU-22: la nota de devolución
+# =====================================================================
+
+class NotaInexistente(ErrorDeMostrador):
+    def __init__(self) -> None:
+        super().__init__("No existe esa nota de devolución en su sucursal.", 404)
+
+
+def _linea_devuelta(fila, cantidad: int) -> LineaDevueltaOut:
+    unitario = _unitario(fila)
+    return LineaDevueltaOut(
+        variante_id=fila.variante_id,
+        sku=fila.sku,
+        producto=fila.producto,
+        talla=fila.talla,
+        color=fila.color,
+        cantidad=cantidad,
+        precio_unitario=unitario,
+        subtotal=unitario * cantidad,
+    )
+
+
+def nota(db: Session, devolucion_id: int, *, sucursal_id: int | None) -> NotaDevolucionOut:
+    """La nota de una devolución o un cambio. `sucursal_id` None = todas
+    (el administrador); el cajero y el encargado ven las de su sucursal."""
+    devolucion, venta = repository.devolucion_con_venta(db, devolucion_id)
+    if devolucion is None or (sucursal_id is not None and venta.sucursal_id != sucursal_id):
+        raise NotaInexistente()
+
+    vendidas = {f.variante_id: f for f in repository.lineas_vendidas(db, venta.id)}
+    devueltas = [
+        _linea_devuelta(vendidas[d.variante_id], d.cantidad)
+        for d in repository.detalles_de(db, devolucion.id)
+    ]
+    valor_devuelto = sum((l.subtotal for l in devueltas), CERO)
+
+    llevadas: list[LineaLlevadaOut] = []
+    venta_nueva_codigo = None
+    if devolucion.venta_cambio_id is not None:
+        venta_nueva_codigo = repository.codigo_de_venta(db, devolucion.venta_cambio_id)
+        for f in repository.lineas_vendidas(db, devolucion.venta_cambio_id):
+            llevadas.append(
+                LineaLlevadaOut(
+                    variante_id=f.variante_id,
+                    sku=f.sku,
+                    producto=f.producto,
+                    talla=f.talla,
+                    color=f.color,
+                    cantidad=f.cantidad,
+                    precio_unitario=f.precio_unitario,
+                    descuento_unitario=f.descuento_unitario,
+                    subtotal=_unitario(f) * f.cantidad,
+                )
+            )
+    total_llevado = sum((l.subtotal for l in llevadas), CERO)
+    contexto = repository.contexto_de_turno(db, devolucion.turno_caja_id)
+
+    return NotaDevolucionOut(
+        id=devolucion.id,
+        numero=devolucion.numero_nota,
+        tipo=devolucion.tipo,
+        estado=devolucion.estado,
+        creado_en=devolucion.creado_en,
+        sucursal=contexto.sucursal,
+        caja=contexto.caja,
+        cajero=contexto.cajero,
+        venta_codigo=venta.codigo,
+        venta_creada_en=venta.creado_en,
+        horas_desde_la_venta=int((devolucion.creado_en - venta.creado_en).total_seconds() // 3600),
+        motivo=devolucion.motivo,
+        devueltas=devueltas,
+        valor_devuelto=valor_devuelto,
+        venta_nueva_codigo=venta_nueva_codigo,
+        llevadas=llevadas,
+        total_llevado=total_llevado,
+        diferencia=devolucion.diferencia,
+        a_favor_de=_a_favor_de(devolucion.diferencia),
+        metodo_diferencia=devolucion.metodo_diferencia,
+        monto_reintegrado=devolucion.monto,
+        conforme=devolucion.conforme,
+        observacion_cliente=devolucion.observacion_cliente,
+    )
+
+
 __all__ = [
+    "NotaInexistente",
+    "nota",
+    "ventana_en_horas",
     "CambioSinMetodo",
     "CambioSinNada",
     "DiferenciaCambiada",

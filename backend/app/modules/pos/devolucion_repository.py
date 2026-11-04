@@ -109,6 +109,7 @@ def agregar_devolucion(
     venta_cambio_id: int | None = None,
     diferencia: Decimal = Decimal("0.00"),
     metodo_diferencia: str | None = None,
+    observacion_cliente: str | None = None,
 ) -> Devolucion:
     """Crea la cabecera, de una devolucion o de un cambio. **Sin commit.**
 
@@ -127,6 +128,11 @@ def agregar_devolucion(
         venta_cambio_id=venta_cambio_id,
         diferencia=diferencia,
         metodo_diferencia=metodo_diferencia,
+        # CU-22: en caja nace CERRADA y conforme (RN-20): el schema exige la
+        # conformidad antes de llegar acá.
+        estado="CERRADA",
+        conforme=True,
+        observacion_cliente=(observacion_cliente or "").strip() or None,
     )
     db.add(devolucion)
     db.flush()
@@ -142,3 +148,50 @@ def agregar_detalle(
     )
     db.add(detalle)
     return detalle
+
+
+# =====================================================================
+# CU-22: la nota de devolución
+# =====================================================================
+
+def devolucion_con_venta(db: Session, devolucion_id: int) -> tuple[Devolucion | None, Venta | None]:
+    fila = db.execute(
+        select(Devolucion, Venta)
+        .join(Venta, Venta.id == Devolucion.venta_id)
+        .where(Devolucion.id == devolucion_id)
+    ).first()
+    return (fila[0], fila[1]) if fila else (None, None)
+
+
+def detalles_de(db: Session, devolucion_id: int) -> list[DetalleDevolucion]:
+    return list(
+        db.scalars(
+            select(DetalleDevolucion)
+            .where(DetalleDevolucion.devolucion_id == devolucion_id)
+            .order_by(DetalleDevolucion.id)
+        )
+    )
+
+
+def codigo_de_venta(db: Session, venta_id: int) -> str | None:
+    return db.scalar(select(Venta.codigo).where(Venta.id == venta_id))
+
+
+def contexto_de_turno(db: Session, turno_caja_id: int) -> Row:
+    """La sucursal, la caja y el cajero del turno en que se registró."""
+    from app.modules.organizacion.models import Sucursal
+    from app.modules.seguridad.models import Usuario
+    from app.modules.ventas.models import Caja, TurnoCaja
+
+    return db.execute(
+        select(
+            Sucursal.nombre.label("sucursal"),
+            Caja.nombre.label("caja"),
+            (Usuario.nombres + " " + Usuario.apellidos).label("cajero"),
+        )
+        .select_from(TurnoCaja)
+        .join(Caja, Caja.id == TurnoCaja.caja_id)
+        .join(Sucursal, Sucursal.id == Caja.sucursal_id)
+        .join(Usuario, Usuario.id == TurnoCaja.usuario_id)
+        .where(TurnoCaja.id == turno_caja_id)
+    ).one()

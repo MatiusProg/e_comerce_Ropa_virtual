@@ -50,6 +50,10 @@ class Empresa(Auditoria, Base):
         CheckConstraint("estado IN ('ACTIVA', 'BAJA')", name="estado"),
         CheckConstraint("color_principal ~ '^#[0-9a-f]{6}$'", name="color_principal"),
         CheckConstraint("color_secundario ~ '^#[0-9a-f]{6}$'", name="color_secundario"),
+        # CU-23: de 1 hora a 30 días.
+        CheckConstraint(
+            "ventana_devolucion_horas BETWEEN 1 AND 720", name="ventana_devolucion"
+        ),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -64,6 +68,11 @@ class Empresa(Auditoria, Base):
     logo: Mapped[str | None] = mapped_column(String(255))
     color_principal: Mapped[str | None] = mapped_column(String(7))
     color_secundario: Mapped[str | None] = mapped_column(String(7))
+    #: CU-23 (RF-35, RN-08): cuántas horas después de la compra o la entrega se
+    #: acepta un cambio o una devolución. Es de cada empresa: es su política.
+    ventana_devolucion_horas: Mapped[int] = mapped_column(
+        SmallInteger, server_default=text("48")
+    )
 
     suscripciones: Mapped[list["Suscripcion"]] = relationship(back_populates="empresa")
 

@@ -444,6 +444,13 @@ class Devolucion(DeEmpresa, Base):
             + "')",
             name="metodo_diferencia",
         ),
+        # CU-22 (RN-20): una nota se cierra solo con la conformidad del
+        # cliente. Las del 1er parcial quedaron cerradas sin el dato (NULL).
+        CheckConstraint("estado IN ('ABIERTA', 'CERRADA')", name="estado"),
+        CheckConstraint(
+            "estado = 'ABIERTA' OR conforme IS DISTINCT FROM false",
+            name="cerrada_con_conformidad",
+        ),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -475,6 +482,19 @@ class Devolucion(DeEmpresa, Base):
     creado_en: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), index=True
     )
+
+    # --- CU-22: la nota de devolución (RF-37, RN-20) ------------------------
+    #: ABIERTA espera la conformidad del cliente (la devolución por la web,
+    #: CU-24/25). En caja nace CERRADA: el cliente está en el mostrador.
+    estado: Mapped[str] = mapped_column(String(10), server_default="CERRADA")
+    #: Si el cliente aceptó el cambio o la devolución. NULL solo en las del
+    #: 1er parcial, que se registraron antes de que existiera la nota.
+    conforme: Mapped[bool | None] = mapped_column(Boolean)
+    observacion_cliente: Mapped[str | None] = mapped_column(String(300))
+
+    @property
+    def numero_nota(self) -> str:
+        return f"ND-{self.id:06d}"
 
     detalles: Mapped[list["DetalleDevolucion"]] = relationship(
         back_populates="devolucion", cascade="all, delete-orphan", passive_deletes=True

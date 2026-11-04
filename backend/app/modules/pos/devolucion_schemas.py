@@ -31,6 +31,8 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 
+from typing import Literal
+
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -74,8 +76,11 @@ class VentaDevolvibleOut(BaseModel):
     # al confirmar hace perder el trabajo hecho y ademas deja al cajero
     # discutiendo con el cliente sin un numero que mostrarle.
     #: Los dias que la tienda da para volver. Es politica, no constante.
+    #: Redondeado hacia abajo; el dato real es `plazo_horas` (CU-23).
     plazo_dias: int
-    #: El instante exacto en que se cierra. `creado_en + plazo_dias`.
+    #: CU-23: la ventana de la empresa, en horas.
+    plazo_horas: int
+    #: El instante exacto en que se cierra. `creado_en + plazo_horas`.
     vence_en: datetime
     #: Si HOY todavia se puede devolver o cambiar contra esta venta.
     dentro_de_plazo: bool
@@ -84,6 +89,18 @@ class VentaDevolvibleOut(BaseModel):
 class LineaDevolucionIn(BaseModel):
     variante_id: int
     cantidad: int = Field(gt=0, le=1_000)
+
+
+class ConformidadIn(BaseModel):
+    """CU-22 (RN-20): la conformidad del cliente, que está en el mostrador.
+
+    `conforme` solo admite `true`: si el cliente no acepta, no hay cambio ni
+    devolución que registrar en caja (decisión del 04/11). La nota que espera
+    la conformidad (ABIERTA) es de la devolución por la web.
+    """
+
+    conforme: Literal[True]
+    observacion: str | None = Field(default=None, max_length=300)
 
 
 class DevolucionIn(BaseModel):
@@ -97,6 +114,8 @@ class DevolucionIn(BaseModel):
     venta_codigo: str = Field(min_length=3, max_length=20)
     motivo: str = Field(min_length=3, max_length=200)
     lineas: list[LineaDevolucionIn] = Field(min_length=1)
+    #: CU-22: sin la conformidad del cliente no se registra (RN-20).
+    conformidad: ConformidadIn
 
     @model_validator(mode="after")
     def _sin_variantes_repetidas(self) -> "DevolucionIn":
@@ -125,6 +144,8 @@ class DevolucionOut(BaseModel):
     """El comprobante de la devolucion."""
 
     id: int
+    #: CU-22: el número de la nota de devolución.
+    numero_nota: str
     venta_codigo: str
     caja_nombre: str
     motivo: str
@@ -187,6 +208,8 @@ class CambioIn(BaseModel):
     llevadas: list[LineaLlevadaIn] = Field(min_length=1)
     #: Como se salda la diferencia, si la hay.
     metodo_diferencia: str | None = None
+    #: CU-22: sin la conformidad del cliente no se registra (RN-20).
+    conformidad: ConformidadIn
     #: Guarda contra un precio movido, igual que `total_esperado` en CU-31: si
     #: la pantalla calculo una diferencia y el servidor otra, se rechaza en vez
     #: de cobrar callado un numero que el cliente no vio.
@@ -223,6 +246,8 @@ class CambioOut(BaseModel):
     """El comprobante del cambio: lo que volvio, lo que salio y la diferencia."""
 
     id: int
+    #: CU-22: el número de la nota de devolución.
+    numero_nota: str
     #: La venta original, la que trajo la prenda devuelta.
     venta_codigo: str
     #: La venta NUEVA que se genero con lo que se llevo. Tiene su comprobante y
@@ -251,3 +276,45 @@ class CambioOut(BaseModel):
     #: Si esa diferencia movio billetes del cajon. Falso con tarjeta y QR, y
     #: falso cuando no hay diferencia.
     toca_el_cajon: bool
+
+
+# =====================================================================
+# CU-22: la nota de devolución (RF-37, RN-20)
+# =====================================================================
+
+class NotaDevolucionOut(BaseModel):
+    """La nota de devolución: lo que volvió y lo que salió, con talla y precio,
+    la diferencia, el motivo y la conformidad del cliente.
+
+    Se arma desde lo registrado (la devolución, la venta original y, en un
+    cambio, la venta nueva): no es una tabla aparte, así que no puede decir
+    algo distinto de lo que pasó.
+    """
+
+    id: int
+    numero: str
+    tipo: str
+    estado: str
+    creado_en: datetime
+    sucursal: str
+    caja: str
+    cajero: str
+    venta_codigo: str
+    venta_creada_en: datetime
+    #: Cuánto tardó en volver, para los reportes de devoluciones (RF-38).
+    horas_desde_la_venta: int
+    motivo: str
+
+    devueltas: list[LineaDevueltaOut]
+    valor_devuelto: Decimal
+    venta_nueva_codigo: str | None
+    llevadas: list[LineaLlevadaOut]
+    total_llevado: Decimal
+    diferencia: Decimal
+    a_favor_de: str
+    metodo_diferencia: str | None
+    #: Lo que salió del cajón en una devolución en efectivo.
+    monto_reintegrado: Decimal
+
+    conforme: bool | None
+    observacion_cliente: str | None

@@ -46,3 +46,17 @@ class MarcaTiendaOut(BaseModel):
     logo_url: str | None
     color_principal: str | None
     color_secundario: str | None
+
+
+# =====================================================================
+# CU-23 Configurar la ventana de devolución (RF-35, RN-08)
+# =====================================================================
+
+class VentanaDevolucionIn(BaseModel):
+    """En horas desde la compra o la entrega: de 1 hora a 30 días."""
+
+    horas: int = Field(ge=1, le=720)
+
+
+class VentanaDevolucionOut(BaseModel):
+    horas: int

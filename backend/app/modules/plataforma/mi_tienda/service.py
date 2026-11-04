@@ -25,7 +25,13 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.modules.catalogo import imagenes_almacen
 from app.modules.plataforma import verificador
-from app.modules.plataforma.mi_tienda.schemas import ColoresIn, MarcaOut, MarcaTiendaOut
+from app.modules.plataforma.mi_tienda.schemas import (
+    ColoresIn,
+    MarcaOut,
+    MarcaTiendaOut,
+    VentanaDevolucionIn,
+    VentanaDevolucionOut,
+)
 from app.modules.plataforma.models import Empresa
 
 FUNCION = "marca_propia"
@@ -147,3 +153,22 @@ def marca_de_la_tienda(db: Session) -> MarcaTiendaOut:
         color_principal=empresa.color_principal,
         color_secundario=empresa.color_secundario,
     )
+
+
+# =====================================================================
+# CU-23 Configurar la ventana de devolución (RF-35, RN-08)
+# =====================================================================
+
+def obtener_ventana(db: Session, empresa_id: int | None) -> VentanaDevolucionOut:
+    return VentanaDevolucionOut(horas=_empresa(db, empresa_id).ventana_devolucion_horas)
+
+
+def guardar_ventana(
+    db: Session, empresa_id: int | None, datos: VentanaDevolucionIn
+) -> VentanaDevolucionOut:
+    """Vale desde ya, también para las ventas anteriores: el plazo se calcula
+    al pedir el cambio, contra la ventana vigente. **Hace commit.**"""
+    empresa = _empresa(db, empresa_id)
+    empresa.ventana_devolucion_horas = datos.horas
+    db.commit()
+    return VentanaDevolucionOut(horas=empresa.ventana_devolucion_horas)

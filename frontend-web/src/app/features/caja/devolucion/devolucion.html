@@ -38,7 +38,7 @@
         <header class="cabecera">
           <mat-icon class="icono">check_circle</mat-icon>
           <div>
-            <h2>Devolución registrada</h2>
+            <h2>Devolución registrada · nota {{ c.numero_nota }}</h2>
             <p class="sub">
               De la venta {{ c.venta_codigo }} · {{ c.caja_nombre }} ·
               {{ c.creado_en | date: 'dd/MM HH:mm' }}
@@ -94,10 +94,16 @@
           }
         </p>
 
-        <button matButton="filled" type="button" class="vb-boton-marca" (click)="otra()">
-          <mat-icon>search</mat-icon>
-          Otra devolución
-        </button>
+        <div class="acciones">
+          <button matButton="outlined" type="button" (click)="verNota(c.id)">
+            <mat-icon>receipt_long</mat-icon>
+            Ver e imprimir la nota
+          </button>
+          <button matButton="filled" type="button" class="vb-boton-marca" (click)="otra()">
+            <mat-icon>search</mat-icon>
+            Otra devolución
+          </button>
+        </div>
       </mat-card-content>
     </mat-card>
   }
@@ -199,10 +205,16 @@
           {{ c.comprobante_numero }}.
         </p>
 
-        <button matButton="filled" type="button" class="vb-boton-marca" (click)="otra()">
-          <mat-icon>search</mat-icon>
-          Otro trámite
-        </button>
+        <div class="acciones">
+          <button matButton="outlined" type="button" (click)="verNota(c.id)">
+            <mat-icon>receipt_long</mat-icon>
+            Ver e imprimir la nota {{ c.numero_nota }}
+          </button>
+          <button matButton="filled" type="button" class="vb-boton-marca" (click)="otra()">
+            <mat-icon>search</mat-icon>
+            Otro trámite
+          </button>
+        </div>
       </mat-card-content>
     </mat-card>
   }
@@ -278,12 +290,12 @@
               <span>
                 Se puede devolver o cambiar hasta el
                 <strong>{{ v.vence_en | date: 'dd/MM/yyyy HH:mm' }}</strong>
-                ({{ v.plazo_dias }} días desde la compra).
+                ({{ plazoTexto(v.plazo_horas) }} desde la compra).
               </span>
             } @else {
               <span>
                 <strong>Fuera de plazo.</strong> El plazo era de
-                {{ v.plazo_dias }} días desde la compra y venció el
+                {{ plazoTexto(v.plazo_horas) }} desde la compra y venció el
                 {{ v.vence_en | date: 'dd/MM/yyyy HH:mm' }}. No se puede
                 devolver ni cambiar.
               </span>
@@ -561,6 +573,17 @@
                 </span>
               </p>
             }
+
+            <!-- CU-22 (RN-20): sin la conformidad del cliente no se registra. -->
+            <div class="conformidad">
+              <mat-checkbox [formControl]="conforme">
+                El cliente está conforme con {{ modo() === 'CAMBIO' ? 'el cambio' : 'la devolución' }}
+              </mat-checkbox>
+              <mat-form-field appearance="outline" class="campo">
+                <mat-label>Observación del cliente (opcional)</mat-label>
+                <input matInput [formControl]="observacionCliente" maxlength="300" />
+              </mat-form-field>
+            </div>
 
             <mat-form-field appearance="outline" class="campo">
               <mat-label>Motivo de la devolución</mat-label>

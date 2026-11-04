@@ -42,6 +42,8 @@ export interface VentaDevolvible {
 
   /** Los días que la tienda da para volver. Es política, no constante. */
   plazo_dias: number;
+  /** CU-23: la ventana de la empresa, en horas. */
+  plazo_horas: number;
   /** El instante exacto en que se cierra. `creado_en + plazo_dias`. */
   vence_en: string;
   /**
@@ -60,10 +62,17 @@ export interface LineaDevolucion {
   cantidad: number;
 }
 
+/** CU-22 (RN-20): la conformidad del cliente. En caja solo puede ser `true`. */
+export interface Conformidad {
+  conforme: true;
+  observacion?: string | null;
+}
+
 export interface Devolucion {
   venta_codigo: string;
   motivo: string;
   lineas: LineaDevolucion[];
+  conformidad: Conformidad;
 }
 
 export interface LineaDevuelta {
@@ -79,6 +88,7 @@ export interface LineaDevuelta {
 
 export interface ComprobanteDevolucion {
   id: number;
+  numero_nota: string;
   venta_codigo: string;
   caja_nombre: string;
   motivo: string;
@@ -114,6 +124,8 @@ export interface Cambio {
   devueltas: LineaDevolucion[];
   /** Lo que se lleva. */
   llevadas: LineaLlevada[];
+  /** CU-22: la conformidad del cliente (RN-20). */
+  conformidad: Conformidad;
   /**
    * Cómo se salda la diferencia. Va **solo si hay diferencia**: mandarlo
    * cuando el cambio sale parejo lo rechaza el servidor, porque quedaría en la
@@ -143,6 +155,7 @@ export interface LineaComprobanteCambio {
 
 export interface ComprobanteCambio {
   id: number;
+  numero_nota: string;
   /** La venta original, la que trajo la prenda devuelta. */
   venta_codigo: string;
   /** La venta NUEVA. La prenda que sale se vendió, y tiene su comprobante. */
@@ -185,4 +198,31 @@ export interface PrendaQueSeLleva {
   descuento_unitario: string;
   cantidad: number;
   disponible: number;
+}
+
+/** CU-22 (RF-37): la nota de devolución, para ver e imprimir. */
+export interface NotaDevolucion {
+  id: number;
+  numero: string;
+  tipo: 'DEVOLUCION' | 'CAMBIO';
+  estado: 'ABIERTA' | 'CERRADA';
+  creado_en: string;
+  sucursal: string;
+  caja: string;
+  cajero: string;
+  venta_codigo: string;
+  venta_creada_en: string;
+  horas_desde_la_venta: number;
+  motivo: string;
+  devueltas: LineaDevuelta[];
+  valor_devuelto: string;
+  venta_nueva_codigo: string | null;
+  llevadas: LineaComprobanteCambio[];
+  total_llevado: string;
+  diferencia: string;
+  a_favor_de: 'CLIENTE' | 'TIENDA' | 'NADIE';
+  metodo_diferencia: string | null;
+  monto_reintegrado: string;
+  conforme: boolean | null;
+  observacion_cliente: string | null;
 }

@@ -9,6 +9,7 @@ import { COLORES_VIOLET, type MarcaEmpresa } from '../../../core/models/mi-tiend
 import { MarcaService, mezclar } from '../../../core/services/marca.service';
 import { MiTiendaService, type ErrorMiTienda } from '../../../core/services/mi-tienda.service';
 import { UrlMediaPipe } from '../../../shared/url-media.pipe';
+import { VentanaDevolucion } from './ventana-devolucion';
 
 const HEX = /^#[0-9a-f]{6}$/;
 
@@ -26,7 +27,14 @@ const HEX = /^#[0-9a-f]{6}$/;
  */
 @Component({
   selector: 'app-mi-tienda',
-  imports: [RouterLink, MatButtonModule, MatIconModule, MatProgressBarModule, UrlMediaPipe],
+  imports: [
+    RouterLink,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressBarModule,
+    UrlMediaPipe,
+    VentanaDevolucion,
+  ],
   templateUrl: './mi-tienda.html',
   styleUrl: './mi-tienda.scss',
 })
