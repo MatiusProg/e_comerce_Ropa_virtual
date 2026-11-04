@@ -120,6 +120,10 @@ from app.modules.traspasos.router import router as traspasos_router
 from app.modules.catalogo.ofertas_router import router as ofertas_router
 # 3ra presentación · CU-41: roles y permisos propios de cada empresa.
 from app.modules.roles.router import router as roles_router
+# 3ra presentación · CU-39 exportar y CU-40 copias de seguridad.
+from app.modules.datos.router import exportacion_router
+from app.modules.datos.router import mantenimiento_router as respaldos_mantenimiento_router
+from app.modules.datos.router import router as respaldos_router
 
 
 # Antes de construir la aplicacion: uvicorn deja el logger raiz sin manejador
@@ -279,3 +283,6 @@ app.include_router(offline_router, prefix=API)
 app.include_router(traspasos_router, prefix=API)
 app.include_router(ofertas_router, prefix=API)
 app.include_router(roles_router, prefix=API)
+app.include_router(exportacion_router, prefix=API)
+app.include_router(respaldos_router, prefix=API)
+app.include_router(respaldos_mantenimiento_router, prefix=API)

@@ -19,7 +19,10 @@ export type TipoNotificacion =
   | 'RESERVA_EN_SUCURSAL'
   | 'RESERVA_PREPARADA'
   | 'PEDIDO_PAGADO'
-  | 'STOCK_BAJO';
+  | 'STOCK_BAJO'
+  // 3ra presentación: CU-33/34 (traspasos) y CU-26 (devoluciones web).
+  | 'TRASPASO'
+  | 'DEVOLUCION';
 
 export interface Notificacion {
   id: number;
@@ -67,6 +70,8 @@ const ICONOS: Record<TipoNotificacion, string> = {
   RESERVA_PREPARADA: 'inventory_2',
   PEDIDO_PAGADO: 'payments',
   STOCK_BAJO: 'warning',
+  TRASPASO: 'swap_horiz',
+  DEVOLUCION: 'assignment_return',
 };
 
 export function iconoDe(tipo: TipoNotificacion): string {

@@ -102,6 +102,8 @@ CATALOGO: tuple[Permiso, ...] = (
             _SOLO_A, ("/plataforma/mi-tienda",), funcion="marca_propia"),
     Permiso("mi_plan.ver", "Ver el plan y su consumo", "Administración", _SOLO_A,
             ("/plataforma/mi-plan",)),
+    Permiso("datos.exportar", "Exportar todos los datos a Excel o CSV", "Administración",
+            _SOLO_A, ("/exportacion",), funcion="exportar_datos"),
     Permiso("mantenimiento.ejecutar", "Disparar las tareas de mantenimiento", "Administración",
             _SOLO_A, ("/mantenimiento",)),
     # --- No asignables -------------------------------------------------------
@@ -109,6 +111,9 @@ CATALOGO: tuple[Permiso, ...] = (
             ("/usuarios",), asignable=False),
     Permiso("roles.gestionar", "Gestionar roles y permisos", "Administración", _SOLO_A,
             ("/roles",), asignable=False),
+    # RN-19: solo el administrador restaura.
+    Permiso("respaldos.gestionar", "Copias de seguridad y restauración", "Administración",
+            _SOLO_A, ("/respaldos",), asignable=False),
 )
 
 POR_CODIGO: dict[str, Permiso] = {p.codigo: p for p in CATALOGO}

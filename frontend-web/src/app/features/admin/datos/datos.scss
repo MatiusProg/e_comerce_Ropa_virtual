@@ -1,0 +1,101 @@
+:host {
+  display: block;
+  max-width: 64rem;
+  margin: 0 auto;
+}
+
+.encabezado {
+  margin-bottom: 1rem;
+
+  h1 {
+    margin: 0;
+  }
+
+  .bajada {
+    margin: 0.25rem 0 0;
+    opacity: 0.75;
+  }
+}
+
+.tarjeta {
+  margin: 0.75rem 0;
+
+  &.peligro {
+    border-color: #ef9a9a;
+  }
+}
+
+.subtitulo {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 1rem 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.nota {
+  margin: 0.25rem 0;
+  opacity: 0.75;
+}
+
+.tenue {
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+.bloqueo {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #8a1c1c;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.archivo {
+  display: block;
+  margin: 0.75rem 0;
+}
+
+.confirmar {
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+
+  p {
+    margin: 0 0 0.5rem;
+  }
+}
+
+.boton-peligro {
+  --mat-button-filled-container-color: #c62828;
+  --mat-button-filled-label-text-color: #fff;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.25rem 0 1rem;
+
+  th,
+  td {
+    padding: 0.45rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    text-align: left;
+  }
+
+  .numero {
+    text-align: right;
+  }
+
+  .botones {
+    white-space: nowrap;
+    text-align: right;
+  }
+}

@@ -268,6 +268,12 @@ export const routes: Routes = [
         title: 'Roles y permisos · Violet Boutique',
         loadComponent: () => import('./features/admin/roles/roles').then((m) => m.Roles),
       },
+      // --- 3ra presentación · CU-39 exportar y CU-40 copias de seguridad ---
+      {
+        path: 'datos',
+        title: 'Datos de la empresa · Violet Boutique',
+        loadComponent: () => import('./features/admin/datos/datos').then((m) => m.Datos),
+      },
       // --- Ciclo 2 · Karen -------------------------------------------------
       // Se agrega al final del bloque y sin reordenar lo anterior, que es el
       // protocolo de archivos compartidos del ciclo (§5 del acuerdo).

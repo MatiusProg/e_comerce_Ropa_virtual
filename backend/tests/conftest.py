@@ -71,6 +71,7 @@ from app.modules.devoluciones_web import models as modelos_dev_web  # noqa: E402
 from app.modules.traspasos import models as modelos_traspasos  # noqa: E402,F401
 from app.modules.catalogo import ofertas_models as modelos_ofertas  # noqa: E402,F401
 from app.modules.roles import models as modelos_roles  # noqa: E402,F401
+from app.modules.datos import models as modelos_datos  # noqa: E402,F401
 from app.modules.seguridad import models as modelos_seguridad  # noqa: E402,F401
 from app.modules.ventas import carrito_models as modelos_carrito  # noqa: E402,F401
 
@@ -107,6 +108,9 @@ TABLAS_VOLATILES = (
     # CU-41: el permiso apunta al rol; `usuario.rol_empresa_id` al rol (SET NULL).
     "rol_empresa_permiso",
     "rol_empresa",
+    # CU-40: la restauración apunta a la copia; las dos, al usuario.
+    "restauracion",
+    "respaldo",
     # P4 va primero: el movimiento apunta a la existencia, al usuario y al
     # proveedor, y la existencia a la variante y a la sucursal. Todas ellas
     # estan mas abajo en esta misma tupla.

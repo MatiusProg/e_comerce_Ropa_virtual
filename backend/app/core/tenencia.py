@@ -167,6 +167,9 @@ TABLAS_DE_EMPRESA = (
     # CU-41 (0038)
     "rol_empresa",
     "rol_empresa_permiso",
+    # CU-40 (0039)
+    "respaldo",
+    "restauracion",
     "medida_talla",
     # inventario
     "existencia",
