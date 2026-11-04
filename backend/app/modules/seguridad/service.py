@@ -352,7 +352,20 @@ def _autenticado(db: Session, usuario, empresa, sucursal_id) -> UsuarioAutentica
         empresa=EmpresaDeLaSesionOut.model_validate(empresa) if empresa else None,
         # 3a: la interfaz avisa; el CU-05 es el que impide escribir.
         solo_consulta=empresa is not None and verificador.suscripcion_vigente(db) is None,
+        **_rol_propio(db, usuario),
     )
+
+
+def _rol_propio(db: Session, usuario) -> dict:
+    """CU-41: el rol propio de la empresa y sus permisos, si tiene uno."""
+    if getattr(usuario, "rol_empresa_id", None) is None:
+        return {}
+    from app.modules.roles.models import RolEmpresa
+
+    rol = db.get(RolEmpresa, usuario.rol_empresa_id)
+    if rol is None:
+        return {}
+    return {"rol_empresa": rol.nombre, "permisos": sorted(p.permiso for p in rol.permisos)}
 
 
 def obtener_usuario_autenticado(

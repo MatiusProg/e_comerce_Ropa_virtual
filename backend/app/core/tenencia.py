@@ -164,6 +164,9 @@ TABLAS_DE_EMPRESA = (
     # CU-31 y CU-32 (0037)
     "precio_mayorista",
     "regla_fuera_de_temporada",
+    # CU-41 (0038)
+    "rol_empresa",
+    "rol_empresa_permiso",
     "medida_talla",
     # inventario
     "existencia",

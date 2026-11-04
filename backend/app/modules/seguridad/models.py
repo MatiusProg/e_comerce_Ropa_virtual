@@ -38,6 +38,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Auditoria, Base
 
+# CU-41: `usuario.rol_empresa_id` apunta a `rol_empresa`; la tabla tiene que
+# estar en el metadata siempre que esté `usuario`.
+from app.modules.roles import models as _roles_empresa  # noqa: E402,F401
+
 # La relacion Rol - Permiso es muchos a muchos y no lleva atributos propios,
 # asi que se resuelve con una tabla intermedia y no con una clase.
 rol_permiso = Table(
@@ -139,6 +143,12 @@ class Usuario(Auditoria, Base):
         ForeignKey("empresa.id"),
         index=True,
         server_default=text("app_empresa_actual()"),
+    )
+    #: 3ra presentación · CU-41. El rol propio de la empresa que acota los
+    #: permisos de su rol base; nulo = todos los de su rol (como siempre).
+    #: ON DELETE SET NULL: borrar el rol no deja a nadie sin poder entrar.
+    rol_empresa_id: Mapped[int | None] = mapped_column(
+        ForeignKey("rol_empresa.id", ondelete="SET NULL"), index=True
     )
 
     rol: Mapped[Rol] = relationship(back_populates="usuarios")

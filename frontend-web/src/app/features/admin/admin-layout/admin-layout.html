@@ -30,81 +30,123 @@
     <mat-icon>home</mat-icon>
     Inicio
   </a>
-  <a routerLink="/admin/mi-plan" routerLinkActive="activo">
-    <mat-icon>workspace_premium</mat-icon>
-    Mi plan
-  </a>
-  <a routerLink="/admin/mi-tienda" routerLinkActive="activo">
-    <mat-icon>palette</mat-icon>
-    Mi tienda
-  </a>
-  <a routerLink="/admin/tablero" routerLinkActive="activo">
-    <mat-icon>dashboard</mat-icon>
-    Tablero
-  </a>
-  <a routerLink="/admin/reportes" routerLinkActive="activo">
-    <mat-icon>download</mat-icon>
-    Reportes
-  </a>
-  <a routerLink="/admin/bitacora" routerLinkActive="activo">
-    <mat-icon>history</mat-icon>
-    Bitácora
-  </a>
-  <a routerLink="/admin/usuarios" routerLinkActive="activo">
-    <mat-icon>manage_accounts</mat-icon>
-    Usuarios
-  </a>
+  @if (puede('mi_plan.ver')) {
+    <a routerLink="/admin/mi-plan" routerLinkActive="activo">
+      <mat-icon>workspace_premium</mat-icon>
+      Mi plan
+    </a>
+  }
+  @if (puede('mi_tienda.gestionar')) {
+    <a routerLink="/admin/mi-tienda" routerLinkActive="activo">
+      <mat-icon>palette</mat-icon>
+      Mi tienda
+    </a>
+  }
+  @if (puede('tablero.ver')) {
+    <a routerLink="/admin/tablero" routerLinkActive="activo">
+      <mat-icon>dashboard</mat-icon>
+      Tablero
+    </a>
+  }
+  @if (puede('reportes.ver')) {
+    <a routerLink="/admin/reportes" routerLinkActive="activo">
+      <mat-icon>download</mat-icon>
+      Reportes
+    </a>
+  }
+  @if (puede('bitacora.ver')) {
+    <a routerLink="/admin/bitacora" routerLinkActive="activo">
+      <mat-icon>history</mat-icon>
+      Bitácora
+    </a>
+  }
+  @if (puede('usuarios.gestionar')) {
+    <a routerLink="/admin/usuarios" routerLinkActive="activo">
+      <mat-icon>manage_accounts</mat-icon>
+      Usuarios
+    </a>
+  }
+  @if (puede('roles.gestionar')) {
+    <a routerLink="/admin/roles" routerLinkActive="activo">
+      <mat-icon>admin_panel_settings</mat-icon>
+      Roles y permisos
+    </a>
+  }
 
-  <a routerLink="/admin/sucursales" routerLinkActive="activo">
-    <mat-icon>storefront</mat-icon>
-    Sucursales
-  </a>
+  @if (puede('organizacion.gestionar')) {
+    <a routerLink="/admin/sucursales" routerLinkActive="activo">
+      <mat-icon>storefront</mat-icon>
+      Sucursales
+    </a>
+  }
 
-  <a routerLink="/admin/empleados" routerLinkActive="activo">
-    <mat-icon>badge</mat-icon>
-    Empleados
-  </a>
-  <a routerLink="/admin/proveedores" routerLinkActive="activo">
-    <mat-icon>local_shipping</mat-icon>
-    Proveedores
-  </a>
+  @if (puede('organizacion.gestionar')) {
+    <a routerLink="/admin/empleados" routerLinkActive="activo">
+      <mat-icon>badge</mat-icon>
+      Empleados
+    </a>
+  }
+  @if (puede('organizacion.gestionar')) {
+    <a routerLink="/admin/proveedores" routerLinkActive="activo">
+      <mat-icon>local_shipping</mat-icon>
+      Proveedores
+    </a>
+  }
 
-  <a routerLink="/admin/maestros" routerLinkActive="activo">
-    <mat-icon>sell</mat-icon>
-    Catálogo
-  </a>
-  <a routerLink="/admin/temporadas" routerLinkActive="activo">
-    <mat-icon>event</mat-icon>
-    Temporadas
-  </a>
-  <a routerLink="/admin/promociones" routerLinkActive="activo">
-    <mat-icon>sell</mat-icon>
-    Promociones
-  </a>
-  <a routerLink="/admin/ofertas" routerLinkActive="activo">
-    <mat-icon>local_offer</mat-icon>
-    Ofertas
-  </a>
-  <a routerLink="/admin/productos" routerLinkActive="activo">
-    <mat-icon>inventory_2</mat-icon>
-    Productos
-  </a>
-  <a routerLink="/admin/inventario" routerLinkActive="activo">
-    <mat-icon>warehouse</mat-icon>
-    Inventario
-  </a>
-  <a routerLink="/admin/reservas" routerLinkActive="activo">
-    <mat-icon>event_available</mat-icon>
-    Reservas
-  </a>
-  <a routerLink="/admin/consolidado" routerLinkActive="activo">
-    <mat-icon>insights</mat-icon>
-    Consolidado
-  </a>
-  <a routerLink="/admin/traspasos" routerLinkActive="activo">
-    <mat-icon>swap_horiz</mat-icon>
-    Traspasos
-  </a>
+  @if (puede('catalogo.gestionar')) {
+    <a routerLink="/admin/maestros" routerLinkActive="activo">
+      <mat-icon>sell</mat-icon>
+      Catálogo
+    </a>
+  }
+  @if (puede('catalogo.gestionar')) {
+    <a routerLink="/admin/temporadas" routerLinkActive="activo">
+      <mat-icon>event</mat-icon>
+      Temporadas
+    </a>
+  }
+  @if (puede('ofertas.gestionar')) {
+    <a routerLink="/admin/promociones" routerLinkActive="activo">
+      <mat-icon>sell</mat-icon>
+      Promociones
+    </a>
+  }
+  @if (puede('ofertas.gestionar')) {
+    <a routerLink="/admin/ofertas" routerLinkActive="activo">
+      <mat-icon>local_offer</mat-icon>
+      Ofertas
+    </a>
+  }
+  @if (puede('catalogo.gestionar')) {
+    <a routerLink="/admin/productos" routerLinkActive="activo">
+      <mat-icon>inventory_2</mat-icon>
+      Productos
+    </a>
+  }
+  @if (puede('inventario.gestionar')) {
+    <a routerLink="/admin/inventario" routerLinkActive="activo">
+      <mat-icon>warehouse</mat-icon>
+      Inventario
+    </a>
+  }
+  @if (puede('reservas.atender')) {
+    <a routerLink="/admin/reservas" routerLinkActive="activo">
+      <mat-icon>event_available</mat-icon>
+      Reservas
+    </a>
+  }
+  @if (puede('inventario.gestionar')) {
+    <a routerLink="/admin/consolidado" routerLinkActive="activo">
+      <mat-icon>insights</mat-icon>
+      Consolidado
+    </a>
+  }
+  @if (puede('traspasos.gestionar')) {
+    <a routerLink="/admin/traspasos" routerLinkActive="activo">
+      <mat-icon>swap_horiz</mat-icon>
+      Traspasos
+    </a>
+  }
 </nav>
 
 <main class="contenido">

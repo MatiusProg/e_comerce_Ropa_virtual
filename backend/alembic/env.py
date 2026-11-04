@@ -26,6 +26,7 @@ from app.modules.catalogo import models as _catalogo_models  # noqa: F401
 # `carrito_models`: `models.py` de catalogo lo tocan otros cuatro casos de uso.
 from app.modules.catalogo import promociones_models as _promociones_models  # noqa: F401
 from app.modules.catalogo import ofertas_models as _ofertas_models  # noqa: F401
+from app.modules.roles import models as _roles_models  # noqa: F401
 
 # Ciclo 2 - descomentar al implementarlos
 from app.modules.inventario import models as _inventario_models  # noqa: F401

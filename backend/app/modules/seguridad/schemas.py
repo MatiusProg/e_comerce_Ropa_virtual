@@ -159,6 +159,10 @@ class UsuarioAutenticadoOut(BaseModel):
     empresa: EmpresaDeLaSesionOut | None = None
     # 3a: suscripción vencida o suspendida; la interfaz avisa que solo consulta.
     solo_consulta: bool = False
+    # 3ra presentación · CU-41. El rol propio y sus permisos, para que la
+    # interfaz arme el menú. `permisos` nulo = todo lo de su rol (sin rol propio).
+    rol_empresa: str | None = None
+    permisos: list[str] | None = None
 
 
 class TokenOut(BaseModel):

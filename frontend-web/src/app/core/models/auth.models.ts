@@ -47,6 +47,12 @@ export interface UsuarioAutenticado {
   empresa: EmpresaDeLaSesion | null;
   /** CU-06 3a: suscripción vencida o suspendida; solo se puede consultar. */
   solo_consulta: boolean;
+  /**
+   * 3ra presentación · CU-41. El rol propio de la empresa y sus permisos.
+   * `permisos` nulo o ausente = no tiene rol propio: todo lo de su rol.
+   */
+  rol_empresa?: string | null;
+  permisos?: string[] | null;
 }
 
 /** La empresa donde se inició sesión. */

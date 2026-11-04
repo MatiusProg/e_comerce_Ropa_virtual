@@ -1,0 +1,166 @@
+<header class="encabezado">
+  <div>
+    <h1 class="vb-titulo">Roles y permisos</h1>
+    <p class="bajada">
+      Cree roles propios a partir del de administrador, encargado o cajero, quíteles lo que no
+      necesitan y asígnelos a su personal. Quien no tiene rol propio conserva todo lo de su rol.
+    </p>
+  </div>
+  <button matButton="filled" class="vb-boton-marca" type="button" (click)="nuevo()">
+    <mat-icon>add</mat-icon>
+    Nuevo rol
+  </button>
+</header>
+
+@if (cargando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+@if (abierto()) {
+  <mat-card class="tarjeta" appearance="outlined">
+    <mat-card-content>
+      <h2 class="subtitulo">{{ editando() ? 'Editar ' + editando()!.nombre : 'Nuevo rol' }}</h2>
+      <form [formGroup]="formulario" (ngSubmit)="guardar()">
+        <div class="fila-form">
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre</mat-label>
+            <input matInput formControlName="nombre" maxlength="40" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Parte del rol</mat-label>
+            <mat-select
+              [value]="base()"
+              [disabled]="!!editando()"
+              (selectionChange)="cambiarBase($event.value)"
+            >
+              @for (b of bases; track b) {
+                <mat-option [value]="b">{{ etiquetaBase[b] }}</mat-option>
+              }
+            </mat-select>
+            @if (editando()) {
+              <mat-hint>El rol base no se cambia.</mat-hint>
+            }
+          </mat-form-field>
+        </div>
+        <mat-form-field appearance="outline" class="ancho">
+          <mat-label>Descripción</mat-label>
+          <input matInput formControlName="descripcion" maxlength="150" />
+        </mat-form-field>
+
+        <h3 class="subtitulo">Qué puede hacer</h3>
+        @for (grupo of areas(); track grupo.area) {
+          <div class="area">
+            <p class="nombre-area">{{ grupo.area }}</p>
+            @for (p of grupo.permisos; track p.codigo) {
+              <mat-checkbox
+                [checked]="marcados().has(p.codigo)"
+                [disabled]="!p.incluido_en_plan"
+                (change)="alternar(p.codigo, $event.checked)"
+                [matTooltip]="p.incluido_en_plan ? '' : 'Su plan no incluye esta función'"
+              >
+                {{ p.nombre }}
+                @if (!p.incluido_en_plan) {
+                  <span class="fuera">· no incluido en su plan</span>
+                }
+              </mat-checkbox>
+            }
+          </div>
+        }
+
+        <div class="acciones">
+          <button matButton="filled" class="vb-boton-marca" type="submit" [disabled]="guardando()">
+            <mat-icon>save</mat-icon>
+            {{ guardando() ? 'Guardando…' : 'Guardar' }}
+          </button>
+          <button matButton type="button" (click)="abierto.set(false)">Cancelar</button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<mat-tab-group animationDuration="0ms">
+  <mat-tab label="Roles">
+    @if (!cargando() && roles().length === 0) {
+      <p class="nota">Todavía no hay roles propios: todo el personal tiene lo de su rol.</p>
+    }
+    @for (rol of roles(); track rol.id) {
+      <mat-card class="tarjeta" appearance="outlined" [class.apagado]="!rol.activo">
+        <mat-card-content>
+          <div class="fila">
+            <div class="cuerpo">
+              <p class="titulo">
+                {{ rol.nombre }}
+                <span class="chip">{{ etiquetaBase[rol.rol_base] }}</span>
+                <span class="tenue">· {{ rol.personas }} persona{{ rol.personas === 1 ? '' : 's' }}</span>
+              </p>
+              @if (rol.descripcion) {
+                <p class="tenue">{{ rol.descripcion }}</p>
+              }
+              <p class="permisos">
+                @for (c of rol.permisos; track c) {
+                  <span class="permiso">{{ nombreDe()(c) }}</span>
+                } @empty {
+                  <span class="tenue">Sin permisos: solo ve sus avisos.</span>
+                }
+              </p>
+            </div>
+            <div class="acciones">
+              <mat-slide-toggle
+                [checked]="rol.activo"
+                (change)="cambiarEstado(rol, $event.checked)"
+                [attr.aria-label]="'Activar o desactivar ' + rol.nombre"
+              />
+              <button matIconButton type="button" (click)="editar(rol)" aria-label="Editar">
+                <mat-icon>edit</mat-icon>
+              </button>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+  </mat-tab>
+
+  <mat-tab label="Personal">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th>Persona</th>
+          <th>Rol</th>
+          <th>Sucursal</th>
+          <th>Rol propio</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of personal(); track p.usuario_id) {
+          <tr>
+            <td>
+              {{ p.nombre }}
+              <span class="tenue correo">{{ p.correo }}</span>
+            </td>
+            <td>{{ etiquetaBase[p.rol_base] }}</td>
+            <td>{{ p.sucursal ?? '—' }}</td>
+            <td>
+              <mat-form-field appearance="outline" class="selector" subscriptSizing="dynamic">
+                <mat-select
+                  [value]="p.rol_empresa_id"
+                  (selectionChange)="asignar(p, $event.value)"
+                  [attr.aria-label]="'Rol propio de ' + p.nombre"
+                >
+                  <mat-option [value]="null">Todo lo de su rol</mat-option>
+                  @for (r of rolesPara(p); track r.id) {
+                    <mat-option [value]="r.id">{{ r.nombre }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    <p class="nota pie">
+      El cambio vale desde la próxima acción de esa persona; el menú se le actualiza al volver a
+      iniciar sesión.
+    </p>
+  </mat-tab>
+</mat-tab-group>

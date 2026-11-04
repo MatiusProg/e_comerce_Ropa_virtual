@@ -1,0 +1,157 @@
+:host {
+  display: block;
+  max-width: 64rem;
+  margin: 0 auto;
+}
+
+.encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  h1 {
+    margin: 0;
+  }
+
+  .bajada {
+    margin: 0.25rem 0 0;
+    max-width: 40rem;
+    opacity: 0.75;
+  }
+}
+
+.tarjeta {
+  margin: 0.75rem 0;
+
+  &.apagado {
+    opacity: 0.6;
+  }
+}
+
+.subtitulo {
+  margin: 0.5rem 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.fila-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+
+  mat-form-field {
+    flex: 1 1 14rem;
+  }
+}
+
+.ancho {
+  width: 100%;
+}
+
+.area {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.75rem;
+
+  .nombre-area {
+    margin: 0 0 0.25rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.6;
+  }
+}
+
+.fuera {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.75rem;
+
+  .cuerpo {
+    flex: 1;
+    min-width: 14rem;
+
+    p {
+      margin: 0;
+    }
+  }
+}
+
+.titulo {
+  font-weight: 500;
+}
+
+.tenue {
+  opacity: 0.65;
+}
+
+.chip {
+  margin: 0 0.4rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.permisos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.5rem !important;
+}
+
+.permiso {
+  padding: 0.1rem 0.5rem;
+  border-radius: 0.35rem;
+  font-size: 0.8rem;
+  background: #ede7f6;
+  color: #4527a0;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+
+  th,
+  td {
+    padding: 0.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  .correo {
+    display: block;
+    font-size: 0.8rem;
+  }
+
+  .selector {
+    min-width: 12rem;
+  }
+}
+
+.nota {
+  opacity: 0.75;
+}
+
+.pie {
+  font-size: 0.85rem;
+}

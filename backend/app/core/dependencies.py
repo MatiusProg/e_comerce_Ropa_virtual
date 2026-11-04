@@ -13,6 +13,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.core import permisos as permisos_catalogo
 from app.core.security import decodificar_token
 from app.core.tenencia import EMPRESA_DE_BAJA, ROL_PLATAFORMA, fijar_contexto_de_usuario
 from app.db.session import get_db
@@ -41,6 +42,8 @@ class UsuarioActual:
         correo: str | None = None,
         empresa_id: int | None = None,
         empresa_de_sesion: int | None = None,
+        permisos: frozenset[str] | None = None,
+        rol_empresa: str | None = None,
     ):
         self.id = usuario_id
         self.rol = rol
@@ -57,6 +60,10 @@ class UsuarioActual:
         # CU-06: la empresa donde inicio sesion. Para el personal es la suya;
         # para el cliente, la tienda (claim del token); None en la plataforma.
         self.empresa_de_sesion = empresa_de_sesion
+        # 3ra presentacion · CU-41. Los permisos del rol propio de la empresa;
+        # None = no tiene rol propio y vale todo lo de su rol base.
+        self.permisos = permisos
+        self.rol_empresa = rol_empresa
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<UsuarioActual id={self.id} rol={self.rol} sucursal={self.sucursal_id}>"
@@ -108,7 +115,13 @@ def get_usuario_actual(
     # consulta, para cortar el acceso si la dieron de baja.
     empresa_del_token = datos.get("empresa_id")
     fila = db.execute(
-        select(UsuarioDB.activo, UsuarioDB.correo, UsuarioDB.empresa_id, Empresa.estado)
+        select(
+            UsuarioDB.activo,
+            UsuarioDB.correo,
+            UsuarioDB.empresa_id,
+            Empresa.estado,
+            UsuarioDB.rol_empresa_id,
+        )
         .outerjoin(
             Empresa,
             Empresa.id == func.coalesce(UsuarioDB.empresa_id, empresa_del_token),
@@ -145,12 +158,46 @@ def get_usuario_actual(
     # los datos de la anterior. El cliente no tiene empresa y sigue en la de la
     # tienda (ver app/core/tenencia.py).
     fijar_contexto_de_usuario(db, rol=usuario.rol, empresa_id=usuario.empresa_de_sesion)
+    # CU-41: el rol propio se lee DESPUES de fijar el contexto, porque su tabla
+    # esta bajo RLS. Y se lee de la base en cada peticion: si el administrador
+    # le quita un permiso, deja de valer ya, sin esperar a que el token venza.
+    if fila[4] is not None:
+        _aplicar_rol_propio(peticion, db, usuario, fila[4])
     _exigir_suscripcion_para_escribir(peticion, db, usuario)
     # Se deja a mano para la bitacora (CU-42). El middleware corre fuera del
     # grafo de dependencias y no puede volver a resolver el token: sin esto,
     # todo asiento saldria sin autor.
     peticion.state.usuario = usuario
     return usuario
+
+
+def _aplicar_rol_propio(
+    peticion: Request, db: Session, usuario: UsuarioActual, rol_empresa_id: int
+) -> None:
+    """CU-41. Carga los permisos del rol propio y corta si la ruta no esta.
+
+    Ver `app/core/permisos.py`: el rol propio solo QUITA permisos a su rol
+    base. Una ruta que ningun permiso cubre queda cerrada para quien tiene rol
+    propio, salvo las libres (su sesion, sus avisos, la vitrina).
+    """
+    from app.modules.roles.models import RolEmpresa
+
+    rol = db.get(RolEmpresa, rol_empresa_id)
+    if rol is None:
+        return
+    usuario.rol_empresa = rol.nombre
+    usuario.permisos = frozenset(p.permiso for p in rol.permisos)
+
+    ruta = peticion.url.path
+    if permisos_catalogo.es_libre(ruta):
+        return
+    codigo = permisos_catalogo.permiso_de_ruta(ruta)
+    if codigo is None or codigo not in usuario.permisos:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Su rol «{rol.nombre}» no incluye esta función. "
+            "Pídasela al administrador de la empresa.",
+        )
 
 
 #: Lo que no escribe datos de la empresa, o lo que hay que poder hacer igual
