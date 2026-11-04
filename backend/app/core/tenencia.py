@@ -186,6 +186,9 @@ TABLAS_DE_EMPRESA = (
     "recomendacion",
     # offline y sincronización (CU-13 a CU-19)
     "operacion_offline",
+    # CU-24 (0031)
+    "solicitud_devolucion",
+    "linea_solicitud_devolucion",
     # avisos y bitácora
     "notificacion",
     "bitacora",
