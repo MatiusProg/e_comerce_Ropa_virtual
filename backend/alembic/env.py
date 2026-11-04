@@ -49,6 +49,7 @@ from app.modules.notificaciones import models as _notificaciones_models  # noqa:
 from app.modules.plataforma import models as _plataforma_models  # noqa: F401
 from app.modules.offline import models as _offline_models  # noqa: F401
 from app.modules.devoluciones_web import models as _dev_web_models  # noqa: F401
+from app.modules.traspasos import models as _traspasos_models  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", _normalizar_url(settings.DATABASE_URL))

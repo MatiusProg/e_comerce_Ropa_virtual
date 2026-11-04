@@ -105,7 +105,7 @@ REGLAS_DEL_PLAN: dict[str, tuple[str, str]] = {
     "ia_cliente": ("aplicado", "ia/ · el asistente se rechaza y las recomendaciones van por popularidad"),
     "foto_ia": ("aplicado", "vestidor_virtual/router.py · probado por IA y su disponibilidad"),
     "marca_propia": ("aplicado", "plataforma/mi_tienda/router.py · guardar el logo y los colores; la tienda los muestra solo con la función"),
-    "traspasos_sugeridos": ("pendiente", "CU-35 Consultar traspasos sugeridos"),
+    "traspasos_sugeridos": ("aplicado", "traspasos/router.py · los traspasos sugeridos (CU-35)"),
     "analitica_ml": ("pendiente", "CU-29 y CU-30, analítica con ML y su dashboard"),
     "exportar_datos": ("pendiente", "CU-39 Exportar los datos de la empresa"),
     # Ajustes numéricos guardados en `funciones`

@@ -273,6 +273,15 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/admin/consolidado/consolidado').then((m) => m.Consolidado),
       },
+      // --- 3ra presentación · CU-33 a CU-35 Traspasos entre sucursales ---
+      // La misma pantalla que la del Encargado: el Administrador ordena entre
+      // dos sucursales cualesquiera y es el único que ve los sugeridos.
+      {
+        path: 'traspasos',
+        title: 'Traspasos · Violet Boutique',
+        loadComponent: () =>
+          import('./features/sucursal/traspasos/traspasos').then((m) => m.Traspasos),
+      },
       // --- Ciclo 2 · P4 Inventario (CU-13, CU-15) ---
       {
         path: 'inventario',
@@ -436,6 +445,14 @@ export const routes: Routes = [
         title: 'Inventario de la sucursal · Violet Boutique',
         loadComponent: () =>
           import('./features/admin/inventario/inventario').then((m) => m.Inventario),
+      },
+      {
+        // 3ra presentación · CU-33 y CU-34: pedir a otra sucursal y atender
+        // lo que le piden a la suya.
+        path: 'traspasos',
+        title: 'Traspasos · Violet Boutique',
+        loadComponent: () =>
+          import('./features/sucursal/traspasos/traspasos').then((m) => m.Traspasos),
       },
       {
         // CU-40 · la misma pantalla que /avisos, colgada de esta cáscara para

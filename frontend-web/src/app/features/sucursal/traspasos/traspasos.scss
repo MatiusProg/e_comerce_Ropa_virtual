@@ -1,0 +1,197 @@
+:host {
+  display: block;
+  max-width: 64rem;
+  margin: 0 auto;
+}
+
+.encabezado {
+  margin-bottom: 1rem;
+
+  h1 {
+    margin: 0;
+  }
+
+  .bajada {
+    margin: 0.25rem 0 0;
+    opacity: 0.75;
+  }
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.tarjeta {
+  margin: 0.75rem 0;
+}
+
+.fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.75rem;
+
+  .cuerpo {
+    flex: 1;
+    min-width: 14rem;
+
+    p {
+      margin: 0;
+    }
+  }
+}
+
+.titulo {
+  font-weight: 500;
+}
+
+.subtitulo {
+  margin: 1rem 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.ruta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.25rem !important;
+}
+
+.chico {
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.tenue {
+  opacity: 0.65;
+}
+
+.chip {
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.estado-SOLICITADO {
+  background: #fff3e0;
+  color: #8a4b00;
+}
+
+.estado-APROBADO {
+  background: #e3f2fd;
+  color: #0d47a1;
+}
+
+.estado-ENVIADO {
+  background: #ede7f6;
+  color: #4527a0;
+}
+
+.estado-RECIBIDO {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.estado-RECHAZADO {
+  background: #ffebee;
+  color: #8a1c1c;
+}
+
+.motivo {
+  margin-top: 0.25rem !important;
+  color: #8a1c1c;
+}
+
+.detalle {
+  margin-top: 0.25rem !important;
+  opacity: 0.85;
+}
+
+.linea {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+.mal {
+  color: #c62828;
+}
+
+.botones,
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.ancho {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.opcion {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.5rem;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.03);
+  }
+
+  &.elegida {
+    border-color: currentColor;
+    border-width: 2px;
+    padding: calc(0.75rem - 1px);
+  }
+}
+
+.paginado {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.nota {
+  opacity: 0.75;
+}
+
+.pie {
+  font-size: 0.85rem;
+}

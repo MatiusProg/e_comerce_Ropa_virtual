@@ -1,0 +1,366 @@
+<header class="encabezado">
+  <h1 class="vb-titulo">Traspasos entre sucursales</h1>
+  <p class="bajada">
+    @if (esAdmin()) {
+      Mueva prendas de una sucursal a otra y siga cada traspaso hasta que llegue.
+    } @else {
+      Pida prendas a otras sucursales y atienda lo que le piden a la suya.
+    }
+  </p>
+</header>
+
+<mat-tab-group
+  [selectedIndex]="pestana()"
+  (selectedIndexChange)="cambiarPestana($event)"
+  animationDuration="0ms"
+>
+  <!-- ============================ CU-34 ============================ -->
+  <mat-tab label="Seguimiento">
+    <div class="filtros">
+      @if (!esAdmin()) {
+        <mat-button-toggle-group
+          [value]="bandeja()"
+          (change)="cambiarBandeja($any($event).value)"
+          aria-label="Qué traspasos ver"
+        >
+          <mat-button-toggle value="TODAS">Todos</mat-button-toggle>
+          <mat-button-toggle value="ENTRANTES">
+            <mat-icon>call_received</mat-icon>
+            Para mi sucursal
+          </mat-button-toggle>
+          <mat-button-toggle value="SALIENTES">
+            <mat-icon>call_made</mat-icon>
+            Me piden
+          </mat-button-toggle>
+        </mat-button-toggle-group>
+      }
+      <mat-button-toggle-group
+        [value]="soloAbiertos()"
+        (change)="cambiarAbiertos($any($event).value)"
+        aria-label="Abiertos o todos"
+      >
+        <mat-button-toggle [value]="true">En curso</mat-button-toggle>
+        <mat-button-toggle [value]="false">Historial</mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
+
+    @if (cargando()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+
+    @if (!cargando() && filas().length === 0) {
+      <mat-card class="tarjeta" appearance="outlined">
+        <mat-card-content>
+          <p class="nota">
+            {{ soloAbiertos() ? 'No hay traspasos en curso.' : 'Todavía no hay traspasos.' }}
+          </p>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    @for (t of filas(); track t.id) {
+      <mat-card class="tarjeta" appearance="outlined">
+        <mat-card-content>
+          <div class="fila">
+            <div class="cuerpo">
+              <p class="titulo">
+                #{{ t.id }} · {{ t.prenda }} · {{ t.talla }} / {{ t.color }}
+                <span class="chip" [class]="'chip estado-' + t.estado">
+                  {{ etiquetaEstado[t.estado] }}
+                </span>
+                @if (t.tipo === 'SUGERIDO') {
+                  <span class="chip">Sugerido</span>
+                } @else if (t.tipo === 'ORDEN') {
+                  <span class="chip">Ordenado</span>
+                }
+              </p>
+              <p class="ruta">
+                <strong>{{ t.origen.nombre }}</strong>
+                <mat-icon class="chico">arrow_forward</mat-icon>
+                <strong>{{ t.destino.nombre }}</strong>
+                · {{ t.cantidad }} u.
+                @if (t.cantidad !== t.cantidad_solicitada) {
+                  <span class="tenue">(se pidieron {{ t.cantidad_solicitada }})</span>
+                }
+                <span class="tenue">· {{ t.sku }}</span>
+              </p>
+              @if (t.motivo) {
+                <p class="detalle">{{ t.motivo }}</p>
+              }
+              @if (t.motivo_rechazo) {
+                <p class="motivo">Rechazado: {{ t.motivo_rechazo }}</p>
+              }
+              <ol class="linea">
+                <li>Pedido {{ t.creado_en | date: 'dd/MM HH:mm' }} · {{ t.solicitado_por }}</li>
+                @if (t.aprobado_en) {
+                  <li>Aprobado {{ t.aprobado_en | date: 'dd/MM HH:mm' }} · {{ t.aprobado_por }}</li>
+                }
+                @if (t.enviado_en) {
+                  <li>Enviado {{ t.enviado_en | date: 'dd/MM HH:mm' }} · {{ t.enviado_por }}</li>
+                }
+                @if (t.recibido_en) {
+                  <li>Recibido {{ t.recibido_en | date: 'dd/MM HH:mm' }} · {{ t.recibido_por }}</li>
+                }
+                @if (t.rechazado_en) {
+                  <li>Rechazado {{ t.rechazado_en | date: 'dd/MM HH:mm' }} · {{ t.rechazado_por }}</li>
+                }
+              </ol>
+            </div>
+
+            @if (abierto()?.id !== t.id && t.acciones.length) {
+              <div class="botones">
+                @for (a of t.acciones; track a) {
+                  <button
+                    [matButton]="a === 'RECHAZAR' ? 'outlined' : 'filled'"
+                    type="button"
+                    [class.vb-boton-marca]="a !== 'RECHAZAR'"
+                    [disabled]="atendiendo() === t.id"
+                    (click)="accionar(t, a)"
+                  >
+                    <mat-icon>{{ iconoAccion(a) }}</mat-icon>
+                    {{ etiquetaAccion(a) }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          @if (abierto()?.id === t.id) {
+            <div class="formulario">
+              @if (abierto()?.accion === 'APROBAR') {
+                <mat-form-field appearance="outline">
+                  <mat-label>Cantidad a enviar</mat-label>
+                  <input matInput type="number" min="1" [max]="t.cantidad" [formControl]="cantidadAprobada" />
+                  <mat-hint>Puede mandar menos de {{ t.cantidad }} si no le alcanza.</mat-hint>
+                </mat-form-field>
+              } @else {
+                <mat-form-field appearance="outline">
+                  <mat-label>Motivo del rechazo</mat-label>
+                  <input matInput [formControl]="motivoRechazo" maxlength="200" />
+                  @if (motivoRechazo.touched && motivoRechazo.invalid) {
+                    <mat-error>Escriba al menos 3 caracteres.</mat-error>
+                  }
+                </mat-form-field>
+              }
+              <div class="acciones">
+                <button
+                  matButton="filled"
+                  type="button"
+                  class="vb-boton-marca"
+                  [disabled]="atendiendo() === t.id"
+                  (click)="confirmar(t)"
+                >
+                  <mat-icon>check</mat-icon>
+                  {{ abierto()?.accion === 'APROBAR' ? 'Aprobar' : 'Rechazar' }}
+                </button>
+                <button matButton type="button" (click)="abierto.set(null)">Cancelar</button>
+              </div>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
+
+    @if (paginas() > 1) {
+      <div class="paginado">
+        <button matButton type="button" [disabled]="pagina() === 1" (click)="irAPagina(pagina() - 1)">
+          <mat-icon>chevron_left</mat-icon>
+          Anterior
+        </button>
+        <span>Página {{ pagina() }} de {{ paginas() }}</span>
+        <button
+          matButton
+          type="button"
+          [disabled]="pagina() === paginas()"
+          (click)="irAPagina(pagina() + 1)"
+        >
+          Siguiente
+          <mat-icon iconPositionEnd>chevron_right</mat-icon>
+        </button>
+      </div>
+    }
+  </mat-tab>
+
+  <!-- ============================ CU-33 ============================ -->
+  <mat-tab [label]="esAdmin() ? 'Ordenar' : 'Pedir'">
+    @if (!prenda()) {
+      <mat-form-field appearance="outline" class="ancho">
+        <mat-label>Buscar prenda por nombre o SKU</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput [formControl]="busqueda" />
+        <mat-hint>
+          @if (esAdmin()) {
+            Prendas con unidades disponibles en alguna sucursal.
+          } @else {
+            Prendas que otras sucursales tienen disponibles.
+          }
+        </mat-hint>
+      </mat-form-field>
+
+      @if (buscando()) {
+        <mat-progress-bar mode="indeterminate" />
+      }
+      @if (!buscando() && prendas().length === 0) {
+        <p class="nota">No hay prendas disponibles con esa búsqueda.</p>
+      }
+      <div class="lista">
+        @for (p of prendas(); track p.variante_id) {
+          <button type="button" class="opcion" (click)="elegirPrenda(p)">
+            <span class="titulo">{{ p.prenda }}</span>
+            <span>{{ p.talla }} / {{ p.color }} · {{ p.sku }}</span>
+            <span class="tenue">{{ p.disponible }} disponibles en total</span>
+          </button>
+        }
+      </div>
+    } @else {
+      <mat-card class="tarjeta" appearance="outlined">
+        <mat-card-content>
+          <div class="fila">
+            <div class="cuerpo">
+              <p class="titulo">{{ prenda()!.prenda }}</p>
+              <p>{{ prenda()!.talla }} / {{ prenda()!.color }} · {{ prenda()!.sku }}</p>
+            </div>
+            <button matButton type="button" (click)="volverABuscar()">
+              <mat-icon>arrow_back</mat-icon>
+              Otra prenda
+            </button>
+          </div>
+
+          <h2 class="subtitulo">¿De qué sucursal sale?</h2>
+          @if (origenes().length === 0) {
+            <p class="nota">Ninguna sucursal la tiene disponible ahora.</p>
+          }
+          <div class="lista">
+            @for (o of origenes(); track o.sucursal_id) {
+              <button
+                type="button"
+                class="opcion"
+                [class.elegida]="origen()?.sucursal_id === o.sucursal_id"
+                (click)="elegirOrigen(o)"
+              >
+                <span class="titulo">{{ o.sucursal }}</span>
+                <span class="tenue">{{ o.disponible }} disponibles</span>
+              </button>
+            }
+          </div>
+
+          @if (origen(); as o) {
+            <div class="formulario">
+              @if (esAdmin()) {
+                <mat-form-field appearance="outline">
+                  <mat-label>Sucursal de destino</mat-label>
+                  <mat-select [formControl]="destinoId">
+                    @for (s of destinos(); track s.id) {
+                      <mat-option [value]="s.id">{{ s.nombre }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              }
+              <mat-form-field appearance="outline">
+                <mat-label>Cantidad</mat-label>
+                <input matInput type="number" min="1" [max]="o.disponible" [formControl]="cantidad" />
+                <mat-hint>Hasta {{ o.disponible }}.</mat-hint>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Motivo</mat-label>
+                <input matInput [formControl]="motivo" maxlength="200" />
+                <mat-hint>Opcional. Por ejemplo, «se agotó la talla M».</mat-hint>
+              </mat-form-field>
+              <div class="acciones">
+                <button
+                  matButton="filled"
+                  type="button"
+                  class="vb-boton-marca"
+                  [disabled]="enviandoPedido()"
+                  (click)="pedir()"
+                >
+                  <mat-icon>swap_horiz</mat-icon>
+                  {{ enviandoPedido() ? 'Enviando…' : esAdmin() ? 'Ordenar traspaso' : 'Pedir a ' + o.sucursal }}
+                </button>
+              </div>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
+  </mat-tab>
+
+  <!-- ============================ CU-35 ============================ -->
+  @if (esAdmin()) {
+    <mat-tab label="Sugeridos">
+      @if (bloqueoDelPlan(); as mensaje) {
+        <mat-card class="tarjeta" appearance="outlined">
+          <mat-card-content>
+            <div class="fila">
+              <mat-icon class="mal">lock</mat-icon>
+              <div class="cuerpo">
+                <p class="titulo">Su plan no incluye los traspasos sugeridos</p>
+                <p class="detalle">{{ mensaje }}</p>
+              </div>
+              <a matButton="filled" class="vb-boton-marca" routerLink="/admin/mi-plan">Ver mi plan</a>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      } @else {
+        <div class="filtros">
+          <mat-form-field appearance="outline">
+            <mat-label>Ventas de los últimos</mat-label>
+            <mat-select [value]="dias()" (selectionChange)="cambiarDias($event.value)">
+              <mat-option [value]="7">7 días</mat-option>
+              <mat-option [value]="30">30 días</mat-option>
+              <mat-option [value]="60">60 días</mat-option>
+              <mat-option [value]="90">90 días</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <button matButton type="button" (click)="cargarSugeridos()" [disabled]="cargandoSugeridos()">
+            <mat-icon>refresh</mat-icon>
+            Recalcular
+          </button>
+        </div>
+
+        @if (cargandoSugeridos()) {
+          <mat-progress-bar mode="indeterminate" />
+        }
+
+        @if (sugerencias(); as s) {
+          @if (s.items.length === 0) {
+            <p class="nota">
+              No hay nada que mover: ninguna sucursal se queda corta de lo que vende y otra le
+              sobra.
+            </p>
+          }
+          @for (item of s.items; track claveSugerido(item)) {
+            <mat-card class="tarjeta" appearance="outlined">
+              <mat-card-content>
+                <div class="fila">
+                  <div class="cuerpo">
+                    <p class="titulo">{{ item.prenda }} · {{ item.talla }} / {{ item.color }}</p>
+                    <p class="ruta">
+                      <strong>{{ item.origen.sucursal }}</strong>
+                      <span class="tenue">({{ item.origen.disponible }} disp., vendió {{ item.origen.vendidas }})</span>
+                      <mat-icon class="chico">arrow_forward</mat-icon>
+                      <strong>{{ item.destino.sucursal }}</strong>
+                      <span class="tenue">({{ item.destino.disponible }} disp., vendió {{ item.destino.vendidas }})</span>
+                    </p>
+                    <p class="detalle">{{ item.razon }}</p>
+                  </div>
+                  <button
+                    matButton="filled"
+                    type="button"
+                    class="vb-boton-marca"
+                    [disabled]="ordenando() === claveSugerido(item)"
+                    (click)="ordenarSugerido(item)"
+                  >
+                    <mat-icon>swap_horiz</mat-icon>
+                    Ordenar {{ item.cantidad_sugerida }} u.
+                  </button>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          }
+          <p class="nota pie">Calculado {{ s.generado_en | date: 'dd/MM HH:mm' }}.</p>
+        }
+      }
+    </mat-tab>
+  }
+</mat-tab-group>

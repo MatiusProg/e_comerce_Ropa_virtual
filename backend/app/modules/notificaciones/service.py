@@ -304,6 +304,30 @@ def avisar_stock_bajo(db: Session, existencia, *, etiqueta: str) -> list[Notific
     return avisos
 
 
+def avisar_traspaso(
+    db: Session, traspaso, *, sucursal_id: int, titulo: str, cuerpo: str
+) -> list[Notificacion]:
+    """CU-33 y CU-34: a los encargados de una de las dos puntas del traspaso.
+
+    Al origen, cuando le piden mercadería o el administrador le ordena
+    mandarla; al destino, cuando ya va en camino o se la rechazaron. Quien
+    llama arma el texto, que es el que conoce la prenda y las sucursales.
+    """
+    return [
+        notificar(
+            db,
+            destinatario=encargado,
+            tipo="TRASPASO",
+            titulo=titulo,
+            cuerpo=cuerpo,
+            enlace="/sucursal/traspasos",
+            entidad="traspaso",
+            entidad_id=traspaso.id,
+        )
+        for encargado in _encargados_de(db, sucursal_id)
+    ]
+
+
 # =====================================================================
 # El despachador de correos
 # =====================================================================

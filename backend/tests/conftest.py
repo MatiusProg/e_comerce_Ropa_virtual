@@ -68,6 +68,7 @@ from app.modules.organizacion import models as modelos_organizacion  # noqa: E40
 from app.modules.plataforma import models as modelos_plataforma  # noqa: E402,F401
 from app.modules.offline import models as modelos_offline  # noqa: E402,F401
 from app.modules.devoluciones_web import models as modelos_dev_web  # noqa: E402,F401
+from app.modules.traspasos import models as modelos_traspasos  # noqa: E402,F401
 from app.modules.seguridad import models as modelos_seguridad  # noqa: E402,F401
 from app.modules.ventas import carrito_models as modelos_carrito  # noqa: E402,F401
 
@@ -96,6 +97,8 @@ TABLAS_VOLATILES = (
     "notificacion",
     # CU-39: cuelga de proveedor y de variante, que estan mas abajo.
     "abastecimiento",
+    # CU-33: apunta a los movimientos, la variante, la sucursal y el usuario.
+    "traspaso",
     # P4 va primero: el movimiento apunta a la existencia, al usuario y al
     # proveedor, y la existencia a la variante y a la sucursal. Todas ellas
     # estan mas abajo en esta misma tupla.
