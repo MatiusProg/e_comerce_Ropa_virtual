@@ -123,3 +123,28 @@ class SolicitudOut(BaseModel):
     #: cliente, - devuelve la tienda). Se salda al retirar, en caja.
     valor_nuevo: Decimal | None
     diferencia: Decimal | None
+    #: CU-25: la nota que la cerró, su estado y el reembolso.
+    devolucion_id: int | None = None
+    numero_nota: str | None = None
+    nota_estado: str | None = None
+    conforme: bool | None = None
+    reembolso_monto: Decimal | None = None
+    reembolso_referencia: str | None = None
+
+
+# =====================================================================
+# CU-25: atender la solicitud
+# =====================================================================
+
+class RespuestaIn(BaseModel):
+    """Al aprobar es opcional (instrucciones para el cliente); al rechazar es
+    obligatoria (RF-36: el rechazo dice por qué)."""
+
+    respuesta: str | None = Field(default=None, max_length=300)
+
+
+class ConformidadClienteIn(BaseModel):
+    """CU-25 (RN-20): el cliente dice si está conforme con la devolución."""
+
+    conforme: bool
+    observacion: str | None = Field(default=None, max_length=300)

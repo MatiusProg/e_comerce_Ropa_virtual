@@ -4,6 +4,9 @@ import { DatePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialog } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 
@@ -15,6 +18,7 @@ import {
   type Solicitud,
 } from '../../../core/models/devoluciones-web.models';
 import { BsPipe } from '../../../shared/bs.pipe';
+import { NotaDevolucionDialogo } from '../../caja/devolucion/nota-devolucion';
 
 /**
  * Pedidos web de la sucursal — «boundary» PantallaPedidosWeb (encargado).
@@ -26,7 +30,16 @@ import { BsPipe } from '../../../shared/bs.pipe';
  */
 @Component({
   selector: 'app-pedidos-web',
-  imports: [DatePipe, MatButtonModule, MatCardModule, MatIconModule, MatTabsModule, BsPipe],
+  imports: [
+    DatePipe,
+    MatButtonModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatTabsModule,
+    BsPipe,
+  ],
   template: `
     <header class="encabezado">
       <h1 class="vb-titulo">Pedidos web</h1>
@@ -70,6 +83,49 @@ import { BsPipe } from '../../../shared/bs.pipe';
                     }
                   </span>
                   <span class="detalle">«{{ s.motivo }}» · {{ s.creado_en | date: 'dd/MM HH:mm' }}</span>
+                  <span class="detalle">
+                    Vale {{ s.valor_devuelto | bs }}
+                    @if (s.diferencia !== null && s.diferencia !== '0.00') { · diferencia {{ s.diferencia | bs }} }
+                  </span>
+                  @if (s.respuesta) { <span class="detalle">Respuesta: {{ s.respuesta }}</span> }
+
+                  <!-- CU-25: atender -->
+                  @if (s.estado === 'PENDIENTE') {
+                    <div class="atender">
+                      <mat-form-field appearance="outline" class="respuesta">
+                        <mat-label>Respuesta al cliente</mat-label>
+                        <input matInput maxlength="300" #resp
+                               placeholder="Al aprobar: instrucciones. Al rechazar: el motivo." />
+                      </mat-form-field>
+                      <button matButton="filled" class="vb-boton-marca" type="button"
+                              [disabled]="ocupada() === s.id" (click)="atender(s, 'aprobar', resp.value)">
+                        <mat-icon>check</mat-icon> Aprobar
+                      </button>
+                      <button matButton="outlined" type="button"
+                              [disabled]="ocupada() === s.id" (click)="atender(s, 'rechazar', resp.value)">
+                        <mat-icon>close</mat-icon> Rechazar
+                      </button>
+                    </div>
+                  } @else if (s.estado === 'APROBADA' && s.tipo === 'DEVOLUCION') {
+                    <div class="atender">
+                      <button matButton="filled" class="vb-boton-marca" type="button"
+                              [disabled]="ocupada() === s.id" (click)="atender(s, 'recibir', '')">
+                        <mat-icon>move_to_inbox</mat-icon> Recibí la prenda: reembolsar {{ s.valor_devuelto | bs }}
+                      </button>
+                    </div>
+                  } @else if (s.estado === 'APROBADA' && s.tipo === 'CAMBIO') {
+                    <span class="detalle aviso">El cliente lo retira en caja: el cajero lo registra como cambio de la venta {{ s.venta_codigo }}.</span>
+                  } @else if (s.devolucion_id) {
+                    <span class="detalle">
+                      Nota {{ s.numero_nota }} · {{ s.nota_estado === 'CERRADA' ? 'cerrada' : 'abierta' }}
+                      @if (s.reembolso_monto) { · reembolsado {{ s.reembolso_monto | bs }} }
+                      @if (s.conforme === false) { · <strong>el cliente NO está conforme</strong> }
+                      @if (s.nota_estado === 'ABIERTA' && s.conforme === null) { · esperando la conformidad del cliente }
+                    </span>
+                    <button matButton type="button" (click)="verNota(s.devolucion_id)">
+                      <mat-icon>receipt_long</mat-icon> Ver nota
+                    </button>
+                  }
                 </div>
                 <span class="estado" [class]="'estado-' + s.estado">{{ rotulo(s.estado) }}</span>
               </div>
@@ -93,6 +149,9 @@ import { BsPipe } from '../../../shared/bs.pipe';
             padding: 10px 0; border-bottom: 1px solid var(--mat-sys-outline-variant); }
     .detalle { display: block; font-size: 0.875rem; color: var(--mat-sys-on-surface-variant); }
     .vacio { color: var(--mat-sys-on-surface-variant); }
+    .atender { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+    .respuesta { flex: 1 1 280px; }
+    .aviso { color: var(--mat-sys-primary); margin-top: 6px; }
     .error { color: var(--mat-sys-error); padding: 0 16px 16px; }
     .estado { padding: 1px 8px; border-radius: 12px; font-size: 0.8rem; white-space: nowrap;
               background: var(--mat-sys-surface-container); }
@@ -103,11 +162,13 @@ import { BsPipe } from '../../../shared/bs.pipe';
 export class PedidosWeb implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly aviso = inject(MatSnackBar);
+  private readonly dialogo = inject(MatDialog);
   private readonly base = `${environment.apiUrl}/sucursal`;
 
   protected readonly porEntregar = signal<PedidoDeSucursal[]>([]);
   protected readonly solicitudes = signal<Solicitud[]>([]);
   protected readonly entregando = signal<string | null>(null);
+  protected readonly ocupada = signal<number | null>(null);
   protected readonly error = signal<string | null>(null);
 
   protected pendientes(): number {
@@ -144,6 +205,33 @@ export class PedidosWeb implements OnInit {
         this.error.set(this.mensaje(e));
       },
     });
+  }
+
+  /** CU-25: aprobar, rechazar (con el motivo) o recibir la prenda y reembolsar. */
+  protected atender(s: Solicitud, accion: 'aprobar' | 'rechazar' | 'recibir', respuesta: string): void {
+    this.ocupada.set(s.id);
+    const cuerpo = accion === 'recibir' ? {} : { respuesta: respuesta.trim() || null };
+    this.http.post<Solicitud>(`${this.base}/solicitudes-devolucion/${s.id}/${accion}`, cuerpo).subscribe({
+      next: (r) => {
+        this.ocupada.set(null);
+        this.error.set(null);
+        const textos = {
+          aprobar: 'Solicitud aprobada.',
+          rechazar: 'Solicitud rechazada.',
+          recibir: `Prenda recibida. Nota ${r.numero_nota}: reembolso de Bs ${r.reembolso_monto ?? '0.00'}.`,
+        };
+        this.aviso.open(textos[accion], 'Cerrar', { duration: 6000 });
+        this.cargar();
+      },
+      error: (e: HttpErrorResponse) => {
+        this.ocupada.set(null);
+        this.error.set(this.mensaje(e));
+      },
+    });
+  }
+
+  protected verNota(id: number): void {
+    this.dialogo.open(NotaDevolucionDialogo, { data: id, width: '760px', maxWidth: '95vw' });
   }
 
   protected rotulo(estado: EstadoSolicitud): string {

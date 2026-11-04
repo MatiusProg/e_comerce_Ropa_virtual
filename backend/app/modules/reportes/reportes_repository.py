@@ -389,17 +389,24 @@ def devoluciones(
         .join(Producto, Producto.id == VarianteProducto.producto_id)
         .join(Talla, Talla.id == VarianteProducto.talla_id)
         .join(Color, Color.id == VarianteProducto.color_id)
-        .join(TurnoCaja, TurnoCaja.id == Devolucion.turno_caja_id)
-        .join(Caja, Caja.id == TurnoCaja.caja_id)
-        .join(Sucursal, Sucursal.id == Caja.sucursal_id)
-        .join(Usuario, Usuario.id == TurnoCaja.usuario_id, isouter=True)
+        # CU-25: la devolución web no tiene turno. La sucursal sale de la caja
+        # si la hubo y si no, del pedido; la persona, del turno o de quien
+        # recibió la prenda.
+        .join(TurnoCaja, TurnoCaja.id == Devolucion.turno_caja_id, isouter=True)
+        .join(Caja, Caja.id == TurnoCaja.caja_id, isouter=True)
+        .join(Sucursal, Sucursal.id == func.coalesce(Caja.sucursal_id, Venta.sucursal_id))
+        .join(
+            Usuario,
+            Usuario.id == func.coalesce(TurnoCaja.usuario_id, Devolucion.recibida_por),
+            isouter=True,
+        )
         .where(
             Devolucion.creado_en >= desde,
             Devolucion.creado_en < hasta,
         )
         .order_by(Devolucion.creado_en.desc())
     )
-    consulta = _acotar_sucursal(consulta, Caja.sucursal_id, sucursal_id)
+    consulta = _acotar_sucursal(consulta, Sucursal.id, sucursal_id)
     consulta = _si(consulta, Devolucion.tipo, tipo)
     return [tuple(f) for f in db.execute(consulta).all()]
 

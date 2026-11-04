@@ -195,3 +195,21 @@ def contexto_de_turno(db: Session, turno_caja_id: int) -> Row:
         .join(Usuario, Usuario.id == TurnoCaja.usuario_id)
         .where(TurnoCaja.id == turno_caja_id)
     ).one()
+
+
+
+def contexto_web(db: Session, *, venta_id: int, recibida_por: int) -> Row:
+    """CU-25: la sucursal del pedido y quien recibió la prenda."""
+    from app.modules.organizacion.models import Sucursal
+    from app.modules.seguridad.models import Usuario
+
+    return db.execute(
+        select(
+            Sucursal.nombre.label("sucursal"),
+            (Usuario.nombres + " " + Usuario.apellidos).label("cajero"),
+        )
+        .select_from(Venta)
+        .join(Sucursal, Sucursal.id == Venta.sucursal_id)
+        .join(Usuario, Usuario.id == recibida_por)
+        .where(Venta.id == venta_id)
+    ).one()

@@ -225,4 +225,8 @@ export interface NotaDevolucion {
   monto_reintegrado: string;
   conforme: boolean | null;
   observacion_cliente: string | null;
+  /** CU-25: CAJA o WEB, y el reembolso por la pasarela si lo hubo. */
+  origen: 'CAJA' | 'WEB';
+  reembolso_referencia: string | null;
+  reembolso_monto: string | null;
 }

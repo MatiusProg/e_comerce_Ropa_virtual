@@ -18,7 +18,7 @@ from app.modules.devoluciones_web.models import (
 from app.modules.inventario.models import Existencia
 from app.modules.organizacion.models import Sucursal
 from app.modules.seguridad.models import Cliente, Usuario
-from app.modules.ventas.models import DetalleVenta, Venta
+from app.modules.ventas.models import DetalleVenta, Devolucion, Venta
 
 
 def venta_digital(db: Session, codigo: str, *, bloquear: bool = False) -> Venta | None:
@@ -129,8 +129,14 @@ def cabecera_de_solicitud(db: Session, solicitud_id: int) -> Row:
             SolicitudDevolucion.respuesta,
             SolicitudDevolucion.creado_en,
             SolicitudDevolucion.atendida_en,
+            SolicitudDevolucion.devolucion_id,
+            Devolucion.estado.label("nota_estado"),
+            Devolucion.conforme,
+            Devolucion.reembolso_monto,
+            Devolucion.reembolso_referencia,
         )
         .join(Venta, Venta.id == SolicitudDevolucion.venta_id)
+        .outerjoin(Devolucion, Devolucion.id == SolicitudDevolucion.devolucion_id)
         .join(Sucursal, Sucursal.id == SolicitudDevolucion.sucursal_id)
         .join(Cliente, Cliente.id == SolicitudDevolucion.cliente_id)
         .join(Usuario, Usuario.id == Cliente.usuario_id)
@@ -176,3 +182,31 @@ def ids_de_solicitudes(
     if estado is not None:
         consulta = consulta.where(SolicitudDevolucion.estado == estado)
     return list(db.scalars(consulta))
+
+
+def solicitud(db: Session, solicitud_id: int, *, bloquear: bool = False) -> SolicitudDevolucion | None:
+    consulta = select(SolicitudDevolucion).where(SolicitudDevolucion.id == solicitud_id)
+    if bloquear:
+        consulta = consulta.with_for_update()
+    return db.scalar(consulta)
+
+
+def venta_por_id(db: Session, venta_id: int, *, bloquear: bool = False) -> Venta | None:
+    consulta = select(Venta).where(Venta.id == venta_id)
+    if bloquear:
+        consulta = consulta.with_for_update()
+    return db.scalar(consulta)
+
+
+def cambio_aprobado(db: Session, venta_id: int) -> SolicitudDevolucion | None:
+    return db.scalar(
+        select(SolicitudDevolucion)
+        .where(
+            SolicitudDevolucion.venta_id == venta_id,
+            SolicitudDevolucion.tipo == "CAMBIO",
+            SolicitudDevolucion.estado == "APROBADA",
+        )
+        .order_by(SolicitudDevolucion.id)
+        .limit(1)
+        .with_for_update()
+    )

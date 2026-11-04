@@ -236,8 +236,14 @@ def _vence_en(venta, horas: int) -> datetime:
     return creado + timedelta(hours=horas)
 
 
-def _exigir_plazo(db: Session, venta) -> None:
-    """RN-08: fuera de la ventana de la empresa, se rechaza."""
+def _exigir_plazo(db: Session, venta, *, cambio_aprobado: bool = False) -> None:
+    """RN-08: fuera de la ventana de la empresa, se rechaza.
+
+    Salvo un cambio que el encargado ya aprobó por la web (CU-25): se pidió a
+    tiempo, y que el cliente tarde en pasar por la tienda no lo anula.
+    """
+    if cambio_aprobado:
+        return
     horas = ventana_en_horas(db)
     vence = _vence_en(venta, horas)
     if tiempo.ahora() > vence:
@@ -462,7 +468,10 @@ def registrar_cambio(db: Session, usuario_id: int, datos: CambioIn) -> CambioOut
     if venta is None:
         raise VentaNoDevolvible(datos.venta_codigo)
 
-    _exigir_plazo(db, venta)
+    from app.modules.devoluciones_web import service as devoluciones_web
+
+    aprobada = devoluciones_web.cambio_aprobado_de(db, venta.id)
+    _exigir_plazo(db, venta, cambio_aprobado=aprobada is not None)
     repository.bloquear_venta(db, venta.id)
 
     # --- Lo que vuelve, al precio que se pago ----------------------------
@@ -603,6 +612,10 @@ def registrar_cambio(db: Session, usuario_id: int, datos: CambioIn) -> CambioOut
     # del mostrador con algo que dice que se la llevo legitimamente.
     comprobante = historial_service.asegurar_comprobante(db, venta_nueva)
 
+    if aprobada is not None:
+        # CU-25: el cambio pedido por la web quedó hecho en caja.
+        devoluciones_web.completar_con(db, aprobada, devolucion.id)
+
     db.commit()
     db.refresh(devolucion)
 
@@ -733,7 +746,15 @@ def nota(db: Session, devolucion_id: int, *, sucursal_id: int | None) -> NotaDev
                 )
             )
     total_llevado = sum((l.subtotal for l in llevadas), CERO)
-    contexto = repository.contexto_de_turno(db, devolucion.turno_caja_id)
+    if devolucion.turno_caja_id is not None:
+        contexto = repository.contexto_de_turno(db, devolucion.turno_caja_id)
+        sucursal_nombre, caja_nombre, quien = contexto.sucursal, contexto.caja, contexto.cajero
+    else:
+        # CU-25: pedida por la web; la recibió el encargado, sin caja.
+        contexto = repository.contexto_web(
+            db, venta_id=venta.id, recibida_por=devolucion.recibida_por
+        )
+        sucursal_nombre, caja_nombre, quien = contexto.sucursal, "Devolución web", contexto.cajero
 
     return NotaDevolucionOut(
         id=devolucion.id,
@@ -741,9 +762,9 @@ def nota(db: Session, devolucion_id: int, *, sucursal_id: int | None) -> NotaDev
         tipo=devolucion.tipo,
         estado=devolucion.estado,
         creado_en=devolucion.creado_en,
-        sucursal=contexto.sucursal,
-        caja=contexto.caja,
-        cajero=contexto.cajero,
+        sucursal=sucursal_nombre,
+        caja=caja_nombre,
+        cajero=quien,
         venta_codigo=venta.codigo,
         venta_creada_en=venta.creado_en,
         horas_desde_la_venta=int((devolucion.creado_en - venta.creado_en).total_seconds() // 3600),
@@ -759,6 +780,9 @@ def nota(db: Session, devolucion_id: int, *, sucursal_id: int | None) -> NotaDev
         monto_reintegrado=devolucion.monto,
         conforme=devolucion.conforme,
         observacion_cliente=devolucion.observacion_cliente,
+        origen=devolucion.origen,
+        reembolso_referencia=devolucion.reembolso_referencia,
+        reembolso_monto=devolucion.reembolso_monto,
     )
 
 

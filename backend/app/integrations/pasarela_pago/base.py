@@ -156,6 +156,12 @@ class ProveedorPasarela(Protocol):
         """Abre la sesion de pago, o levanta ErrorDePasarela."""
         ...
 
+    def reembolsar(self, referencia_sesion: str, monto, clave: str) -> str:
+        """CU-25: devuelve `monto` del cobro de esa sesion. Devuelve el id del
+        reembolso, o levanta ErrorDePasarela. `clave` hace idempotente el pedido:
+        reintentarlo no devuelve dos veces."""
+        ...
+
     def interpretar_webhook(self, cuerpo: bytes, firma: str | None) -> EventoDePago:
         """Verifica la firma y traduce la notificacion (CU-28).
 

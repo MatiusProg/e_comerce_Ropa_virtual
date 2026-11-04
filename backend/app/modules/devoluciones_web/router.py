@@ -17,11 +17,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.core.dependencies import DbSession, Usuario, requiere_roles
 from app.modules.devoluciones_web import service
 from app.modules.devoluciones_web.schemas import (
+    ConformidadClienteIn,
     PedidoDeSucursalOut,
+    RespuestaIn,
     PedidoDevolvibleOut,
     SolicitudIn,
     SolicitudOut,
 )
+from app.modules.pos.devolucion_schemas import NotaDevolucionOut
 
 sucursal_router = APIRouter(
     prefix="/sucursal",
@@ -116,5 +119,77 @@ def solicitar(datos: SolicitudIn, db: DbSession, usuario: Usuario):
 def mis_solicitudes(db: DbSession, usuario: Usuario):
     try:
         return service.mis_solicitudes(db, usuario.id)
+    except service.ErrorDevolucionWeb as e:
+        raise _http(e) from e
+
+
+# --- CU-25: atender (encargado) ---------------------------------------------------
+
+@sucursal_router.post(
+    "/solicitudes-devolucion/{solicitud_id}/aprobar",
+    response_model=SolicitudOut,
+    summary="CU-25 Aprobar una solicitud de cambio o devolución",
+)
+def aprobar(solicitud_id: int, datos: RespuestaIn, db: DbSession, usuario: Usuario):
+    try:
+        return service.aprobar(
+            db, solicitud_id, usuario_id=usuario.id, sucursal_id=_ambito(usuario),
+            respuesta=datos.respuesta,
+        )
+    except service.ErrorDevolucionWeb as e:
+        raise _http(e) from e
+
+
+@sucursal_router.post(
+    "/solicitudes-devolucion/{solicitud_id}/rechazar",
+    response_model=SolicitudOut,
+    summary="CU-25 Rechazar una solicitud, con el motivo",
+)
+def rechazar(solicitud_id: int, datos: RespuestaIn, db: DbSession, usuario: Usuario):
+    try:
+        return service.rechazar(
+            db, solicitud_id, usuario_id=usuario.id, sucursal_id=_ambito(usuario),
+            respuesta=datos.respuesta,
+        )
+    except service.ErrorDevolucionWeb as e:
+        raise _http(e) from e
+
+
+@sucursal_router.post(
+    "/solicitudes-devolucion/{solicitud_id}/recibir",
+    response_model=SolicitudOut,
+    summary="CU-25 Recibir la prenda y reembolsar por la pasarela",
+)
+def recibir(solicitud_id: int, db: DbSession, usuario: Usuario):
+    try:
+        return service.recibir(db, solicitud_id, usuario_id=usuario.id, sucursal_id=_ambito(usuario))
+    except service.ErrorDevolucionWeb as e:
+        raise _http(e) from e
+
+
+# --- CU-25: el cliente da su conformidad (RN-20) ----------------------------------
+
+@cliente_router.post(
+    "/{solicitud_id}/conformidad",
+    response_model=SolicitudOut,
+    summary="CU-25 Dar o negar la conformidad con la devolución",
+)
+def conformidad(solicitud_id: int, datos: ConformidadClienteIn, db: DbSession, usuario: Usuario):
+    try:
+        return service.conformidad(
+            db, usuario.id, solicitud_id, conforme=datos.conforme, observacion=datos.observacion
+        )
+    except service.ErrorDevolucionWeb as e:
+        raise _http(e) from e
+
+
+@cliente_router.get(
+    "/{solicitud_id}/nota",
+    response_model=NotaDevolucionOut,
+    summary="CU-25 La nota de mi devolución",
+)
+def nota(solicitud_id: int, db: DbSession, usuario: Usuario):
+    try:
+        return service.nota_del_cliente(db, usuario.id, solicitud_id)
     except service.ErrorDevolucionWeb as e:
         raise _http(e) from e
