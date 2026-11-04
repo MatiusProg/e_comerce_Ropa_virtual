@@ -41,7 +41,11 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, DeEmpresa
 
-TIPOS_OPERACION = ("VENTA", "RESERVA")
+#: INGRESO y AJUSTE son de CU-21: el encargado registra mercadería que llegó
+#: o un conteo físico sin conexión. No crean venta ni reserva: dejan
+#: movimientos de inventario que apuntan a esta fila.
+TIPOS_OPERACION = ("VENTA", "RESERVA", "INGRESO", "AJUSTE")
+TIPOS_DE_INVENTARIO = ("INGRESO", "AJUSTE")
 
 #: Los estados del SERVIDOR. Los del cliente son más (local, enviada,
 #: confirmada, rechazada, en conflicto: RF-20): `local` y `enviada` viven solo
@@ -55,7 +59,8 @@ METODOS_OFFLINE = ("EFECTIVO", "QR")
 
 
 class OperacionOffline(DeEmpresa, Base):
-    """Una venta o una reserva hecha sin conexión, y qué decidió el servidor."""
+    """Una venta, una reserva o un movimiento de inventario hecho sin conexión,
+    y qué decidió el servidor."""
 
     __tablename__ = "operacion_offline"
     __table_args__ = (
@@ -77,7 +82,8 @@ class OperacionOffline(DeEmpresa, Base):
         CheckConstraint("monto_cobrado IS NULL OR monto_cobrado > 0", name="monto"),
         # Confirmada = tiene lo que creó. Rechazada = tiene el motivo.
         CheckConstraint(
-            "(estado = 'CONFIRMADA' AND (venta_id IS NOT NULL OR reserva_id IS NOT NULL)"
+            "(estado = 'CONFIRMADA' AND (venta_id IS NOT NULL OR reserva_id IS NOT NULL"
+            " OR tipo IN ('INGRESO', 'AJUSTE'))"
             " AND motivo_rechazo IS NULL)"
             " OR (estado = 'RECHAZADA' AND venta_id IS NULL AND reserva_id IS NULL"
             " AND motivo_rechazo IS NOT NULL)",

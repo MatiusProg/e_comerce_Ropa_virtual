@@ -578,3 +578,49 @@ def contar_existencias(
         busqueda=busqueda,
     )
     return db.scalar(consulta) or 0
+
+
+# =====================================================================
+# CU-21 (2do parcial) - Kardex
+# =====================================================================
+
+def kardex(
+    db: Session, *, existencia_id: int, pagina: int, tamano: int
+) -> tuple[int, list[Row]]:
+    """Los movimientos de una existencia con el saldo acumulado.
+
+    La suma acumulada se calcula sobre TODA la historia (subconsulta con la
+    ventana) y recién después se pagina: si se paginara primero, el saldo de
+    la página dos empezaría de cero.
+    """
+    saldo = (
+        func.sum(MovimientoInventario.cantidad)
+        .over(order_by=(MovimientoInventario.creado_en, MovimientoInventario.id))
+        .label("saldo")
+    )
+    historia = (
+        select(
+            MovimientoInventario.id,
+            MovimientoInventario.creado_en,
+            MovimientoInventario.tipo,
+            MovimientoInventario.cantidad,
+            MovimientoInventario.motivo,
+            MovimientoInventario.referencia,
+            MovimientoInventario.operacion_offline_id,
+            Proveedor.razon_social.label("proveedor"),
+            (Usuario.nombres + " " + Usuario.apellidos).label("usuario"),
+            saldo,
+        )
+        .outerjoin(Proveedor, Proveedor.id == MovimientoInventario.proveedor_id)
+        .outerjoin(Usuario, Usuario.id == MovimientoInventario.usuario_id)
+        .where(MovimientoInventario.existencia_id == existencia_id)
+        .subquery()
+    )
+    total = db.scalar(select(func.count()).select_from(historia)) or 0
+    filas = db.execute(
+        select(historia)
+        .order_by(historia.c.creado_en.desc(), historia.c.id.desc())
+        .offset((pagina - 1) * tamano)
+        .limit(tamano)
+    ).all()
+    return total, list(filas)

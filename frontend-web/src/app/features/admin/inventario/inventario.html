@@ -1,4 +1,5 @@
-<!-- CU-13, CU-15 y CU-16 · Inventario — «boundary» PantallaInventario. -->
+<!-- CU-13, CU-15 y CU-16 · Inventario — «boundary» PantallaInventario.
+     2do parcial: CU-21 suma el kardex y el inventario sin conexión. -->
 <header class="encabezado">
   <div>
     <h1 class="vb-titulo">Inventario</h1>
@@ -20,6 +21,10 @@
     }
   </div>
 </header>
+
+@if (esEncargado()) {
+  <app-inventario-offline (sincronizado)="refrescarTodo()" />
+}
 
 <mat-card class="tarjeta vb-filete-superior" appearance="outlined">
   @if (cargando()) {
@@ -151,20 +156,28 @@
                   <button
                     matIconButton
                     type="button"
+                    matTooltip="Ver el kardex"
+                    (click)="verKardex(e)"
+                  >
+                    <mat-icon>receipt_long</mat-icon>
+                  </button>
+                  <button
+                    matIconButton
+                    type="button"
                     matTooltip="Fijar el punto de reposición"
                     (click)="fijarMinimo(e)"
                   >
                     <mat-icon>notifications_active</mat-icon>
                   </button>
+                  <button
+                    matIconButton
+                    type="button"
+                    matTooltip="Ajustar por conteo físico"
+                    (click)="ajustar(e)"
+                  >
+                    <mat-icon>fact_check</mat-icon>
+                  </button>
                   @if (esAdministrador()) {
-                    <button
-                      matIconButton
-                      type="button"
-                      matTooltip="Ajustar por conteo físico"
-                      (click)="ajustar(e)"
-                    >
-                      <mat-icon>fact_check</mat-icon>
-                    </button>
                     <button
                       matIconButton
                       type="button"

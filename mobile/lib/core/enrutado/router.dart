@@ -34,6 +34,7 @@ import '../../features/gestion/pantalla_tablero.dart';
 import '../../features/reportes/pantalla_reporte_por_voz.dart';
 import '../../features/vestidor/pantalla_vestidor.dart';
 import '../../features/inicio/pantalla_inicio.dart';
+import '../../features/inventario/pantalla_inventario.dart';
 import '../../features/perfil/pantalla_perfil.dart';
 
 /// Rutas de la aplicacion. Constantes y no cadenas sueltas: un error de tipeo
@@ -124,6 +125,11 @@ class Rutas {
 
   /// CU-42 · la bitacora del sistema.
   static const String bitacora = '/bitacora';
+
+  // --- 2do parcial · CU-21 -----------------------------------------------
+  /// El inventario de la sucursal del encargado, tambien sin conexion.
+  static const String inventario = '/inventario';
+  static const String inventarioIngreso = '/inventario/ingreso';
 
   /// CU-29 · mis compras.
   ///
@@ -286,6 +292,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Rutas.bitacora,
         builder: (context, estado) => const PantallaBitacora(),
+      ),
+      GoRoute(
+        path: Rutas.inventario,
+        builder: (context, estado) => const PantallaInventario(),
+      ),
+      GoRoute(
+        path: Rutas.inventarioIngreso,
+        builder: (context, estado) => const PantallaIngresoSinRed(),
       ),
 
       // CU-29 · el historial. Suelta y no anidada bajo el carrito: ver la

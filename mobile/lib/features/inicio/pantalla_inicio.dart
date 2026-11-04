@@ -325,6 +325,14 @@ class _Gestion extends ConsumerWidget {
       ('Tablero', 'CU-36 · indicadores', Icons.dashboard_outlined, Rutas.tablero),
       ('Reportes', 'CU-37 · PDF y Excel', Icons.download_outlined, Rutas.reportes),
       ('Pedir un reporte', 'CU-35 · voz', Icons.mic_none, Rutas.reportePorVoz),
+      // CU-21: el inventario de SU sucursal; el administrador lo ve en la web.
+      if (esEncargado)
+        (
+          'Inventario',
+          'CU-21 · kardex, ingresos y conteos, también sin conexión',
+          Icons.inventory_2_outlined,
+          Rutas.inventario,
+        ),
       if (esAdmin)
         ('Bitácora', 'CU-42 · quién hizo qué', Icons.history, Rutas.bitacora),
     ];

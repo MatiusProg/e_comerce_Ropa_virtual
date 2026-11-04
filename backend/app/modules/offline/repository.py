@@ -8,13 +8,13 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from sqlalchemy import Row, select
+from sqlalchemy import Row, and_, func, select
 from sqlalchemy.orm import Session
 
 from app.modules.catalogo.models import Categoria, Color, Producto, Talla, VarianteProducto
-from app.modules.inventario.models import Existencia
+from app.modules.inventario.models import Existencia, MovimientoInventario
 from app.modules.offline.models import OperacionOffline
-from app.modules.organizacion.models import Sucursal
+from app.modules.organizacion.models import Proveedor, Sucursal
 from app.modules.plataforma.models import ClienteEmpresa
 from app.modules.seguridad.models import Cliente, Usuario
 
@@ -151,3 +151,58 @@ def operaciones(
         )
     consulta = consulta.order_by(OperacionOffline.recibida_en.desc()).limit(limite)
     return [(fila[0], fila[1]) for fila in db.execute(consulta)]
+
+
+# =====================================================================
+# CU-21 Inventario sin conexión
+# =====================================================================
+
+def prendas_para_inventario(db: Session, sucursal_id: int) -> list[Row]:
+    """Todas las prendas activas, con su saldo en la sucursal (cero si no hay)."""
+    return list(
+        db.execute(
+            select(
+                VarianteProducto.id.label("variante_id"),
+                VarianteProducto.sku,
+                Producto.nombre.label("producto"),
+                Talla.codigo.label("talla"),
+                Color.nombre.label("color"),
+                func.coalesce(Existencia.cantidad_disponible, 0).label("disponible"),
+                func.coalesce(Existencia.cantidad_reservada, 0).label("reservada"),
+                func.coalesce(Existencia.stock_minimo, 0).label("stock_minimo"),
+            )
+            .join(Producto, Producto.id == VarianteProducto.producto_id)
+            .join(Talla, Talla.id == VarianteProducto.talla_id)
+            .join(Color, Color.id == VarianteProducto.color_id)
+            .outerjoin(
+                Existencia,
+                and_(
+                    Existencia.variante_id == VarianteProducto.id,
+                    Existencia.sucursal_id == sucursal_id,
+                ),
+            )
+            .where(VarianteProducto.activa.is_(True), Producto.activo.is_(True))
+            .order_by(Producto.nombre, Talla.codigo, Color.nombre)
+            .limit(MAXIMO_PRENDAS)
+        )
+    )
+
+
+def proveedores_activos(db: Session) -> list[Proveedor]:
+    return list(
+        db.scalars(
+            select(Proveedor).where(Proveedor.activo.is_(True)).order_by(Proveedor.razon_social)
+        )
+    )
+
+
+def unidades_de_operacion(db: Session, operacion_id: int) -> int:
+    """Lo que movió una operación offline de inventario, con signo."""
+    return int(
+        db.scalar(
+            select(func.coalesce(func.sum(MovimientoInventario.cantidad), 0)).where(
+                MovimientoInventario.operacion_offline_id == operacion_id
+            )
+        )
+        or 0
+    )

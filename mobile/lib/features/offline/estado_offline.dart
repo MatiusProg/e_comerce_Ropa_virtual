@@ -1,7 +1,8 @@
 /// Estado del trabajo sin conexion del cliente (2do parcial).
 ///
 /// CU-13 Preparar el dispositivo · CU-15 Registrar reserva offline ·
-/// CU-17 Sincronizar · CU-18 Consultar pendientes.
+/// CU-17 Sincronizar · CU-18 Consultar pendientes · CU-21 Inventario del
+/// encargado sin conexion (ingresos y conteos).
 ///
 /// LA REGLA QUE SOSTIENE TODO (RNF06)
 /// ----------------------------------
@@ -18,6 +19,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/almacenamiento/base_local.dart';
 import '../../core/red/excepciones.dart';
+import '../../data/modelos/inventario_offline.dart';
 import '../../data/modelos/offline.dart';
 import '../../data/modelos/reservas.dart';
 import '../../data/repositorios/repositorio_catalogo.dart';
@@ -40,6 +42,7 @@ final offlineProvider = NotifierProvider<ControlOffline, EstadoOffline>(
 class EstadoOffline {
   const EstadoOffline({
     this.paquete,
+    this.inventario,
     this.operaciones = const [],
     this.sincronizando = false,
     this.enLinea = true,
@@ -47,6 +50,9 @@ class EstadoOffline {
   });
 
   final PaqueteCliente? paquete;
+
+  /// CU-21: el paquete del encargado.
+  final PaqueteInventario? inventario;
   final List<OperacionGuardada> operaciones;
   final bool sincronizando;
   final bool enLinea;
@@ -55,8 +61,13 @@ class EstadoOffline {
   List<OperacionGuardada> get pendientes =>
       operaciones.where((o) => o.estado.pendiente).toList();
 
+  /// CU-21: los ingresos y conteos de la cola.
+  List<OperacionGuardada> get deInventario =>
+      operaciones.where((o) => esDeInventario(o.cuerpo)).toList();
+
   EstadoOffline copiarCon({
     PaqueteCliente? paquete,
+    PaqueteInventario? inventario,
     List<OperacionGuardada>? operaciones,
     bool? sincronizando,
     bool? enLinea,
@@ -64,6 +75,7 @@ class EstadoOffline {
   }) =>
       EstadoOffline(
         paquete: paquete ?? this.paquete,
+        inventario: inventario ?? this.inventario,
         operaciones: operaciones ?? this.operaciones,
         sincronizando: sincronizando ?? this.sincronizando,
         enLinea: enLinea ?? this.enLinea,
@@ -88,6 +100,7 @@ class ControlOffline extends Notifier<EstadoOffline> {
   Future<void> _cargar() async {
     state = state.copiarCon(
       paquete: await _base.leerPaquete(),
+      inventario: await _base.leerPaqueteInventario(),
       operaciones: await _base.operaciones(),
       cargado: true,
     );
@@ -112,6 +125,7 @@ class ControlOffline extends Notifier<EstadoOffline> {
     await _base.guardarPaquete(paquete);
     // Lo apartado sin red y todavia no confirmado ya no esta disponible.
     for (final op in state.pendientes) {
+      if (op.cuerpo['tipo'] != 'RESERVA') continue;
       await _base.descontar(
         op.cuerpo['sucursal_id'] as int,
         _cantidades(op.cuerpo),
@@ -188,6 +202,112 @@ class ControlOffline extends Notifier<EstadoOffline> {
     return op;
   }
 
+  // --- CU-21 ---------------------------------------------------------------
+
+  /// Descarga el inventario de la sucursal. Lo registrado sin red y todavia
+  /// no confirmado se vuelve a aplicar: si no, el encargado veria el saldo de
+  /// antes de su propio ingreso. Lanza [SinRespuesta] o [ErrorApi].
+  Future<PaqueteInventario> prepararInventario() async {
+    final paquete = await _repo.descargarPaqueteInventario();
+    await _base.guardarPaqueteInventario(paquete);
+    final delta = <int, int>{};
+    for (final op in state.pendientes) {
+      _efecto(op.cuerpo).forEach((v, c) => delta[v] = (delta[v] ?? 0) + c);
+    }
+    if (delta.isNotEmpty) await _base.aplicarAInventario(delta);
+    final guardado = await _base.leerPaqueteInventario();
+    state = state.copiarCon(inventario: guardado, enLinea: true);
+    return guardado!;
+  }
+
+  /// Guarda un ingreso en el telefono. Lo confirma el servidor.
+  Future<OperacionGuardada> registrarIngreso({
+    required ProveedorLocal proveedor,
+    required String? remito,
+    required Map<PrendaInventario, int> prendas,
+  }) {
+    final unidades = prendas.values.fold<int>(0, (t, c) => t + c);
+    return _guardarDeInventario(
+      resumen: 'Ingreso de ${proveedor.razonSocial}: $unidades unidades',
+      cuerpo: {
+        'tipo': 'INGRESO',
+        'lineas': <Map<String, dynamic>>[],
+        'ingreso': {
+          'proveedor_id': proveedor.id,
+          'referencia': (remito == null || remito.trim().isEmpty) ? null : remito.trim(),
+          'lineas': [
+            for (final e in prendas.entries)
+              {'variante_id': e.key.varianteId, 'cantidad': e.value},
+          ],
+        },
+      },
+    );
+  }
+
+  /// Guarda un conteo. Viaja lo que el telefono VEIA y lo que se conto: el
+  /// servidor aplica la diferencia, asi las ventas del medio no se pisan.
+  Future<OperacionGuardada> registrarConteo({
+    required PrendaInventario prenda,
+    required int contado,
+    required String motivo,
+  }) {
+    return _guardarDeInventario(
+      resumen: 'Conteo de ${prenda.sku}: se veían ${prenda.fisica}, se contaron $contado',
+      cuerpo: {
+        'tipo': 'AJUSTE',
+        'lineas': <Map<String, dynamic>>[],
+        'conteo': {
+          'variante_id': prenda.varianteId,
+          'saldo_visto': prenda.fisica,
+          'cantidad_contada': contado,
+          'motivo': motivo.trim(),
+        },
+      },
+    );
+  }
+
+  Future<OperacionGuardada> _guardarDeInventario({
+    required String resumen,
+    required Map<String, dynamic> cuerpo,
+  }) async {
+    final uuid = _uuidV4();
+    final op = OperacionGuardada(
+      uuid: uuid,
+      estado: EstadoOperacion.local,
+      creadaEn: DateTime.now(),
+      resumen: resumen,
+      cuerpo: {'uuid': uuid, 'creada_en': conDesfase(DateTime.now()), ...cuerpo},
+    );
+    // Primero la operacion y despues el saldo (ver `reservar`).
+    await _base.guardarOperacion(op);
+    await _base.aplicarAInventario(_efecto(op.cuerpo));
+    state = state.copiarCon(
+      operaciones: await _base.operaciones(),
+      inventario: await _base.leerPaqueteInventario(),
+    );
+    unawaited(sincronizar());
+    return op;
+  }
+
+  /// Lo que una operacion de inventario le hace al saldo local.
+  Map<int, int> _efecto(Map<String, dynamic> cuerpo) {
+    if (cuerpo['tipo'] == 'INGRESO') {
+      final ingreso = cuerpo['ingreso'] as Map<String, dynamic>;
+      return {
+        for (final l in (ingreso['lineas'] as List).cast<Map<String, dynamic>>())
+          l['variante_id'] as int: l['cantidad'] as int,
+      };
+    }
+    if (cuerpo['tipo'] == 'AJUSTE') {
+      final c = cuerpo['conteo'] as Map<String, dynamic>;
+      return {
+        c['variante_id'] as int:
+            (c['cantidad_contada'] as int) - (c['saldo_visto'] as int),
+      };
+    }
+    return const {};
+  }
+
   // --- CU-17 ---------------------------------------------------------------
 
   /// Manda la cola por lotes. Nunca lanza: lo que no se pudo, queda.
@@ -210,6 +330,14 @@ class ControlOffline extends Notifier<EstadoOffline> {
       );
     }
     if (cuenta.confirmadas > 0) ref.invalidate(misReservasProvider);
+    // CU-21: con red, el saldo confirmado reemplaza al calculado en el telefono.
+    if (state.inventario != null && state.enLinea && cuenta.confirmadas + cuenta.rechazadas > 0) {
+      try {
+        await prepararInventario();
+      } on Exception {
+        // Sin red otra vez: queda el saldo local hasta la proxima.
+      }
+    }
     return (confirmadas: cuenta.confirmadas, rechazadas: cuenta.rechazadas);
   }
 
@@ -277,6 +405,10 @@ class ControlOffline extends Notifier<EstadoOffline> {
           l['variante_id'] as int: l['cantidad'] as int,
       };
 }
+
+/// CU-21: un ingreso o un conteo del encargado.
+bool esDeInventario(Map<String, dynamic> cuerpo) =>
+    cuerpo['tipo'] == 'INGRESO' || cuerpo['tipo'] == 'AJUSTE';
 
 class _Cuenta {
   int confirmadas = 0;
