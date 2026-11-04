@@ -20,6 +20,7 @@ import { OfflineService } from '../../../core/services/offline.service';
 import type { OperacionGuardada } from '../../../core/models/offline.models';
 import { PosService, type ErrorPos } from '../../../core/services/pos.service';
 import type {
+  EscalonMayorista,
   LineaEnCurso,
   MetodoDePago,
   PrendaEnMostrador,
@@ -604,9 +605,43 @@ export class Venta implements OnInit {
     return this.enBs(this.unitarioCentavos(linea.prenda) * linea.cantidad);
   }
 
-  /** Lo que se cobra por unidad: con el descuento de CU-12 si lo tiene. */
+  /**
+   * Lo que se cobra por unidad: el precio MÁS BAJO entre el de lista, la
+   * promoción de CU-12 y el mayorista de CU-31 si se llega a la cantidad
+   * (RN-15). Nunca se suman. Es la misma regla que aplica el servidor: si no
+   * coincidiera, el cobro volvería con 409.
+   */
   private unitarioCentavos(prenda: PrendaEnMostrador): number {
-    return this.aCentavos(prenda.descuento?.precio_final ?? prenda.precio);
+    const base = this.aCentavos(prenda.descuento?.precio_final ?? prenda.precio);
+    const escalon = this.escalonDe(prenda);
+    return escalon ? Math.min(base, this.aCentavos(escalon.precio_unitario)) : base;
+  }
+
+  /**
+   * CU-31 · El escalón mayorista que alcanza esta prenda en el ticket, o nada.
+   * La cantidad mínima se cuenta POR PRODUCTO: tallas y colores mezclados del
+   * mismo producto suman.
+   */
+  protected escalonDe(prenda: PrendaEnMostrador): EscalonMayorista | null {
+    if (!prenda.producto_id || !prenda.mayoristas?.length) return null;
+    const unidades = this.lineas()
+      .filter((l) => l.prenda.producto_id === prenda.producto_id)
+      .reduce((suma, l) => suma + l.cantidad, 0);
+    let mejor: EscalonMayorista | null = null;
+    for (const e of prenda.mayoristas) {
+      if (e.cantidad_minima <= unidades && (!mejor || e.cantidad_minima > mejor.cantidad_minima)) {
+        mejor = e;
+      }
+    }
+    return mejor;
+  }
+
+  /** Si en esta línea ganó el mayorista sobre la promoción (para rotularla). */
+  protected ganaMayorista(prenda: PrendaEnMostrador): boolean {
+    const escalon = this.escalonDe(prenda);
+    if (!escalon) return false;
+    const base = this.aCentavos(prenda.descuento?.precio_final ?? prenda.precio);
+    return this.aCentavos(escalon.precio_unitario) < base;
   }
 
 

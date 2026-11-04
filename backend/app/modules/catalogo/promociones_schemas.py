@@ -117,6 +117,9 @@ class PromocionOut(BaseModel):
     #: poder distinguirlas o el Administrador cree que algo esta roto.
     vigente: bool
 
+    #: 3ra presentacion · CU-32: MANUAL o AUTOMATICA (fuera de temporada).
+    origen: Literal["MANUAL", "AUTOMATICA"] = "MANUAL"
+
 
 class PaginaPromociones(BaseModel):
     total: int
@@ -135,9 +138,14 @@ class DescuentoOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    promocion_id: int
+    #: Nulo cuando lo que gano es el precio mayorista (CU-31), que no es una
+    #: promocion.
+    promocion_id: int | None
     nombre: str
     porcentaje: Decimal
+    #: 3ra presentacion · CU-31. PROMOCION (manual o automatica de fuera de
+    #: temporada) o MAYORISTA. Uno solo, el que deja el precio mas bajo (RN-15).
+    tipo: Literal["PROMOCION", "MAYORISTA"] = "PROMOCION"
     #: Lo que se descuenta POR UNIDAD, en dinero y ya redondeado a dos
     #: decimales. Viaja calculado porque la regla ---como se redondea--- es del
     #: negocio: si cada pantalla la dedujera por su cuenta, la web y el movil

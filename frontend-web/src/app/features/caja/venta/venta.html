@@ -227,6 +227,10 @@
                   <span class="nombre">
                     {{ prenda.producto }}
                     <span class="detalle">{{ prenda.talla }} · {{ prenda.color }}</span>
+                    <!-- CU-31 · los precios mayoristas, para que el cajero los ofrezca. -->
+                    @for (e of prenda.mayoristas ?? []; track e.cantidad_minima) {
+                      <span class="detalle">Desde {{ e.cantidad_minima }} u.: {{ e.precio_unitario | bs }} c/u</span>
+                    }
                   </span>
                   <span class="sku">{{ prenda.sku }}</span>
                   <span class="precio">
@@ -338,7 +342,11 @@
                     {{ linea.prenda.producto }}
                     <span class="detalle">
                       {{ linea.prenda.talla }} · {{ linea.prenda.color }}
-                      @if (linea.prenda.descuento; as d) {
+                      @if (ganaMayorista(linea.prenda)) {
+                        · <span class="promo-chica">
+                          Mayorista desde {{ escalonDe(linea.prenda)!.cantidad_minima }} u.
+                        </span>
+                      } @else if (linea.prenda.descuento; as d) {
                         · <span class="promo-chica">−{{ d.porcentaje }} %</span>
                       }
                     </span>

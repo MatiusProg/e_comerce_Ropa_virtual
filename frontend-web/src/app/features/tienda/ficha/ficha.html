@@ -66,6 +66,19 @@
           <p class="precio">{{ precio() }}</p>
         }
 
+        <!-- CU-31 (RF-56): los precios mayoristas. Se aplican solos en el
+             carrito al llegar a la cantidad, mezclando tallas y colores. -->
+        @if (producto.mayoristas?.length) {
+          <ul class="mayoristas">
+            @for (e of producto.mayoristas; track e.cantidad_minima) {
+              <li>
+                <mat-icon>inventory_2</mat-icon>
+                Desde {{ e.cantidad_minima }} unidades: <strong>{{ e.precio_unitario | bs }}</strong> c/u
+              </li>
+            }
+          </ul>
+        }
+
         @if (producto.descripcion) {
           <p class="descripcion">{{ producto.descripcion }}</p>
         }

@@ -130,8 +130,11 @@ def _armar_carrito(db: Session, carrito_id: int | None) -> CarritoOut:
     del_color = repository.imagen_de_variantes(db, [f.variante_id for f in filas])
 
     # CU-12. Una sola consulta para todo el carrito, no una por linea.
+    # CU-31: con las cantidades entra tambien el precio mayorista (RN-15).
     descuentos = promociones.descuentos_por_variante(
-        db, {f.variante_id: f.precio for f in filas}
+        db,
+        {f.variante_id: f.precio for f in filas},
+        {f.variante_id: f.cantidad for f in filas if f.ofrecible},
     )
 
     lineas: list[LineaCarritoOut] = []

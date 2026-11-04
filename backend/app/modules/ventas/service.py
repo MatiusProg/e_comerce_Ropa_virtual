@@ -452,7 +452,10 @@ def crear_pedido(
     #
     # Se pide una sola vez para todo el pedido, no una por linea.
     descuentos = promociones.descuentos_por_variante(
-        db, {linea.variante_id: linea.precio for linea in lineas}
+        db,
+        {linea.variante_id: linea.precio for linea in lineas},
+        # CU-31: el mismo precio mayorista que el carrito le mostro (RN-15).
+        {linea.variante_id: linea.cantidad for linea in lineas},
     )
 
     subtotal = sum(

@@ -64,6 +64,9 @@ from app.db.base import Auditoria, Base, DeEmpresa
 #: una por categoria, que ademas deja rastro de cual se aplico.
 ALCANCES_PROMOCION = ("PRODUCTO", "CATEGORIA", "TEMPORADA")
 
+#: 3ra presentacion · CU-32: quien la creo.
+ORIGENES_PROMOCION = ("MANUAL", "AUTOMATICA")
+
 
 class Promocion(DeEmpresa, Auditoria, Base):
     """Un descuento con vigencia sobre un producto, una categoria o una temporada.
@@ -116,6 +119,9 @@ class Promocion(DeEmpresa, Auditoria, Base):
         # en cada cobro es «las promociones activas vigentes hoy». Sin este
         # indice recorre la tabla entera cada vez.
         Index("ix_promocion_vigencia", "activa", "desde", "hasta"),
+        CheckConstraint(
+            "origen IN ('" + "', '".join(ORIGENES_PROMOCION) + "')", name="origen_valido"
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -148,5 +154,12 @@ class Promocion(DeEmpresa, Auditoria, Base):
     #: proxima temporada es lo normal---.
     activa: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
 
+    #: 3ra presentacion · CU-32. MANUAL la carga el Administrador (CU-31,
+    #: RF-58); AUTOMATICA la crea la regla de fuera de temporada (RF-57). Una
+    #: automatica apagada a mano no se vuelve a crear (RN-16).
+    origen: Mapped[str] = mapped_column(
+        String(10), server_default=text("'MANUAL'"), index=True
+    )
 
-__all__ = ["ALCANCES_PROMOCION", "Promocion"]
+
+__all__ = ["ALCANCES_PROMOCION", "ORIGENES_PROMOCION", "Promocion"]

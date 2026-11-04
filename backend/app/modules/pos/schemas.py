@@ -28,6 +28,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.modules.catalogo.ofertas_schemas import EscalonMayoristaOut
 from app.modules.catalogo.promociones_schemas import DescuentoOut
 
 #: Como se cobra en el mostrador. Es el mismo conjunto que
@@ -71,6 +72,13 @@ class PrendaEnMostradorOut(BaseModel):
     #: con 409 *toda* venta de una prenda en promocion.
     descuento: DescuentoOut | None = None
     disponible: int
+    #: 3ra presentacion · CU-31. Con estos dos la pantalla aplica el precio
+    #: mayorista igual que el servidor: la cantidad minima se cuenta sumando
+    #: las variantes del mismo producto, y se cobra el precio mas bajo entre
+    #: la promocion y el mayorista (RN-15). Si no lo supiera, su total no
+    #: coincidiria y el cobro volveria con 409.
+    producto_id: int | None = None
+    mayoristas: list[EscalonMayoristaOut] = []
 
 
 class PaginaDePrendas(BaseModel):

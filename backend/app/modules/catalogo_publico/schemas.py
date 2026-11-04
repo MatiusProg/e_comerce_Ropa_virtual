@@ -16,6 +16,7 @@ que precio entro.
 """
 from decimal import Decimal
 
+from app.modules.catalogo.ofertas_schemas import EscalonMayoristaOut
 from app.modules.catalogo.promociones_schemas import DescuentoOut
 
 from pydantic import BaseModel, ConfigDict
@@ -199,6 +200,9 @@ class FichaProductoOut(BaseModel):
     #: La promocion vigente del producto, o nada (CU-12). Igual que en la
     #: tarjeta: el precio de lista se muestra al lado, no restado.
     descuento: DescuentoOut | None = None
+    #: 3ra presentacion · CU-31 (RF-56): los precios mayoristas del producto,
+    #: «desde 6 u., Bs 70 c/u». Se aplican en el carrito al llegar a la cantidad.
+    mayoristas: list[EscalonMayoristaOut] = []
 
     imagenes: list[ImagenVitrinaOut] = []
     variantes: list[VarianteVitrinaOut] = []

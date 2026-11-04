@@ -69,7 +69,9 @@ from sqlalchemy.orm import Session
 
 from app.core import tiempo
 from app.modules.caja import repository as caja_repository
+from app.modules.catalogo import ofertas_repository
 from app.modules.catalogo import promociones_service as promociones
+from app.modules.catalogo.ofertas_schemas import EscalonMayoristaOut
 from app.modules.inventario import service as inventario
 from app.modules.pos import repository
 from app.modules.pos.schemas import (
@@ -244,6 +246,12 @@ def buscar_prendas(
     descuentos = promociones.descuentos_por_variante(
         db, {f.variante_id: f.precio for f in filas}
     )
+    # CU-31: los escalones mayoristas de los productos de la pagina.
+    escalones: dict[int, list[EscalonMayoristaOut]] = {}
+    for e in ofertas_repository.escalones_de_productos(
+        db, list({f.producto_id for f in filas})
+    ):
+        escalones.setdefault(e.producto_id, []).append(EscalonMayoristaOut.model_validate(e))
     return total, [
         PrendaEnMostradorOut(
             variante_id=fila.variante_id,
@@ -254,6 +262,8 @@ def buscar_prendas(
             precio=fila.precio,
             descuento=promociones.a_contrato(descuentos.get(fila.variante_id)),
             disponible=fila.disponible,
+            producto_id=fila.producto_id,
+            mayoristas=escalones.get(fila.producto_id, []),
         )
         for fila in filas
     ]
@@ -265,8 +275,11 @@ def buscar_prendas(
 
 def _lineas_de_reserva(db: Session, reserva_id: int):
     filas = repository.lineas_llevadas(db, reserva_id=reserva_id)
+    cantidades: dict[int, int] = {}
+    for f in filas:
+        cantidades[f.variante_id] = cantidades.get(f.variante_id, 0) + f.cantidad
     descuentos = promociones.descuentos_por_variante(
-        db, {f.variante_id: f.precio for f in filas}
+        db, {f.variante_id: f.precio for f in filas}, cantidades
     )
     lineas = []
     for fila in filas:
@@ -460,8 +473,12 @@ def registrar_venta(
     # CU-12. Las promociones vigentes se leen al cobrar, no antes: una que
     # vencio anoche no se honra hoy, y una que empieza hoy alcanza a la reserva
     # que se atendio ayer. Una sola consulta para todo el ticket.
+    # CU-31: con las cantidades entra tambien el precio mayorista (RN-15).
+    cantidades: dict[int, int] = {}
+    for variante_id, cantidad, _precio, _ in lineas:
+        cantidades[variante_id] = cantidades.get(variante_id, 0) + cantidad
     descuentos = promociones.descuentos_por_variante(
-        db, {variante_id: precio for variante_id, _, precio, _ in lineas}
+        db, {variante_id: precio for variante_id, _, precio, _ in lineas}, cantidades
     )
 
     subtotal = sum((precio * cantidad for _, cantidad, precio, _ in lineas), CERO)

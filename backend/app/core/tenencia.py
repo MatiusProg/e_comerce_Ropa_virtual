@@ -161,6 +161,9 @@ TABLAS_DE_EMPRESA = (
     "variante_producto",
     "imagen_producto",
     "promocion",
+    # CU-31 y CU-32 (0037)
+    "precio_mayorista",
+    "regla_fuera_de_temporada",
     "medida_talla",
     # inventario
     "existencia",
