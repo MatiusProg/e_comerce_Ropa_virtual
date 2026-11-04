@@ -61,6 +61,15 @@ class ProveedorSimulado:
     nombre = "simulada"
     cobra_de_verdad = False
 
+    def reembolsar(self, referencia_sesion: str, monto, clave: str) -> str:
+        """CU-25: un reembolso de mentira, escrito en el log. Ningun dinero se
+        mueve, igual que con el cobro."""
+        _log.info(
+            "REEMBOLSO SIMULADO de %s sobre la sesion %s (clave %s): no se devolvio nada",
+            monto, referencia_sesion, clave,
+        )
+        return "re_sim_" + uuid.uuid5(uuid.NAMESPACE_URL, clave).hex[:24]
+
     def crear_sesion(self, solicitud: SolicitudDePago) -> SesionDePago:
         if settings.es_produccion:
             _log.warning(

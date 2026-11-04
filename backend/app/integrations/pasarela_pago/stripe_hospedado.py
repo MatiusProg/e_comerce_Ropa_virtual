@@ -81,6 +81,30 @@ class ProveedorStripe:
         self._stripe = stripe
         self._cliente = stripe.StripeClient(settings.PAGO_API_KEY)
 
+    def reembolsar(self, referencia_sesion: str, monto, clave: str) -> str:
+        """CU-25: reembolso parcial del cobro de una Checkout Session.
+
+        La sesion no se reembolsa: se reembolsa su PaymentIntent, asi que
+        primero se lo busca. El reembolso es por `monto`, no por el total: el
+        cliente puede devolver una prenda de tres. `idempotency_key` evita que
+        un reintento por un corte de red devuelva dos veces.
+        """
+        try:
+            sesion = self._cliente.v1.checkout.sessions.retrieve(referencia_sesion)
+            intento = sesion.payment_intent
+            if not intento:
+                raise ErrorDePasarela("La sesion no tiene un cobro que reembolsar.")
+            reembolso = self._cliente.v1.refunds.create(
+                params={"payment_intent": intento, "amount": a_unidad_minima(monto)},
+                options={"idempotency_key": clave},
+            )
+        except ErrorDePasarela:
+            raise
+        except Exception as e:  # el SDK levanta su propia jerarquia
+            _log.exception("Stripe rechazo el reembolso de la sesion %s", referencia_sesion)
+            raise ErrorDePasarela(str(e)) from e
+        return reembolso.id
+
     def crear_sesion(self, solicitud: SolicitudDePago) -> SesionDePago:
         lineas = [
             {

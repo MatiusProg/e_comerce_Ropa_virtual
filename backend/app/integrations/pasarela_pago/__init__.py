@@ -118,3 +118,9 @@ def interpretar_webhook(cuerpo: bytes, firma: str | None) -> EventoDePago:
     el contenido sin haberlo verificado.
     """
     return obtener_proveedor().interpretar_webhook(cuerpo, firma)
+
+
+def reembolsar(referencia_sesion: str, monto, clave: str) -> str:
+    """CU-25: devuelve `monto` del cobro de esa sesion con el proveedor
+    configurado. Levanta `ErrorDePasarela` si no se pudo."""
+    return obtener_proveedor().reembolsar(referencia_sesion, monto, clave)

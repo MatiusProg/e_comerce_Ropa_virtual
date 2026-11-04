@@ -454,6 +454,15 @@ class Devolucion(DeEmpresa, Base):
             "estado = 'ABIERTA' OR conforme IS DISTINCT FROM false",
             name="cerrada_con_conformidad",
         ),
+        # CU-25: la de caja cuelga de un turno; la de la web, de quien recibió
+        # la prenda, y no toca ningún cajón.
+        CheckConstraint("origen IN ('CAJA', 'WEB')", name="origen"),
+        CheckConstraint(
+            "(origen = 'CAJA' AND turno_caja_id IS NOT NULL)"
+            " OR (origen = 'WEB' AND turno_caja_id IS NULL AND recibida_por IS NOT NULL"
+            " AND monto = 0)",
+            name="origen_y_turno",
+        ),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -461,9 +470,17 @@ class Devolucion(DeEmpresa, Base):
         BigInteger, ForeignKey("venta.id"), index=True
     )
     #: Donde se proceso. Es lo que ata la plata que sale a un arqueo.
-    turno_caja_id: Mapped[int] = mapped_column(
+    #: Nulo solo en una devolución pedida por la web (CU-25): no pasa por caja.
+    turno_caja_id: Mapped[int | None] = mapped_column(
         BigInteger, ForeignKey("turno_caja.id"), index=True
     )
+    #: CU-25: CAJA (CU-22) o WEB (pedida en CU-24, recibida en CU-25).
+    origen: Mapped[str] = mapped_column(String(6), server_default="CAJA")
+    #: CU-25: el encargado que recibió la prenda de una devolución web.
+    recibida_por: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("usuario.id"))
+    #: CU-25: el reembolso por la pasarela (mismo medio con que se pagó).
+    reembolso_referencia: Mapped[str | None] = mapped_column(String(100))
+    reembolso_monto: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
     #: DEVOLUCION o CAMBIO. Ver `TIPOS_DEVOLUCION`.
     tipo: Mapped[str] = mapped_column(String(12), server_default="DEVOLUCION")
     #: La venta que se llevo el cliente a cambio. Solo en los CAMBIO.

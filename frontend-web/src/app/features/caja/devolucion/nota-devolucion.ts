@@ -80,8 +80,17 @@ import { BsPipe } from '../../../shared/bs.pipe';
           </p>
         } @else {
           <p class="saldo">
-            Reintegrado del cajón: <strong>{{ n.monto_reintegrado | bs }}</strong>
-            @if (esCero(n.monto_reintegrado)) { (no se cobró en efectivo: vuelve por el mismo medio) }
+            @if (n.origen === 'WEB') {
+              @if (n.reembolso_monto) {
+                Reembolsado por la pasarela de pago: <strong>{{ n.reembolso_monto | bs }}</strong>
+                <small>(ref. {{ n.reembolso_referencia }})</small>
+              } @else {
+                Devolución web sin cobro por la pasarela: el reintegro va por el medio con que se pagó.
+              }
+            } @else {
+              Reintegrado del cajón: <strong>{{ n.monto_reintegrado | bs }}</strong>
+              @if (esCero(n.monto_reintegrado)) { (no se cobró en efectivo: vuelve por el mismo medio) }
+            }
           </p>
         }
 
@@ -90,10 +99,12 @@ import { BsPipe } from '../../../shared/bs.pipe';
           <mat-icon>{{ n.conforme ? 'verified' : 'help_outline' }}</mat-icon>
           @if (n.conforme === true) {
             El cliente dio su conformidad.
-          } @else if (n.conforme === null) {
-            Registrada antes de la nota de devolución: sin conformidad anotada.
-          } @else {
+          } @else if (n.conforme === false) {
+            El cliente dijo que NO está conforme: la nota sigue abierta.
+          } @else if (n.estado === 'ABIERTA') {
             Espera la conformidad del cliente.
+          } @else {
+            Registrada antes de la nota de devolución: sin conformidad anotada.
           }
           @if (n.observacion_cliente) { <em>«{{ n.observacion_cliente }}»</em> }
         </p>
@@ -124,14 +135,19 @@ import { BsPipe } from '../../../shared/bs.pipe';
 })
 export class NotaDevolucionDialogo implements OnInit {
   private readonly http = inject(HttpClient);
-  private readonly id = inject<number>(MAT_DIALOG_DATA);
+  /** El id de la devolución (personal) o la URL de la nota del cliente (CU-25). */
+  private readonly datos = inject<number | { url: string }>(MAT_DIALOG_DATA);
 
   protected readonly nota = signal<NotaDevolucion | null>(null);
   protected readonly cargando = signal(true);
   protected readonly error = signal<string | null>(null);
 
   ngOnInit(): void {
-    this.http.get<NotaDevolucion>(`${environment.apiUrl}/pos/notas-devolucion/${this.id}`).subscribe({
+    const url =
+      typeof this.datos === 'number'
+        ? `${environment.apiUrl}/pos/notas-devolucion/${this.datos}`
+        : this.datos.url;
+    this.http.get<NotaDevolucion>(url).subscribe({
       next: (n) => {
         this.nota.set(n);
         this.cargando.set(false);

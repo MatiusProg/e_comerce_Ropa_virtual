@@ -272,6 +272,12 @@ def solicitud_out(db: Session, solicitud_id: int) -> SolicitudOut:
         valor_devuelto=valor_devuelto,
         valor_nuevo=valor_nuevo if es_cambio else None,
         diferencia=(valor_nuevo - valor_devuelto) if es_cambio else None,
+        devolucion_id=cabecera.devolucion_id,
+        numero_nota=f"ND-{cabecera.devolucion_id:06d}" if cabecera.devolucion_id else None,
+        nota_estado=cabecera.nota_estado,
+        conforme=cabecera.conforme,
+        reembolso_monto=cabecera.reembolso_monto,
+        reembolso_referencia=cabecera.reembolso_referencia,
     )
 
 
@@ -287,3 +293,191 @@ def solicitudes_de_sucursal(
         solicitud_out(db, i)
         for i in repository.ids_de_solicitudes(db, sucursal_id=sucursal_id, estado=estado)
     ]
+
+
+# =====================================================================
+# CU-25 Atender solicitud de devolución (encargado)
+# =====================================================================
+#
+#   aprobar / rechazar   PENDIENTE -> APROBADA | RECHAZADA (con el motivo)
+#   recibir              DEVOLUCION APROBADA -> COMPLETADA: entra la prenda,
+#                        se reembolsa por la pasarela y nace la nota ABIERTA
+#   (caja, CU-22)        CAMBIO APROBADO -> COMPLETADA al retirarlo en caja,
+#                        que salda la diferencia (`completar_con`)
+#   conformidad          el cliente cierra la nota (RN-20)
+
+
+def _solicitud_de_sucursal(db: Session, solicitud_id: int, sucursal_id: int | None):
+    solicitud = repository.solicitud(db, solicitud_id, bloquear=True)
+    if solicitud is None or (sucursal_id is not None and solicitud.sucursal_id != sucursal_id):
+        raise ErrorDevolucionWeb("No existe esa solicitud en su sucursal.", 404)
+    return solicitud
+
+
+def aprobar(
+    db: Session, solicitud_id: int, *, usuario_id: int, sucursal_id: int | None,
+    respuesta: str | None,
+) -> SolicitudOut:
+    """RF-36. Una DEVOLUCIÓN aprobada espera la prenda; un CAMBIO, que el
+    cliente lo retire en caja. **Commit.**"""
+    solicitud = _solicitud_de_sucursal(db, solicitud_id, sucursal_id)
+    if solicitud.estado != "PENDIENTE":
+        raise ErrorDevolucionWeb("Esa solicitud ya se atendió.", 409)
+    solicitud.estado = "APROBADA"
+    solicitud.respuesta = (respuesta or "").strip() or None
+    solicitud.atendida_por = usuario_id
+    solicitud.atendida_en = tiempo.ahora()
+    db.commit()
+    return solicitud_out(db, solicitud.id)
+
+
+def rechazar(
+    db: Session, solicitud_id: int, *, usuario_id: int, sucursal_id: int | None,
+    respuesta: str | None,
+) -> SolicitudOut:
+    """RF-36: el rechazo dice por qué. Las unidades vuelven a poder pedirse. **Commit.**"""
+    motivo = (respuesta or "").strip()
+    if len(motivo) < 5:
+        raise ErrorDevolucionWeb("Diga por qué se rechaza (al menos 5 letras).", 422)
+    solicitud = _solicitud_de_sucursal(db, solicitud_id, sucursal_id)
+    if solicitud.estado != "PENDIENTE":
+        raise ErrorDevolucionWeb("Esa solicitud ya se atendió.", 409)
+    solicitud.estado = "RECHAZADA"
+    solicitud.respuesta = motivo
+    solicitud.atendida_por = usuario_id
+    solicitud.atendida_en = tiempo.ahora()
+    db.commit()
+    return solicitud_out(db, solicitud.id)
+
+
+def recibir(
+    db: Session, solicitud_id: int, *, usuario_id: int, sucursal_id: int | None
+) -> SolicitudOut:
+    """La prenda de una DEVOLUCIÓN aprobada llegó a la sucursal. **Commit.**
+
+    En una sola transacción: la nota (ABIERTA, origen WEB, sin turno: no toca
+    ningún cajón), sus líneas, el reingreso al inventario y el reembolso por la
+    pasarela, por el mismo medio con que se pagó. Si la pasarela falla, no
+    queda nada escrito: ni la prenda reingresada ni una nota sin reembolso.
+    """
+    from app.integrations import pasarela_pago
+    from app.integrations.pasarela_pago.base import ErrorDePasarela
+    from app.modules.inventario import service as inventario
+    from app.modules.pagos.models import Pago
+    from app.modules.ventas.models import DetalleDevolucion, Devolucion
+
+    solicitud = _solicitud_de_sucursal(db, solicitud_id, sucursal_id)
+    if solicitud.tipo != "DEVOLUCION":
+        raise ErrorDevolucionWeb("Un cambio se retira en caja, no se recibe acá.", 409)
+    if solicitud.estado != "APROBADA":
+        raise ErrorDevolucionWeb("Solo se recibe una devolución aprobada.", 409)
+
+    venta = repository.venta_por_id(db, solicitud.venta_id, bloquear=True)
+    vendidas = {f.variante_id: f for f in devoluciones.lineas_vendidas(db, venta.id)}
+    ya = devoluciones.ya_devuelto(db, venta.id)
+    lineas = list(solicitud.lineas)
+    valor = CERO
+    for l in lineas:
+        fila = vendidas[l.variante_id]
+        if l.cantidad > fila.cantidad - ya.get(l.variante_id, 0):
+            raise ErrorDevolucionWeb(
+                f"De «{fila.producto} {fila.talla}» ya volvió parte en caja: revise la solicitud.",
+                409,
+            )
+        valor += (fila.precio_unitario - fila.descuento_unitario) * l.cantidad
+
+    devolucion = Devolucion(
+        venta_id=venta.id,
+        turno_caja_id=None,
+        origen="WEB",
+        recibida_por=usuario_id,
+        tipo="DEVOLUCION",
+        motivo=f"Pedida por la web: {solicitud.motivo}"[:200],
+        monto=CERO,
+        estado="ABIERTA",
+        conforme=None,
+    )
+    db.add(devolucion)
+    db.flush()
+    for l in lineas:
+        db.add(
+            DetalleDevolucion(
+                devolucion_id=devolucion.id, variante_id=l.variante_id, cantidad=l.cantidad
+            )
+        )
+        inventario.reingresar_por_devolucion(
+            db,
+            variante_id=l.variante_id,
+            sucursal_id=venta.sucursal_id,
+            cantidad=l.cantidad,
+            usuario_id=usuario_id,
+            motivo=f"Devolución web de {venta.codigo} (nota {devolucion.numero_nota})"[:200],
+        )
+
+    pago = db.query(Pago).filter(Pago.venta_id == venta.id).one_or_none()
+    if pago is not None and pago.metodo == "PASARELA" and pago.referencia_externa:
+        try:
+            devolucion.reembolso_referencia = pasarela_pago.reembolsar(
+                pago.referencia_externa, valor, clave=f"devolucion-web-{solicitud.id}"
+            )
+        except ErrorDePasarela as e:
+            db.rollback()
+            raise ErrorDevolucionWeb(
+                f"La pasarela no pudo hacer el reembolso; no se registró nada. Detalle: {e}",
+                502,
+            ) from e
+        devolucion.reembolso_monto = valor
+
+    solicitud.estado = "COMPLETADA"
+    solicitud.devolucion_id = devolucion.id
+    db.commit()
+    return solicitud_out(db, solicitud.id)
+
+
+# --- Lo usa la caja (CU-22) para el cambio aprobado ---------------------------
+
+def cambio_aprobado_de(db: Session, venta_id: int):
+    """La solicitud de CAMBIO aprobada de esta venta, si la hay."""
+    return repository.cambio_aprobado(db, venta_id)
+
+
+def completar_con(db: Session, solicitud, devolucion_id: int) -> None:
+    """El cambio se hizo en caja: la solicitud queda COMPLETADA. **Sin commit.**"""
+    solicitud.estado = "COMPLETADA"
+    solicitud.devolucion_id = devolucion_id
+
+
+# --- El cliente cierra la nota (RN-20) -----------------------------------------
+
+def conformidad(
+    db: Session, usuario_id: int, solicitud_id: int, *, conforme: bool, observacion: str | None
+) -> SolicitudOut:
+    """Conforme cierra la nota. No conforme la deja ABIERTA con la observación,
+    a la vista del encargado: sin conformidad, la nota no se cierra. **Commit.**"""
+    from app.modules.ventas.models import Devolucion
+
+    cliente_id = _cliente_id(db, usuario_id)
+    solicitud = repository.solicitud(db, solicitud_id, bloquear=True)
+    if solicitud is None or solicitud.cliente_id != cliente_id:
+        raise ErrorDevolucionWeb("No tiene esa solicitud.", 404)
+    if solicitud.devolucion_id is None:
+        raise ErrorDevolucionWeb("Todavía no hay una nota que confirmar.", 409)
+    devolucion = db.get(Devolucion, solicitud.devolucion_id)
+    if devolucion.estado == "CERRADA":
+        raise ErrorDevolucionWeb("La nota ya está cerrada.", 409)
+    devolucion.conforme = conforme
+    devolucion.observacion_cliente = (observacion or "").strip() or None
+    if conforme:
+        devolucion.estado = "CERRADA"
+    db.commit()
+    return solicitud_out(db, solicitud.id)
+
+
+def nota_del_cliente(db: Session, usuario_id: int, solicitud_id: int):
+    from app.modules.pos import devolucion_service
+
+    cliente_id = _cliente_id(db, usuario_id)
+    solicitud = repository.solicitud(db, solicitud_id)
+    if solicitud is None or solicitud.cliente_id != cliente_id or solicitud.devolucion_id is None:
+        raise ErrorDevolucionWeb("No hay una nota para esa solicitud.", 404)
+    return devolucion_service.nota(db, solicitud.devolucion_id, sucursal_id=None)

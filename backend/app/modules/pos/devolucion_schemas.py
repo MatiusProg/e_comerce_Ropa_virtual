@@ -318,3 +318,7 @@ class NotaDevolucionOut(BaseModel):
 
     conforme: bool | None
     observacion_cliente: str | None
+    #: CU-25: CAJA o WEB, y el reembolso por la pasarela si lo hubo.
+    origen: str = "CAJA"
+    reembolso_referencia: str | None = None
+    reembolso_monto: Decimal | None = None

@@ -87,6 +87,13 @@ export interface Solicitud {
   valor_devuelto: string;
   valor_nuevo: string | null;
   diferencia: string | null;
+  /** CU-25: la nota que la cerró, su estado y el reembolso. */
+  devolucion_id: number | null;
+  numero_nota: string | null;
+  nota_estado: 'ABIERTA' | 'CERRADA' | null;
+  conforme: boolean | null;
+  reembolso_monto: string | null;
+  reembolso_referencia: string | null;
 }
 
 export const ROTULO_SOLICITUD: Record<EstadoSolicitud, string> = {
