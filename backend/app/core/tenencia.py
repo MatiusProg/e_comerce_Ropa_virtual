@@ -166,6 +166,7 @@ TABLAS_DE_EMPRESA = (
     "existencia",
     "movimiento_inventario",
     "abastecimiento",
+    "traspaso",
     # reservas
     "reserva",
     "reserva_detalle",

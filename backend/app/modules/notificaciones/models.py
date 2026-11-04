@@ -78,6 +78,9 @@ TIPOS_NOTIFICACION = (
     "RESERVA_PREPARADA",
     "PEDIDO_PAGADO",
     "STOCK_BAJO",
+    # 3ra presentación: CU-33 y CU-34. Al origen le piden mercadería y al
+    # destino le avisan que ya va en camino.
+    "TRASPASO",
 )
 
 #: OMITIDO es para el aviso que nace sin destinatario de correo ---un usuario
@@ -144,7 +147,7 @@ class Notificacion(DeEmpresa, Base):
     __table_args__ = (
         CheckConstraint(
             "tipo IN ('RESERVA_EN_SUCURSAL', 'RESERVA_PREPARADA', "
-            "'PEDIDO_PAGADO', 'STOCK_BAJO')",
+            "'PEDIDO_PAGADO', 'STOCK_BAJO', 'TRASPASO')",
             name="tipo_valido",
         ),
         CheckConstraint(
