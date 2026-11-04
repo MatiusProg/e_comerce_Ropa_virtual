@@ -78,6 +78,7 @@ def _devolver(
             "venta_codigo": codigo,
             "motivo": motivo,
             "lineas": [{"variante_id": variante_id, "cantidad": cantidad}],
+            "conformidad": {"conforme": True},
         },
     )
 

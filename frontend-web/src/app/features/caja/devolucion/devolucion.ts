@@ -10,6 +10,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
@@ -30,6 +32,7 @@ import type {
 } from '../../../core/models/devoluciones.models';
 import type { PrendaEnMostrador } from '../../../core/models/pos.models';
 import { BsPipe } from '../../../shared/bs.pipe';
+import { NotaDevolucionDialogo } from './nota-devolucion';
 
 /** Qué está haciendo el cajero con la prenda que le trajeron. */
 export type Modo = 'DEVOLUCION' | 'CAMBIO';
@@ -79,6 +82,8 @@ export type Modo = 'DEVOLUCION' | 'CAMBIO';
     MatInputModule,
     MatProgressBarModule,
     MatButtonToggleModule,
+    MatCheckboxModule,
+    MatDialogModule,
     MatSelectModule,
   ],
   templateUrl: './devolucion.html',
@@ -116,6 +121,17 @@ export class Devolucion implements OnInit {
     validators: [Validators.required, Validators.minLength(3), Validators.maxLength(200)],
   });
   protected readonly busqueda = new FormControl('', { nonNullable: true });
+  /**
+   * CU-22 (RN-20): la conformidad del cliente. Sin ella no se registra: el
+   * cliente está en el mostrador y o acepta, o se lleva su prenda.
+   */
+  protected readonly conforme = new FormControl(false, { nonNullable: true });
+  protected readonly observacionCliente = new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.maxLength(300)],
+  });
+  private readonly conformeMarcado = toSignal(this.conforme.valueChanges, { initialValue: false });
+  private readonly dialogo = inject(MatDialog);
   /**
    * Cómo se salda la diferencia. Sin valor por defecto a propósito: el cajero
    * tiene que elegirlo mirando lo que pasa sobre el mostrador. Uno por omisión
@@ -218,6 +234,7 @@ export class Devolucion implements OnInit {
    */
   protected readonly sePuedeConfirmar = computed(() => {
     if (!this.dentroDePlazo() || !this.hayQueDevolver()) return false;
+    if (!this.conformeMarcado()) return false;
     if (this.modo() === 'DEVOLUCION') return true;
     if (!this.hayQueLlevar()) return false;
     return this.diferenciaCentavos() === 0 || !!this.metodoElegido();
@@ -384,6 +401,7 @@ export class Devolucion implements OnInit {
         lineas: this.lineas()
           .filter((l) => l.cantidad > 0)
           .map((l) => ({ variante_id: l.linea.variante_id, cantidad: l.cantidad })),
+        conformidad: this.conformidad(),
       })
       .subscribe({
         next: (comprobante) => {
@@ -393,6 +411,7 @@ export class Devolucion implements OnInit {
           this.lineas.set([]);
           this.motivo.setValue('');
           this.motivo.markAsUntouched();
+          this.limpiarConformidad();
           // El arqueo del turno acaba de cambiar si salió plata del cajón.
           this.caja.miTurno().subscribe({ error: () => undefined });
         },
@@ -403,6 +422,29 @@ export class Devolucion implements OnInit {
           if (e.tipo === 'se-pasa') this.buscar();
         },
       });
+  }
+
+  private conformidad() {
+    return {
+      conforme: true as const,
+      observacion: this.observacionCliente.value.trim() || null,
+    };
+  }
+
+  private limpiarConformidad(): void {
+    this.conforme.setValue(false);
+    this.observacionCliente.setValue('');
+  }
+
+  /** CU-22: la nota de devolución, para ver e imprimir. */
+  protected verNota(id: number): void {
+    this.dialogo.open(NotaDevolucionDialogo, { data: id, width: '760px', maxWidth: '95vw' });
+  }
+
+  /** CU-23: la ventana se dice en días si es exacta, si no en horas. */
+  protected plazoTexto(horas: number): string {
+    if (horas % 24 === 0) return horas === 24 ? '1 día' : `${horas / 24} días`;
+    return horas === 1 ? '1 hora' : `${horas} horas`;
   }
 
   protected otra(): void {
@@ -426,6 +468,7 @@ export class Devolucion implements OnInit {
           variante_id: p.variante_id,
           cantidad: p.cantidad,
         })),
+        conformidad: this.conformidad(),
         // Los dos campos se omiten cuando no corresponden en vez de mandarse en
         // cero o en nulo: el servidor rechaza un método contra una diferencia
         // de cero, y con razón —quedaría en la base diciendo que se movió plata
@@ -447,6 +490,7 @@ export class Devolucion implements OnInit {
           this.metodoDiferencia.setValue(null);
           this.motivo.setValue('');
           this.motivo.markAsUntouched();
+          this.limpiarConformidad();
           this.modo.set('DEVOLUCION');
           // El arqueo del turno acaba de cambiar si la diferencia fue en
           // efectivo, y además salió una venta nueva.

@@ -7,7 +7,13 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from app.core.dependencies import DbSession, Usuario, requiere_funcion, requiere_roles
 from app.modules.plataforma.mi_tienda import service
-from app.modules.plataforma.mi_tienda.schemas import ColoresIn, MarcaOut, MarcaTiendaOut
+from app.modules.plataforma.mi_tienda.schemas import (
+    ColoresIn,
+    MarcaOut,
+    MarcaTiendaOut,
+    VentanaDevolucionIn,
+    VentanaDevolucionOut,
+)
 
 router = APIRouter(
     prefix="/plataforma/mi-tienda",
@@ -83,6 +89,37 @@ async def subir_logo(
 def quitar_logo(db: DbSession, usuario: Usuario) -> MarcaOut:
     try:
         return service.quitar_logo(db, usuario.empresa_id)
+    except service.SinEmpresa:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, _SIN_EMPRESA)
+
+
+# =====================================================================
+# CU-23 Configurar la ventana de devolución (RF-35, RN-08)
+# =====================================================================
+# No depende del plan: devolver dentro de un plazo es de todas las empresas.
+
+@router.get(
+    "/devoluciones",
+    response_model=VentanaDevolucionOut,
+    summary="CU-23 Ver la ventana de devolución",
+)
+def obtener_ventana(db: DbSession, usuario: Usuario) -> VentanaDevolucionOut:
+    try:
+        return service.obtener_ventana(db, usuario.empresa_id)
+    except service.SinEmpresa:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, _SIN_EMPRESA)
+
+
+@router.put(
+    "/devoluciones",
+    response_model=VentanaDevolucionOut,
+    summary="CU-23 Configurar la ventana de devolución",
+)
+def guardar_ventana(
+    datos: VentanaDevolucionIn, db: DbSession, usuario: Usuario
+) -> VentanaDevolucionOut:
+    try:
+        return service.guardar_ventana(db, usuario.empresa_id, datos)
     except service.SinEmpresa:
         raise HTTPException(status.HTTP_403_FORBIDDEN, _SIN_EMPRESA)
 

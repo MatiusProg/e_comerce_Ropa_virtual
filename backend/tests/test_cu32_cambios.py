@@ -78,6 +78,7 @@ def _cambiar(
         "motivo": motivo,
         "devueltas": [{"variante_id": devuelve[0], "cantidad": devuelve[1]}],
         "llevadas": [{"variante_id": lleva[0], "cantidad": lleva[1]}],
+        "conformidad": {"conforme": True},
     }
     if metodo is not None:
         cuerpo["metodo_diferencia"] = metodo
