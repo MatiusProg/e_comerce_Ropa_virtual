@@ -303,6 +303,7 @@ def _armar_pedido(db: Session, fila) -> PedidoOut:
             _vence_en(fila.creado_en) if fila.estado == ESTADO_PENDIENTE else None
         ),
         estado_pago=fila.estado_pago,
+        entregado_en=fila.entregado_en,
     )
 
 

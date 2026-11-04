@@ -92,6 +92,8 @@ from app.modules.pos.router import router as pos_router
 # CU-32, en archivos propios dentro del mismo paquete, con el patron de
 # `carrito_*`: dos casos de uso distintos que conviene poder distinguir.
 from app.modules.pos.devolucion_router import notas_router as notas_devolucion_router
+from app.modules.devoluciones_web.router import cliente_router as devoluciones_web_cliente
+from app.modules.devoluciones_web.router import sucursal_router as devoluciones_web_sucursal
 from app.modules.pos.devolucion_router import router as devoluciones_router
 from app.modules.ia.asistente_router import router as asistente_router
 from app.modules.ia.router import router as ia_router
@@ -252,6 +254,8 @@ app.include_router(abastecimiento_router, prefix=API)
 app.include_router(pos_router, prefix=API)
 app.include_router(devoluciones_router, prefix=API)
 app.include_router(notas_devolucion_router, prefix=API)
+app.include_router(devoluciones_web_cliente, prefix=API)
+app.include_router(devoluciones_web_sucursal, prefix=API)
 app.include_router(ia_router, prefix=API)
 app.include_router(asistente_router, prefix=API)
 app.include_router(reportes_router, prefix=API)
