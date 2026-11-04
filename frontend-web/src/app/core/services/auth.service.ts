@@ -75,6 +75,16 @@ export class AuthService {
   readonly autenticado = computed(() => this._usuario() !== null);
   readonly rol = computed(() => this._usuario()?.rol ?? null);
 
+  /**
+   * CU-41 · Si el rol propio de la empresa incluye el permiso. Sin rol propio
+   * vale todo lo de su rol, como siempre. Es solo para el menú: quien hace
+   * cumplir el permiso es el servidor.
+   */
+  puede(codigo: string): boolean {
+    const permisos = this._usuario()?.permisos;
+    return permisos == null || permisos.includes(codigo);
+  }
+
   get token(): string | null {
     try {
       return localStorage.getItem(CLAVE_TOKEN);

@@ -118,6 +118,8 @@ from app.modules.offline.router import router as offline_router
 from app.modules.traspasos.router import router as traspasos_router
 # 3ra presentación · CU-31 y CU-32: precios mayoristas y fuera de temporada.
 from app.modules.catalogo.ofertas_router import router as ofertas_router
+# 3ra presentación · CU-41: roles y permisos propios de cada empresa.
+from app.modules.roles.router import router as roles_router
 
 
 # Antes de construir la aplicacion: uvicorn deja el logger raiz sin manejador
@@ -276,3 +278,4 @@ app.include_router(contratacion_router, prefix=API)
 app.include_router(offline_router, prefix=API)
 app.include_router(traspasos_router, prefix=API)
 app.include_router(ofertas_router, prefix=API)
+app.include_router(roles_router, prefix=API)

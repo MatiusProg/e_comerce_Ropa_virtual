@@ -33,6 +33,8 @@ export class AdminLayout {
   private readonly auth = inject(AuthService);
 
   protected readonly usuario = this.auth.usuario;
+  /** CU-41: esconde del menú lo que el rol propio de la empresa no incluye. */
+  protected readonly puede = (codigo: string) => this.auth.puede(codigo);
 
   protected readonly iniciales = computed(() => {
     const u = this.usuario();

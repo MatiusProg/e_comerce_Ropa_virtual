@@ -38,6 +38,8 @@ export class CajaLayout {
   private readonly auth = inject(AuthService);
 
   protected readonly usuario = this.auth.usuario;
+  /** CU-41: esconde del menú lo que el rol propio de la empresa no incluye. */
+  protected readonly puede = (codigo: string) => this.auth.puede(codigo);
   /** CU-18: cuántas ventas sin red faltan subir, a la vista en toda la caja. */
   protected readonly offline = inject(OfflineService);
 
