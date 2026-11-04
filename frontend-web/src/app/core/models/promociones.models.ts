@@ -19,8 +19,14 @@ export type Alcance = 'PRODUCTO' | 'CATEGORIA' | 'TEMPORADA';
  * qué se pregunta si es un error.
  */
 export interface Descuento {
-  promocion_id: number;
+  /** Nulo cuando lo que ganó es el precio mayorista (CU-31). */
+  promocion_id: number | null;
   nombre: string;
+  /**
+   * 3ra presentación · CU-31. Uno solo, el que deja el precio más bajo
+   * (RN-15): la promoción (manual o de fuera de temporada) o el mayorista.
+   */
+  tipo?: 'PROMOCION' | 'MAYORISTA';
   porcentaje: string;
   /** Lo que se descuenta por unidad, en dinero y ya redondeado. */
   monto_unitario: string;
@@ -47,6 +53,8 @@ export interface Promocion {
    * cree que algo está roto.
    */
   vigente: boolean;
+  /** 3ra presentación · CU-32: la cargó el Administrador o la creó la regla. */
+  origen?: 'MANUAL' | 'AUTOMATICA';
 }
 
 export interface PaginaPromociones {

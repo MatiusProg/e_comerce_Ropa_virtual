@@ -256,6 +256,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/admin/promociones/promociones').then((m) => m.Promociones),
       },
+      // --- 3ra presentación · CU-31 y CU-32 Ofertas y precios mayoristas ---
+      {
+        path: 'ofertas',
+        title: 'Ofertas · Violet Boutique',
+        loadComponent: () => import('./features/admin/ofertas/ofertas').then((m) => m.Ofertas),
+      },
       // --- Ciclo 2 · Karen -------------------------------------------------
       // Se agrega al final del bloque y sin reordenar lo anterior, que es el
       // protocolo de archivos compartidos del ciclo (§5 del acuerdo).

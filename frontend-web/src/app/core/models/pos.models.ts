@@ -30,6 +30,19 @@ export interface PrendaEnMostrador {
    */
   descuento: Descuento | null;
   disponible: number;
+  /**
+   * 3ra presentación · CU-31. Con estos dos la pantalla aplica el mayorista
+   * igual que el servidor: la cantidad mínima se cuenta sumando las variantes
+   * del mismo producto, y se cobra el precio más bajo (RN-15).
+   */
+  producto_id?: number | null;
+  mayoristas?: EscalonMayorista[];
+}
+
+/** «Desde 6 u., Bs 70 c/u» (CU-31, RF-56). */
+export interface EscalonMayorista {
+  cantidad_minima: number;
+  precio_unitario: string;
 }
 
 export interface PaginaDePrendas {

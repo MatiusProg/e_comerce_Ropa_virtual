@@ -85,7 +85,16 @@
           <tbody>
             @for (p of promociones(); track p.id) {
               <tr [class.apagada]="!p.activa">
-                <td class="nombre">{{ p.nombre }}</td>
+                <td class="nombre">
+                  {{ p.nombre }}
+                  <!-- CU-32: la creó la regla de fuera de temporada. Se apaga
+                       igual que cualquiera y no se vuelve a crear (RN-16). -->
+                  @if (p.origen === 'AUTOMATICA') {
+                    <span class="automatica" matTooltip="Creada por la regla de fuera de temporada">
+                      Automática
+                    </span>
+                  }
+                </td>
                 <td>
                   <span class="alcance">
                     <mat-icon>{{ iconoDe(p.alcance) }}</mat-icon>

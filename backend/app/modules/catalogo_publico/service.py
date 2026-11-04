@@ -19,7 +19,9 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from app.modules.catalogo import imagenes_almacen as almacen
+from app.modules.catalogo import ofertas_repository
 from app.modules.catalogo import promociones_service as promociones
+from app.modules.catalogo.ofertas_schemas import EscalonMayoristaOut
 # Costura C1: la unica lectura de `existencia` que hace P5 pasa por aqui.
 # Es una importacion de funcion, no un SELECT sobre una tabla ajena ni una
 # llamada HTTP interna --- el contrato esta en la seccion 6 del documento de
@@ -241,6 +243,11 @@ def obtener_ficha(db: Session, producto_id: int) -> FichaProductoOut:
         _variante(v, vestidor, descuentos_variantes) for v in _ordenadas(ofrecibles)
     ]
     ficha.tiene_vestidor = any(v.imagen_vestidor_url for v in ficha.variantes)
+    # CU-31 (RF-56): los escalones mayoristas, para mostrarlos en la ficha.
+    ficha.mayoristas = [
+        EscalonMayoristaOut.model_validate(e)
+        for e in ofertas_repository.escalones_de_productos(db, [producto_id])
+    ]
 
     ficha.imagenes = [
         ImagenVitrinaOut(

@@ -54,6 +54,8 @@ def _seleccion_prenda() -> Select:
             Color.nombre.label("color"),
             VarianteProducto.precio,
             Existencia.cantidad_disponible.label("disponible"),
+            # CU-31: para juntar las variantes del mismo producto en el mayorista.
+            VarianteProducto.producto_id,
         )
         .join(Producto, Producto.id == VarianteProducto.producto_id)
         .join(Talla, Talla.id == VarianteProducto.talla_id)

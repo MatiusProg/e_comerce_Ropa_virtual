@@ -1,4 +1,5 @@
 import type { Descuento } from './promociones.models';
+import type { EscalonMayorista } from './pos.models';
 
 /**
  * CU-17 · Consultar catálogo · y CU-18 · Consultar ficha de producto — modelos
@@ -137,6 +138,8 @@ export interface FichaProducto {
    * «Bs 250» tachado.
    */
   descuento: Descuento | null;
+  /** 3ra presentación · CU-31 (RF-56): «desde 6 u., Bs 200 c/u». */
+  mayoristas?: EscalonMayorista[];
   imagenes: ImagenVitrina[];
   /** Ya vienen ordenadas por el orden del maestro de tallas, no alfabético. */
   variantes: VarianteVitrina[];

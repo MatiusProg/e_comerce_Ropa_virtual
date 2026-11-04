@@ -49,6 +49,7 @@ from sqlalchemy.orm import Session
 
 from app.core import tiempo
 
+from app.modules.catalogo import ofertas_repository
 from app.modules.catalogo import promociones_repository as repository
 from app.modules.catalogo.promociones_models import Promocion
 from app.modules.catalogo.promociones_schemas import (
@@ -117,11 +118,14 @@ class VigenciaInvalida(ErrorDePromociones):
 class Descuento:
     """El descuento que gano, ya resuelto en dinero."""
 
-    promocion_id: int
+    #: Nulo si gano el precio mayorista.
+    promocion_id: int | None
     nombre: str
     porcentaje: Decimal
     monto_unitario: Decimal
     precio_final: Decimal
+    #: PROMOCION o MAYORISTA (CU-31).
+    tipo: str = "PROMOCION"
 
 
 def _redondear(valor: Decimal) -> Decimal:
@@ -161,7 +165,9 @@ def _descuento_de(fila, precio: Decimal) -> Descuento:
 
 
 def descuentos_por_variante(
-    db: Session, precios: dict[int, Decimal]
+    db: Session,
+    precios: dict[int, Decimal],
+    cantidades: dict[int, int] | None = None,
 ) -> dict[int, Descuento]:
     """COSTURA. El descuento vigente de cada variante, o nada.
 
@@ -191,7 +197,64 @@ def descuentos_por_variante(
         gana = _elegir(candidatas)
         if gana is not None:
             salida[variante_id] = _descuento_de(gana, precios[variante_id])
+
+    if cantidades:
+        _aplicar_mayorista(db, precios, cantidades, salida)
     return salida
+
+
+def _aplicar_mayorista(
+    db: Session,
+    precios: dict[int, Decimal],
+    cantidades: dict[int, int],
+    salida: dict[int, Descuento],
+) -> None:
+    """3ra presentacion · CU-31 y RN-15: el precio mayorista, si deja menos.
+
+    La cantidad minima se cuenta POR PRODUCTO: se suman todas las variantes del
+    mismo producto que van juntas (doce poleras de tallas mezcladas son doce).
+    Se aplica el escalon mas alto que se alcanza y, de la promocion y el
+    mayorista, gana el que deja el precio mas bajo. **No se suman nunca.**
+
+    Solo lo usan quienes saben las cantidades: el mostrador al cobrar, el
+    carrito y el pedido web. La vitrina no, porque ahi no hay cantidad.
+    """
+    filas = ofertas_repository.escalones_de_variantes(db, list(precios))
+    if not filas:
+        return
+
+    producto_de: dict[int, int] = {}
+    escalones: dict[int, list[tuple[int, Decimal]]] = {}
+    for f in filas:
+        producto_de[f.variante_id] = f.producto_id
+        escalones.setdefault(f.producto_id, [])
+        if (f.cantidad_minima, f.precio_unitario) not in escalones[f.producto_id]:
+            escalones[f.producto_id].append((f.cantidad_minima, f.precio_unitario))
+
+    unidades: dict[int, int] = {}
+    for variante_id, producto_id in producto_de.items():
+        unidades[producto_id] = unidades.get(producto_id, 0) + cantidades.get(variante_id, 0)
+
+    for variante_id, producto_id in producto_de.items():
+        alcanzados = [e for e in escalones[producto_id] if e[0] <= unidades[producto_id]]
+        if not alcanzados:
+            continue
+        minima, precio_mayorista = max(alcanzados, key=lambda e: e[0])
+        precio = precios[variante_id]
+        monto = precio - precio_mayorista
+        if monto <= 0:
+            continue
+        actual = salida.get(variante_id)
+        if actual is not None and actual.monto_unitario >= monto:
+            continue
+        salida[variante_id] = Descuento(
+            promocion_id=None,
+            nombre=f"Precio mayorista desde {minima} u.",
+            porcentaje=_redondear(monto * CIEN / precio),
+            monto_unitario=monto,
+            precio_final=precio_mayorista,
+            tipo="MAYORISTA",
+        )
 
 
 def descuentos_por_producto(
@@ -232,6 +295,7 @@ def a_contrato(descuento: Descuento | None) -> DescuentoOut | None:
         porcentaje=descuento.porcentaje,
         monto_unitario=descuento.monto_unitario,
         precio_final=descuento.precio_final,
+        tipo=descuento.tipo,
     )
 
 
@@ -276,6 +340,7 @@ def _armar(fila, hoy: date) -> PromocionOut:
         hasta=promocion.hasta,
         activa=promocion.activa,
         vigente=vigente,
+        origen=promocion.origen or "MANUAL",
     )
 
 

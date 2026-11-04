@@ -1,0 +1,239 @@
+<header class="encabezado">
+  <h1 class="vb-titulo">Ofertas y precios mayoristas</h1>
+  <p class="bajada">
+    Sobre una prenda se cobra un solo precio: el más bajo entre el de lista, el mayorista y la
+    oferta vigente. Los descuentos no se suman.
+  </p>
+</header>
+
+<mat-tab-group animationDuration="0ms">
+  <!-- ============================ CU-31 ============================ -->
+  <mat-tab label="Precios mayoristas">
+    <mat-card class="tarjeta" appearance="outlined">
+      <mat-card-content>
+        <h2 class="subtitulo">
+          {{ editando() ? 'Editar el precio de ' + editando()!.producto : 'Nuevo precio mayorista' }}
+        </h2>
+
+        @if (!editando()) {
+          @if (producto(); as p) {
+            <div class="elegido">
+              <span>
+                <strong>{{ p.nombre }}</strong>
+                <span class="tenue">· {{ p.codigo }} · lista {{ p.precio_base | bs }}</span>
+              </span>
+              <button matButton type="button" (click)="producto.set(null)">Cambiar</button>
+            </div>
+          } @else {
+            <mat-form-field appearance="outline" class="ancho">
+              <mat-label>Buscar producto</mat-label>
+              <mat-icon matPrefix>search</mat-icon>
+              <input matInput [formControl]="busquedaProducto" />
+            </mat-form-field>
+            <div class="lista">
+              @for (p of productos(); track p.id) {
+                <button type="button" class="opcion" (click)="elegirProducto(p)">
+                  <span class="titulo">{{ p.nombre }}</span>
+                  <span class="tenue">{{ p.codigo }} · {{ p.precio_base | bs }}</span>
+                </button>
+              }
+            </div>
+          }
+        }
+
+        <form class="fila-form" [formGroup]="formulario" (ngSubmit)="guardar()">
+          <mat-form-field appearance="outline">
+            <mat-label>Desde (unidades)</mat-label>
+            <input matInput type="number" min="2" formControlName="cantidad_minima" />
+            <mat-hint>Suman todas las tallas y colores.</mat-hint>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Precio por unidad (Bs)</mat-label>
+            <input matInput type="number" min="0.01" step="0.01" formControlName="precio_unitario" />
+          </mat-form-field>
+          <div class="acciones">
+            <button
+              matButton="filled"
+              class="vb-boton-marca"
+              type="submit"
+              [disabled]="guardando()"
+            >
+              <mat-icon>save</mat-icon>
+              {{ guardando() ? 'Guardando…' : 'Guardar' }}
+            </button>
+            @if (editando() || producto()) {
+              <button matButton type="button" (click)="cancelar()">Cancelar</button>
+            }
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    @if (cargando()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (!cargando() && mayoristas().length === 0) {
+      <p class="nota">Todavía no hay precios mayoristas.</p>
+    }
+    @if (mayoristas().length) {
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th class="numero">Lista</th>
+            <th class="numero">Desde</th>
+            <th class="numero">Mayorista</th>
+            <th>Activo</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of mayoristas(); track m.id) {
+            <tr [class.apagada]="!m.activo">
+              <td>{{ m.producto }}</td>
+              <td class="numero">{{ m.precio_base | bs }}</td>
+              <td class="numero">{{ m.cantidad_minima }} u.</td>
+              <td class="numero"><strong>{{ m.precio_unitario | bs }}</strong></td>
+              <td>
+                <mat-slide-toggle
+                  [checked]="m.activo"
+                  (change)="cambiarEstado(m, $event.checked)"
+                  [attr.aria-label]="'Activar o desactivar el mayorista de ' + m.producto"
+                />
+              </td>
+              <td>
+                <button matIconButton type="button" (click)="editar(m)" aria-label="Editar">
+                  <mat-icon>edit</mat-icon>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </mat-tab>
+
+  <!-- ============================ CU-32 ============================ -->
+  <mat-tab label="Fuera de temporada">
+    <mat-card class="tarjeta" appearance="outlined">
+      <mat-card-content>
+        <h2 class="subtitulo">El factor que dispara la oferta</h2>
+        <p class="nota">
+          Una prenda entra en oferta cuando su temporada terminó hace al menos esos días
+          <strong>y</strong> le quedan al menos esas unidades disponibles sumando todas las
+          sucursales.
+        </p>
+        <form [formGroup]="regla" (ngSubmit)="guardarRegla()">
+          <mat-slide-toggle formControlName="activa">Crear ofertas automáticas</mat-slide-toggle>
+          <div class="fila-form">
+            <mat-form-field appearance="outline">
+              <mat-label>Días desde el fin de la temporada</mat-label>
+              <input matInput type="number" min="0" formControlName="dias_desde_fin" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Existencia sobrante (unidades)</mat-label>
+              <input matInput type="number" min="1" formControlName="existencia_minima" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Descuento (%)</mat-label>
+              <input matInput type="number" min="1" max="90" formControlName="porcentaje" />
+            </mat-form-field>
+          </div>
+          @if (reglaPorOmision()) {
+            <p class="nota">Estos son los valores de inicio: todavía no se guardó ninguna regla.</p>
+          }
+          <div class="acciones">
+            <button
+              matButton="filled"
+              class="vb-boton-marca"
+              type="submit"
+              [disabled]="guardandoRegla()"
+            >
+              <mat-icon>save</mat-icon>
+              Guardar regla
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <div class="cabecera-lista">
+      <h2 class="subtitulo">Prendas que cumplen hoy el factor</h2>
+      <div class="acciones">
+        <button matButton type="button" (click)="cargarCandidatas()" [disabled]="cargandoCandidatas()">
+          <mat-icon>refresh</mat-icon>
+          Recalcular
+        </button>
+        <button
+          matButton="filled"
+          class="vb-boton-marca"
+          type="button"
+          [disabled]="aplicando()"
+          (click)="aplicar()"
+        >
+          <mat-icon>bolt</mat-icon>
+          {{ aplicando() ? 'Aplicando…' : 'Aplicar ahora' }}
+        </button>
+      </div>
+    </div>
+
+    @if (cargandoCandidatas()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (!cargandoCandidatas() && candidatas().length === 0) {
+      <p class="nota">Ninguna prenda cumple el factor hoy.</p>
+    }
+    @if (candidatas().length) {
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Temporada</th>
+            <th class="numero">Terminó hace</th>
+            <th class="numero">Disponible</th>
+            <th>Situación</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of candidatas(); track c.producto_id) {
+            <tr>
+              <td>{{ c.producto }}</td>
+              <td>{{ c.temporada }} <span class="tenue">({{ c.fin_de_temporada | date: 'dd/MM/yy' }})</span></td>
+              <td class="numero">{{ c.dias_desde_fin }} días</td>
+              <td class="numero">{{ c.disponible }} u.</td>
+              <td><span class="chip" [class]="'chip ' + c.situacion">{{ etiquetaSituacion[c.situacion] }}</span></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+
+    @if (ultima(); as a) {
+      <p class="nota pie">
+        Última aplicación ({{ a.hoy | date: 'dd/MM/yy' }}): {{ a.creadas }} creadas,
+        {{ a.cerradas }} cerradas, {{ a.ya_vigentes }} ya vigentes,
+        {{ a.apagadas_por_admin }} apagadas a mano.
+      </p>
+    }
+    <p class="nota pie">
+      Las ofertas creadas aparecen en <a routerLink="/admin/promociones">Promociones</a> como
+      «Automática». Si apaga una, no se vuelve a crear.
+    </p>
+  </mat-tab>
+
+  <!-- ============================ RF-58 ============================ -->
+  <mat-tab label="Ofertas manuales">
+    <mat-card class="tarjeta" appearance="outlined">
+      <mat-card-content>
+        <p>
+          Las ofertas manuales, con su vigencia sobre una prenda, una categoría o una temporada,
+          se gestionan en Promociones.
+        </p>
+        <a matButton="filled" class="vb-boton-marca" routerLink="/admin/promociones">
+          <mat-icon>sell</mat-icon>
+          Ir a Promociones
+        </a>
+      </mat-card-content>
+    </mat-card>
+  </mat-tab>
+</mat-tab-group>

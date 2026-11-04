@@ -1,0 +1,153 @@
+:host {
+  display: block;
+  max-width: 64rem;
+  margin: 0 auto;
+}
+
+.encabezado {
+  margin-bottom: 1rem;
+
+  h1 {
+    margin: 0;
+  }
+
+  .bajada {
+    margin: 0.25rem 0 0;
+    opacity: 0.75;
+  }
+}
+
+.tarjeta {
+  margin: 1rem 0;
+}
+
+.subtitulo {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.ancho {
+  width: 100%;
+}
+
+.fila-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+
+  mat-form-field {
+    flex: 1 1 12rem;
+  }
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.elegido {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 0.5rem;
+}
+
+.opcion {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.5rem;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.03);
+  }
+}
+
+.titulo {
+  font-weight: 500;
+}
+
+.tenue {
+  opacity: 0.65;
+}
+
+.cabecera-lista {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0 1rem;
+
+  th,
+  td {
+    padding: 0.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    text-align: left;
+  }
+
+  .numero {
+    text-align: right;
+  }
+
+  .apagada {
+    opacity: 0.55;
+  }
+}
+
+.chip {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: rgba(0, 0, 0, 0.06);
+
+  &.NUEVA {
+    background: #fff3e0;
+    color: #8a4b00;
+  }
+
+  &.VIGENTE,
+  &.CREADA {
+    background: #e8f5e9;
+    color: #1b5e20;
+  }
+
+  &.APAGADA {
+    background: #eceff1;
+    color: #455a64;
+  }
+}
+
+.nota {
+  opacity: 0.75;
+}
+
+.pie {
+  font-size: 0.85rem;
+}
