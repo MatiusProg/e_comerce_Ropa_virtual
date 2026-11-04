@@ -35,6 +35,8 @@ import type {
 import type { SucursalBreve } from '../../../core/models/organizacion.models';
 import type { Proveedor } from '../../../core/models/proveedores.models';
 import { AjusteFormulario } from './ajuste-formulario';
+import { KardexDialogo, type DatosKardex } from './kardex-dialogo';
+import { InventarioOffline } from './inventario-offline';
 import { MinimoFormulario, type DatosMinimoFormulario } from './minimo-formulario';
 import { IngresoFormulario, type DatosIngresoFormulario } from './ingreso-formulario';
 import {
@@ -81,6 +83,7 @@ import {
     MatTableModule,
     MatTabsModule,
     MatTooltipModule,
+    InventarioOffline,
   ],
   templateUrl: './inventario.html',
   styleUrl: './inventario.scss',
@@ -93,10 +96,13 @@ export class Inventario implements OnInit {
   private readonly dialogo = inject(MatDialog);
   private readonly aviso = inject(MatSnackBar);
 
-  /** Solo el Administrador ajusta y transfiere (CU-15). */
+  /** Solo el Administrador transfiere (CU-15). */
   protected readonly esAdministrador = computed(
     () => this.auth.rol() === 'ADMINISTRADOR',
   );
+  /** CU-21: el encargado también ajusta por conteo, en su sucursal, y es el
+   *  único que trabaja el inventario sin conexión. */
+  protected readonly esEncargado = computed(() => this.auth.rol() === 'ENCARGADO');
 
   // La columna «Sucursal» es solo del Administrador: el Encargado ve la suya
   // y nada más, y en su tabla decía lo mismo en todas las filas.
@@ -401,6 +407,15 @@ export class Inventario implements OnInit {
         );
         this.refrescarTodo();
       });
+  }
+
+  /** CU-21 / RF-53: todos los movimientos de la prenda con su saldo. */
+  protected verKardex(existencia: Existencia): void {
+    const datos: DatosKardex = {
+      variante_id: existencia.variante_id,
+      sucursal_id: existencia.sucursal_id,
+    };
+    this.dialogo.open(KardexDialogo, { data: datos, width: '920px', maxWidth: '95vw' });
   }
 
   // --- Presentación -------------------------------------------------------

@@ -4,7 +4,10 @@ import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import type {
+  ConteoOffline,
   DevolucionIn,
+  IngresoOffline,
+  PaqueteDeInventario,
   EstadoLocal,
   LoteOut,
   OperacionDeSucursal,
@@ -18,6 +21,7 @@ import { sinRespuesta } from '../sin-respuesta';
 /** Igual que `MAXIMO_POR_LOTE` del backend. */
 const POR_LOTE = 50;
 const CLAVE_PAQUETE = 'mostrador';
+const CLAVE_INVENTARIO = 'inventario';
 /** Cada cuánto se reintenta sola la cola mientras haya pendientes. */
 const REINTENTO_MS = 60_000;
 
@@ -44,12 +48,14 @@ export class OfflineService {
 
   private readonly _enLinea = signal(typeof navigator === 'undefined' ? true : navigator.onLine);
   private readonly _paquete = signal<PaqueteDeMostrador | null>(null);
+  private readonly _paqueteInventario = signal<PaqueteDeInventario | null>(null);
   private readonly _operaciones = signal<OperacionGuardada[]>([]);
   private readonly _sincronizando = signal(false);
   private readonly _ahora = signal(Date.now());
 
   readonly enLinea = this._enLinea.asReadonly();
   readonly paquete = this._paquete.asReadonly();
+  readonly paqueteInventario = this._paqueteInventario.asReadonly();
   readonly sincronizando = this._sincronizando.asReadonly();
 
   /** De la más nueva a la más vieja. */
@@ -104,6 +110,9 @@ export class OfflineService {
   private async cargar(): Promise<void> {
     try {
       this._paquete.set((await leer<PaqueteDeMostrador>(PAQUETES, CLAVE_PAQUETE)) ?? null);
+      this._paqueteInventario.set(
+        (await leer<PaqueteDeInventario>(PAQUETES, CLAVE_INVENTARIO)) ?? null,
+      );
       this._operaciones.set(await todos<OperacionGuardada>(OPERACIONES));
     } catch {
       // Sin IndexedDB (modo privado de algunos navegadores) la web sigue
@@ -193,6 +202,97 @@ export class OfflineService {
     };
     await guardar(PAQUETES, actualizado, CLAVE_PAQUETE);
     this._paquete.set(actualizado);
+    return guardada;
+  }
+
+  // --- CU-21 Inventario sin conexión (encargado) -------------------------
+
+  /**
+   * Descarga las prendas con su saldo y los proveedores. Lo registrado sin
+   * red y todavía no confirmado se vuelve a aplicar encima: si no, el
+   * encargado vería el saldo de antes de su propio ingreso.
+   */
+  async prepararInventario(): Promise<PaqueteDeInventario> {
+    const paquete = await firstValueFrom(
+      this.http.get<PaqueteDeInventario>(`${this.base}/paquete-inventario`),
+    );
+    const delta = new Map<number, number>();
+    for (const o of this.pendientes()) {
+      for (const [variante, cantidad] of this.efectoEnInventario(o.operacion)) {
+        delta.set(variante, (delta.get(variante) ?? 0) + cantidad);
+      }
+    }
+    paquete.prendas = paquete.prendas.map((p) => ({
+      ...p,
+      disponible: Math.max(0, p.disponible + (delta.get(p.variante_id) ?? 0)),
+    }));
+    await guardar(PAQUETES, paquete, CLAVE_INVENTARIO);
+    this._paqueteInventario.set(paquete);
+    this._ahora.set(Date.now());
+    return paquete;
+  }
+
+  /** Lo que una operación de inventario le hace al saldo local. */
+  private efectoEnInventario(op: OperacionOfflineIn): [number, number][] {
+    if (op.tipo === 'INGRESO' && op.ingreso) {
+      return op.ingreso.lineas.map((l) => [l.variante_id, l.cantidad]);
+    }
+    if (op.tipo === 'AJUSTE' && op.conteo) {
+      return [[op.conteo.variante_id, op.conteo.cantidad_contada - op.conteo.saldo_visto]];
+    }
+    return [];
+  }
+
+  /** Guarda un ingreso sin red. Lo confirma el servidor al sincronizar. */
+  async registrarIngresoOffline(ingreso: IngresoOffline, resumen: string): Promise<OperacionGuardada> {
+    return this.guardarDeInventario({ tipo: 'INGRESO', ingreso }, resumen);
+  }
+
+  /** Guarda un conteo sin red: viaja lo que se veía y lo que se contó. */
+  async registrarConteoOffline(conteo: ConteoOffline, resumen: string): Promise<OperacionGuardada> {
+    return this.guardarDeInventario({ tipo: 'AJUSTE', conteo }, resumen);
+  }
+
+  private async guardarDeInventario(
+    parcial: Pick<OperacionOfflineIn, 'tipo' | 'ingreso' | 'conteo'>,
+    resumen: string,
+  ): Promise<OperacionGuardada> {
+    const paquete = this._paqueteInventario();
+    if (!paquete) throw new Error('Prepare el inventario para trabajar sin conexión.');
+    const uuid = crypto.randomUUID();
+    const operacion: OperacionOfflineIn = {
+      uuid,
+      creada_en: new Date().toISOString(),
+      lineas: [],
+      ...parcial,
+    };
+    const guardada: OperacionGuardada = {
+      uuid,
+      estado: 'local',
+      operacion,
+      resumen,
+      total: '',
+      intentos: 0,
+      motivo: null,
+      venta_codigo: null,
+      requiere_devolucion: false,
+      actualizada_en: new Date().toISOString(),
+    };
+    // Primero la operación, después el saldo local (ver `registrarVenta`).
+    await guardar(OPERACIONES, guardada);
+    this._operaciones.update((ops) => [...ops, guardada]);
+
+    const efecto = new Map(this.efectoEnInventario(operacion));
+    const actualizado: PaqueteDeInventario = {
+      ...paquete,
+      prendas: paquete.prendas.map((p) =>
+        efecto.has(p.variante_id)
+          ? { ...p, disponible: Math.max(0, p.disponible + efecto.get(p.variante_id)!) }
+          : p,
+      ),
+    };
+    await guardar(PAQUETES, actualizado, CLAVE_INVENTARIO);
+    this._paqueteInventario.set(actualizado);
     return guardada;
   }
 

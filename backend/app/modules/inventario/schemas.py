@@ -339,6 +339,43 @@ class MovimientoOut(BaseModel):
     usuario: str | None
 
 
+class MovimientoKardexOut(BaseModel):
+    """CU-21 / RF-53: una fila del kardex de una prenda en una sucursal."""
+
+    id: int
+    creado_en: datetime
+    tipo: str
+    #: Con signo: positiva entra, negativa sale.
+    cantidad: int
+    #: El disponible que quedó después de este movimiento.
+    saldo: int
+    motivo: str | None
+    referencia: str | None
+    proveedor: str | None
+    usuario: str | None
+    #: Se registró sin conexión y llegó al sincronizar (CU-17).
+    sin_conexion: bool
+
+
+class KardexOut(BaseModel):
+    """El kardex de una prenda en una sucursal, del más reciente al más viejo."""
+
+    variante_id: int
+    sku: str
+    producto: str
+    talla: str
+    color: str
+    sucursal_id: int
+    sucursal: str
+    disponible: int
+    reservada: int
+    stock_minimo: int
+    total: int
+    pagina: int
+    tamano: int
+    items: list[MovimientoKardexOut]
+
+
 class PaginaMovimientos(BaseModel):
     """Historial de movimientos, paginado."""
 

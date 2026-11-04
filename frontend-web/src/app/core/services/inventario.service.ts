@@ -15,6 +15,7 @@ import {
   IngresoCrear,
   IngresoRegistrado,
   IngresoResumen,
+  Kardex,
   Movimiento,
   PaginaExistencias,
   PaginaIngresos,
@@ -116,6 +117,18 @@ export class InventarioService {
     if (filtros.tamano) params = params.set('tamano', filtros.tamano);
     return this.http
       .get<PaginaExistencias>(`${this.base}/existencias`, { params })
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
+
+  /** CU-21 / RF-53: el kardex de una prenda en una sucursal. */
+  kardex(variante_id: number, sucursal_id: number, pagina = 1, tamano = 50): Observable<Kardex> {
+    const params = new HttpParams()
+      .set('variante_id', variante_id)
+      .set('sucursal_id', sucursal_id)
+      .set('pagina', pagina)
+      .set('tamano', tamano);
+    return this.http
+      .get<Kardex>(`${this.base}/kardex`, { params })
       .pipe(catchError((e) => throwError(() => this.traducir(e))));
   }
 

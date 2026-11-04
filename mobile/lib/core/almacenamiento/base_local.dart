@@ -1,4 +1,4 @@
-/// SQLite del telefono (2do parcial, CU-13, CU-15, CU-17 y CU-18).
+/// SQLite del telefono (2do parcial, CU-13, CU-15, CU-17, CU-18 y CU-21).
 ///
 /// Lo que pide el enunciado (§6.3) para trabajar sin red, en tablas y no en
 /// un solo JSON: las sucursales, las prendas con su saldo por sucursal y las
@@ -13,6 +13,7 @@ import 'dart:convert';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
+import '../../data/modelos/inventario_offline.dart';
 import '../../data/modelos/offline.dart';
 
 class BaseLocal {
@@ -21,7 +22,8 @@ class BaseLocal {
   static final BaseLocal instancia = BaseLocal._();
 
   /// 2: la vitrina con fotos (producto, categoria e imagen de cada prenda).
-  static const _version = 2;
+  /// 3: el inventario del encargado (CU-21): sus prendas y los proveedores.
+  static const _version = 3;
   Database? _db;
 
   Future<Database> get _base async {
@@ -71,6 +73,22 @@ class BaseLocal {
             motivo TEXT,
             reserva_id INTEGER
           )''');
+        await db.execute('''
+          CREATE TABLE prenda_inventario (
+            variante_id INTEGER PRIMARY KEY,
+            sku TEXT NOT NULL,
+            producto TEXT NOT NULL,
+            talla TEXT NOT NULL,
+            color TEXT NOT NULL,
+            disponible INTEGER NOT NULL,
+            reservada INTEGER NOT NULL,
+            stock_minimo INTEGER NOT NULL
+          )''');
+        await db.execute('''
+          CREATE TABLE proveedor_local (
+            id INTEGER PRIMARY KEY,
+            razon_social TEXT NOT NULL
+          )''');
       },
       onUpgrade: (db, anterior, _) async {
         if (anterior < 2) {
@@ -92,6 +110,24 @@ class BaseLocal {
           await db.delete('disponible_local');
           await db.delete('sucursal_local');
           await db.delete('metadato');
+        }
+        if (anterior < 3) {
+          await db.execute('''
+          CREATE TABLE prenda_inventario (
+            variante_id INTEGER PRIMARY KEY,
+            sku TEXT NOT NULL,
+            producto TEXT NOT NULL,
+            talla TEXT NOT NULL,
+            color TEXT NOT NULL,
+            disponible INTEGER NOT NULL,
+            reservada INTEGER NOT NULL,
+            stock_minimo INTEGER NOT NULL
+          )''');
+          await db.execute('''
+          CREATE TABLE proveedor_local (
+            id INTEGER PRIMARY KEY,
+            razon_social TEXT NOT NULL
+          )''');
         }
       },
     );
@@ -211,6 +247,92 @@ class BaseLocal {
           'UPDATE disponible_local SET disponible = MAX(0, disponible - ?) '
           'WHERE variante_id = ? AND sucursal_id = ?',
           [entrada.value, entrada.key, sucursalId],
+        );
+      }
+    });
+  }
+
+  // --- El inventario del encargado (CU-21) --------------------------------
+
+  /// Reemplaza el paquete de inventario en una sola transaccion. Las claves
+  /// del metadato llevan `inv_` para no pisar el paquete del cliente.
+  Future<void> guardarPaqueteInventario(PaqueteInventario paquete) async {
+    final db = await _base;
+    await db.transaction((tx) async {
+      await tx.delete('prenda_inventario');
+      await tx.delete('proveedor_local');
+      final lote = tx.batch();
+      for (final p in paquete.prendas) {
+        lote.insert('prenda_inventario', {
+          'variante_id': p.varianteId,
+          'sku': p.sku,
+          'producto': p.producto,
+          'talla': p.talla,
+          'color': p.color,
+          'disponible': p.disponible,
+          'reservada': p.reservada,
+          'stock_minimo': p.stockMinimo,
+        });
+      }
+      for (final p in paquete.proveedores) {
+        lote.insert('proveedor_local', {'id': p.id, 'razon_social': p.razonSocial});
+      }
+      final meta = {
+        'inv_generado_en': paquete.generadoEn.toIso8601String(),
+        'inv_vigente_hasta': paquete.vigenteHasta.toIso8601String(),
+        'inv_sucursal_id': '${paquete.sucursalId}',
+        'inv_sucursal': paquete.sucursal,
+      };
+      meta.forEach((clave, valor) {
+        lote.insert('metadato', {'clave': clave, 'valor': valor},
+            conflictAlgorithm: ConflictAlgorithm.replace);
+      });
+      await lote.commit(noResult: true);
+    });
+  }
+
+  Future<PaqueteInventario?> leerPaqueteInventario() async {
+    final db = await _base;
+    final meta = {
+      for (final f in await db.query('metadato'))
+        f['clave'] as String: f['valor'] as String,
+    };
+    if (!meta.containsKey('inv_generado_en')) return null;
+    return PaqueteInventario(
+      generadoEn: DateTime.parse(meta['inv_generado_en']!),
+      vigenteHasta: DateTime.parse(meta['inv_vigente_hasta']!),
+      sucursalId: int.parse(meta['inv_sucursal_id']!),
+      sucursal: meta['inv_sucursal']!,
+      prendas: [
+        for (final f in await db.query('prenda_inventario', orderBy: 'producto, talla, color'))
+          PrendaInventario(
+            varianteId: f['variante_id'] as int,
+            sku: f['sku'] as String,
+            producto: f['producto'] as String,
+            talla: f['talla'] as String,
+            color: f['color'] as String,
+            disponible: f['disponible'] as int,
+            reservada: f['reservada'] as int,
+            stockMinimo: f['stock_minimo'] as int,
+          ),
+      ],
+      proveedores: [
+        for (final f in await db.query('proveedor_local', orderBy: 'razon_social'))
+          ProveedorLocal(id: f['id'] as int, razonSocial: f['razon_social'] as String),
+      ],
+    );
+  }
+
+  /// Suma (o resta) al disponible local lo registrado sin red. Nunca baja de
+  /// cero: si no alcanza, lo decide el servidor al sincronizar.
+  Future<void> aplicarAInventario(Map<int, int> delta) async {
+    final db = await _base;
+    await db.transaction((tx) async {
+      for (final e in delta.entries) {
+        await tx.rawUpdate(
+          'UPDATE prenda_inventario SET disponible = MAX(0, disponible + ?) '
+          'WHERE variante_id = ?',
+          [e.value, e.key],
         );
       }
     });

@@ -42,7 +42,9 @@ from app.modules.inventario.schemas import (
     IngresoIn,
     IngresoOut,
     IngresoResumenOut,
+    KardexOut,
     LineaIngresoOut,
+    MovimientoKardexOut,
     MovimientoOut,
     PaginaIngresos,
     PaginaExistencias,
@@ -385,9 +387,18 @@ def _fila_a_movimiento(fila) -> MovimientoOut:
 # =====================================================================
 
 def registrar_ingreso(
-    db: Session, datos: IngresoIn, *, usuario_id: int | None
+    db: Session,
+    datos: IngresoIn,
+    *,
+    usuario_id: int | None,
+    confirmar: bool = True,
+    movimientos: list | None = None,
 ) -> IngresoOut:
     """Pasos 4 a 7: recibe el envio de un proveedor y sube los saldos.
+
+    Con `confirmar=False` no hace commit: lo usa la sincronizacion offline de
+    CU-21, que confirma cada operacion por su cuenta. `movimientos`, si viene,
+    recibe los movimientos escritos para que la operacion offline los marque.
 
     Todo el ingreso es **una** transaccion. Si la linea catorce falla, las
     trece anteriores no quedan cargadas: el remito se vuelve a intentar entero
@@ -466,6 +477,8 @@ def registrar_ingreso(
             usuario_id=usuario_id,
         )
         primer_movimiento = primer_movimiento or movimiento
+        if movimientos is not None:
+            movimientos.append(movimiento)
 
         variante = variantes[linea.variante_id]
         lineas.append(
@@ -491,7 +504,10 @@ def registrar_ingreso(
     db.refresh(primer_movimiento)
     registrado_en = primer_movimiento.creado_en
 
-    db.commit()
+    # CU-21 sin conexión: lo confirma la sincronización, operación por
+    # operación, dentro de su propio SAVEPOINT.
+    if confirmar:
+        db.commit()
 
     return IngresoOut(
         registrado_en=registrado_en,
@@ -626,6 +642,114 @@ def registrar_ajuste(
             repository.obtener_existencia_con_detalle(db, existencia.id)
         ),
         diferencia=diferencia,
+    )
+
+
+def ajustar_por_diferencia(
+    db: Session,
+    *,
+    variante_id: int,
+    sucursal_id: int,
+    diferencia: int,
+    motivo: str,
+    usuario_id: int | None,
+):
+    """CU-21 sin conexion: aplica un conteo fisico como DIFERENCIA. **Sin commit.**
+
+    POR QUE LA DIFERENCIA Y NO LO CONTADO
+    -------------------------------------
+    El encargado conto la percha sin red, y el conteo llega al servidor
+    despues. En el medio pudo haber ventas: si se tomara lo contado como saldo
+    final, esas ventas se borrarian del inventario. Por eso el dispositivo
+    manda lo que vio y lo que conto, y se aplica solo lo que cambio
+    (decision de Luis del 03/11). Las ventas del medio quedan como estaban.
+
+    Devuelve el movimiento escrito, o `None` si no hubo diferencia (contar lo
+    mismo que se veia no es un error: el conteo se confirma sin movimiento).
+    """
+    _sucursal_activa(db, sucursal_id)
+    _variantes_validas(db, [variante_id])
+    if diferencia == 0:
+        return None
+    existencia = _existencia_o_crearla(db, variante_id=variante_id, sucursal_id=sucursal_id)
+    # Lo que se resta sale del disponible: lo reservado lo mueven las reservas.
+    return _aplicar_movimiento(
+        db,
+        existencia,
+        tipo="AJUSTE",
+        cantidad=diferencia,
+        motivo=motivo,
+        usuario_id=usuario_id,
+    )
+
+
+def kardex(
+    db: Session, *, variante_id: int, sucursal_id: int, pagina: int, tamano: int
+) -> KardexOut:
+    """CU-21 / RF-53: todos los movimientos de UNA prenda en UNA sucursal, con
+    el saldo que dejo cada uno.
+
+    El saldo no se guarda: sale del invariante de D4 (el disponible es la suma
+    de los movimientos), con una suma acumulada en la base. Por eso el kardex
+    cuadra siempre con la existencia, y si algun dia no cuadra, es un error a
+    la vista y no un numero inventado.
+    """
+    variantes = _variantes_validas(db, [variante_id])
+    existencia = repository.obtener_existencia(
+        db, variante_id=variante_id, sucursal_id=sucursal_id
+    )
+    variante = variantes[variante_id]
+    if existencia is None:
+        sucursal = _sucursal_activa(db, sucursal_id)
+        return KardexOut(
+            variante_id=variante_id,
+            sku=variante.sku,
+            producto=variante.producto,
+            talla=variante.talla,
+            color=variante.color,
+            sucursal_id=sucursal_id,
+            sucursal=sucursal.nombre,
+            disponible=0,
+            reservada=0,
+            stock_minimo=0,
+            total=0,
+            pagina=pagina,
+            tamano=tamano,
+            items=[],
+        )
+    sucursal = repository.obtener_sucursal(db, sucursal_id)
+    total, filas = repository.kardex(
+        db, existencia_id=existencia.id, pagina=pagina, tamano=tamano
+    )
+    return KardexOut(
+        variante_id=variante_id,
+        sku=variante.sku,
+        producto=variante.producto,
+        talla=variante.talla,
+        color=variante.color,
+        sucursal_id=sucursal_id,
+        sucursal=sucursal.nombre,
+        disponible=existencia.cantidad_disponible,
+        reservada=existencia.cantidad_reservada,
+        stock_minimo=existencia.stock_minimo,
+        total=total,
+        pagina=pagina,
+        tamano=tamano,
+        items=[
+            MovimientoKardexOut(
+                id=f.id,
+                creado_en=f.creado_en,
+                tipo=f.tipo,
+                cantidad=f.cantidad,
+                saldo=f.saldo,
+                motivo=f.motivo,
+                referencia=f.referencia,
+                proveedor=f.proveedor,
+                usuario=f.usuario,
+                sin_conexion=f.operacion_offline_id is not None,
+            )
+            for f in filas
+        ],
     )
 
 

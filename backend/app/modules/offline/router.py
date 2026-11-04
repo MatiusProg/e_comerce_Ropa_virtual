@@ -6,6 +6,8 @@ QUIÉN PUEDE
 - El paquete del mostrador y la venta offline: CAJERO y ENCARGADO, los mismos
   que cobran en línea (CU-31).
 - El paquete para reservar y la reserva offline: también el CLIENTE (CU-15).
+- El paquete de inventario y el ingreso o conteo offline: solo el ENCARGADO,
+  en su sucursal (CU-21).
 - Atender las rechazadas y devolver el dinero: ENCARGADO, de su sucursal, y
   el ADMINISTRADOR, de todas (CU-19, solo web).
 """
@@ -25,6 +27,7 @@ from app.modules.offline.schemas import (
     LoteOut,
     OperacionOut,
     PaqueteDeClienteOut,
+    PaqueteDeInventarioOut,
     PaqueteDeMostradorOut,
 )
 
@@ -60,6 +63,23 @@ def paquete_de_cliente(db: DbSession):
     return service.paquete_de_cliente(db)
 
 
+@router.get(
+    "/paquete-inventario",
+    response_model=PaqueteDeInventarioOut,
+    summary="CU-21 Preparar el dispositivo (inventario)",
+    dependencies=[Depends(requiere_roles("ENCARGADO"))],
+)
+def paquete_de_inventario(db: DbSession, usuario: Usuario):
+    """Las prendas con su saldo en la sucursal y los proveedores, para
+    registrar ingresos y conteos sin conexión."""
+    try:
+        return service.paquete_de_inventario(
+            db, usuario_id=usuario.id, sucursal_id=usuario.sucursal_id
+        )
+    except service.ErrorOffline as e:
+        raise HTTPException(e.codigo, detail=e.mensaje) from e
+
+
 @router.post(
     "/sincronizar",
     response_model=LoteOut,
@@ -69,8 +89,8 @@ def paquete_de_cliente(db: DbSession):
 def sincronizar(lote: LoteIn, db: DbSession, usuario: Usuario):
     """Confirma o rechaza cada operación del lote. Es idempotente por UUID:
     reenviar una operación devuelve lo que se decidió la primera vez."""
-    if usuario.rol == "CLIENTE" and any(o.tipo == "VENTA" for o in lote.operaciones):
-        raise HTTPException(403, "Un cliente no registra ventas de mostrador.")
+    if usuario.rol == "CLIENTE" and any(o.tipo != "RESERVA" for o in lote.operaciones):
+        raise HTTPException(403, "Un cliente solo registra reservas.")
     try:
         return service.sincronizar(
             db,

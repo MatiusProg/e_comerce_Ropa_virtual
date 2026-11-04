@@ -114,6 +114,40 @@ class PaqueteDeClienteOut(BaseModel):
     prendas: list[PrendaParaReservarOut]
 
 
+class PrendaDeInventarioOut(BaseModel):
+    """CU-21: una prenda de la empresa con su saldo en la sucursal del
+    encargado. Van TODAS las activas, también las que todavía no tienen saldo
+    acá: un ingreso puede traer una prenda que nunca llegó a esta sucursal."""
+
+    variante_id: int
+    sku: str
+    producto: str
+    talla: str
+    color: str
+    disponible: int
+    reservada: int
+    stock_minimo: int
+
+
+class ProveedorOfflineOut(BaseModel):
+    id: int
+    razon_social: str
+
+
+class PaqueteDeInventarioOut(BaseModel):
+    """Lo que el encargado descarga para registrar ingresos y conteos sin
+    conexión (CU-21). El saldo es el de la descarga: el conteo offline manda
+    lo que vio y lo que contó, y se aplica la diferencia."""
+
+    generado_en: datetime
+    vigente_hasta: datetime
+    empresa_id: int
+    usuario_id: int
+    sucursal: SucursalOfflineOut
+    prendas: list[PrendaDeInventarioOut]
+    proveedores: list[ProveedorOfflineOut]
+
+
 # =====================================================================
 # CU-17 Sincronizar
 # =====================================================================
@@ -143,12 +177,51 @@ class PagoOfflineIn(BaseModel):
         return self
 
 
+class LineaIngresoOfflineIn(BaseModel):
+    variante_id: int
+    cantidad: int = Field(gt=0, le=100_000)
+
+
+class IngresoOfflineIn(BaseModel):
+    """CU-21: mercadería que llegó mientras no había red."""
+
+    proveedor_id: int
+    referencia: str | None = Field(default=None, max_length=40)
+    observacion: str | None = Field(default=None, max_length=120)
+    lineas: list[LineaIngresoOfflineIn] = Field(min_length=1, max_length=50)
+
+
+class ConteoOfflineIn(BaseModel):
+    """CU-21: un conteo físico sin conexión.
+
+    Viajan lo que el dispositivo VEÍA (disponible + reservada al descargar,
+    menos lo que restó después) y lo que se contó. El servidor aplica la
+    diferencia, no lo contado: las ventas que llegaron en el medio no se
+    pisan (decisión del 03/11).
+    """
+
+    variante_id: int
+    saldo_visto: int = Field(ge=0, le=1_000_000)
+    cantidad_contada: int = Field(ge=0, le=1_000_000)
+    motivo: str = Field(min_length=5, max_length=200)
+
+    @property
+    def diferencia(self) -> int:
+        return self.cantidad_contada - self.saldo_visto
+
+
 class OperacionOfflineIn(BaseModel):
     uuid: UUID
-    tipo: Literal["VENTA", "RESERVA"]
+    tipo: Literal["VENTA", "RESERVA", "INGRESO", "AJUSTE"]
     creada_en: datetime
-    lineas: list[LineaOfflineIn] = Field(min_length=1, max_length=50)
+    #: VENTA y RESERVA. Los de inventario usan `ingreso` o `conteo`.
+    lineas: list[LineaOfflineIn] = Field(default_factory=list, max_length=50)
     pago: PagoOfflineIn | None = None
+
+    #: INGRESO y AJUSTE (CU-21): la sucursal es la del encargado; si viene,
+    #: tiene que coincidir.
+    ingreso: IngresoOfflineIn | None = None
+    conteo: ConteoOfflineIn | None = None
 
     #: VENTA: el turno del paquete de CU-13.
     turno_caja_id: int | None = None
@@ -162,6 +235,20 @@ class OperacionOfflineIn(BaseModel):
 
     @model_validator(mode="after")
     def _campos_segun_tipo(self) -> "OperacionOfflineIn":
+        if self.tipo in ("INGRESO", "AJUSTE"):
+            if self.lineas or self.pago is not None:
+                raise ValueError("Un movimiento de inventario no lleva líneas de venta ni pago.")
+            if self.tipo == "INGRESO" and self.ingreso is None:
+                raise ValueError("Un ingreso offline necesita sus prendas y su proveedor.")
+            if self.tipo == "AJUSTE" and self.conteo is None:
+                raise ValueError("Un ajuste offline necesita el conteo.")
+            if self.tipo == "INGRESO":
+                vistas = [l.variante_id for l in self.ingreso.lineas]
+                if len(vistas) != len(set(vistas)):
+                    raise ValueError("La misma prenda aparece dos veces.")
+            return self
+        if not self.lineas:
+            raise ValueError("La operación no tiene prendas.")
         if self.tipo == "VENTA":
             if self.turno_caja_id is None:
                 raise ValueError("Una venta offline necesita el turno de caja.")
@@ -208,6 +295,8 @@ class ResultadoOut(BaseModel):
     #: Rechazada y cobrada: hay que devolverle el dinero al cliente (CU-19).
     requiere_devolucion: bool
     devuelta: bool
+    #: CU-21: unidades que movió un INGRESO o un AJUSTE (con signo).
+    unidades: int | None = None
     #: Ya había llegado antes: esta respuesta es la de la primera vez.
     repetida: bool
     recibida_en: datetime

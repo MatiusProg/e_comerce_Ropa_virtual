@@ -66,6 +66,7 @@ from app.modules.inventario.schemas import (
     IngresoIn,
     AvisoDeIngresoOut,
     IngresoOut,
+    KardexOut,
     MovimientoOut,
     PaginaIngresos,
     PaginaExistencias,
@@ -443,6 +444,35 @@ def listar_movimientos(
         desde=desde,
         hasta=hasta,
     )
+
+
+@operacion_router.get(
+    "/kardex",
+    response_model=KardexOut,
+    summary="CU-21 Kardex de una prenda en una sucursal",
+)
+def kardex(
+    db: DbSession,
+    usuario: Usuario,
+    variante_id: Annotated[int, Query()],
+    sucursal_id: Annotated[int | None, Query()] = None,
+    pagina: Annotated[int, Query(ge=1)] = 1,
+    tamano: Annotated[int, Query(ge=1, le=100)] = 50,
+) -> KardexOut:
+    """RF-53: cada movimiento de la prenda con el saldo que dejó, incluidas
+    ventas, reservas, traspasos, devoluciones y lo registrado sin conexión.
+
+    El Encargado ve su sucursal. El Administrador tiene que decir cuál.
+    """
+    sucursal = _sucursal_del_usuario(usuario, sucursal_id)
+    if sucursal is None:
+        raise HTTPException(422, "Indique la sucursal del kardex.")
+    try:
+        return service.kardex(
+            db, variante_id=variante_id, sucursal_id=sucursal, pagina=pagina, tamano=tamano
+        )
+    except service.ErrorDeInventario as error:
+        raise _traducir(error)
 
 
 @operacion_router.get(

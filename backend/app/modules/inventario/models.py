@@ -208,6 +208,12 @@ class MovimientoInventario(DeEmpresa, Base):
     usuario_id: Mapped[int | None] = mapped_column(
         BigInteger, ForeignKey("usuario.id"), index=True
     )
+    #: CU-21 (2do parcial): la operación offline que lo originó, si se
+    #: registró sin conexión. El kardex la usa para marcar «sin conexión», y
+    #: une el movimiento con el dispositivo y la hora en que se hizo de verdad.
+    operacion_offline_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("operacion_offline.id"), index=True
+    )
     creado_en: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

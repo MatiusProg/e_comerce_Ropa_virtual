@@ -61,12 +61,62 @@ export interface PagoOffline {
   referencia?: string | null;
 }
 
+/** CU-21: una prenda con su saldo en la sucursal del encargado. */
+export interface PrendaDeInventario {
+  variante_id: number;
+  sku: string;
+  producto: string;
+  talla: string;
+  color: string;
+  disponible: number;
+  reservada: number;
+  stock_minimo: number;
+}
+
+export interface ProveedorOffline {
+  id: number;
+  razon_social: string;
+}
+
+/** CU-21: lo que el encargado se lleva para registrar inventario sin red. */
+export interface PaqueteDeInventario {
+  generado_en: string;
+  vigente_hasta: string;
+  empresa_id: number;
+  usuario_id: number;
+  sucursal: SucursalOffline;
+  prendas: PrendaDeInventario[];
+  proveedores: ProveedorOffline[];
+}
+
+export interface IngresoOffline {
+  proveedor_id: number;
+  referencia?: string | null;
+  observacion?: string | null;
+  lineas: { variante_id: number; cantidad: number }[];
+}
+
+/**
+ * CU-21: un conteo sin red. Viaja lo que se VEÍA y lo que se contó: el
+ * servidor aplica la diferencia, así las ventas del medio no se pisan.
+ */
+export interface ConteoOffline {
+  variante_id: number;
+  saldo_visto: number;
+  cantidad_contada: number;
+  motivo: string;
+}
+
+export type TipoOperacionOffline = 'VENTA' | 'RESERVA' | 'INGRESO' | 'AJUSTE';
+
 /** Lo que viaja al servidor en CU-17. */
 export interface OperacionOfflineIn {
   uuid: string;
-  tipo: 'VENTA' | 'RESERVA';
+  tipo: TipoOperacionOffline;
   creada_en: string;
   lineas: LineaOffline[];
+  ingreso?: IngresoOffline | null;
+  conteo?: ConteoOffline | null;
   pago?: PagoOffline | null;
   turno_caja_id?: number | null;
   sucursal_id?: number | null;
@@ -110,6 +160,8 @@ export interface ResultadoSincronizacion {
   reserva_id: number | null;
   requiere_devolucion: boolean;
   devuelta: boolean;
+  /** CU-21: unidades que movió un INGRESO o un AJUSTE, con signo. */
+  unidades?: number | null;
   repetida: boolean;
   recibida_en: string;
 }

@@ -6,6 +6,8 @@ CU-17 Sincronizar              ->  `sincronizar`
 CU-18 Consultar pendientes     ->  `operaciones_mias` (la cola local la muestra
                                     el dispositivo; acá está lo ya decidido)
 CU-19 Atender rechazadas       ->  `operaciones_de_sucursal`, `registrar_devolucion`
+CU-21 Inventario sin conexión  ->  `paquete_de_inventario`, y los tipos INGRESO y
+                                    AJUSTE en `sincronizar`
 CU-14, CU-15 y CU-16 se hacen en el dispositivo y llegan acá por CU-17.
 
 CADA OPERACIÓN VA EN SU PROPIO SAVEPOINT, Y SE CONFIRMA SOLA
@@ -43,7 +45,8 @@ from app.modules.catalogo_publico import repository as catalogo_publico
 from app.modules.inventario import service as inventario
 from app.modules.notificaciones import service as notificaciones
 from app.modules.offline import repository
-from app.modules.offline.models import OperacionOffline
+from app.modules.inventario.schemas import IngresoIn, LineaIngresoIn
+from app.modules.offline.models import TIPOS_DE_INVENTARIO, OperacionOffline
 from app.modules.offline.schemas import (
     ClienteOfflineOut,
     DevolucionIn,
@@ -53,8 +56,11 @@ from app.modules.offline.schemas import (
     OperacionOfflineIn,
     OperacionOut,
     PaqueteDeClienteOut,
+    PaqueteDeInventarioOut,
     PaqueteDeMostradorOut,
+    PrendaDeInventarioOut,
     PrendaOfflineOut,
+    ProveedorOfflineOut,
     PrendaParaReservarOut,
     ResultadoOut,
     SucursalOfflineOut,
@@ -200,6 +206,31 @@ def paquete_de_cliente(db: Session) -> PaqueteDeClienteOut:
     )
 
 
+def paquete_de_inventario(
+    db: Session, *, usuario_id: int, sucursal_id: int | None
+) -> PaqueteDeInventarioOut:
+    """CU-21: lo que el encargado descarga para registrar ingresos y conteos
+    sin conexión. No pide turno: el inventario no es la caja."""
+    if sucursal_id is None:
+        raise ErrorOffline("Su cuenta no está asignada a ninguna sucursal.", 403)
+    generado = _ahora()
+    return PaqueteDeInventarioOut(
+        generado_en=generado,
+        vigente_hasta=_vigencia(generado),
+        empresa_id=empresa_actual(db),
+        usuario_id=usuario_id,
+        sucursal=_sucursal_out(repository.sucursal(db, sucursal_id)),
+        prendas=[
+            PrendaDeInventarioOut(**f._mapping)
+            for f in repository.prendas_para_inventario(db, sucursal_id)
+        ],
+        proveedores=[
+            ProveedorOfflineOut(id=p.id, razon_social=p.razon_social)
+            for p in repository.proveedores_activos(db)
+        ],
+    )
+
+
 # =====================================================================
 # CU-17 Sincronizar operaciones pendientes
 # =====================================================================
@@ -259,9 +290,19 @@ def _sincronizar_una(
         carga=op.model_dump(mode="json"),
     )
 
+    movimientos: list = []
     punto = db.begin_nested()
     try:
-        if op.tipo == "VENTA":
+        if op.tipo in TIPOS_DE_INVENTARIO:
+            fila.sucursal_id = _confirmar_inventario(
+                db,
+                op,
+                usuario_id=usuario_id,
+                rol=rol,
+                sucursal_del_usuario=sucursal_del_usuario,
+                movimientos=movimientos,
+            )
+        elif op.tipo == "VENTA":
             fila.sucursal_id, fila.venta_id = _confirmar_venta(db, op, usuario_id=usuario_id)
         else:
             fila.sucursal_id, fila.reserva_id = _confirmar_reserva(
@@ -274,6 +315,7 @@ def _sincronizar_una(
         fila.estado = "CONFIRMADA"
     except Rechazo as r:
         punto.rollback()
+        movimientos = []
         fila.estado = "RECHAZADA"
         fila.motivo_rechazo = r.motivo
         fila.venta_id = fila.reserva_id = None
@@ -287,6 +329,12 @@ def _sincronizar_una(
 
     db.add(fila)
     try:
+        if movimientos:
+            # El movimiento apunta a la operación: el kardex lo marca «sin
+            # conexión». Se escribe en la misma transacción que la fila.
+            db.flush()
+            for movimiento in movimientos:
+                movimiento.operacion_offline_id = fila.id
         db.commit()
     except IntegrityError:
         # Dos pedidos con el mismo UUID a la vez: el otro ganó el UNIQUE.
@@ -308,6 +356,8 @@ def _sucursal_declarada(
     Si no hay ninguna que se pueda comprobar, el pedido mismo está mal
     formado y se responde con error en vez de guardar una fila sin sucursal.
     """
+    if op.tipo in TIPOS_DE_INVENTARIO and sucursal_del_usuario is None:
+        raise ErrorOffline("Su cuenta no está asignada a ninguna sucursal.", 403)
     if op.tipo == "VENTA" and op.turno_caja_id is not None:
         turno = caja_repository.turno_por_id(db, op.turno_caja_id)
         if turno is not None and turno.usuario_id == usuario_id:
@@ -319,6 +369,68 @@ def _sucursal_declarada(
     if op.sucursal_id is not None and repository.sucursal(db, op.sucursal_id) is not None:
         return op.sucursal_id
     raise ErrorOffline("La operación no dice de qué sucursal es.", 422)
+
+
+def _confirmar_inventario(
+    db: Session,
+    op: OperacionOfflineIn,
+    *,
+    usuario_id: int,
+    rol: str,
+    sucursal_del_usuario: int | None,
+    movimientos: list,
+) -> int:
+    """CU-21 confirmado en el servidor: un ingreso o un conteo hecho sin red.
+
+    Solo el encargado, y solo en su sucursal: es el mismo ámbito que en línea.
+    Las reglas son las de en línea (prendas activas, proveedor activo, saldo
+    que no queda negativo); si alguna falla, se rechaza con su motivo.
+    """
+    if rol != "ENCARGADO":
+        raise Rechazo("Solo el encargado de la sucursal registra inventario sin conexión.")
+    if sucursal_del_usuario is None:
+        raise Rechazo("Su cuenta no está asignada a ninguna sucursal.")
+    sucursal_id = sucursal_del_usuario
+    try:
+        if op.tipo == "INGRESO":
+            datos = IngresoIn(
+                sucursal_id=sucursal_id,
+                proveedor_id=op.ingreso.proveedor_id,
+                referencia=op.ingreso.referencia,
+                observacion=op.ingreso.observacion,
+                lineas=[
+                    LineaIngresoIn(variante_id=l.variante_id, cantidad=l.cantidad)
+                    for l in op.ingreso.lineas
+                ],
+            )
+            inventario.registrar_ingreso(
+                db, datos, usuario_id=usuario_id, confirmar=False, movimientos=movimientos
+            )
+        else:
+            conteo = op.conteo
+            movimiento = inventario.ajustar_por_diferencia(
+                db,
+                variante_id=conteo.variante_id,
+                sucursal_id=sucursal_id,
+                diferencia=conteo.diferencia,
+                motivo=(
+                    f"{conteo.motivo} (sin conexión: se veían {conteo.saldo_visto}, "
+                    f"se contaron {conteo.cantidad_contada})"
+                )[:200],
+                usuario_id=usuario_id,
+            )
+            if movimiento is not None:
+                movimientos.append(movimiento)
+    except inventario.StockInsuficiente as e:
+        raise Rechazo(
+            f"El conteo resta {abs(op.conteo.diferencia)} y en la sucursal quedan "
+            f"{e.disponible} disponibles: lo demás ya se vendió o se apartó."
+        ) from e
+    except inventario.ErrorDeInventario as e:
+        from app.modules.inventario.router import _traducir
+
+        raise Rechazo(str(_traducir(e).detail)) from e
+    return sucursal_id
 
 
 def _confirmar_venta(
@@ -473,6 +585,9 @@ def _resultado(db: Session, fila: OperacionOffline, *, repetida: bool) -> Result
         motivo=fila.motivo_rechazo,
         venta_codigo=venta_codigo,
         reserva_id=fila.reserva_id,
+        unidades=repository.unidades_de_operacion(db, fila.id)
+        if fila.tipo in TIPOS_DE_INVENTARIO and fila.estado == "CONFIRMADA"
+        else None,
         requiere_devolucion=_por_devolver(fila),
         devuelta=fila.devuelto_en is not None,
         repetida=repetida,

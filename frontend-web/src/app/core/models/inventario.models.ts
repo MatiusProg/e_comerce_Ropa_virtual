@@ -275,3 +275,36 @@ export interface FiltrosExistencias {
   pagina?: number;
   tamano?: number;
 }
+
+/** CU-21 / RF-53: una fila del kardex, con el saldo que dejó. */
+export interface MovimientoKardex {
+  id: number;
+  creado_en: string;
+  tipo: TipoMovimiento;
+  cantidad: number;
+  saldo: number;
+  motivo: string | null;
+  referencia: string | null;
+  proveedor: string | null;
+  usuario: string | null;
+  /** Se registró sin conexión y llegó al sincronizar. */
+  sin_conexion: boolean;
+}
+
+/** CU-21: el kardex de una prenda en una sucursal. */
+export interface Kardex {
+  variante_id: number;
+  sku: string;
+  producto: string;
+  talla: string;
+  color: string;
+  sucursal_id: number;
+  sucursal: string;
+  disponible: number;
+  reservada: number;
+  stock_minimo: number;
+  total: number;
+  pagina: number;
+  tamano: number;
+  items: MovimientoKardex[];
+}
