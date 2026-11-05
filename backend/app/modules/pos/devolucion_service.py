@@ -144,7 +144,8 @@ class FueraDePlazo(ErrorDeMostrador):
         self.vencio_en = vencio_en
         self.plazo_horas = plazo_horas
         super().__init__(
-            f"El plazo para devolver o cambiar es de {_texto_de_plazo(plazo_horas)} desde la compra,"
+            f"El plazo para devolver o cambiar es de {_texto_de_plazo(plazo_horas)} desde la compra"
+            " (o desde la entrega, si fue un pedido web),"
             f" y venció el {tiempo.en_bolivia(vencio_en):%d/%m/%Y a las %H:%M}.",
             409,
         )
@@ -230,7 +231,9 @@ def _vence_en(venta, horas: int) -> datetime:
     mismo lunes a las 08:00 tendria poco mas de dos. El plazo es el mismo para
     los dos o no es un plazo.
     """
-    creado = venta.creado_en
+    # Un pedido web se cuenta desde que se ENTREGÓ, igual que en la web
+    # (CU-24): antes de tenerlo en la mano el cliente no puede devolverlo.
+    creado = getattr(venta, "entregado_en", None) or venta.creado_en
     if creado.tzinfo is None:  # pragma: no cover - la columna es timestamptz
         creado = creado.replace(tzinfo=timezone.utc)
     return creado + timedelta(hours=horas)
@@ -250,6 +253,54 @@ def _exigir_plazo(db: Session, venta, *, cambio_aprobado: bool = False) -> None:
         raise FueraDePlazo(vence, horas)
 
 
+#: RN-23: una venta que salió de un cambio se paga con la prenda que volvió.
+METODO_CAMBIO = "CAMBIO"
+
+
+class SoloCambio(ErrorDeMostrador):
+    """Esta venta no se devuelve en caja: solo se cambia."""
+
+    def __init__(self, motivo: str) -> None:
+        super().__init__(motivo, 409)
+
+
+def _por_que_solo_cambio(venta) -> str | None:
+    """Por qué esta venta no admite DEVOLUCIÓN en caja, o None si la admite.
+
+    - RN-23: lo que el cliente se llevó en un cambio no se devuelve, solo se
+      vuelve a cambiar. Esa venta no tiene dinero propio: se pagó con la prenda
+      que volvió, y devolverla abriría un reintegro que no sale de ningún lado.
+    - Un pedido web se cobró por la pasarela: su devolución la pide el cliente
+      en «Mis compras» y se le reembolsa por el mismo medio (CU-24/25). En caja
+      solo se hace el cambio.
+    """
+    if venta.metodo_pago == METODO_CAMBIO:
+        return (
+            "Esta venta salió de un cambio: no se devuelve, solo se puede volver "
+            "a cambiar (RN-23)."
+        )
+    if venta.metodo_pago is None:
+        return (
+            "Es un pedido web: la devolución la pide el cliente desde «Mis compras» "
+            "y se le reembolsa por la pasarela. En caja solo se puede cambiar."
+        )
+    return None
+
+
+def _aprobada_cubre(aprobada, pedidas) -> bool:
+    """Si lo que se trae de vuelta está dentro de lo que se aprobó por la web.
+
+    El cambio aprobado salta el plazo, pero solo para las prendas y cantidades
+    de la solicitud: con cualquier otra cosa rige el plazo normal.
+    """
+    if aprobada is None:
+        return False
+    aprobadas: dict[int, int] = {}
+    for linea in aprobada.lineas:
+        aprobadas[linea.variante_id] = aprobadas.get(linea.variante_id, 0) + linea.cantidad
+    return all(p.cantidad <= aprobadas.get(p.variante_id, 0) for p in pedidas)
+
+
 def _nombre(fila) -> str:
     return " · ".join(p for p in (fila.producto, fila.talla, fila.color) if p)
 
@@ -263,7 +314,7 @@ def _sale_del_cajon(venta) -> bool:
     return venta.metodo_pago == METODO_EFECTIVO
 
 
-def _lineas_que_vuelven(db: Session, venta, pedidas):
+def _lineas_que_vuelven(db: Session, venta, pedidas, *, en_la_web: dict[int, int] | None = None):
     """Valida lo que el cliente trae y lo resuelve a lineas con precio y nombre.
 
     Lo comparten los dos flujos de CU-32: lo que vuelve en un cambio se
@@ -281,7 +332,11 @@ def _lineas_que_vuelven(db: Session, venta, pedidas):
     para que quien llama arme el comprobante sin volver a consultar.
     """
     vendidas = {f.variante_id: f for f in repository.lineas_vendidas(db, venta.id)}
-    ya = repository.ya_devuelto(db, venta.id)
+    ya = dict(repository.ya_devuelto(db, venta.id))
+    # Lo que el cliente ya pidió devolver o cambiar por la web y todavía no se
+    # resolvió tampoco se puede traer a caja: se gastaría dos veces.
+    for variante_id, cantidad in (en_la_web or {}).items():
+        ya[variante_id] = ya.get(variante_id, 0) + cantidad
 
     ajenas = [l.variante_id for l in pedidas if l.variante_id not in vendidas]
     if ajenas:
@@ -333,6 +388,9 @@ def buscar_venta(db: Session, usuario_id: int, codigo: str) -> VentaDevolvibleOu
     # cliente por que no se puede, y con que fecha.
     horas = ventana_en_horas(db)
     vence = _vence_en(venta, horas)
+    from app.modules.devoluciones_web import repository as devoluciones_web_repo
+
+    aprobada = devoluciones_web_repo.cambio_aprobado(db, venta.id)
 
     return VentaDevolvibleOut(
         codigo=venta.codigo,
@@ -347,7 +405,9 @@ def buscar_venta(db: Session, usuario_id: int, codigo: str) -> VentaDevolvibleOu
         plazo_dias=horas // 24,
         plazo_horas=horas,
         vence_en=vence,
-        dentro_de_plazo=tiempo.ahora() <= vence,
+        dentro_de_plazo=aprobada is not None or tiempo.ahora() <= vence,
+        cambio_aprobado=aprobada is not None,
+        solo_cambio=_por_que_solo_cambio(venta),
     )
 
 
@@ -369,6 +429,10 @@ def registrar(db: Session, usuario_id: int, datos: DevolucionIn) -> DevolucionOu
     )
     if venta is None:
         raise VentaNoDevolvible(datos.venta_codigo)
+
+    motivo_solo_cambio = _por_que_solo_cambio(venta)
+    if motivo_solo_cambio is not None:
+        raise SoloCambio(motivo_solo_cambio)
 
     _exigir_plazo(db, venta)
 
@@ -471,11 +535,24 @@ def registrar_cambio(db: Session, usuario_id: int, datos: CambioIn) -> CambioOut
     from app.modules.devoluciones_web import service as devoluciones_web
 
     aprobada = devoluciones_web.cambio_aprobado_de(db, venta.id)
+    if not _aprobada_cubre(aprobada, datos.devueltas):
+        # Lo que se trae no es lo que se aprobó: es un cambio común, con su
+        # plazo, y no cierra la solicitud.
+        aprobada = None
     _exigir_plazo(db, venta, cambio_aprobado=aprobada is not None)
     repository.bloquear_venta(db, venta.id)
 
     # --- Lo que vuelve, al precio que se pago ----------------------------
-    vueltas, vendidas = _lineas_que_vuelven(db, venta, datos.devueltas)
+    from app.modules.devoluciones_web import repository as devoluciones_web_repo
+
+    en_la_web = devoluciones_web_repo.pedido_en_solicitudes_abiertas(db, venta.id)
+    if aprobada is not None:
+        # La solicitud que se está cumpliendo no se cuenta contra sí misma.
+        for linea in aprobada.lineas:
+            en_la_web[linea.variante_id] = en_la_web.get(linea.variante_id, 0) - linea.cantidad
+    vueltas, vendidas = _lineas_que_vuelven(
+        db, venta, datos.devueltas, en_la_web={v: n for v, n in en_la_web.items() if n > 0}
+    )
     valor_devuelto = sum((precio * cantidad for _, cantidad, precio, _ in vueltas), CERO)
 
     # --- Lo que se lleva, al precio y las promociones de HOY --------------

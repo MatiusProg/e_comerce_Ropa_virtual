@@ -82,8 +82,14 @@ class VentaDevolvibleOut(BaseModel):
     plazo_horas: int
     #: El instante exacto en que se cierra. `creado_en + plazo_horas`.
     vence_en: datetime
-    #: Si HOY todavia se puede devolver o cambiar contra esta venta.
+    #: Si HOY todavia se puede devolver o cambiar contra esta venta. Con un
+    #: cambio aprobado por la web (CU-25) es verdadero aunque haya vencido.
     dentro_de_plazo: bool
+    #: CU-25: hay una solicitud de CAMBIO aprobada para esta venta.
+    cambio_aprobado: bool = False
+    #: Si no es nulo, esta venta no se DEVUELVE en caja, solo se CAMBIA, y
+    #: este es el motivo para mostrarle al cajero (RN-23 y pedidos web).
+    solo_cambio: str | None = None
 
 
 class LineaDevolucionIn(BaseModel):

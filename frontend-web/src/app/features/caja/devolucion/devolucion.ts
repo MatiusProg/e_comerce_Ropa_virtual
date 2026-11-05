@@ -353,8 +353,9 @@ export class Devolucion implements OnInit {
         // reingresa mercadería que el cliente no trajo.
         this.lineas.set(venta.lineas.map((linea) => ({ linea, cantidad: 0 })));
         // Cada venta arranca su propio trámite: lo elegido para la anterior no
-        // tiene nada que ver con esta.
-        this.elegirModo('DEVOLUCION');
+        // tiene nada que ver con esta, y la conformidad tampoco (RN-20).
+        this.limpiarConformidad();
+        this.elegirModo(venta.solo_cambio ? 'CAMBIO' : 'DEVOLUCION');
       },
       error: (e: ErrorDevolucion) => {
         this.buscando.set(false);
@@ -450,6 +451,7 @@ export class Devolucion implements OnInit {
   protected otra(): void {
     this.comprobante.set(null);
     this.comprobanteCambio.set(null);
+    this.limpiarConformidad();
     this.codigo.setValue('');
   }
 

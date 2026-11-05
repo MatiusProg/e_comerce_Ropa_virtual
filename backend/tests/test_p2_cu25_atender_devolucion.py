@@ -209,7 +209,9 @@ def test_sin_cambio_aprobado_la_caja_sigue_exigiendo_la_ventana(
     from app.modules.ventas.models import Venta
 
     fila = db.query(Venta).filter(Venta.codigo == entregado["codigo"]).one()
+    # El plazo de un pedido web corre desde la ENTREGA (auditoría del 05/11).
     fila.creado_en = tiempo.ahora() - timedelta(days=10)
+    fila.entregado_en = tiempo.ahora() - timedelta(days=9)
     db.commit()
     cajero = _empleado(api, cabeceras_admin, cargo="CAJERO", sucursal_id=tienda["sucursal"], sufijo="27")
     _abrir_turno(api, cajero, _caja(db, tienda["sucursal"]))
@@ -221,6 +223,86 @@ def test_sin_cambio_aprobado_la_caja_sigue_exigiendo_la_ventana(
             "motivo": "Sin solicitud",
             "devueltas": [{"variante_id": tienda["variante"], "cantidad": 1}],
             "llevadas": [{"variante_id": otra_talla, "cantidad": 1}],
+            "metodo_diferencia": "EFECTIVO",
+            "conformidad": {"conforme": True},
+        },
+    )
+    assert r.status_code == 409 and "plazo" in r.json()["detail"]
+
+
+# =====================================================================
+# Auditoría del 05/11: la caja y los pedidos web
+# =====================================================================
+
+def test_la_busqueda_en_caja_habilita_el_cambio_aprobado_aunque_haya_vencido(
+    api: TestClient, cabeceras_admin: dict, cabeceras_cliente: dict, encargado: dict,
+    entregado: dict, tienda: dict, otra_talla: int, db,
+) -> None:
+    """Antes la pantalla mostraba «vencido» y apagaba los botones, así que el
+    cambio aprobado por la web no se podía hacer aunque el backend lo aceptara."""
+    from app.modules.ventas.models import Venta
+
+    s = _solicitar(api, cabeceras_cliente, entregado["codigo"], tienda["variante"], 1,
+                   tipo="CAMBIO", nueva=otra_talla).json()
+    _accion(api, encargado, s["id"], "aprobar", "Pase por la tienda")
+    fila = db.query(Venta).filter(Venta.codigo == entregado["codigo"]).one()
+    fila.creado_en = tiempo.ahora() - timedelta(days=10)
+    fila.entregado_en = tiempo.ahora() - timedelta(days=9)
+    db.commit()
+
+    cajero = _empleado(api, cabeceras_admin, cargo="CAJERO", sucursal_id=tienda["sucursal"], sufijo="30")
+    _abrir_turno(api, cajero, _caja(db, tienda["sucursal"]))
+    vista = api.get(f"/api/v1/pos/devoluciones/ventas/{entregado['codigo']}", headers=cajero).json()
+    assert vista["cambio_aprobado"] is True
+    assert vista["dentro_de_plazo"] is True
+    assert vista["solo_cambio"] and "pedido web" in vista["solo_cambio"]
+
+
+def test_un_pedido_web_no_se_devuelve_en_caja(
+    api: TestClient, cabeceras_admin: dict, entregado: dict, tienda: dict, db,
+) -> None:
+    """Se cobró por la pasarela: en caja salía la prenda y no volvía el dinero."""
+    cajero = _empleado(api, cabeceras_admin, cargo="CAJERO", sucursal_id=tienda["sucursal"], sufijo="31")
+    _abrir_turno(api, cajero, _caja(db, tienda["sucursal"]))
+    r = api.post(
+        "/api/v1/pos/devoluciones",
+        headers=cajero,
+        json={
+            "venta_codigo": entregado["codigo"],
+            "motivo": "Quiere su dinero",
+            "lineas": [{"variante_id": tienda["variante"], "cantidad": 1}],
+            "conformidad": {"conforme": True},
+        },
+    )
+    assert r.status_code == 409
+    assert "Mis compras" in r.json()["detail"]
+
+
+def test_el_cambio_aprobado_no_salta_el_plazo_para_otras_prendas(
+    api: TestClient, cabeceras_admin: dict, cabeceras_cliente: dict, encargado: dict,
+    entregado: dict, tienda: dict, otra_talla: int, db,
+) -> None:
+    """Se aprobó cambiar 1 unidad: traer 2 fuera de plazo es un cambio común."""
+    from app.modules.ventas.models import Venta
+
+    s = _solicitar(api, cabeceras_cliente, entregado["codigo"], tienda["variante"], 1,
+                   tipo="CAMBIO", nueva=otra_talla).json()
+    _accion(api, encargado, s["id"], "aprobar", "Pase por la tienda")
+    fila = db.query(Venta).filter(Venta.codigo == entregado["codigo"]).one()
+    fila.creado_en = tiempo.ahora() - timedelta(days=10)
+    fila.entregado_en = tiempo.ahora() - timedelta(days=9)
+    db.commit()
+
+    cajero = _empleado(api, cabeceras_admin, cargo="CAJERO", sucursal_id=tienda["sucursal"], sufijo="32")
+    _abrir_turno(api, cajero, _caja(db, tienda["sucursal"]))
+    r = api.post(
+        "/api/v1/pos/devoluciones/cambios",
+        headers=cajero,
+        json={
+            "venta_codigo": entregado["codigo"],
+            "motivo": "Más de lo aprobado",
+            "devueltas": [{"variante_id": tienda["variante"], "cantidad": 2}],
+            "llevadas": [{"variante_id": otra_talla, "cantidad": 2}],
             "metodo_diferencia": "EFECTIVO",
             "conformidad": {"conforme": True},
         },

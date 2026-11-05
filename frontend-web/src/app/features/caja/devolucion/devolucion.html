@@ -290,12 +290,15 @@
               <span>
                 Se puede devolver o cambiar hasta el
                 <strong>{{ v.vence_en | date: 'dd/MM/yyyy HH:mm' }}</strong>
-                ({{ plazoTexto(v.plazo_horas) }} desde la compra).
+                ({{ plazoTexto(v.plazo_horas) }} desde la compra o la entrega).
+                @if (v.cambio_aprobado) {
+                  Tiene un <strong>cambio aprobado por la web</strong>: vale aunque el plazo haya vencido.
+                }
               </span>
             } @else {
               <span>
                 <strong>Fuera de plazo.</strong> El plazo era de
-                {{ plazoTexto(v.plazo_horas) }} desde la compra y venció el
+                {{ plazoTexto(v.plazo_horas) }} desde la compra o la entrega y venció el
                 {{ v.vence_en | date: 'dd/MM/yyyy HH:mm' }}. No se puede
                 devolver ni cambiar.
               </span>
@@ -387,7 +390,7 @@
                 [disabled]="!dentroDePlazo()"
                 aria-label="Qué se hace con lo que vuelve"
               >
-                <mat-button-toggle value="DEVOLUCION">
+                <mat-button-toggle value="DEVOLUCION" [disabled]="!!v.solo_cambio">
                   <mat-icon>assignment_return</mat-icon>
                   Devolver
                 </mat-button-toggle>
@@ -397,6 +400,12 @@
                 </mat-button-toggle>
               </mat-button-toggle-group>
             </div>
+            @if (v.solo_cambio) {
+              <p class="plazo" role="note">
+                <mat-icon>info</mat-icon>
+                <span>{{ v.solo_cambio }}</span>
+              </p>
+            }
 
             @if (modo() === 'CAMBIO') {
               <section class="cambio">

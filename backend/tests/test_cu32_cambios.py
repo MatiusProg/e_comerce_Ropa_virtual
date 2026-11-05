@@ -674,3 +674,40 @@ def test_el_reporte_de_devoluciones_trae_el_valor_devuelto(
     catalogo = api.get("/api/v1/reportes/catalogo", headers=cabeceras_admin).json()
     devoluciones = next(f for f in catalogo if f["tipo"] == "devoluciones")
     assert "Valor devuelto" in devoluciones["columnas"]
+
+
+# =====================================================================
+# RN-23 (auditoría del 05/11): lo que salió de un cambio no se devuelve
+# =====================================================================
+
+def test_lo_que_salio_de_un_cambio_no_se_devuelve_solo_se_vuelve_a_cambiar(
+    api: TestClient, mostrador: dict, variantes: list[int], stock
+) -> None:
+    """La venta del cambio se pagó con la prenda que volvió: no tiene dinero
+    propio que reintegrar. Antes se recibía la prenda y se devolvían Bs 0."""
+    cab = mostrador["cabeceras"]
+    codigo = _vender(api, cab, variantes[0], 1)
+    r = _cambiar(api, cab, codigo, devuelve=(variantes[0], 1), lleva=(variantes[1], 1))
+    assert r.status_code == 201, r.text
+    nueva = r.json()["venta_nueva_codigo"]
+
+    vista = api.get(f"{DEVOLUCIONES}/ventas/{nueva}", headers=cab).json()
+    assert vista["solo_cambio"] and "RN-23" in vista["solo_cambio"]
+
+    r = _devolver(api, cab, nueva, variantes[1], 1)
+    assert r.status_code == 409
+    assert "RN-23" in r.json()["detail"]
+
+    # Volver a cambiarla sí se puede.
+    r = _cambiar(api, cab, nueva, devuelve=(variantes[1], 1), lleva=(variantes[0], 1))
+    assert r.status_code == 201, r.text
+
+
+def test_una_venta_comun_se_puede_devolver_y_no_trae_solo_cambio(
+    api: TestClient, mostrador: dict, variantes: list[int], stock
+) -> None:
+    cab = mostrador["cabeceras"]
+    codigo = _vender(api, cab, variantes[0], 1)
+    vista = api.get(f"{DEVOLUCIONES}/ventas/{codigo}", headers=cab).json()
+    assert vista["solo_cambio"] is None
+    assert vista["cambio_aprobado"] is False

@@ -244,9 +244,45 @@ def test_el_cliente_no_manda_inventario(
 def test_el_conteo_offline_aplica_la_diferencia_y_respeta_las_ventas_del_medio(
     api: TestClient, cabeceras_admin: dict, encargado: dict, variantes: list[int], sucursal: int, db
 ) -> None:
-    """El encargado ve 10 y cuenta 8 sin red. Mientras tanto, en línea, se
-    venden 3. Al sincronizar quedan 10 - 3 - 2 = 5, no 8."""
+    """El encargado cuenta 8 sin red cuando había 10. DESPUÉS del conteo, en
+    línea, se venden 3. Al sincronizar quedan 10 - 2 - 3 = 5, no 8."""
     cajero = _empleado(api, cabeceras_admin, cargo="CAJERO", sucursal_id=sucursal, sufijo="23")
+    turno_id = _abrir_turno(api, cajero, _caja(db, sucursal))
+    conteo = _conteo(variantes[0], visto=10, contado=8)  # se cuenta primero
+    venta = _sincronizar(
+        api,
+        cajero,
+        {
+            "uuid": str(uuid.uuid4()),
+            "tipo": "VENTA",
+            "creada_en": _ahora(),
+            "turno_caja_id": turno_id,
+            "lineas": [
+                {"variante_id": variantes[0], "cantidad": 3, "precio_unitario": str(PRECIO)}
+            ],
+            "pago": {"metodo": "EFECTIVO", "monto": str(PRECIO * 3)},
+        },
+    )
+    assert venta.json()["resultados"][0]["estado"] == "CONFIRMADA", venta.text
+
+    r = _sincronizar(api, encargado, conteo)
+    resultado = r.json()["resultados"][0]
+    assert resultado["estado"] == "CONFIRMADA", resultado
+    assert resultado["unidades"] == -2
+    assert _disponible(api, cabeceras_admin, sucursal_id=sucursal, variante_id=variantes[0]) == 5
+
+    movimiento = api.get(KARDEX, headers=encargado, params={"variante_id": variantes[0]}).json()["items"][0]
+    assert movimiento["tipo"] == "AJUSTE" and movimiento["sin_conexion"] is True
+    assert "había 10" in movimiento["motivo"]
+
+
+def test_el_conteo_offline_no_descuenta_dos_veces_lo_vendido_antes_de_contar(
+    api: TestClient, cabeceras_admin: dict, encargado: dict, variantes: list[int], sucursal: int, db
+) -> None:
+    """Auditoría del 05/11. El paquete dice 10. ANTES del conteo se venden 3 en
+    línea, así que en la percha hay 7 y el encargado cuenta 7. El saldo del
+    paquete (10) está viejo: con él se restaban 3 de nuevo y quedaban 4."""
+    cajero = _empleado(api, cabeceras_admin, cargo="CAJERO", sucursal_id=sucursal, sufijo="29")
     turno_id = _abrir_turno(api, cajero, _caja(db, sucursal))
     venta = _sincronizar(
         api,
@@ -264,15 +300,11 @@ def test_el_conteo_offline_aplica_la_diferencia_y_respeta_las_ventas_del_medio(
     )
     assert venta.json()["resultados"][0]["estado"] == "CONFIRMADA", venta.text
 
-    r = _sincronizar(api, encargado, _conteo(variantes[0], visto=10, contado=8))
+    r = _sincronizar(api, encargado, _conteo(variantes[0], visto=10, contado=7))
     resultado = r.json()["resultados"][0]
     assert resultado["estado"] == "CONFIRMADA", resultado
-    assert resultado["unidades"] == -2
-    assert _disponible(api, cabeceras_admin, sucursal_id=sucursal, variante_id=variantes[0]) == 5
-
-    movimiento = api.get(KARDEX, headers=encargado, params={"variante_id": variantes[0]}).json()["items"][0]
-    assert movimiento["tipo"] == "AJUSTE" and movimiento["sin_conexion"] is True
-    assert "se veían 10" in movimiento["motivo"]
+    assert resultado["unidades"] == 0
+    assert _disponible(api, cabeceras_admin, sucursal_id=sucursal, variante_id=variantes[0]) == 7
 
 
 def test_un_conteo_igual_a_lo_visto_se_confirma_sin_movimiento(
@@ -285,13 +317,14 @@ def test_un_conteo_igual_a_lo_visto_se_confirma_sin_movimiento(
     assert kardex["total"] == 1
 
 
-def test_un_conteo_que_resta_mas_de_lo_que_queda_se_rechaza(
+def test_el_conteo_se_mide_contra_la_percha_y_no_contra_el_saldo_del_paquete(
     api: TestClient, cabeceras_admin: dict, encargado: dict, variantes: list[int], sucursal: int
 ) -> None:
+    """Un `saldo_visto` viejo (30) no cambia nada: había 10 y se contaron 5."""
     resultado = _sincronizar(api, encargado, _conteo(variantes[0], visto=30, contado=5)).json()["resultados"][0]
-    assert resultado["estado"] == "RECHAZADA"
-    assert "quedan 10" in resultado["motivo"]
-    assert _disponible(api, cabeceras_admin, sucursal_id=sucursal, variante_id=variantes[0]) == 10
+    assert resultado["estado"] == "CONFIRMADA"
+    assert resultado["unidades"] == -5
+    assert _disponible(api, cabeceras_admin, sucursal_id=sucursal, variante_id=variantes[0]) == 5
 
 
 def test_un_conteo_rechazado_no_deshace_el_ingreso_del_mismo_lote(
@@ -302,7 +335,8 @@ def test_un_conteo_rechazado_no_deshace_el_ingreso_del_mismo_lote(
         api,
         encargado,
         _ingreso(proveedor, (variantes[0], 2)),
-        _conteo(variantes[0], visto=50, contado=0),
+        # Una prenda que no existe: el conteo se rechaza.
+        _conteo(999_999, visto=0, contado=1),
     )
     assert [x["estado"] for x in r.json()["resultados"]] == ["CONFIRMADA", "RECHAZADA"]
     assert _disponible(api, cabeceras_admin, sucursal_id=sucursal, variante_id=variantes[0]) == 12
