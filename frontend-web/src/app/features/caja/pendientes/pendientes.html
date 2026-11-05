@@ -109,6 +109,12 @@
                   Se cobró: el encargado tiene que devolverle {{ op.total | bs }} al cliente.
                 </p>
               }
+              @if (op.reintegro_qr !== null && op.reintegro_qr !== undefined) {
+                <p class="motivo">
+                  El sistema le reintegró {{ op.total | bs }} por QR al cliente
+                  (ref. {{ op.reintegro_qr }}).
+                </p>
+              }
             </div>
           </li>
         }

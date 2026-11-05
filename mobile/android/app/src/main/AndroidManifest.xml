@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Necesario para consumir la API desplegada en Railway. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- CU-42: Android 13+ pide permiso para mostrar notificaciones. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Vestidor virtual (P9). Declarado desde ahora porque la camara es
          requisito del prototipo I3; ver mobile/README.md. -->
     <uses-permission android:name="android.permission.CAMERA" />
@@ -40,6 +42,11 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- CU-42: el canal de los avisos push con la app cerrada. El backend
+             manda channel_id "avisos"; la app lo crea al arrancar. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="avisos" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

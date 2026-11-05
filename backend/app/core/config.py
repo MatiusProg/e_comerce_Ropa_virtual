@@ -167,6 +167,24 @@ class Settings(BaseSettings):
     #: despachador de CU-40 en cada notificacion.
     CORREO_SMTP_ESPERA_SEGUNDOS: int = 15
 
+    # --- Avisos push (CU-42, RF-65) --------------------------------------
+    #
+    # `simulado` no manda nada: deja el aviso en el log y en una lista en
+    # memoria que leen las pruebas. `real` usa los dos canales de verdad:
+    # FCM para la app Flutter y Web Push (VAPID) para la web instalada.
+    # Un canal sin sus claves falla su envío con el motivo, no el sistema.
+    PUSH_PROVEEDOR: str = "simulado"
+    #: La cuenta de servicio de Firebase: el JSON entero, o el mismo JSON en
+    #: base64 (más cómodo de pegar en una variable de Railway).
+    PUSH_FCM_CREDENCIALES: str = ""
+    #: Las claves VAPID de la web, en base64url. La pública la pide el
+    #: navegador para suscribirse; la privada firma cada envío.
+    PUSH_VAPID_PUBLICA: str = ""
+    PUSH_VAPID_PRIVADA: str = ""
+    #: El contacto que exige el estándar VAPID (`mailto:` o una URL).
+    PUSH_VAPID_CONTACTO: str = "mailto:soporte@violetboutique.bo"
+    PUSH_ESPERA_SEGUNDOS: int = 10
+
     # --- Recuperacion de contrasena (CU-41, RF39) ------------------------
     #
     # Cuanto vale el enlace. Corto a proposito: el enlace ES la credencial

@@ -147,6 +147,8 @@ export interface OperacionGuardada {
   motivo: string | null;
   venta_codigo: string | null;
   requiere_devolucion: boolean;
+  /** CU-43: la referencia del reintegro automático del QR, si lo hubo. */
+  reintegro_qr?: string | null;
   actualizada_en: string;
 }
 
@@ -160,6 +162,10 @@ export interface ResultadoSincronizacion {
   reserva_id: number | null;
   requiere_devolucion: boolean;
   devuelta: boolean;
+  /** CU-43: el sistema la devolvió solo al rechazarla (QR reintegrado). */
+  devolucion_automatica?: boolean;
+  /** La del reintegro automático o la que anotó el encargado (CU-19). */
+  referencia_devolucion?: string | null;
   /** CU-21: unidades que movió un INGRESO o un AJUSTE, con signo. */
   unidades?: number | null;
   repetida: boolean;
@@ -183,7 +189,6 @@ export interface OperacionDeSucursal extends ResultadoSincronizacion {
   referencia_pago: string | null;
   devuelto_en: string | null;
   metodo_devolucion: string | null;
-  referencia_devolucion: string | null;
 }
 
 export interface DevolucionIn {

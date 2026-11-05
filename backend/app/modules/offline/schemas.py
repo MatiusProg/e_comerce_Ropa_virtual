@@ -228,6 +228,8 @@ class OperacionOfflineIn(BaseModel):
 
     #: RESERVA: la sucursal y la franja (como en CU-22). Si la hace el
     #: cajero, la sucursal es la suya y el cliente es uno del paquete.
+    #: VENTA (CU-43): opcional, el cliente del paquete a quien avisarle si la
+    #: venta se rechaza y se le devuelve el dinero.
     sucursal_id: int | None = None
     cliente_id: int | None = None
     franja_inicio: datetime | None = None
@@ -295,8 +297,12 @@ class ResultadoOut(BaseModel):
     #: Rechazada y cobrada: hay que devolverle el dinero al cliente (CU-19).
     requiere_devolucion: bool
     devuelta: bool
+    #: CU-43: la devolvió el sistema solo al rechazarla (QR reintegrado).
+    devolucion_automatica: bool = False
     #: CU-21: unidades que movió un INGRESO o un AJUSTE (con signo).
     unidades: int | None = None
+    #: La del reintegro automático (CU-43) o la que anotó el encargado (CU-19).
+    referencia_devolucion: str | None = None
     #: Ya había llegado antes: esta respuesta es la de la primera vez.
     repetida: bool
     recibida_en: datetime
@@ -324,7 +330,6 @@ class OperacionOut(ResultadoOut):
     referencia_pago: str | None
     devuelto_en: datetime | None
     metodo_devolucion: str | None
-    referencia_devolucion: str | None
 
 
 class DevolucionIn(BaseModel):

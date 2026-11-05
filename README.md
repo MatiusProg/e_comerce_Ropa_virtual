@@ -233,7 +233,7 @@ está en el Word de la entrega, `SI2 Ex2 Grupo 15.docx`.
 |---|---|---|---|---|
 | **1** | dom 25/10 | CU-01 a CU-12 | Empresas, planes y suscripciones · login por empresa · cuenta única del cliente · usuarios y empleados por empresa · contratar un plan · personalizar la tienda | ✅ |
 | **2** | dom 01/11 | CU-13 a CU-20 | Preparar el dispositivo · venta, reserva y pago sin conexión · sincronizar · operaciones pendientes y rechazadas · caja con ventas sin conexión | ✅ |
-| **3** | dom 08/11 | CU-21 a CU-43 | Inventario de la sucursal · cambios y devoluciones (en caja y por la web) · avisos por correo según el plan · reportes con IA y voz · analítica con ML · ofertas · traspasos · probador por talla · exportación y copias de seguridad · roles · avisos push | 🚧 CU-21 hecho |
+| **3** | dom 08/11 | CU-21 a CU-43 | Inventario de la sucursal · cambios y devoluciones (en caja y por la web) · avisos por correo según el plan · reportes con IA y voz · analítica con ML · ofertas · traspasos · probador por talla · exportación y copias de seguridad · roles · avisos push | 🚧 hechos CU-21 a 25, 31 a 35, 42 y 43 |
 
 **Defensa: martes 10/11/2026, 7:00.** El reparto de la 3ra presentación es por
 bloques: devoluciones, IA, ML, probador y avisos van por un lado; traspasos,
