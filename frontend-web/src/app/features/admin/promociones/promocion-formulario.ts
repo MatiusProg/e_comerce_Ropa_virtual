@@ -168,9 +168,9 @@ export class PromocionFormulario implements OnInit {
       });
       return;
     }
-    // Productos: se piden muchos de una porque el desplegable no pagina. Una
+    // Productos: se piden 100 (el tope del backend) porque el desplegable no pagina. Una
     // tienda con miles necesitaría un buscador; con este catálogo alcanza.
-    this.productos.listar({ tamano: 200 }).subscribe({
+    this.productos.listar({ tamano: 100 }).subscribe({
       next: (p) => listo(p.items.map((i) => ({ id: i.id, nombre: i.nombre }))),
       error: fallo,
     });
