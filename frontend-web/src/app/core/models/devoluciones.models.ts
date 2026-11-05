@@ -55,6 +55,13 @@ export interface VentaDevolvible {
    * esconder la venta.
    */
   dentro_de_plazo: boolean;
+  /** CU-25: hay un cambio aprobado por la web; vale aunque el plazo haya vencido. */
+  cambio_aprobado: boolean;
+  /**
+   * Si no es nulo, esta venta no se devuelve en caja: solo se cambia (RN-23 o
+   * pedido web). Es el motivo que se le muestra al cajero.
+   */
+  solo_cambio: string | null;
 }
 
 export interface LineaDevolucion {

@@ -257,6 +257,11 @@ class OperacionOfflineIn(BaseModel):
             if self.pago is None:
                 raise ValueError("Una venta offline se cobra en el acto (RN-05).")
         else:
+            # Una reserva no se cobra: se paga al retirarla en la tienda. Si
+            # trajera un pago, una reserva rechazada dejaría «dinero por
+            # devolver» que nunca entró (CU-19, CU-43).
+            if self.pago is not None:
+                raise ValueError("Una reserva no lleva pago: se cobra al retirarla.")
             if self.franja_inicio is None or self.franja_fin is None:
                 raise ValueError("Una reserva necesita su franja.")
             if self.franja_fin <= self.franja_inicio:

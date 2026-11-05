@@ -121,7 +121,7 @@ const ETIQUETAS: Record<EstadoLocal, string> = {
               <div class="acciones">
                 <button matButton type="button" (click)="cancelar()">Cancelar</button>
                 <button matButton="filled" class="vb-boton-marca" type="button"
-                        [disabled]="!proveedor.value || !lineas().length" (click)="guardarIngreso()">
+                        [disabled]="guardando() || !proveedor.value || !lineas().length" (click)="guardarIngreso()">
                   Guardar ingreso
                 </button>
               </div>
@@ -158,7 +158,7 @@ const ETIQUETAS: Record<EstadoLocal, string> = {
               <div class="acciones">
                 <button matButton type="button" (click)="cancelar()">Cancelar</button>
                 <button matButton="filled" class="vb-boton-marca" type="button"
-                        [disabled]="contado.invalid || motivo.invalid" (click)="guardarConteo(prenda)">
+                        [disabled]="guardando() || contado.invalid || motivo.invalid" (click)="guardarConteo(prenda)">
                   Guardar conteo
                 </button>
               </div>
@@ -258,6 +258,12 @@ export class InventarioOffline {
   readonly sincronizado = output<void>();
 
   protected readonly preparando = signal(false);
+  /**
+   * Mientras se escribe en este equipo. Cada clic genera una operación con su
+   * propio UUID, así que un doble clic grababa dos ingresos o dos conteos y el
+   * servidor no tenía cómo saber que era el mismo.
+   */
+  protected readonly guardando = signal(false);
   /** En línea, el panel de trabajo se abre a pedido; sin red, siempre. */
   protected readonly abierto = signal(false);
   protected readonly trabajando = computed(
@@ -274,6 +280,8 @@ export class InventarioOffline {
   protected readonly contado = new FormControl<number | null>(null, [
     Validators.required,
     Validators.min(0),
+    // Se cuentan prendas enteras.
+    Validators.pattern(/^\d+$/),
   ]);
   protected readonly motivo = new FormControl('', {
     nonNullable: true,
@@ -372,18 +380,26 @@ export class InventarioOffline {
   protected async guardarIngreso(): Promise<void> {
     const proveedor_id = this.proveedor.value;
     const lineas = this.lineas();
-    if (!proveedor_id || !lineas.length) return;
+    if (!proveedor_id || !lineas.length || this.guardando()) return;
     const nombre =
       this.offline.paqueteInventario()?.proveedores.find((p) => p.id === proveedor_id)?.razon_social ?? '';
     const unidades = lineas.reduce((t, l) => t + l.cantidad, 0);
-    await this.offline.registrarIngresoOffline(
-      {
-        proveedor_id,
-        referencia: this.remito.value.trim() || null,
-        lineas: lineas.map((l) => ({ variante_id: l.prenda.variante_id, cantidad: l.cantidad })),
-      },
-      `Ingreso de ${nombre}: ${unidades} unidades`,
-    );
+    this.guardando.set(true);
+    try {
+      await this.offline.registrarIngresoOffline(
+        {
+          proveedor_id,
+          referencia: this.remito.value.trim() || null,
+          lineas: lineas.map((l) => ({ variante_id: l.prenda.variante_id, cantidad: l.cantidad })),
+        },
+        `Ingreso de ${nombre}: ${unidades} unidades`,
+      );
+    } catch {
+      this.aviso.open('No se pudo guardar el ingreso en este equipo. Intente de nuevo.', 'Cerrar', { duration: 6000 });
+      return;
+    } finally {
+      this.guardando.set(false);
+    }
     this.aviso.open('Ingreso guardado en este equipo. Se confirma al sincronizar.', 'Cerrar', { duration: 5000 });
     this.cancelar();
     if (this.offline.enLinea()) void this.sincronizar();
@@ -399,16 +415,25 @@ export class InventarioOffline {
   }
 
   protected async guardarConteo(prenda: PrendaDeInventario): Promise<void> {
+    if (this.guardando()) return;
     const contado = Number(this.contado.value);
-    await this.offline.registrarConteoOffline(
-      {
-        variante_id: prenda.variante_id,
-        saldo_visto: this.fisica(prenda),
-        cantidad_contada: contado,
-        motivo: this.motivo.value.trim(),
-      },
-      `Conteo de ${prenda.sku}: se veían ${this.fisica(prenda)}, se contaron ${contado}`,
-    );
+    this.guardando.set(true);
+    try {
+      await this.offline.registrarConteoOffline(
+        {
+          variante_id: prenda.variante_id,
+          saldo_visto: this.fisica(prenda),
+          cantidad_contada: contado,
+          motivo: this.motivo.value.trim(),
+        },
+        `Conteo de ${prenda.sku}: se veían ${this.fisica(prenda)}, se contaron ${contado}`,
+      );
+    } catch {
+      this.aviso.open('No se pudo guardar el conteo en este equipo. Intente de nuevo.', 'Cerrar', { duration: 6000 });
+      return;
+    } finally {
+      this.guardando.set(false);
+    }
     this.aviso.open('Conteo guardado en este equipo. Se confirma al sincronizar.', 'Cerrar', { duration: 5000 });
     this.cancelar();
     if (this.offline.enLinea()) void this.sincronizar();

@@ -227,7 +227,7 @@ def test_un_cliente_ajeno_se_ignora_sin_rechazar_la_venta(
     assert venta.cliente_id is None
 
 
-def test_la_reserva_del_cliente_rechazada_con_qr_se_reintegra_y_le_avisa(
+def test_la_reserva_del_cliente_rechazada_le_avisa_sin_dinero_que_devolver(
     api: TestClient, cabeceras_cliente: dict, variantes: list[int], sucursal: int
 ) -> None:
     op = {
@@ -238,13 +238,13 @@ def test_la_reserva_del_cliente_rechazada_con_qr_se_reintegra_y_le_avisa(
         "franja_inicio": _manana(6).isoformat(),  # fuera de horario
         "franja_fin": _manana(7).isoformat(),
         "lineas": [{"variante_id": variantes[0], "cantidad": 1, "precio_unitario": str(PRECIO)}],
-        "pago": {"metodo": "QR", "monto": "50.00", "referencia": "BNB-123"},
     }
     [r] = _sincronizar(api, cabeceras_cliente, op)
-    assert r["devolucion_automatica"] is True
+    # Una reserva no se cobra (auditoría del 05/11): no hay nada que reintegrar.
+    assert r["devolucion_automatica"] is False
     tipos = sorted(a["tipo"] for a in _avisos(api, cabeceras_cliente))
-    # Uno por la reserva y uno por el dinero; al cliente no le llega resumen.
-    assert tipos == ["DEVOLUCION_PAGO", "OPERACION_OFFLINE"]
+    # Solo el aviso de la reserva; al cliente no le llega resumen.
+    assert tipos == ["OPERACION_OFFLINE"]
 
 
 # =====================================================================

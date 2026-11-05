@@ -277,16 +277,31 @@ def test_reserva_offline_fuera_de_horario_se_rechaza_con_el_motivo(
         "franja_inicio": _manana(6).isoformat(),
         "franja_fin": _manana(7).isoformat(),
         "lineas": [{"variante_id": variantes[0], "cantidad": 1, "precio_unitario": str(PRECIO)}],
-        "pago": {"metodo": "QR", "monto": "50.00", "referencia": "BNB-123"},
     }
     [resultado] = _sincronizar(api, cabeceras_cliente, op).json()["resultados"]
     assert resultado["estado"] == "RECHAZADA"
     assert "atiende" in resultado["motivo"]
-    # CU-43 (3ra presentación): lo cobrado por QR se reintegra solo al
-    # rechazarse; ya no queda para que el encargado lo devuelva a mano.
+    # Una reserva no se cobra: rechazada, no deja dinero por devolver.
     assert resultado["requiere_devolucion"] is False
-    assert resultado["devolucion_automatica"] is True
-    assert resultado["devuelta"] is True
+    assert resultado["devolucion_automatica"] is False
+
+
+def test_una_reserva_offline_no_puede_traer_pago(
+    api: TestClient, cabeceras_cliente: dict, variantes: list[int], sucursal: int
+) -> None:
+    """Auditoría del 05/11: con un pago inventado, una reserva rechazada dejaba
+    «dinero por devolver» que nunca entró y disparaba la devolución automática."""
+    op = {
+        "uuid": str(uuid.uuid4()),
+        "tipo": "RESERVA",
+        "creada_en": datetime.now(timezone.utc).isoformat(),
+        "sucursal_id": sucursal,
+        "franja_inicio": _manana(6).isoformat(),
+        "franja_fin": _manana(7).isoformat(),
+        "lineas": [{"variante_id": variantes[0], "cantidad": 1, "precio_unitario": str(PRECIO)}],
+        "pago": {"metodo": "QR", "monto": "9999.00", "referencia": "BNB-123"},
+    }
+    assert _sincronizar(api, cabeceras_cliente, op).status_code == 422
 
 
 # =====================================================================
@@ -323,3 +338,17 @@ def test_una_confirmada_no_se_devuelve(
 
 def test_el_cajero_no_atiende_devoluciones(api: TestClient, cajero: dict) -> None:
     assert api.get(OPERACIONES, headers=cajero["cab"]).status_code == 403
+
+
+def test_lo_por_devolver_de_una_venta_rechazada_no_supera_su_total(
+    api: TestClient, cajero: dict, variantes: list[int], db
+) -> None:
+    """Auditoría del 05/11: el monto que declaraba el teléfono pasaba tal cual
+    a «dinero por devolver» y al arqueo, aunque fuera mayor que la venta."""
+    from app.modules.offline.models import OperacionOffline
+
+    op = _venta(cajero["turno_id"], variantes[1], cantidad=999, monto="999999.00")
+    [resultado] = _sincronizar(api, cajero["cab"], op).json()["resultados"]
+    assert resultado["estado"] == "RECHAZADA"
+    fila = db.query(OperacionOffline).filter(OperacionOffline.uuid == op["uuid"]).one()
+    assert fila.monto_cobrado == PRECIO * 999

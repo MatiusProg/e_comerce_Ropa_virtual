@@ -325,7 +325,11 @@ def _sincronizar_una(
         elif op.tipo == "VENTA":
             fila.cliente_id = _cliente_de_la_venta(db, op)
             fila.sucursal_id, fila.venta_id = _confirmar_venta(
-                db, op, usuario_id=usuario_id, cliente_id=fila.cliente_id
+                db,
+                op,
+                usuario_id=usuario_id,
+                cliente_id=fila.cliente_id,
+                movimientos=movimientos,
             )
         else:
             fila.cliente_id = _cliente_de_la_reserva(db, op, usuario_id=usuario_id, rol=rol)
@@ -348,6 +352,12 @@ def _sincronizar_una(
         fila.sucursal_id = _sucursal_declarada(
             db, op, usuario_id=usuario_id, sucursal_del_usuario=sucursal_del_usuario
         )
+        # Lo que queda «por devolver» nunca supera el total de la venta: lo
+        # que el cliente dio de más ya se le entregó como vuelto. Sin este
+        # tope, un monto inflado en el teléfono se volvía dinero a devolver
+        # y descuadraba el arqueo.
+        if fila.monto_cobrado is not None:
+            fila.monto_cobrado = min(fila.monto_cobrado, _total_declarado(op))
         # CU-43: lo cobrado de una rechazada se devuelve por el mismo medio.
         if fila.monto_cobrado is not None:
             _devolver_automaticamente(fila)
@@ -440,13 +450,25 @@ def _confirmar_inventario(
             )
         else:
             conteo = op.conteo
+            # La diferencia se mide contra lo que había EN LA PERCHA cuando se
+            # contó, calculado en el servidor, y no contra el saldo del
+            # paquete: ese saldo puede tener horas y no ve lo que vendieron
+            # las otras cajas. Con el del paquete, una venta hecha entre la
+            # descarga y el conteo se descontaba dos veces.
+            habia = repository.fisico_al_momento(
+                db,
+                variante_id=conteo.variante_id,
+                sucursal_id=sucursal_id,
+                momento=op.creada_en,
+            )
+            diferencia = conteo.cantidad_contada - habia
             movimiento = inventario.ajustar_por_diferencia(
                 db,
                 variante_id=conteo.variante_id,
                 sucursal_id=sucursal_id,
-                diferencia=conteo.diferencia,
+                diferencia=diferencia,
                 motivo=(
-                    f"{conteo.motivo} (sin conexión: se veían {conteo.saldo_visto}, "
+                    f"{conteo.motivo} (sin conexión: había {habia}, "
                     f"se contaron {conteo.cantidad_contada})"
                 )[:200],
                 usuario_id=usuario_id,
@@ -455,8 +477,9 @@ def _confirmar_inventario(
                 movimientos.append(movimiento)
     except inventario.StockInsuficiente as e:
         raise Rechazo(
-            f"El conteo resta {abs(op.conteo.diferencia)} y en la sucursal quedan "
-            f"{e.disponible} disponibles: lo demás ya se vendió o se apartó."
+            f"Se contaron {op.conteo.cantidad_contada} y hay menos unidades libres "
+            f"de las que el conteo resta (quedan {e.disponible} disponibles): "
+            "lo demás está apartado para reservas."
         ) from e
     except inventario.ErrorDeInventario as e:
         from app.modules.inventario.router import _traducir
@@ -486,8 +509,20 @@ def _cliente_de_la_reserva(
     return cliente.id if cliente else None
 
 
+def _total_declarado(op: OperacionOfflineIn) -> Decimal:
+    """El total de la venta según sus líneas: precio menos descuento, por cantidad."""
+    return sum(
+        ((l.precio_unitario - l.descuento_unitario) * l.cantidad for l in op.lineas), CERO
+    )
+
+
 def _confirmar_venta(
-    db: Session, op: OperacionOfflineIn, *, usuario_id: int, cliente_id: int | None = None
+    db: Session,
+    op: OperacionOfflineIn,
+    *,
+    usuario_id: int,
+    cliente_id: int | None = None,
+    movimientos: list | None = None,
 ) -> tuple[int, int]:
     """CU-14 confirmada en el servidor. Devuelve (sucursal, venta).
 
@@ -552,6 +587,7 @@ def _confirmar_venta(
                 cantidad=linea.cantidad,
                 usuario_id=usuario_id,
                 motivo=f"Venta {codigo} sin conexión",
+                movimientos=movimientos,
             )
         except inventario.StockInsuficiente as e:
             nombre = " · ".join(

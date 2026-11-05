@@ -6,6 +6,7 @@ Ninguna consulta filtra por empresa: lo hace la RLS de cada tabla.
 
 from __future__ import annotations
 
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import Row, and_, func, select
@@ -206,3 +207,42 @@ def unidades_de_operacion(db: Session, operacion_id: int) -> int:
         )
         or 0
     )
+
+
+#: Los movimientos que pasan unidades entre el disponible y lo reservado: no
+#: cambian lo que hay en la percha.
+_NO_CAMBIAN_LO_FISICO = ("RESERVA", "LIBERACION")
+
+
+def fisico_al_momento(
+    db: Session, *, variante_id: int, sucursal_id: int, momento: datetime
+) -> int:
+    """CU-21 sin conexión: cuántas unidades había en la percha en `momento`.
+
+    Es lo físico de hoy (disponible + reservada) menos lo que se movió después.
+    Un movimiento que vino de una operación sin conexión cuenta en la hora en
+    que pasó en el teléfono, no en la de la sincronización: una venta offline
+    hecha antes del conteo y subida después ya no estaba en la percha cuando
+    se contó.
+    """
+    existencia = db.scalar(
+        select(Existencia).where(
+            Existencia.variante_id == variante_id, Existencia.sucursal_id == sucursal_id
+        )
+    )
+    if existencia is None:
+        return 0
+    cuando = func.coalesce(OperacionOffline.creada_en_cliente, MovimientoInventario.creado_en)
+    posteriores = db.scalar(
+        select(func.coalesce(func.sum(MovimientoInventario.cantidad), 0))
+        .select_from(MovimientoInventario)
+        .outerjoin(
+            OperacionOffline, OperacionOffline.id == MovimientoInventario.operacion_offline_id
+        )
+        .where(
+            MovimientoInventario.existencia_id == existencia.id,
+            MovimientoInventario.tipo.not_in(_NO_CAMBIAN_LO_FISICO),
+            cuando > momento,
+        )
+    )
+    return existencia.cantidad_disponible + existencia.cantidad_reservada - int(posteriores)

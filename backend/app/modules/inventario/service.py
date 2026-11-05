@@ -1027,8 +1027,12 @@ def descontar_por_venta(
     cantidad: int,
     usuario_id: int | None,
     motivo: str | None = None,
+    movimientos: list | None = None,
 ) -> Existencia:
     """Saca unidades del disponible por una venta. **Sin commit.**
+
+    `movimientos`, si viene, recibe el movimiento escrito: la sincronización
+    sin conexión lo vincula a su operación (kardex y conteo offline, CU-21).
 
     En el Ciclo 2 la usa CU-24 cuando el cliente se lleva la prenda que vino a
     probarse. En el Ciclo 3 la va a usar tambien el punto de venta (P7) para la
@@ -1054,7 +1058,7 @@ def descontar_por_venta(
     if existencia is None:
         raise ExistenciaInexistente()
 
-    _aplicar_movimiento(
+    movimiento = _aplicar_movimiento(
         db,
         existencia,
         tipo="VENTA",
@@ -1062,6 +1066,8 @@ def descontar_por_venta(
         motivo=motivo,
         usuario_id=usuario_id,
     )
+    if movimientos is not None:
+        movimientos.append(movimiento)
     return existencia
 
 
