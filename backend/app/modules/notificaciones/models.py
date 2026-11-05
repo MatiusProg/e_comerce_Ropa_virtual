@@ -82,6 +82,9 @@ TIPOS_NOTIFICACION = (
     # 3ra presentación: CU-33 y CU-34. Al origen le piden mercadería y al
     # destino le avisan que ya va en camino.
     "TRASPASO",
+    # 3ra presentación · CU-26: las devoluciones por la web (CU-24 y CU-25).
+    # Al encargado, que llegó una solicitud; al cliente, cómo se resolvió.
+    "DEVOLUCION",
     # 3ra presentación: CU-42 y CU-43. El resultado de una operación hecha sin
     # conexión, y la devolución del dinero de una que se rechazó.
     "OPERACION_OFFLINE",
@@ -166,7 +169,7 @@ class Notificacion(DeEmpresa, Base):
     __table_args__ = (
         CheckConstraint(
             "tipo IN ('RESERVA_EN_SUCURSAL', 'RESERVA_PREPARADA', "
-            "'PEDIDO_PAGADO', 'STOCK_BAJO', 'TRASPASO', "
+            "'PEDIDO_PAGADO', 'STOCK_BAJO', 'TRASPASO', 'DEVOLUCION', "
             "'OPERACION_OFFLINE', 'DEVOLUCION_PAGO')",
             name="tipo_valido",
         ),

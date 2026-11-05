@@ -27,6 +27,7 @@ from sqlalchemy.orm import Session
 
 from app.core import tiempo
 from app.modules.devoluciones_web import repository
+from app.modules.notificaciones import service as notificaciones
 from app.modules.devoluciones_web.models import (
     LineaSolicitudDevolucion,
     SolicitudDevolucion,
@@ -221,6 +222,9 @@ def solicitar(db: Session, usuario_id: int, datos: SolicitudIn) -> SolicitudOut:
         ],
     )
     db.add(solicitud)
+    db.flush()
+    # CU-26: el aviso queda en la misma transaccion; el correo sale despues.
+    notificaciones.avisar_devolucion_solicitada(db, solicitud)
     db.commit()
     return solicitud_out(db, solicitud.id)
 
@@ -327,6 +331,7 @@ def aprobar(
     solicitud.respuesta = (respuesta or "").strip() or None
     solicitud.atendida_por = usuario_id
     solicitud.atendida_en = tiempo.ahora()
+    notificaciones.avisar_devolucion_resuelta(db, solicitud)
     db.commit()
     return solicitud_out(db, solicitud.id)
 
@@ -346,6 +351,7 @@ def rechazar(
     solicitud.respuesta = motivo
     solicitud.atendida_por = usuario_id
     solicitud.atendida_en = tiempo.ahora()
+    notificaciones.avisar_devolucion_resuelta(db, solicitud)
     db.commit()
     return solicitud_out(db, solicitud.id)
 
@@ -430,6 +436,7 @@ def recibir(
 
     solicitud.estado = "COMPLETADA"
     solicitud.devolucion_id = devolucion.id
+    notificaciones.avisar_devolucion_resuelta(db, solicitud)
     db.commit()
     return solicitud_out(db, solicitud.id)
 

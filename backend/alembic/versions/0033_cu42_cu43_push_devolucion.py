@@ -8,9 +8,14 @@
 - `operacion_offline`: el cliente de la operación (opcional en la venta) y si
   la devolución la hizo el sistema solo.
 
-Va DESPUÉS de la 0037 de Karen aunque el número sea menor: el acuerdo de la P3
-reservó de la 0029 a la 0035 para nosotros y ella ya mergeó la 0036 y la 0037
-sobre la 0032. A Alembic le importa la cadena, no el número.
+Va AL FINAL, después de la 0039 de Karen, aunque el número sea menor: el
+acuerdo de la P3 reservó de la 0029 a la 0035 para nosotros, pero ella mergeó
+de la 0036 a la 0039 antes. A Alembic le importa la cadena, no el número.
+
+Primero colgaba de la 0037, igual que la 0038 de Karen, y `main` quedó con
+DOS cabezas: el `alembic upgrade head` del Dockerfile falla así. Se movió al
+final ---y no la 0038 detrás de esta--- porque la 0038 y la 0039 ya pueden
+estar aplicadas en producción y en la base de Karen; esta, todavía no.
 """
 
 from collections.abc import Sequence
@@ -20,18 +25,20 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "0033_cu42_cu43_push"
-down_revision: str | None = "0037_cu31_ofertas"
+down_revision: str | None = "0039_cu40_respaldos"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 _EMPRESA = sa.text("app_empresa_actual()")
 
+# Lo que dejó la 0039 (CU-26 sumó DEVOLUCION).
 TIPOS_ANTES = (
-    "('RESERVA_EN_SUCURSAL', 'RESERVA_PREPARADA', 'PEDIDO_PAGADO', 'STOCK_BAJO', 'TRASPASO')"
+    "('RESERVA_EN_SUCURSAL', 'RESERVA_PREPARADA', 'PEDIDO_PAGADO', 'STOCK_BAJO', 'TRASPASO', "
+    "'DEVOLUCION')"
 )
 TIPOS_DESPUES = (
     "('RESERVA_EN_SUCURSAL', 'RESERVA_PREPARADA', 'PEDIDO_PAGADO', 'STOCK_BAJO', 'TRASPASO', "
-    "'OPERACION_OFFLINE', 'DEVOLUCION_PAGO')"
+    "'DEVOLUCION', 'OPERACION_OFFLINE', 'DEVOLUCION_PAGO')"
 )
 
 

@@ -20,7 +20,9 @@ export type TipoNotificacion =
   | 'RESERVA_PREPARADA'
   | 'PEDIDO_PAGADO'
   | 'STOCK_BAJO'
+  // 3ra presentación: CU-33/34 (traspasos) y CU-26 (devoluciones web).
   | 'TRASPASO'
+  | 'DEVOLUCION'
   // CU-42 y CU-43 (3ra presentación)
   | 'OPERACION_OFFLINE'
   | 'DEVOLUCION_PAGO';
@@ -73,7 +75,8 @@ const ICONOS: Record<TipoNotificacion, string> = {
   RESERVA_PREPARADA: 'inventory_2',
   PEDIDO_PAGADO: 'payments',
   STOCK_BAJO: 'warning',
-  TRASPASO: 'local_shipping',
+  TRASPASO: 'swap_horiz',
+  DEVOLUCION: 'assignment_return',
   OPERACION_OFFLINE: 'cloud_sync',
   DEVOLUCION_PAGO: 'currency_exchange',
 };

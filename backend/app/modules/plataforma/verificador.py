@@ -107,11 +107,11 @@ REGLAS_DEL_PLAN: dict[str, tuple[str, str]] = {
     "marca_propia": ("aplicado", "plataforma/mi_tienda/router.py · guardar el logo y los colores; la tienda los muestra solo con la función"),
     "traspasos_sugeridos": ("aplicado", "traspasos/router.py · los traspasos sugeridos (CU-35)"),
     "analitica_ml": ("pendiente", "CU-29 y CU-30, analítica con ML y su dashboard"),
-    "exportar_datos": ("pendiente", "CU-39 Exportar los datos de la empresa"),
+    "exportar_datos": ("aplicado", "datos/router.py · la exportación a Excel y CSV (CU-39)"),
     # Ajustes numéricos guardados en `funciones`
     "bitacora_dias": ("aplicado", "bitacora/service.py · la consulta no va más atrás de esos días"),
-    "respaldo_intervalo_horas": ("pendiente", "CU-40 Gestionar copias de seguridad de la empresa"),
-    "respaldo_retencion": ("pendiente", "CU-40 Gestionar copias de seguridad de la empresa"),
+    "respaldo_intervalo_horas": ("aplicado", "datos/respaldos.py · cada cuánto la copia manual y la automática (CU-40)"),
+    "respaldo_retencion": ("aplicado", "datos/respaldos.py · cuántas automáticas se conservan (CU-40)"),
 }
 
 

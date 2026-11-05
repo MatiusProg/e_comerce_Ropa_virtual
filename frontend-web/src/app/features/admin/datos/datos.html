@@ -1,0 +1,156 @@
+<header class="encabezado">
+  <h1 class="vb-titulo">Datos de la empresa</h1>
+  <p class="bajada">
+    Exportar es para leer sus datos en Excel. La copia de seguridad es para recuperarlos si algo
+    sale mal.
+  </p>
+</header>
+
+<!-- ============================ CU-39 ============================ -->
+<mat-card class="tarjeta" appearance="outlined">
+  <mat-card-content>
+    <h2 class="subtitulo"><mat-icon>file_download</mat-icon> Exportar todos los datos</h2>
+    <p class="nota">Una hoja (o un CSV) por tabla: productos, inventario, ventas, clientes y todo lo demás.</p>
+    @if (exportarBloqueado(); as mensaje) {
+      <p class="bloqueo">
+        <mat-icon>lock</mat-icon>
+        {{ mensaje }} <a routerLink="/admin/mi-plan">Ver mi plan</a>
+      </p>
+    }
+    <div class="acciones">
+      <button matButton="filled" class="vb-boton-marca" type="button"
+              [disabled]="!!trabajando()" (click)="exportar('xlsx')">
+        <mat-icon>table_view</mat-icon>
+        {{ trabajando() === 'exportar-xlsx' ? 'Preparando…' : 'Excel' }}
+      </button>
+      <button matButton="outlined" type="button" [disabled]="!!trabajando()" (click)="exportar('zip')">
+        <mat-icon>folder_zip</mat-icon>
+        {{ trabajando() === 'exportar-zip' ? 'Preparando…' : 'CSV (ZIP)' }}
+      </button>
+    </div>
+  </mat-card-content>
+</mat-card>
+
+<!-- ============================ CU-40 ============================ -->
+<mat-card class="tarjeta" appearance="outlined">
+  <mat-card-content>
+    <h2 class="subtitulo"><mat-icon>backup</mat-icon> Copias de seguridad</h2>
+    @if (historial(); as h) {
+      <p class="nota">
+        Plan {{ h.plan ?? '—' }}: copia manual {{ textoIntervalo(h.intervalo_manual_horas) }};
+        se guardan cifradas las últimas {{ h.retencion_automaticas }} automáticas. Restaurar no
+        tiene límite.
+      </p>
+      @if (h.proxima_manual) {
+        <p class="nota">La próxima copia manual se puede generar desde el {{ h.proxima_manual | date: 'dd/MM HH:mm' }}.</p>
+      }
+    }
+    <div class="acciones">
+      <button matButton="filled" class="vb-boton-marca" type="button"
+              [disabled]="!!trabajando() || !!historial()?.proxima_manual" (click)="copiaManual()">
+        <mat-icon>download</mat-icon>
+        {{ trabajando() === 'manual' ? 'Generando…' : 'Generar y descargar copia' }}
+      </button>
+      <button matButton="outlined" type="button" [disabled]="!!trabajando()" (click)="copiaAutomatica()"
+              matTooltip="La que corre sola cada día o semana; acá se dispara a mano">
+        <mat-icon>schedule</mat-icon>
+        Copia automática ahora
+      </button>
+    </div>
+  </mat-card-content>
+</mat-card>
+
+<mat-card class="tarjeta peligro" appearance="outlined">
+  <mat-card-content>
+    <h2 class="subtitulo"><mat-icon>restore</mat-icon> Restaurar</h2>
+    <p class="nota">
+      Reemplaza <strong>todos</strong> los datos de la empresa por los de la copia; lo que se cargó
+      después se pierde. Solo acepta copias de esta empresa y sin alterar.
+    </p>
+    <label class="archivo">
+      <input type="file" accept="application/json,.json" (change)="elegirArchivo($event)" />
+    </label>
+    @if (archivo() || desdeCopia()) {
+      <div class="confirmar">
+        <p>
+          Va a restaurar desde <strong>{{ desdeCopia()?.archivo ?? archivo()?.name }}</strong>.
+          Escriba RESTAURAR para confirmar.
+        </p>
+        <mat-form-field appearance="outline">
+          <mat-label>Confirmación</mat-label>
+          <input matInput [formControl]="confirmacion" autocomplete="off" />
+        </mat-form-field>
+        <div class="acciones">
+          <button matButton="filled" class="boton-peligro" type="button"
+                  [disabled]="trabajando() === 'restaurar'" (click)="restaurar()">
+            <mat-icon>restore</mat-icon>
+            {{ trabajando() === 'restaurar' ? 'Restaurando…' : 'Restaurar' }}
+          </button>
+          <button matButton type="button" (click)="cancelarRestauracion()">Cancelar</button>
+        </div>
+      </div>
+    }
+  </mat-card-content>
+</mat-card>
+
+@if (cargando()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+@if (historial(); as h) {
+  <h2 class="subtitulo">Historial de copias</h2>
+  @if (h.copias.length === 0) {
+    <p class="nota">Todavía no se generó ninguna copia.</p>
+  } @else {
+    <table class="tabla">
+      <thead>
+        <tr><th>Cuándo</th><th>Tipo</th><th>Quién</th><th class="numero">Tamaño</th><th class="numero">Filas</th><th></th></tr>
+      </thead>
+      <tbody>
+        @for (c of h.copias; track c.id) {
+          <tr>
+            <td>{{ c.creado_en | date: 'dd/MM/yy HH:mm' }}</td>
+            <td>{{ c.tipo === 'MANUAL' ? 'Manual' : 'Automática' }}</td>
+            <td>{{ c.creado_por ?? 'El sistema' }}</td>
+            <td class="numero">{{ c.tamano_bytes / 1024 | number: '1.0-1' }} KB</td>
+            <td class="numero" [matTooltip]="'SHA-256 ' + c.sha256">{{ totalFilas(c.filas) }}</td>
+            <td class="botones">
+              @if (c.descargable) {
+                <button matIconButton type="button" (click)="descargar(c)" aria-label="Descargar"
+                        matTooltip="Descargar"><mat-icon>download</mat-icon></button>
+                <button matIconButton type="button" (click)="prepararRestauracion(c)"
+                        aria-label="Restaurar desde esta copia" matTooltip="Restaurar desde esta copia">
+                  <mat-icon>restore</mat-icon>
+                </button>
+              } @else {
+                <span class="tenue" matTooltip="Las manuales se descargan y no quedan en el servidor">descargada</span>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+
+  <h2 class="subtitulo">Restauraciones</h2>
+  @if (h.restauraciones.length === 0) {
+    <p class="nota">Nunca se restauró la empresa.</p>
+  } @else {
+    <table class="tabla">
+      <thead>
+        <tr><th>Cuándo</th><th>Quién</th><th>Archivo</th><th>Datos del</th><th class="numero">Filas</th></tr>
+      </thead>
+      <tbody>
+        @for (r of h.restauraciones; track r.id) {
+          <tr>
+            <td>{{ r.creado_en | date: 'dd/MM/yy HH:mm' }}</td>
+            <td>{{ r.restaurado_por ?? '—' }}</td>
+            <td>{{ r.archivo }}</td>
+            <td>{{ r.datos_del | date: 'dd/MM/yy HH:mm' }}</td>
+            <td class="numero">{{ totalFilas(r.filas) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+}

@@ -72,6 +72,12 @@
       Roles y permisos
     </a>
   }
+  @if (puede('respaldos.gestionar')) {
+    <a routerLink="/admin/datos" routerLinkActive="activo">
+      <mat-icon>backup</mat-icon>
+      Datos y copias
+    </a>
+  }
 
   @if (puede('organizacion.gestionar')) {
     <a routerLink="/admin/sucursales" routerLinkActive="activo">

@@ -334,6 +334,67 @@ def avisar_traspaso(
     ]
 
 
+def avisar_devolucion_solicitada(db: Session, solicitud) -> list[Notificacion]:
+    """CU-26 (CU-24): a los encargados de la sucursal del pedido."""
+    codigo = _codigo_de_venta(db, solicitud.venta_id)
+    que = "un cambio" if solicitud.tipo == "CAMBIO" else "una devolución"
+    return [
+        notificar(
+            db,
+            destinatario=encargado,
+            tipo="DEVOLUCION",
+            titulo=f"Pidieron {que} del pedido {codigo}",
+            cuerpo=f"Motivo del cliente: {solicitud.motivo}",
+            enlace="/sucursal/pedidos-web",
+            entidad="solicitud_devolucion",
+            entidad_id=solicitud.id,
+        )
+        for encargado in _encargados_de(db, solicitud.sucursal_id)
+    ]
+
+
+def avisar_devolucion_resuelta(db: Session, solicitud) -> Notificacion | None:
+    """CU-26 (CU-25): al cliente, cuando su solicitud se aprueba, se rechaza
+    o se completa con el reembolso."""
+    destinatario = _usuario_del_cliente(db, solicitud.cliente_id)
+    if destinatario is None:
+        return None
+    codigo = _codigo_de_venta(db, solicitud.venta_id)
+    que = "cambio" if solicitud.tipo == "CAMBIO" else "devolución"
+    if solicitud.estado == "APROBADA":
+        titulo = f"Aprobamos su {que} del pedido {codigo}"
+        cuerpo = (
+            "Acérquese a la sucursal con la prenda para retirar el cambio."
+            if solicitud.tipo == "CAMBIO"
+            else "Lleve la prenda a la sucursal: al recibirla le devolvemos el dinero."
+        )
+    elif solicitud.estado == "RECHAZADA":
+        titulo = f"No pudimos aceptar su {que} del pedido {codigo}"
+        cuerpo = f"Motivo: {solicitud.respuesta}"
+    else:
+        titulo = f"Su {que} del pedido {codigo} está completa"
+        cuerpo = "Recibimos la prenda y registramos el reembolso por el mismo medio de pago."
+    if solicitud.respuesta and solicitud.estado == "APROBADA":
+        cuerpo = f"{cuerpo} Nota de la tienda: {solicitud.respuesta}"
+    return notificar(
+        db,
+        destinatario=destinatario,
+        tipo="DEVOLUCION",
+        titulo=titulo,
+        cuerpo=cuerpo,
+        enlace="/mi-cuenta/compras",
+        entidad="solicitud_devolucion",
+        entidad_id=solicitud.id,
+    )
+
+
+def _codigo_de_venta(db: Session, venta_id: int) -> str:
+    from app.modules.ventas.models import Venta
+
+    venta = db.get(Venta, venta_id)
+    return venta.codigo if venta else f"#{venta_id}"
+
+
 # =====================================================================
 # CU-42 y CU-43: lo que le consume P14 (offline) al sincronizar
 # =====================================================================
