@@ -80,3 +80,7 @@ Desktop.ini
 # Archivo de bloqueo que crea Enterprise Architect al abrir el .eapx.
 # Queda tirado si el proceso EA no cierra limpio; nunca se versiona.
 *.ldb
+
+# CU-42: identifican al proyecto de Firebase y la cuenta de servicio. No se versionan.
+mobile/android/app/google-services.json
+*firebase-adminsdk*.json

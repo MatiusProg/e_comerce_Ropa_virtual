@@ -452,6 +452,39 @@
           }
         }
 
+        @if (sinRed()) {
+          <!-- CU-43: a quién avisarle si el servidor la rechaza y devuelve el dinero. -->
+          <mat-form-field appearance="outline" class="campo">
+            <mat-label>Cliente (opcional)</mat-label>
+            <mat-icon matPrefix>person_search</mat-icon>
+            <input
+              matInput
+              [formControl]="buscarCliente"
+              placeholder="Nombre o documento"
+              [readonly]="clienteOffline() !== null"
+            />
+            @if (clienteOffline()) {
+              <button matIconButton matSuffix type="button" aria-label="Quitar cliente"
+                      (click)="elegirCliente(null)">
+                <mat-icon>close</mat-icon>
+              </button>
+            }
+            <mat-hint>Si la venta se rechaza al sincronizar, le avisamos de la devolución.</mat-hint>
+          </mat-form-field>
+          @if (sugerenciasCliente().length) {
+            <div class="sugerencias-cliente" role="listbox" aria-label="Clientes">
+              @for (c of sugerenciasCliente(); track c.id) {
+                <button matButton type="button" role="option" (click)="elegirCliente(c)">
+                  {{ c.nombre }}
+                  @if (c.documento) {
+                    <span class="doc">· {{ c.documento }}</span>
+                  }
+                </button>
+              }
+            </div>
+          }
+        }
+
         <div class="acciones">
           <button
             matButton="filled"

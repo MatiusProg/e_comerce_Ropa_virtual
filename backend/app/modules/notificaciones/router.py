@@ -27,9 +27,13 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.dependencies import DbSession, Usuario, requiere_roles
-from app.modules.notificaciones import service
+from app.modules.notificaciones import push_service, service
 from app.modules.notificaciones.schemas import (
+    BajaPushIn,
+    ConfiguracionPushOut,
     DespachoOut,
+    SuscripcionPushIn,
+    SuscripcionPushOut,
     MarcadasOut,
     PaginaNotificacionesOut,
     ResumenNotificacionesOut,
@@ -118,6 +122,56 @@ def marcar_todas_leidas(db: DbSession, usuario: Usuario) -> MarcadasOut:
 # Mantenimiento  -  el despachador de correos
 # =====================================================================
 
+# =====================================================================
+# CU-42: los dispositivos que reciben avisos push
+# =====================================================================
+
+
+@router.get(
+    "/push/configuracion",
+    response_model=ConfiguracionPushOut,
+    summary="CU-42 Lo que el dispositivo necesita para suscribirse",
+)
+def configuracion_push(usuario: Usuario) -> ConfiguracionPushOut:
+    """La clave pública VAPID para la web. Si es nula, Web Push no está
+    configurado en este servidor y la web no ofrece activar los avisos."""
+    return push_service.configuracion()
+
+
+@router.get(
+    "/push/dispositivos",
+    response_model=list[SuscripcionPushOut],
+    summary="CU-42 Mis dispositivos con avisos push",
+)
+def mis_dispositivos(db: DbSession, usuario: Usuario) -> list[SuscripcionPushOut]:
+    return push_service.mis_dispositivos(db, usuario.id)
+
+
+@router.post(
+    "/push/dispositivos",
+    response_model=SuscripcionPushOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="CU-42 Registrar este dispositivo para recibir avisos push",
+)
+def registrar_dispositivo(
+    datos: SuscripcionPushIn, db: DbSession, usuario: Usuario
+) -> SuscripcionPushOut:
+    """Idempotente: la app lo llama en cada inicio de sesión con su token de
+    FCM, y la web con su suscripción de Web Push. No se duplica."""
+    return push_service.registrar(db, usuario.id, datos)
+
+
+@router.post(
+    "/push/dispositivos/baja",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="CU-42 Dejar de recibir avisos push en este dispositivo",
+)
+def dar_de_baja_dispositivo(datos: BajaPushIn, db: DbSession, usuario: Usuario) -> None:
+    """Al cerrar sesión: ese teléfono deja de recibir los avisos de esta
+    cuenta. No falla si ya no estaba: cerrar sesión dos veces no es un error."""
+    push_service.dar_de_baja(db, usuario.id, datos.direccion)
+
+
 mantenimiento_router = APIRouter(
     prefix="/mantenimiento/notificaciones",
     tags=["Notificaciones · Mantenimiento"],
@@ -165,3 +219,15 @@ def reintentar(db: DbSession) -> dict[str, int]:
     arreglar la clave o el remitente—, no del despachador.
     """
     return {"encolados": service.reintentar_fallidas(db)}
+
+
+@mantenimiento_router.post(
+    "/despacho-push",
+    response_model=DespachoOut,
+    summary="CU-42 Enviar por push los avisos pendientes",
+)
+def despachar_push(db: DbSession) -> DespachoOut:
+    """Manda por push los avisos que esperan salir. Idempotente, como el del
+    correo. La sincronización de CU-17 ya despacha los suyos al terminar el
+    lote; esto recoge los de los demás casos de uso y los que fallaron."""
+    return push_service.despachar(db)

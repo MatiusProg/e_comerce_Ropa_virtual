@@ -198,6 +198,8 @@ TABLAS_DE_EMPRESA = (
     "linea_solicitud_devolucion",
     # avisos y bitácora
     "notificacion",
+    # CU-42 (0033): los dispositivos que reciben push
+    "suscripcion_push",
     "bitacora",
 )
 

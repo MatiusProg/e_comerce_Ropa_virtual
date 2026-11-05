@@ -30,6 +30,7 @@ def crear(
     entidad_id: int | None,
     correo_estado: str,
     correo_error: str | None = None,
+    push_estado: str = "OMITIDO",
 ) -> Notificacion:
     """Inserta el aviso y lo deja en la sesion, SIN confirmar."""
     fila = Notificacion(
@@ -42,6 +43,7 @@ def crear(
         entidad_id=entidad_id,
         correo_estado=correo_estado,
         correo_error=correo_error,
+        push_estado=push_estado,
     )
     db.add(fila)
     # `flush` y no `commit`: le da el id a la fila ---que el llamador puede

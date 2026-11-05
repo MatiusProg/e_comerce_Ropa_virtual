@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 
 import { AuthService } from '../../core/services/auth.service';
+import { PushWebService } from '../../core/services/push-web.service';
 import {
   Notificacion,
   NotificacionesService,
@@ -44,6 +45,8 @@ export class Campanita implements OnInit {
   private readonly servicio = inject(NotificacionesService);
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
+  /** CU-42: el botón «avisos en este dispositivo» del pie del menú. */
+  protected readonly push = inject(PushWebService);
 
   /**
    * A dónde lleva «ver todos», según el rol.
@@ -58,6 +61,8 @@ export class Campanita implements OnInit {
         return '/admin/avisos';
       case 'ENCARGADO':
         return '/sucursal/avisos';
+      case 'CAJERO':
+        return '/avisos';
       default:
         return '/avisos';
     }
@@ -72,6 +77,12 @@ export class Campanita implements OnInit {
     // Solo el contador al arrancar. La lista se pide al abrir el menú: traerla
     // en cada carga de pantalla serían veinte filas que casi nadie despliega.
     this.servicio.refrescarContador().subscribe({ error: () => undefined });
+    void this.push.iniciar();
+  }
+
+  protected alternarPush(): void {
+    const accion = this.push.activo() ? this.push.desactivar() : this.push.activar();
+    accion.catch(() => undefined);
   }
 
   protected abrir(): void {

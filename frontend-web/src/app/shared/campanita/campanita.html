@@ -46,6 +46,25 @@
     }
   }
 
+  @if (push.disponible()) {
+    <button
+      mat-menu-item
+      type="button"
+      class="ver-todos"
+      [disabled]="push.ocupado() || (push.permisoDenegado() && !push.activo())"
+      (click)="alternarPush()"
+    >
+      <mat-icon>{{ push.activo() ? 'notifications_off' : 'notifications_active' }}</mat-icon>
+      @if (push.activo()) {
+        Apagar los avisos en este dispositivo
+      } @else if (push.permisoDenegado()) {
+        El navegador bloqueó los avisos
+      } @else {
+        Recibir avisos en este dispositivo
+      }
+    </button>
+  }
+
   <a mat-menu-item [routerLink]="enlaceTodos()" class="ver-todos">
     <mat-icon>list</mat-icon>
     Ver todos

@@ -45,6 +45,9 @@ openpyxl==3.1.5                 # Excel
 
 # --- Integraciones externas (ciclo 3) ------------------------------------
 stripe==15.6.1                  # P8 - pasarela de pago (modo sandbox)
+# CU-42 - Web Push con VAPID para la web instalada (PWA). FCM, el push de la
+# app, va por su API HTTP con httpx y python-jose: no hace falta firebase-admin.
+pywebpush==2.5.0
 # P10 - servicio de inteligencia artificial. El SDK de Gemini se fija al
 # construir P10 en el Ciclo 3, con la version que este vigente entonces
 # (seccion 6.6). El paquete `anthropic` se quito el 11/09: era de la

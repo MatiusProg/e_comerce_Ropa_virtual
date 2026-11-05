@@ -161,6 +161,11 @@ def notificar(
         estado, motivo = "OMITIDO", "El plan de la empresa no incluye avisos por correo."
     else:
         estado, motivo = "PENDIENTE", None
+    # CU-42: sale por push si la persona tiene algún dispositivo suscrito.
+    # Lo despacha `push_service`, después del commit, igual que el correo.
+    from app.modules.notificaciones import push_service
+
+    push = "PENDIENTE" if push_service.tiene_dispositivos(db, destinatario.id) else "OMITIDO"
     return repository.crear(
         db,
         destinatario_id=destinatario.id,
@@ -172,6 +177,7 @@ def notificar(
         entidad_id=entidad_id,
         correo_estado=estado,
         correo_error=motivo,
+        push_estado=push,
     )
 
 
@@ -329,6 +335,56 @@ def avisar_traspaso(
 
 
 # =====================================================================
+# CU-42 y CU-43: lo que le consume P14 (offline) al sincronizar
+# =====================================================================
+#
+# Los textos los arma `offline/service.py`, que es quien conoce la operación;
+# acá se resuelve a quién y con qué tipo. Igual que los otros `avisar_*`, no
+# confirman: nacen en la transacción de la operación.
+
+
+def usuario_del_cliente(db: Session, cliente_id: int | None) -> Usuario | None:
+    return _usuario_del_cliente(db, cliente_id)
+
+
+def encargados_de(db: Session, sucursal_id: int) -> list[Usuario]:
+    return _encargados_de(db, sucursal_id)
+
+
+def avisar_a(
+    db: Session,
+    destinatarios: list[Usuario],
+    *,
+    tipo: str,
+    titulo: str,
+    cuerpo: str,
+    enlace: str | None,
+    entidad: str,
+    entidad_id: int,
+) -> list[Notificacion]:
+    """Un aviso igual para cada persona, sin repetir a nadie."""
+    vistos: set[int] = set()
+    avisos = []
+    for d in destinatarios:
+        if d is None or d.id in vistos:
+            continue
+        vistos.add(d.id)
+        avisos.append(
+            notificar(
+                db,
+                destinatario=d,
+                tipo=tipo,
+                titulo=titulo,
+                cuerpo=cuerpo,
+                enlace=enlace,
+                entidad=entidad,
+                entidad_id=entidad_id,
+            )
+        )
+    return avisos
+
+
+# =====================================================================
 # El despachador de correos
 # =====================================================================
 
@@ -468,6 +524,7 @@ def _a_salida(fila: Notificacion) -> NotificacionOut:
         creada_en=tiempo.en_bolivia(fila.creada_en),
         leida_en=tiempo.en_bolivia(fila.leida_en) if fila.leida_en else None,
         correo_estado=fila.correo_estado,
+        push_estado=fila.push_estado,
     )
 
 

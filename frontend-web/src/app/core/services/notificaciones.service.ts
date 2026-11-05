@@ -19,7 +19,11 @@ export type TipoNotificacion =
   | 'RESERVA_EN_SUCURSAL'
   | 'RESERVA_PREPARADA'
   | 'PEDIDO_PAGADO'
-  | 'STOCK_BAJO';
+  | 'STOCK_BAJO'
+  | 'TRASPASO'
+  // CU-42 y CU-43 (3ra presentación)
+  | 'OPERACION_OFFLINE'
+  | 'DEVOLUCION_PAGO';
 
 export interface Notificacion {
   id: number;
@@ -43,6 +47,8 @@ export interface Notificacion {
   leida_en: string | null;
 
   correo_estado: 'OMITIDO' | 'PENDIENTE' | 'ENVIADO' | 'FALLIDO';
+  /** CU-42: si salió también por push a algún dispositivo. */
+  push_estado?: 'OMITIDO' | 'PENDIENTE' | 'ENVIADO' | 'FALLIDO';
 }
 
 export interface PaginaNotificaciones {
@@ -67,6 +73,9 @@ const ICONOS: Record<TipoNotificacion, string> = {
   RESERVA_PREPARADA: 'inventory_2',
   PEDIDO_PAGADO: 'payments',
   STOCK_BAJO: 'warning',
+  TRASPASO: 'local_shipping',
+  OPERACION_OFFLINE: 'cloud_sync',
+  DEVOLUCION_PAGO: 'currency_exchange',
 };
 
 export function iconoDe(tipo: TipoNotificacion): string {
