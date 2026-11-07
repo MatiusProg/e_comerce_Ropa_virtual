@@ -122,6 +122,24 @@ POR_CODIGO: dict[str, Permiso] = {p.codigo: p for p in CATALOGO}
 #: su sesión, sus avisos y la vitrina pública.
 RUTAS_LIBRES = ("/auth", "/notificaciones", "/tienda")
 
+#: Consultas de apoyo: las listas que las pantallas usan para llenar sus
+#: desplegables (sucursales, productos, temporadas...). Solo LECTURA (GET).
+#: Sin esto, un rol propio parcial —un «Analista» con reportes y nada más—
+#: abría la pantalla de reportes y el selector de sucursal fallaba en
+#: silencio con 403. El rol base sigue mandando: estas rutas conservan su
+#: `requiere_roles`, así que un cajero no ve más que antes. Ninguna devuelve
+#: algo que no se vea ya en la vitrina pública o en el propio reporte.
+CONSULTAS_DE_APOYO = (
+    "/organizacion/sucursales",
+    "/organizacion/ciudades",
+    "/catalogo/productos",
+    "/catalogo/categorias",
+    "/catalogo/temporadas",
+    "/catalogo/colecciones",
+    "/catalogo/tallas",
+    "/catalogo/colores",
+)
+
 PREFIJO_API = "/api/v1"
 
 
@@ -149,3 +167,11 @@ def es_libre(ruta: str) -> bool:
 
 def asignables_para(rol_base: str) -> list[Permiso]:
     return [p for p in CATALOGO if p.asignable and rol_base in p.roles_base]
+
+
+def es_consulta_de_apoyo(metodo: str, ruta: str) -> bool:
+    if metodo not in ("GET", "HEAD"):
+        return False
+    if ruta.startswith(PREFIJO_API):
+        ruta = ruta[len(PREFIJO_API):]
+    return any(_coincide(ruta, p) for p in CONSULTAS_DE_APOYO)

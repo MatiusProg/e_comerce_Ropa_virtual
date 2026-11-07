@@ -103,7 +103,7 @@ def _sin_stock(disponible: int, pedido: int) -> ErrorDeTraspaso:
 #  Permisos de cada paso
 # =====================================================================
 
-def _acciones(t: Traspaso, quien: Quien) -> list[str]:
+def _acciones(t: Traspaso, quien: Quien, *, destino_activo: bool = True) -> list[str]:
     es_origen = quien.es_admin or quien.sucursal_id == t.sucursal_origen_id
     es_destino = quien.es_admin or quien.sucursal_id == t.sucursal_destino_id
     if t.estado == "SOLICITADO":
@@ -113,12 +113,17 @@ def _acciones(t: Traspaso, quien: Quien) -> list[str]:
     if t.estado == "APROBADO":
         return ["ENVIAR", "RECHAZAR"] if es_origen else []
     if t.estado == "ENVIADO":
+        # El destino se dio de baja con la mercadería en camino: ya no puede
+        # entrar ahí (E2), y sin esto el traspaso quedaba trabado para
+        # siempre. El origen (o el admin) la recibe de vuelta.
+        if not destino_activo:
+            return ["DEVOLVER"] if es_origen else []
         return ["RECIBIR"] if es_destino else []
     return []
 
 
-def _exigir(t: Traspaso, quien: Quien, accion: str) -> None:
-    if accion in _acciones(t, quien):
+def _exigir(t: Traspaso, quien: Quien, accion: str, *, destino_activo: bool = True) -> None:
+    if accion in _acciones(t, quien, destino_activo=destino_activo):
         return
     if t.estado in ("RECIBIDO", "RECHAZADO"):
         raise ErrorDeTraspaso(f"El traspaso ya está {t.estado.lower()}: no admite cambios.", 409)
@@ -127,7 +132,18 @@ def _exigir(t: Traspaso, quien: Quien, accion: str) -> None:
         "RECHAZAR": ("SOLICITADO", "APROBADO"),
         "ENVIAR": ("APROBADO",),
         "RECIBIR": ("ENVIADO",),
+        "DEVOLVER": ("ENVIADO",),
     }[accion]
+    if t.estado == "ENVIADO" and accion == "RECIBIR" and not destino_activo:
+        raise ErrorDeTraspaso(
+            "La sucursal destino fue dada de baja: la mercadería no puede entrar "
+            "ahí. El origen tiene que recibirla de vuelta (Devolver).",
+            422,
+        )
+    if t.estado == "ENVIADO" and accion == "DEVOLVER" and destino_activo:
+        raise ErrorDeTraspaso(
+            "El destino sigue activo: el traspaso se recibe allá, no se devuelve.", 409
+        )
     if t.estado not in esperados:
         raise ErrorDeTraspaso(
             f"El traspaso está {t.estado.lower()} y no se puede {accion.lower()} en ese estado.",
@@ -151,7 +167,14 @@ def _visible(t: Traspaso | None, quien: Quien) -> Traspaso:
 #  Lectura
 # =====================================================================
 
-def _a_salida(fila, quien: Quien) -> TraspasoOut:
+def _destino_activo(db: Session, t: Traspaso) -> bool:
+    if t.estado != "ENVIADO":
+        return True  # solo importa con la mercadería en camino
+    destino = inventario_repo.obtener_sucursal(db, t.sucursal_destino_id)
+    return destino is not None and bool(destino.activa)
+
+
+def _a_salida(db: Session, fila, quien: Quien) -> TraspasoOut:
     t: Traspaso = fila[0]
     return TraspasoOut(
         id=t.id,
@@ -178,12 +201,12 @@ def _a_salida(fila, quien: Quien) -> TraspasoOut:
         recibido_en=t.recibido_en,
         rechazado_por=fila.rechazado_por,
         rechazado_en=t.rechazado_en,
-        acciones=_acciones(t, quien),
+        acciones=_acciones(t, quien, destino_activo=_destino_activo(db, t)),
     )
 
 
 def _detalle(db: Session, traspaso_id: int, quien: Quien) -> TraspasoOut:
-    return _a_salida(repository.detalle(db, traspaso_id), quien)
+    return _a_salida(db, repository.detalle(db, traspaso_id), quien)
 
 
 def listar(
@@ -210,7 +233,7 @@ def listar(
         tamano=tamano,
     )
     return PaginaTraspasos(
-        total=total, pagina=pagina, tamano=tamano, items=[_a_salida(f, quien) for f in filas]
+        total=total, pagina=pagina, tamano=tamano, items=[_a_salida(db, f, quien) for f in filas]
     )
 
 
@@ -327,7 +350,7 @@ def solicitar(db: Session, quien: Quien, datos: SolicitarTraspasoIn) -> Traspaso
 def _bloquear(db: Session, quien: Quien, traspaso_id: int, accion: str) -> Traspaso:
     t = _visible(repository.obtener(db, traspaso_id, bloquear=True), quien)
     try:
-        _exigir(t, quien, accion)
+        _exigir(t, quien, accion, destino_activo=_destino_activo(db, t))
     except ErrorDeTraspaso:
         db.rollback()
         raise
@@ -439,6 +462,45 @@ def recibir(db: Session, quien: Quien, traspaso_id: int) -> TraspasoOut:
         tipo="TRANSFERENCIA",
         cantidad=t.cantidad,
         motivo=f"Traspaso #{t.id} {origen.nombre} → {destino.nombre}: recibido"[:200],
+        referencia=f"TRASPASO-{t.id}",
+        usuario_id=quien.usuario_id,
+    )
+    t.estado = "RECIBIDO"
+    t.recibido_por = quien.usuario_id
+    t.recibido_en = _ahora()
+    t.movimiento_entrada_id = entrada.id
+    db.commit()
+    return _detalle(db, t.id, quien)
+
+
+def devolver(db: Session, quien: Quien, traspaso_id: int) -> TraspasoOut:
+    """El destino se dio de baja con la mercadería en camino: vuelve al origen.
+
+    Se cierra como RECIBIDO —las unidades llegaron a algún lado y el
+    invariante del inventario queda cerrado: salida en el origen, entrada en
+    el origen—, pero la entrada es en la sucursal de ORIGEN y su motivo dice
+    que fue una devolución. No hace falta migrar los CHECK del traspaso.
+    """
+    t = _bloquear(db, quien, traspaso_id, "DEVOLVER")
+    origen = inventario_repo.obtener_sucursal(db, t.sucursal_origen_id)
+    destino = inventario_repo.obtener_sucursal(db, t.sucursal_destino_id)
+    if not origen.activa:
+        db.rollback()
+        raise ErrorDeTraspaso(
+            "Las dos sucursales del traspaso están dadas de baja: reactive el origen "
+            "para devolverle la mercadería.",
+            422,
+        )
+    existencia = inventario._existencia_o_crearla(
+        db, variante_id=t.variante_id, sucursal_id=t.sucursal_origen_id
+    )
+    entrada = inventario._aplicar_movimiento(
+        db,
+        existencia,
+        tipo="TRANSFERENCIA",
+        cantidad=t.cantidad,
+        motivo=(f"Traspaso #{t.id} devuelto a {origen.nombre}: "
+                f"{destino.nombre} se dio de baja")[:200],
         referencia=f"TRASPASO-{t.id}",
         usuario_id=quien.usuario_id,
     )

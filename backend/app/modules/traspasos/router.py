@@ -178,6 +178,17 @@ def enviar(traspaso_id: Id, db: DbSession, usuario: Usuario):
         raise _traducir(e) from e
 
 
+@router.post("/{traspaso_id}/devolver", response_model=TraspasoOut,
+             summary="CU-34 Devolver al origen (destino dado de baja)")
+def devolver(traspaso_id: Id, db: DbSession, usuario: Usuario):
+    """Solo con la mercadería en camino y el destino dado de baja: las
+    unidades vuelven a entrar en el origen y el traspaso se cierra."""
+    try:
+        return service.devolver(db, _quien(usuario), traspaso_id)
+    except service.ErrorDeTraspaso as e:
+        raise _traducir(e) from e
+
+
 @router.post("/{traspaso_id}/recibir", response_model=TraspasoOut, summary="CU-34 Recibir")
 def recibir(traspaso_id: Id, db: DbSession, usuario: Usuario):
     """Suma al destino (RN-09) y cierra el traspaso."""

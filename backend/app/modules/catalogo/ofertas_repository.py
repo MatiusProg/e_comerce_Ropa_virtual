@@ -15,6 +15,7 @@ from app.modules.catalogo.models import Producto, Temporada, VarianteProducto
 from app.modules.catalogo.ofertas_models import PrecioMayorista, ReglaFueraDeTemporada
 from app.modules.catalogo.promociones_models import Promocion
 from app.modules.inventario.models import Existencia
+from app.modules.organizacion.models import Sucursal
 
 
 # =====================================================================
@@ -141,7 +142,7 @@ def candidatas_fuera_de_temporada(
     """Los productos que cumplen el factor de RF-57.
 
     - su temporada terminó el `hasta_fin` o antes (hoy menos los días), y
-    - la suma de lo disponible en todas las sucursales llega al mínimo.
+    - la suma de lo disponible en las sucursales activas llega al mínimo.
 
     Trae también la promoción automática que ya tenga, si tiene alguna: el
     servicio decide con eso si la crea o la deja como está.
@@ -152,7 +153,10 @@ def candidatas_fuera_de_temporada(
             func.coalesce(func.sum(Existencia.cantidad_disponible), 0).label("disponible"),
         )
         .join(Existencia, Existencia.variante_id == VarianteProducto.id)
-        .where(VarianteProducto.activa.is_(True))
+        # Lo que está en una sucursal dada de baja no se puede vender: no
+        # cuenta como sobrante.
+        .join(Sucursal, Sucursal.id == Existencia.sucursal_id)
+        .where(VarianteProducto.activa.is_(True), Sucursal.activa.is_(True))
         .group_by(VarianteProducto.producto_id)
         .subquery()
     )

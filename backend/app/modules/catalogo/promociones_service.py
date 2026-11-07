@@ -427,6 +427,9 @@ def editar(db: Session, promocion_id: int, datos: PromocionEditarIn) -> Promocio
 
     promocion.desde = desde
     promocion.hasta = hasta
+    # CU-32: si el Administrador toca una automática, la decisión pasa a ser
+    # suya: la regla ya no la reabre por su cuenta.
+    promocion.cerrada_por_regla = False
 
     db.commit()
     return obtener(db, promocion_id)

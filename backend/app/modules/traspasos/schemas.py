@@ -85,7 +85,7 @@ class TraspasoOut(BaseModel):
     rechazado_en: datetime | None = None
     #: Lo que puede hacer QUIEN CONSULTA, ya resuelto por el servidor. La web
     #: muestra los botones con esto y no repite la regla.
-    acciones: list[Literal["APROBAR", "RECHAZAR", "ENVIAR", "RECIBIR"]] = []
+    acciones: list[Literal["APROBAR", "RECHAZAR", "ENVIAR", "RECIBIR", "DEVOLVER"]] = []
 
 
 class PaginaTraspasos(BaseModel):

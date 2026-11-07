@@ -324,3 +324,48 @@ def test_los_sugeridos_son_del_admin_y_de_su_plan(
     r = api.get(SUGERIDOS, headers=cabeceras_admin)
     assert r.status_code == 403
     assert r.json()["codigo"] == "plan_limit" or "plan" in r.text
+
+
+# =====================================================================
+# Tanda C de la auditoría
+# =====================================================================
+
+def test_con_el_destino_dado_de_baja_el_origen_lo_recibe_de_vuelta(
+    api, cabeceras_admin, enc_centro, enc_norte, centro, norte, variantes
+) -> None:
+    t = _pedir(api, enc_norte, variante=variantes[0], origen=centro, cantidad=4).json()
+    api.post(f"{TRASPASOS}/{t['id']}/aprobar", headers=enc_centro)
+    assert api.post(f"{TRASPASOS}/{t['id']}/enviar", headers=enc_centro).status_code == 200
+    assert _saldo(api, cabeceras_admin, centro, variantes[0]) == 6
+
+    # Mientras el destino está activo, devolver no corresponde.
+    assert api.post(f"{TRASPASOS}/{t['id']}/devolver", headers=enc_centro).status_code == 409
+
+    r = api.patch(f"/api/v1/organizacion/sucursales/{norte}/estado", headers=cabeceras_admin,
+                  json={"activa": False})
+    assert r.status_code == 200, r.text
+
+    # Ya no se puede recibir allá, y el origen ve el botón para recuperarla.
+    r = api.post(f"{TRASPASOS}/{t['id']}/recibir", headers=cabeceras_admin)
+    assert r.status_code == 422, r.text
+    detalle = api.get(f"{TRASPASOS}/{t['id']}", headers=enc_centro).json()
+    assert detalle["acciones"] == ["DEVOLVER"]
+
+    r = api.post(f"{TRASPASOS}/{t['id']}/devolver", headers=enc_centro)
+    assert r.status_code == 200, r.text
+    assert r.json()["estado"] == "RECIBIDO"
+    assert _saldo(api, cabeceras_admin, centro, variantes[0]) == 10
+    assert _saldo(api, cabeceras_admin, norte, variantes[0]) == 0
+
+
+def test_crear_el_saldo_dos_veces_no_choca(db, norte, variantes) -> None:
+    """Lo que pasa en dos recepciones simultáneas: la segunda creación del
+    saldo de la misma prenda no revienta con la UNIQUE, toma la misma fila."""
+    from app.core.tenencia import fijar_empresa
+    from app.modules.inventario import repository as inventario_repo
+
+    fijar_empresa(db, 1)
+    a = inventario_repo.agregar_existencia(db, variante_id=variantes[0], sucursal_id=norte)
+    b = inventario_repo.agregar_existencia(db, variante_id=variantes[0], sucursal_id=norte)
+    assert a is not None and a.id == b.id
+    db.rollback()

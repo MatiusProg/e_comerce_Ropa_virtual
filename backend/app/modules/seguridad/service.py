@@ -640,7 +640,7 @@ def editar_usuario(
             # la cambio porque la cuenta estaba comprometida, dejar vivos los
             # tokens anteriores no serviria de nada.
             repository.revocar_sesiones_de_usuario(db, usuario_id)
-        usuario.rol_id = rol.id
+        usuario.asignar_rol(rol.id)
 
         if empleado is not None and sucursal_id is not None:
             empleado.sucursal_id = sucursal_id

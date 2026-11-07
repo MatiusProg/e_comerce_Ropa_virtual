@@ -26,6 +26,7 @@ P5 consulte estas tablas por su cuenta.
 from datetime import datetime
 
 from sqlalchemy import Row, Select, and_, func, or_, select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from app.modules.catalogo.models import Color, Producto, Talla, VarianteProducto
@@ -138,16 +139,27 @@ def agregar_existencia(db: Session, *, variante_id: int, sucursal_id: int) -> Ex
     actualizar. Se crea con las dos cantidades en cero y el movimiento que sigue
     es el que la sube: asi la afirmacion de D4 -el saldo es la suma de sus
     movimientos- se cumple tambien para la primera unidad.
+
+    Tanda C de la auditoría: con `ON CONFLICT DO NOTHING`. Dos recepciones a
+    la vez de la misma prenda en una sucursal que nunca la tuvo (dos traspasos
+    que llegan juntos, un traspaso y un ingreso) intentaban crear las dos la
+    misma fila: la segunda chocaba con la UNIQUE y respondía 500. Ahora la
+    segunda no inserta nada, espera el bloqueo de la primera y sigue sobre la
+    misma fila.
     """
-    existencia = Existencia(
-        variante_id=variante_id,
-        sucursal_id=sucursal_id,
-        cantidad_disponible=0,
-        cantidad_reservada=0,
+    db.execute(
+        pg_insert(Existencia)
+        .values(
+            variante_id=variante_id,
+            sucursal_id=sucursal_id,
+            cantidad_disponible=0,
+            cantidad_reservada=0,
+        )
+        .on_conflict_do_nothing(index_elements=["variante_id", "sucursal_id"])
     )
-    db.add(existencia)
-    db.flush()
-    return existencia
+    return obtener_existencia(
+        db, variante_id=variante_id, sucursal_id=sucursal_id, bloquear=True
+    )
 
 
 # --- Movimientos ---------------------------------------------------------

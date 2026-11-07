@@ -189,7 +189,7 @@ def crear_empleado(db: Session, datos: EmpleadoCrearIn, empresa_id: int) -> Empl
             # La cuenta pasa a tener el rol del cargo. Sus tokens vigentes
             # llevan el rol viejo y no llevan sucursal, asi que hay que
             # revocarlos o seguiria operando con el ambito anterior.
-            usuario.rol_id = rol.id
+            usuario.asignar_rol(rol.id)
             repositorio_seguridad.revocar_sesiones_de_usuario(db, usuario.id)
         else:
             if repository.obtener_usuario_por_correo(db, datos.correo, empresa_id) is not None:
@@ -296,7 +296,7 @@ def editar_empleado(
         if datos.apellidos is not None:
             usuario.apellidos = datos.apellidos
         if rol is not None:
-            usuario.rol_id = rol.id
+            usuario.asignar_rol(rol.id)
 
         if cambia_cargo or cambia_sucursal:
             repositorio_seguridad.revocar_sesiones_de_usuario(db, usuario.id)

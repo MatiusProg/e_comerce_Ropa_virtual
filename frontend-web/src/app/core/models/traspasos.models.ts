@@ -5,7 +5,7 @@
 
 export type EstadoTraspaso = 'SOLICITADO' | 'APROBADO' | 'ENVIADO' | 'RECIBIDO' | 'RECHAZADO';
 export type TipoTraspaso = 'PEDIDO' | 'ORDEN' | 'SUGERIDO';
-export type AccionTraspaso = 'APROBAR' | 'RECHAZAR' | 'ENVIAR' | 'RECIBIR';
+export type AccionTraspaso = 'APROBAR' | 'RECHAZAR' | 'ENVIAR' | 'RECIBIR' | 'DEVOLVER';
 export type Bandeja = 'ENTRANTES' | 'SALIENTES';
 
 export interface SucursalDelTraspaso {
