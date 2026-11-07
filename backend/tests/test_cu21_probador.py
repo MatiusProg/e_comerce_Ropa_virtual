@@ -108,8 +108,22 @@ def _probar(api: TestClient, cab: dict[str, str], variante_id: int, contenido=No
         PROBAR,
         headers=cab,
         data={"variante_id": variante_id},
-        files={"captura": ("captura.png", contenido or _png(alfa=255), "image/png")},
+        files={"captura": ("captura.png",
+                           _png(alfa=255) if contenido is None else contenido, "image/png")},
     )
+
+
+@pytest.fixture
+def apagado(monkeypatch):
+    """El probador apagado A PROPÓSITO (`no_disponible`).
+
+    Desde el 07/11 (CU-38) el valor por defecto es el SIMULADO, que no llama a
+    nadie: R9 sigue cubierto. Estas pruebas fijan el comportamiento del apagado.
+    """
+    from app.integrations import probador_ia
+    from app.integrations.probador_ia.no_disponible import ProbadorNoDisponible
+
+    monkeypatch.setattr(probador_ia, "obtener_proveedor", lambda: ProbadorNoDisponible())
 
 
 # --- Autorizacion ----------------------------------------------------------
@@ -123,14 +137,26 @@ def test_el_vestidor_es_del_cliente(
 
 # --- Que sea opcional de verdad --------------------------------------------
 
-def test_por_omision_el_probado_por_ia_esta_apagado(
-    api: TestClient, cabeceras_cliente: dict[str, str]
+def test_por_omision_es_el_simulado_que_no_llama_a_nadie(
+    api: TestClient, cabeceras_cliente: dict[str, str], prenda: dict
 ) -> None:
-    """El valor por defecto NO llama a nadie, y lo dice.
+    """El valor por defecto NO llama a nadie (R9): es el simulado, y lo dice.
 
-    Es el riesgo R9: un valor por defecto que consume cuota la gasta cada vez
-    que alguien abre el vestidor en una máquina recién clonada.
+    2do parcial (CU-38): antes era `no_disponible`. El simulado compone en el
+    servidor con Pillow, así que el botón se ofrece sin gastar crédito.
     """
+    from app.integrations import probador_ia
+
+    assert probador_ia.obtener_proveedor().nombre == "simulado"
+    assert api.get(PROBADOR, headers=cabeceras_cliente).json()["disponible"] is True
+    respuesta = _probar(api, cabeceras_cliente, prenda["con_png"])
+    assert respuesta.status_code == 200, respuesta.text
+    assert respuesta.headers["X-Generada-Por"] == "simulado"
+
+
+def test_apagado_lo_dice(
+    api: TestClient, cabeceras_cliente: dict[str, str], apagado
+) -> None:
     respuesta = api.get(PROBADOR, headers=cabeceras_cliente)
     assert respuesta.status_code == 200, respuesta.text
     cuerpo = respuesta.json()
@@ -139,7 +165,7 @@ def test_por_omision_el_probado_por_ia_esta_apagado(
 
 
 def test_con_el_probador_apagado_responde_503_y_no_500(
-    api: TestClient, cabeceras_cliente: dict[str, str], prenda: dict
+    api: TestClient, cabeceras_cliente: dict[str, str], prenda: dict, apagado
 ) -> None:
     """503 es «apagado»; 500 sería «roto». La app decide distinto con cada uno.
 

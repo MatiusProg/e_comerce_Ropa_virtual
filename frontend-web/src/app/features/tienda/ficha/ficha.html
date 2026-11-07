@@ -217,22 +217,41 @@
           </button>
         }
 
-        <!-- El vestidor virtual es de la app móvil (RF13): la cámara y la
-             detección de pose corren en el teléfono. -->
-        <button
-          matButton="filled"
-          type="button"
-          class="vb-boton-marca vestidor"
-          [disabled]="!producto.tiene_vestidor"
-          [matTooltip]="
-            producto.tiene_vestidor
-              ? 'Disponible en la app móvil: la cámara y la detección de pose son del teléfono'
-              : 'Esta prenda todavía no tiene su imagen para el vestidor virtual'
-          "
-        >
-          <mat-icon>view_in_ar</mat-icon>
-          Probar en el vestidor virtual
-        </button>
+        <!-- 3ra presentación · CU-37: el probador con la talla real, también en
+             la web. Antes este botón era solo un aviso de que el vestidor
+             estaba en la app móvil. -->
+        @if (!producto.tiene_vestidor) {
+          <button
+            matButton="filled"
+            type="button"
+            class="vb-boton-marca vestidor"
+            disabled
+            matTooltip="Esta prenda todavía no está preparada para el probador"
+          >
+            <mat-icon>checkroom</mat-icon>
+            Probármela
+          </button>
+        } @else if (puedeComprar()) {
+          <a
+            matButton="filled"
+            class="vb-boton-marca vestidor"
+            [routerLink]="['/tienda/producto', producto.id, 'probador']"
+            matTooltip="Probátela sobre tu foto, con el tamaño real de cada talla"
+          >
+            <mat-icon>checkroom</mat-icon>
+            Probármela
+          </a>
+        } @else {
+          <a
+            matButton
+            class="vestidor"
+            routerLink="/login"
+            [queryParams]="{ destino: '/tienda/producto/' + producto.id + '/probador' }"
+          >
+            <mat-icon>checkroom</mat-icon>
+            Ingresá para probártela
+          </a>
+        }
       </section>
     </div>
   </mat-card>

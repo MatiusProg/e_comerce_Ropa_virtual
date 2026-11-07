@@ -77,6 +77,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/tienda/ficha/ficha').then((m) => m.Ficha),
   },
   {
+    // 3ra presentación · CU-37 y CU-38: el probador con la talla real. Exige
+    // sesión de Cliente: usa sus medidas y guarda sus pruebas.
+    path: 'tienda/producto/:id/probador',
+    title: 'Probador · Violet Boutique',
+    canActivate: [sesionGuard, rolGuard('CLIENTE')],
+    loadComponent: () => import('./features/tienda/probador/probador').then((m) => m.Probador),
+  },
+  {
     // CU-26. Como los favoritos, exige sesión de Cliente: un carrito es de
     // alguien. El código es de P7 aunque la ruta viva bajo /tienda, que es
     // donde el cliente la usa.
@@ -255,6 +263,13 @@ export const routes: Routes = [
         title: 'Promociones · Violet Boutique',
         loadComponent: () =>
           import('./features/admin/promociones/promociones').then((m) => m.Promociones),
+      },
+      // --- 3ra presentación · CU-36 Preparar prenda para el probador ---
+      {
+        path: 'probador',
+        title: 'Preparar prendas para el probador · Violet Boutique',
+        loadComponent: () =>
+          import('./features/admin/probador/probador-admin').then((m) => m.ProbadorAdmin),
       },
       // --- 3ra presentación · CU-31 y CU-32 Ofertas y precios mayoristas ---
       {

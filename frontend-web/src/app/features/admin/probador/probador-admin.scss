@@ -1,0 +1,225 @@
+:host {
+  display: block;
+  padding: 16px;
+}
+
+.encabezado p {
+  max-width: 70ch;
+  color: var(--mat-sys-on-surface-variant, #555);
+}
+
+.disposicion {
+  display: grid;
+  grid-template-columns: minmax(220px, 300px) 1fr;
+  gap: 16px;
+  align-items: start;
+
+  @media (max-width: 800px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.producto {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 8px;
+  text-align: left;
+  padding: 10px 12px;
+  border: 1px solid var(--mat-sys-outline-variant, #ddd);
+  border-radius: 10px;
+  background: var(--mat-sys-surface, #fff);
+  cursor: pointer;
+  font: inherit;
+
+  &.elegido {
+    border-color: var(--mat-sys-primary, #6a1b9a);
+    box-shadow: 0 0 0 1px var(--mat-sys-primary, #6a1b9a);
+  }
+  .nombre {
+    font-weight: 600;
+  }
+  .avance {
+    grid-column: 1;
+    font-size: 0.82rem;
+    color: var(--mat-sys-on-surface-variant, #666);
+  }
+  .etiqueta {
+    grid-row: 1 / span 2;
+    grid-column: 2;
+    align-self: center;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+  .lista {
+    background: #e3f4e6;
+    color: #1b5e20;
+  }
+  .falta {
+    background: #fff3e0;
+    color: #8a4b00;
+  }
+}
+
+.bloque {
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.faltan {
+  list-style: none;
+  padding: 0;
+  li {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    color: #8a4b00;
+  }
+}
+
+.ok {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: #1b5e20;
+}
+
+.miniaturas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.miniatura {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 92px;
+  padding: 6px;
+  border: 1px solid var(--mat-sys-outline-variant, #ddd);
+  border-radius: 8px;
+  background: repeating-conic-gradient(#f2f2f2 0% 25%, #fff 0% 50%) 50% / 12px 12px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+
+  &.elegida {
+    border-color: var(--mat-sys-primary, #6a1b9a);
+  }
+  img {
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+  }
+  .marca {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    color: #1b5e20;
+    font-size: 18px;
+  }
+}
+
+.pasos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  .activo {
+    background: var(--mat-sys-secondary-container, #ede7f6);
+  }
+}
+
+.lienzo {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  margin: 8px 0 12px;
+  background: repeating-conic-gradient(#f2f2f2 0% 25%, #fff 0% 50%) 50% / 16px 16px;
+  border: 1px dashed var(--mat-sys-outline, #999);
+
+  img {
+    display: block;
+    max-width: min(100%, 420px);
+    max-height: 520px;
+    cursor: crosshair;
+    user-select: none;
+  }
+  .lineas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    line {
+      stroke: #d81b60;
+      stroke-width: 0.6;
+      stroke-dasharray: 2 1;
+      vector-effect: non-scaling-stroke;
+    }
+  }
+  .punto {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    margin: -7px 0 0 -7px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px #0006;
+    pointer-events: none;
+    &.hombro_izq {
+      background: #1e88e5;
+    }
+    &.hombro_der {
+      background: #43a047;
+    }
+    &.ruedo {
+      background: #d81b60;
+    }
+  }
+}
+
+.tabla-medidas {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+  overflow-x: auto;
+  .fila {
+    display: grid;
+    grid-template-columns: 56px repeat(4, minmax(64px, 1fr));
+    gap: 6px;
+    align-items: center;
+  }
+  .cabecera {
+    font-size: 0.8rem;
+    color: var(--mat-sys-on-surface-variant, #666);
+  }
+  input {
+    width: 100%;
+    padding: 6px;
+    border: 1px solid var(--mat-sys-outline-variant, #ccc);
+    border-radius: 6px;
+    font: inherit;
+  }
+}
+
+.ayuda {
+  font-size: 0.9rem;
+  color: var(--mat-sys-on-surface-variant, #555);
+}
+
+.error {
+  color: #b3261e;
+}
+
+.vacio {
+  color: var(--mat-sys-on-surface-variant, #666);
+}

@@ -173,6 +173,9 @@ TABLAS_DE_EMPRESA = (
     # CU-29 y CU-30 (0040)
     "modelo_analitica",
     "medida_talla",
+    # CU-36 y CU-37 (0041)
+    "punto_prenda",
+    "sesion_probador",
     # inventario
     "existencia",
     "movimiento_inventario",

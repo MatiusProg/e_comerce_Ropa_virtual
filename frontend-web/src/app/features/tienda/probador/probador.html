@@ -1,0 +1,173 @@
+<a matButton [routerLink]="['/tienda/producto', id()]" class="volver">
+  <mat-icon>arrow_back</mat-icon> Volver a la prenda
+</a>
+
+@if (cargando() && !prueba()) {
+  <mat-progress-bar mode="indeterminate" />
+} @else if (error()) {
+  <p class="error" role="alert">{{ error() }}</p>
+} @else if (prueba(); as prueba) {
+  <header>
+    <h1>Probador · {{ prueba.nombre }}</h1>
+    <p class="ayuda">
+      La prenda se dibuja a su tamaño real según tus medidas y las de cada talla: si una talla te
+      queda grande o chica, lo vas a ver. Tu foto no sale de tu dispositivo, salvo que pidas la foto
+      realista.
+    </p>
+  </header>
+
+  @if (prueba.prendas.length === 0) {
+    <p class="vacio">Esta prenda todavía no está preparada para el probador.</p>
+  } @else {
+    <div class="disposicion">
+      <section class="controles">
+        @if (!prueba.medidas) {
+          <mat-card appearance="outlined" class="bloque">
+            <h2>Tus medidas</h2>
+            <p class="ayuda">Sin ellas la prenda se ve en un tamaño aproximado, no en su talla real.</p>
+            <div class="medidas">
+              <label>Busto (cm)<input type="number" min="50" max="200" [(ngModel)]="medidas.busto_cm" /></label>
+              <label>Cintura (cm)<input type="number" min="40" max="200" [(ngModel)]="medidas.cintura_cm" /></label>
+              <label>Cadera (cm)<input type="number" min="50" max="200" [(ngModel)]="medidas.cadera_cm" /></label>
+              <label>Altura (cm, opcional)<input type="number" min="100" max="230" [(ngModel)]="medidas.altura_cm" /></label>
+            </div>
+            @if (errorMedidas()) {
+              <p class="error" role="alert">{{ errorMedidas() }}</p>
+            }
+            <button matButton="filled" type="button" class="vb-boton-marca" [disabled]="guardandoMedidas()" (click)="guardarMedidas()">
+              {{ guardandoMedidas() ? 'Guardando…' : 'Guardar mis medidas' }}
+            </button>
+          </mat-card>
+        }
+
+        <mat-card appearance="outlined" class="bloque">
+          <h2>Talla</h2>
+          @if (prueba.ajuste.talla_recomendada) {
+            <p class="recomendada">
+              <mat-icon aria-hidden="true">straighten</mat-icon>
+              Según tus medidas, te recomendamos la <strong>{{ prueba.ajuste.talla_recomendada }}</strong>.
+            </p>
+          }
+          <div class="chips" role="group" aria-label="Talla">
+            @for (t of tallas(); track t.id) {
+              <button type="button" class="chip" [class.elegida]="elegida()?.talla_id === t.id" (click)="elegirTalla(t.id)">
+                {{ t.codigo }}
+              </button>
+            }
+          </div>
+          @if (colores().length > 1) {
+            <div class="chips" role="group" aria-label="Color">
+              @for (c of colores(); track c.variante_id) {
+                <button type="button" class="chip" [class.elegida]="elegida()?.variante_id === c.variante_id" (click)="cambiarPrenda(c)">
+                  {{ c.color }}
+                </button>
+              }
+            </div>
+          }
+          @if (ajusteElegido(); as a) {
+            <p class="ajuste" [class]="'ajuste ' + a.ajuste">
+              {{ palabras[a.ajuste] ?? a.ajuste }}
+              <span class="cm">(prenda: busto {{ a.busto_cm }} cm · largo {{ a.largo_cm }} cm)</span>
+            </p>
+          } @else if (!prueba.ajuste.hay_tabla) {
+            <p class="ayuda">Esta prenda no tiene tabla de medidas: el tamaño es aproximado.</p>
+          }
+        </mat-card>
+
+        <mat-card appearance="outlined" class="bloque">
+          <h2>Tu foto</h2>
+          <p class="ayuda">De frente, de cuerpo entero o hasta la cadera, con los hombros a la vista.</p>
+          <label class="vb-boton-archivo">
+            <mat-icon aria-hidden="true">photo_camera</mat-icon>
+            {{ hayFoto() ? 'Cambiar foto' : 'Tomar o elegir una foto' }}
+            <input type="file" accept="image/*" capture="user" (change)="elegirFoto($event)" />
+          </label>
+          @if (hayFoto()) {
+            <button matButton type="button" [disabled]="detectando()" (click)="detectarPose()">
+              <mat-icon>accessibility_new</mat-icon>
+              {{ detectando() ? 'Detectando la pose…' : 'Detectar hombros otra vez' }}
+            </button>
+          }
+          @if (avisoPose()) {
+            <p class="aviso" role="status">{{ avisoPose() }}</p>
+          }
+          @if (hayFoto() && hombros().length < 2 && !detectando()) {
+            <p class="aviso">Marcá con un clic tu hombro {{ hombros().length === 0 ? 'izquierdo' : 'derecho' }} sobre la foto.</p>
+          }
+        </mat-card>
+
+        <mat-card appearance="outlined" class="bloque">
+          <h2>Guardar y foto realista</h2>
+          <button matButton type="button" [disabled]="!listaParaProbar() || guardando() || !!sesion()" (click)="guardarPrueba()">
+            <mat-icon>bookmark_add</mat-icon>
+            {{ sesion() ? 'Prueba guardada' : 'Guardar esta prueba' }}
+          </button>
+          @if (prueba.foto_ia.disponible) {
+            <button matButton="filled" type="button" class="vb-boton-marca" [disabled]="!listaParaProbar() || generando() || !!sesion()?.foto_url" (click)="generarFoto()">
+              <mat-icon>auto_awesome</mat-icon>
+              {{ generando() ? 'Generando la foto…' : 'Generar foto realista' }}
+            </button>
+            <p class="ayuda">Usa una de las fotos con IA del mes que incluye el plan de la tienda.</p>
+          } @else {
+            <p class="candado">
+              <mat-icon aria-hidden="true">lock</mat-icon>
+              Foto realista no disponible: {{ prueba.foto_ia.motivo }}
+            </p>
+          }
+          @if (generando()) {
+            <mat-progress-bar mode="indeterminate" />
+          }
+          @if (errorFoto()) {
+            <p class="error" role="alert">{{ errorFoto() }}</p>
+          }
+        </mat-card>
+      </section>
+
+      <section class="vista">
+        <div class="marco" [class.vacio-marco]="!hayFoto()">
+          <canvas
+            #lienzo
+            [hidden]="!hayFoto()"
+            (click)="marcarHombro($event)"
+            aria-label="Tu foto con la prenda"
+          ></canvas>
+          @if (!hayFoto()) {
+            <p class="vacio">Subí una foto para probarte la prenda.</p>
+          }
+        </div>
+        @if (aproximado() && hombros().length === 2) {
+          <p class="aviso">Sin tus medidas o sin la tabla de la talla, el tamaño es aproximado.</p>
+        }
+        @if (sesion()?.foto_url; as url) {
+          <figure class="foto-ia">
+            <img [src]="url | urlMedia" alt="Foto realista de la prueba" />
+            <figcaption>{{ generadaPor(sesion()!) }}</figcaption>
+          </figure>
+        }
+      </section>
+    </div>
+
+    @if (misPruebas().length) {
+      <section class="mis-pruebas">
+        <h2>Mis pruebas de esta prenda</h2>
+        <ul>
+          @for (s of misPruebas(); track s.id) {
+            <li>
+              @if (s.foto_url) {
+                <img [src]="s.foto_url | urlMedia" alt="" />
+              }
+              <span>
+                <strong>Talla {{ s.talla }}</strong> · {{ s.color }} ·
+                {{ s.ajuste ? (palabras[s.ajuste] ?? s.ajuste) : 'sin medidas' }}
+                <small>{{ s.creado_en | date: 'dd/MM/yyyy HH:mm' }}</small>
+              </span>
+              <button matIconButton type="button" (click)="borrar(s)" aria-label="Borrar esta prueba" matTooltip="Borrar (y su foto)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+}

@@ -1,0 +1,194 @@
+<header class="encabezado">
+  <h1>Preparar prendas para el probador</h1>
+  <p>
+    Para que el cliente se pruebe una prenda con su talla real, marcá los hombros y el ruedo sobre
+    la imagen sin fondo y cargá cuánto mide la prenda en cada talla. Las imágenes se suben en la
+    galería de <a routerLink="/admin/productos">Productos</a> (PNG sin fondo, asociado a una
+    variante).
+  </p>
+</header>
+
+@if (cargando()) {
+  <mat-progress-bar mode="indeterminate" />
+} @else if (error()) {
+  <p class="error" role="alert">{{ error() }}</p>
+} @else {
+  <div class="disposicion">
+    <aside class="lista" aria-label="Productos con imagen de vestidor">
+      @for (p of productos(); track p.producto_id) {
+        <button
+          type="button"
+          class="producto"
+          [class.elegido]="prenda()?.producto_id === p.producto_id"
+          [disabled]="cargandoPrenda()"
+          (click)="elegirProducto(p.producto_id)"
+        >
+          <span class="nombre">{{ p.nombre }}</span>
+          <span class="avance">
+            {{ p.imagenes_calibradas }}/{{ p.imagenes }} imágenes ·
+            {{ p.tallas_medidas }}/{{ p.tallas }} tallas
+          </span>
+          @if (p.lista) {
+            <span class="etiqueta lista">Lista</span>
+          } @else {
+            <span class="etiqueta falta">Falta</span>
+          }
+        </button>
+      } @empty {
+        <p class="vacio">
+          Ningún producto tiene todavía una imagen de vestidor. Subí un PNG sin fondo en la galería
+          de un producto y asocialo a una variante.
+        </p>
+      }
+    </aside>
+
+    <section class="detalle">
+      @if (cargandoPrenda()) {
+        <mat-progress-bar mode="indeterminate" />
+      }
+      @if (prenda(); as prenda) {
+        <h2>{{ prenda.nombre }}</h2>
+        @if (prenda.faltan.length) {
+          <ul class="faltan">
+            @for (f of prenda.faltan; track f) {
+              <li><mat-icon aria-hidden="true">info</mat-icon>{{ f }}</li>
+            }
+          </ul>
+        } @else {
+          <p class="ok"><mat-icon aria-hidden="true">check_circle</mat-icon> Lista para el probador.</p>
+        }
+
+        <mat-card appearance="outlined" class="bloque">
+          <h3>1 · Puntos de la imagen</h3>
+          <div class="miniaturas">
+            @for (i of prenda.imagenes; track i.imagen_id) {
+              <button
+                type="button"
+                class="miniatura"
+                [class.elegida]="imagenElegida()?.imagen_id === i.imagen_id"
+                (click)="elegirImagen(i)"
+                [attr.aria-label]="'Imagen ' + i.talla + ' ' + i.color"
+              >
+                <img [src]="i.url | urlMedia" alt="" />
+                <span>{{ i.talla }} · {{ i.color }}</span>
+                @if (i.puntos) {
+                  <mat-icon class="marca" aria-label="Calibrada">check</mat-icon>
+                }
+              </button>
+            }
+          </div>
+
+          @if (imagenElegida(); as img) {
+            <div class="pasos" role="group" aria-label="Qué punto marcar">
+              @for (p of pasos; track p.clave) {
+                <button
+                  matButton
+                  type="button"
+                  [class.activo]="paso() === p.clave"
+                  (click)="elegirPaso(p.clave)"
+                >
+                  @if (puntos()[p.clave]) {
+                    <mat-icon>check</mat-icon>
+                  }
+                  {{ p.etiqueta }}
+                </button>
+              }
+            </div>
+            <p class="ayuda">Hacé clic sobre la imagen para marcar: <strong>{{ etiquetaDelPaso() }}</strong>.</p>
+            <div class="lienzo">
+              <img
+                [src]="img.url | urlMedia"
+                alt="Prenda a calibrar"
+                (click)="marcar($event)"
+                draggable="false"
+              />
+              @if (puntos().hombro_izq && puntos().hombro_der) {
+                <svg class="lineas" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                  <line
+                    [attr.x1]="puntos().hombro_izq!.x * 100"
+                    [attr.y1]="puntos().hombro_izq!.y * 100"
+                    [attr.x2]="puntos().hombro_der!.x * 100"
+                    [attr.y2]="puntos().hombro_der!.y * 100"
+                  />
+                  @if (puntos().ruedo) {
+                    <line
+                      [attr.x1]="(puntos().hombro_izq!.x + puntos().hombro_der!.x) * 50"
+                      [attr.y1]="(puntos().hombro_izq!.y + puntos().hombro_der!.y) * 50"
+                      [attr.x2]="puntos().ruedo!.x * 100"
+                      [attr.y2]="puntos().ruedo!.y * 100"
+                    />
+                  }
+                </svg>
+              }
+              @for (p of pasos; track p.clave) {
+                @if (puntos()[p.clave]; as punto) {
+                  <span
+                    class="punto"
+                    [class]="'punto ' + p.clave"
+                    [style.left]="pct(punto.x)"
+                    [style.top]="pct(punto.y)"
+                    [attr.title]="p.etiqueta"
+                  ></span>
+                }
+              }
+            </div>
+            @if (errorPuntos()) {
+              <p class="error" role="alert">{{ errorPuntos() }}</p>
+            }
+            <button
+              matButton="filled"
+              type="button"
+              class="vb-boton-marca"
+              [disabled]="!puntosCompletos() || guardandoPuntos()"
+              (click)="guardarPuntos()"
+            >
+              {{ guardandoPuntos() ? 'Guardando…' : 'Guardar puntos' }}
+            </button>
+          } @else {
+            <p class="vacio">Este producto no tiene imágenes de vestidor.</p>
+          }
+        </mat-card>
+
+        <mat-card appearance="outlined" class="bloque">
+          <h3>2 · Medidas de la prenda por talla (cm)</h3>
+          <p class="ayuda">
+            Lo que mide la prenda, no el cuerpo: el busto ya incluye la holgura. Cada talla tiene que
+            medir igual o más que la anterior.
+          </p>
+          <div class="tabla-medidas" role="table" aria-label="Medidas por talla">
+            <div class="fila cabecera" role="row">
+              <span role="columnheader">Talla</span>
+              <span role="columnheader">Busto</span>
+              <span role="columnheader">Cintura</span>
+              <span role="columnheader">Cadera</span>
+              <span role="columnheader">Largo</span>
+            </div>
+            @for (f of filas(); track f.talla_id) {
+              <div class="fila" role="row">
+                <strong role="cell">{{ f.codigo }}</strong>
+                <input role="cell" type="number" min="30" max="250" step="0.5" [(ngModel)]="f.busto_cm" [attr.aria-label]="'Busto ' + f.codigo" />
+                <input role="cell" type="number" min="30" max="250" step="0.5" [(ngModel)]="f.cintura_cm" [attr.aria-label]="'Cintura ' + f.codigo" />
+                <input role="cell" type="number" min="30" max="250" step="0.5" [(ngModel)]="f.cadera_cm" [attr.aria-label]="'Cadera ' + f.codigo" />
+                <input role="cell" type="number" min="20" max="200" step="0.5" [(ngModel)]="f.largo_cm" [attr.aria-label]="'Largo ' + f.codigo" />
+              </div>
+            }
+          </div>
+          @if (errorMedidas()) {
+            <p class="error" role="alert">{{ errorMedidas() }}</p>
+          }
+          <button
+            matButton="filled"
+            type="button"
+            class="vb-boton-marca"
+            [disabled]="guardandoMedidas()"
+            (click)="guardarMedidas()"
+          >
+            {{ guardandoMedidas() ? 'Guardando…' : 'Guardar medidas' }}
+          </button>
+        </mat-card>
+      } @else if (!cargandoPrenda()) {
+        <p class="vacio">Elegí un producto de la lista.</p>
+      }
+    </section>
+  </div>
+}

@@ -136,7 +136,11 @@ class Settings(BaseSettings):
     # `gemini` y una IA_API_KEY; el modelo se puede cambiar sin tocar codigo,
     # que hace falta porque los nombres de los modelos de imagen cambian
     # seguido.
-    PROBADOR_IA_PROVEEDOR: str = "no_disponible"
+    #
+    # 2do parcial (CU-38, 07/11): el valor por defecto pasa a `simulado`, que
+    # compone la vista en el servidor con Pillow y NO llama a nadie (R9 sigue
+    # cubierto). `no_disponible` queda para apagarlo a proposito.
+    PROBADOR_IA_PROVEEDOR: str = "simulado"
     PROBADOR_IA_MODELO: str = ""
 
     # --- Correo saliente (CU-40 y CU-41, ciclo 3) ------------------------
