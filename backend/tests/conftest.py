@@ -72,6 +72,7 @@ from app.modules.traspasos import models as modelos_traspasos  # noqa: E402,F401
 from app.modules.catalogo import ofertas_models as modelos_ofertas  # noqa: E402,F401
 from app.modules.roles import models as modelos_roles  # noqa: E402,F401
 from app.modules.datos import models as modelos_datos  # noqa: E402,F401
+from app.modules.analitica import models as modelos_analitica  # noqa: E402,F401
 from app.modules.seguridad import models as modelos_seguridad  # noqa: E402,F401
 from app.modules.ventas import carrito_models as modelos_carrito  # noqa: E402,F401
 
@@ -113,6 +114,8 @@ TABLAS_VOLATILES = (
     # CU-40: la restauración apunta a la copia; las dos, al usuario.
     "restauracion",
     "respaldo",
+    # CU-29: apunta a `usuario` (SET NULL) y a la empresa.
+    "modelo_analitica",
     # P4 va primero: el movimiento apunta a la existencia, al usuario y al
     # proveedor, y la existencia a la variante y a la sucursal. Todas ellas
     # estan mas abajo en esta misma tupla.

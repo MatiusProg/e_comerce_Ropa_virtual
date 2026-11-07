@@ -60,6 +60,12 @@
       Reportes con IA
     </a>
   }
+  @if (puede('analitica.usar')) {
+    <a routerLink="/admin/analitica" routerLinkActive="activo">
+      <mat-icon>insights</mat-icon>
+      Analítica
+    </a>
+  }
   @if (puede('bitacora.ver')) {
     <a routerLink="/admin/bitacora" routerLinkActive="activo">
       <mat-icon>history</mat-icon>

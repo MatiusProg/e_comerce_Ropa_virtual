@@ -351,6 +351,13 @@ export const routes: Routes = [
       // CU-42 · la bitacora. Va dentro de 'admin' porque la guarda del padre
       // ya resuelve el rol, y porque es donde la va a buscar quien la
       // necesite: al lado de los reportes, no en una seccion propia.
+      // CU-29 y CU-30 · la analítica con ML, al lado del tablero y los reportes.
+      {
+        path: 'analitica',
+        title: 'Analítica inteligente · Violet Boutique',
+        loadComponent: () =>
+          import('./features/reportes/analitica/analitica').then((m) => m.Analitica),
+      },
       {
         path: 'bitacora',
         title: 'Bitácora del sistema · Violet Boutique',

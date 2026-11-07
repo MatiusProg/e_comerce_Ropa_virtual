@@ -170,6 +170,8 @@ TABLAS_DE_EMPRESA = (
     # CU-40 (0039)
     "respaldo",
     "restauracion",
+    # CU-29 y CU-30 (0040)
+    "modelo_analitica",
     "medida_talla",
     # inventario
     "existencia",

@@ -106,7 +106,7 @@ REGLAS_DEL_PLAN: dict[str, tuple[str, str]] = {
     "foto_ia": ("aplicado", "vestidor_virtual/router.py · probado por IA y su disponibilidad"),
     "marca_propia": ("aplicado", "plataforma/mi_tienda/router.py · guardar el logo y los colores; la tienda los muestra solo con la función"),
     "traspasos_sugeridos": ("aplicado", "traspasos/router.py · los traspasos sugeridos (CU-35)"),
-    "analitica_ml": ("pendiente", "CU-29 y CU-30, analítica con ML y su dashboard"),
+    "analitica_ml": ("aplicado", "analitica/router.py · entrenar los modelos y el dashboard (CU-29 y CU-30)"),
     "exportar_datos": ("aplicado", "datos/router.py · la exportación a Excel y CSV (CU-39)"),
     # Ajustes numéricos guardados en `funciones`
     "bitacora_dias": ("aplicado", "bitacora/service.py · la consulta no va más atrás de esos días"),

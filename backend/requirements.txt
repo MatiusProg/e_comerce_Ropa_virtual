@@ -43,6 +43,13 @@ pillow==12.3.0
 reportlab==5.0.1                # PDF
 openpyxl==3.1.5                 # Excel
 
+# --- Analítica con ML (CU-29 y CU-30) -------------------------------------
+# Modelos chicos que entrenan en segundos en la CPU de Railway: gradient
+# boosting para la demanda semanal y K-means para los segmentos de clientes.
+# Trae scipy y joblib como dependencias.
+numpy==2.5.4
+scikit-learn==1.9.1
+
 # --- Integraciones externas (ciclo 3) ------------------------------------
 stripe==15.6.1                  # P8 - pasarela de pago (modo sandbox)
 # CU-42 - Web Push con VAPID para la web instalada (PWA). FCM, el push de la
