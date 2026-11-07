@@ -24,6 +24,7 @@ import type {
   Reserva,
   ReservaResumen,
 } from '../../../core/models/reservas.models';
+import { rotuloReserva } from '../../../core/models/reservas.models';
 import {
   AtencionFormulario,
   type DatosAtencionFormulario,
@@ -65,6 +66,7 @@ import {
   styleUrl: './reservas-sucursal.scss',
 })
 export class ReservasSucursal implements OnInit {
+  protected readonly rotuloReserva = rotuloReserva;
   private readonly api = inject(ReservasService);
   private readonly auth = inject(AuthService);
   private readonly dialogo = inject(MatDialog);

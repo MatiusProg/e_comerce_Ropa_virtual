@@ -208,8 +208,11 @@ def _dibujar_pdf(comprobante: Comprobante, pedido) -> bytes:
     y -= 12 * mm
     pdf.setFont("Helvetica-Bold", 9)
     pdf.drawString(20 * mm, y, "PRENDA")
-    pdf.drawRightString(120 * mm, y, "CANT.")
-    pdf.drawRightString(150 * mm, y, "P. UNIT.")
+    pdf.drawRightString(108 * mm, y, "CANT.")
+    pdf.drawRightString(132 * mm, y, "P. UNIT.")
+    # El descuento por unidad (promoción o mayorista): sin esta columna,
+    # cantidad × precio no daba el subtotal y el recibo parecía mal sumado.
+    pdf.drawRightString(158 * mm, y, "DESC.")
     pdf.drawRightString(ancho - 20 * mm, y, "SUBTOTAL")
     y -= 2 * mm
     pdf.line(20 * mm, y, ancho - 20 * mm, y)
@@ -224,9 +227,11 @@ def _dibujar_pdf(comprobante: Comprobante, pedido) -> bytes:
         detalle = " · ".join(
             p for p in (linea.producto_nombre, linea.talla_codigo, linea.color_nombre) if p
         )
-        pdf.drawString(20 * mm, y, detalle[:60])
-        pdf.drawRightString(120 * mm, y, str(linea.cantidad))
-        pdf.drawRightString(150 * mm, y, f"Bs {linea.precio_unitario}")
+        pdf.drawString(20 * mm, y, detalle[:48])
+        pdf.drawRightString(108 * mm, y, str(linea.cantidad))
+        pdf.drawRightString(132 * mm, y, f"Bs {linea.precio_unitario}")
+        descuento = linea.descuento_unitario or 0
+        pdf.drawRightString(158 * mm, y, f"-Bs {descuento}" if descuento else "—")
         pdf.drawRightString(ancho - 20 * mm, y, f"Bs {linea.subtotal}")
 
     y -= 4 * mm

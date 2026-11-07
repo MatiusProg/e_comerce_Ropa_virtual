@@ -15,7 +15,7 @@
   }
 
   <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate id="formulario-temporada">
-    <mat-form-field appearance="outline" class="ancho-completo">
+    <mat-form-field subscriptSizing="dynamic" appearance="outline" class="ancho-completo">
       <mat-label>Nombre</mat-label>
       <input matInput formControlName="nombre" />
       <mat-hint>Por ejemplo: Primavera-Verano 2026, Escolar, Liquidación.</mat-hint>

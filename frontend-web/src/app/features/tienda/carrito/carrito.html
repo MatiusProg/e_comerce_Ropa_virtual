@@ -170,10 +170,16 @@
               <strong>{{ c.total | bs }}</strong>
             </p>
             <!--
-              Las promociones son CU-12 y todavía no existen. Se dice acá en vez
-              de mostrar un «descuentos: 0,00» que parecería un total final.
+              El total ya viene con los descuentos. Acá se dice cuánto se
+              ahorró y por qué: promoción (CU-12) o precio mayorista (CU-31).
             -->
-            <p class="nota-promos">Sin promociones aplicadas todavía.</p>
+            @if (ahorro().monto > 0) {
+              <p class="nota-promos">
+                Incluye un ahorro de <strong>{{ ahorro().monto | bs }}</strong> por {{ ahorro().origen }}.
+              </p>
+            } @else {
+              <p class="nota-promos">Ninguna prenda tiene descuento por ahora.</p>
+            }
           </div>
 
           <!--

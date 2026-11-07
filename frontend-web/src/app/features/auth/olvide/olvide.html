@@ -44,7 +44,7 @@
         </p>
 
         <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
-          <mat-form-field appearance="outline" class="ancho-completo">
+          <mat-form-field subscriptSizing="dynamic" appearance="outline" class="ancho-completo">
             <mat-label>Empresa</mat-label>
             <input matInput formControlName="empresa" autocapitalize="none" spellcheck="false" />
             <mat-icon matSuffix>domain</mat-icon>

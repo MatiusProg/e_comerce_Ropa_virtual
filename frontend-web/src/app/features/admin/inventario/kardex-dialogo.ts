@@ -12,7 +12,7 @@ import {
   InventarioService,
   type ErrorInventario,
 } from '../../../core/services/inventario.service';
-import type { Kardex } from '../../../core/models/inventario.models';
+import { rotuloMovimiento, type Kardex } from '../../../core/models/inventario.models';
 
 export interface DatosKardex {
   variante_id: number;
@@ -72,7 +72,7 @@ export interface DatosKardex {
               <ng-container matColumnDef="tipo">
                 <th mat-header-cell *matHeaderCellDef>Tipo</th>
                 <td mat-cell *matCellDef="let m">
-                  {{ m.tipo }}
+                  {{ rotuloMovimiento(m.tipo) }}
                   @if (m.sin_conexion) {
                     <mat-icon class="sin-red" matTooltip="Registrado sin conexión">cloud_off</mat-icon>
                   }
@@ -137,6 +137,7 @@ export interface DatosKardex {
   `,
 })
 export class KardexDialogo implements OnInit {
+  protected readonly rotuloMovimiento = rotuloMovimiento;
   private readonly api = inject(InventarioService);
   private readonly datos = inject<DatosKardex>(MAT_DIALOG_DATA);
 

@@ -139,7 +139,7 @@ export class Compras implements OnInit {
         enlace.href = url;
         enlace.download = `recibo-${compra.codigo}.pdf`;
         enlace.click();
-        URL.revokeObjectURL(url);
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
         this.descargando.set(null);
       },
       error: (e: ErrorCompras) => {

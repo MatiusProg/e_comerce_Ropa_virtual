@@ -41,7 +41,7 @@ import { BsPipe } from '../../../shared/bs.pipe';
               ({{ n.horas_desde_la_venta }} h antes)
             </p>
           </div>
-          <span class="estado" [class.abierta]="n.estado === 'ABIERTA'">{{ n.estado }}</span>
+          <span class="estado" [class.abierta]="n.estado === 'ABIERTA'">{{ n.estado === 'ABIERTA' ? 'Abierta' : 'Cerrada' }}</span>
         </header>
 
         <h3>Lo que devolvió</h3>

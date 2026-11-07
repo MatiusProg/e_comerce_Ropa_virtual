@@ -32,6 +32,7 @@ import type {
   PaginaMovimientos,
   TipoMovimiento,
 } from '../../../core/models/inventario.models';
+import { rotuloMovimiento } from '../../../core/models/inventario.models';
 import type { SucursalBreve } from '../../../core/models/organizacion.models';
 import type { Proveedor } from '../../../core/models/proveedores.models';
 import { AjusteFormulario } from './ajuste-formulario';
@@ -89,6 +90,7 @@ import {
   styleUrl: './inventario.scss',
 })
 export class Inventario implements OnInit {
+  protected readonly rotuloMovimiento = rotuloMovimiento;
   private readonly api = inject(InventarioService);
   private readonly organizacion = inject(OrganizacionService);
   private readonly proveedoresApi = inject(ProveedoresService);

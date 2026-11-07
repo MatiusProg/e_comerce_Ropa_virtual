@@ -51,6 +51,7 @@
             <th scope="col">Prenda</th>
             <th scope="col" class="numero">Cant.</th>
             <th scope="col" class="numero">P. unit.</th>
+            <th scope="col" class="numero">Desc.</th>
             <th scope="col" class="numero">Subtotal</th>
           </tr>
         </thead>
@@ -63,6 +64,9 @@
               </td>
               <td class="numero">{{ linea.cantidad }}</td>
               <td class="numero">{{ linea.precio_unitario | bs }}</td>
+              <td class="numero">
+                @if (+linea.descuento_unitario > 0) { −{{ linea.descuento_unitario | bs }} } @else { — }
+              </td>
               <td class="numero">{{ linea.subtotal | bs }}</td>
             </tr>
           }
@@ -439,7 +443,7 @@
             cuenta como efectivo, pero sí lo lista aparte.
           </p>
           @if (metodo() === 'QR' && sinRed()) {
-            <mat-form-field appearance="outline" class="campo">
+            <mat-form-field subscriptSizing="dynamic" appearance="outline" class="campo">
               <mat-label>Referencia del QR</mat-label>
               <input matInput [formControl]="referenciaManual" placeholder="Número de operación" />
               <mat-hint>La que muestra el banco del cliente. Sin ella no se puede devolver.</mat-hint>
@@ -454,7 +458,7 @@
 
         @if (sinRed()) {
           <!-- CU-43: a quién avisarle si el servidor la rechaza y devuelve el dinero. -->
-          <mat-form-field appearance="outline" class="campo">
+          <mat-form-field subscriptSizing="dynamic" appearance="outline" class="campo">
             <mat-label>Cliente (opcional)</mat-label>
             <mat-icon matPrefix>person_search</mat-icon>
             <input

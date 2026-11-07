@@ -68,6 +68,41 @@ def test_una_tarea_que_falla_no_corta_las_demas(db, fabrica_sesiones, monkeypatc
     assert "se cayó el proveedor" in vuelta.errores[0]
 
 
+def test_el_segundo_worker_no_repite_la_vuelta(db, fabrica_sesiones, monkeypatch) -> None:
+    """Tanda D: el bloqueo no alcanzaba. El segundo worker lo tomaba un
+    segundo después y repetía la vuelta; ahora mira la marca y se la saltea."""
+    from datetime import timedelta
+
+    corridas: list[int] = []
+    monkeypatch.setattr(tareas, "TAREAS_POR_EMPRESA",
+                        (("anota", lambda _db, e: corridas.append(e)),))
+    minimo = timedelta(minutes=14)
+    conexion = fabrica_sesiones().get_bind().connect()
+    try:
+        conexion.execute(text("DELETE FROM tarea_automatica"))
+        conexion.commit()
+
+        primera = tareas.correr_vuelta(fabrica_sesiones, minimo)
+        segunda = tareas.correr_vuelta(fabrica_sesiones, minimo)
+
+        assert primera.tomada and not primera.salteada
+        assert segunda.tomada and segunda.salteada
+        assert segunda.hechas == 0
+        assert len(corridas) == primera.empresas  # una sola vez por empresa
+
+        # Pasado el intervalo, vuelve a tocar.
+        conexion.execute(text(
+            "UPDATE tarea_automatica SET ultima_vuelta = now() - interval '15 minutes'"))
+        conexion.commit()
+        assert tareas.correr_vuelta(fabrica_sesiones, minimo).salteada is False
+        # A mano (sin mínimo) corre siempre.
+        assert tareas.correr_vuelta(fabrica_sesiones).salteada is False
+    finally:
+        conexion.execute(text("DELETE FROM tarea_automatica"))
+        conexion.commit()
+        conexion.close()
+
+
 @pytest.mark.parametrize("valor, esperado", [
     ("on", True), ("ON", True), ("1", True), ("true", True),
     ("off", False), ("", False), ("no", False),

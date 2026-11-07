@@ -127,7 +127,7 @@
             <th mat-header-cell *matHeaderCellDef></th>
             <td mat-cell *matCellDef="let l" class="numerica">
               <button
-                matIconButton
+                matIconButton aria-label="Quitar de la reserva"
                 type="button"
                 matTooltip="Quitar de la reserva"
                 (click)="quitarLinea(l.variante_id)"

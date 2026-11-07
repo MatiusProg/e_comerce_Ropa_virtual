@@ -1,6 +1,8 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+
+import { entero } from '../../../shared/validadores';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -39,10 +41,10 @@ import { environment } from '../../../../environments/environment';
         <div class="fila">
           <mat-form-field appearance="outline">
             <mat-label>Horas</mat-label>
-            <input matInput type="number" min="1" max="720" [formControl]="horas" />
+            <input matInput type="number" min="1" max="720" step="1" [formControl]="horas" />
             <mat-hint>{{ comoTexto() }}</mat-hint>
             @if (horas.invalid) {
-              <mat-error>Entre 1 hora y 720 (30 días).</mat-error>
+              <mat-error>Un número entero de horas, entre 1 y 720 (30 días).</mat-error>
             }
           </mat-form-field>
           @for (atajo of atajos; track atajo) {
@@ -82,7 +84,7 @@ export class VentanaDevolucion implements OnInit {
   protected readonly atajos = [24, 48, 72];
   protected readonly horas = new FormControl<number>(48, {
     nonNullable: true,
-    validators: [Validators.required, Validators.min(1), Validators.max(720)],
+    validators: [Validators.required, Validators.min(1), Validators.max(720), entero],
   });
   protected readonly guardadas = signal<number | null>(null);
   protected readonly guardando = signal(false);

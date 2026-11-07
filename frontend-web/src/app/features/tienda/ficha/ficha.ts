@@ -69,7 +69,7 @@ export class Ficha implements OnInit {
   private readonly router = inject(Router);
 
   /**
-   * Esta prenda, como destino de «Ingresá para comprar»: quien se identifica
+   * Esta prenda, como destino de «Ingrese para comprar»: quien se identifica
    * para comprarla vuelve a ella, no a «Mi cuenta» (flujo 8a de CU-01).
    */
   protected get aqui(): string {

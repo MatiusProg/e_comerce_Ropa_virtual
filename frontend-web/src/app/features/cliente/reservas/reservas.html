@@ -41,7 +41,7 @@
           <mat-card class="tarjeta vb-filete-superior" appearance="outlined">
             <div class="cabecera-tarjeta">
               <span class="etiqueta-estado" [class]="claseDeEstado(r.estado)">
-                {{ r.estado }}
+                {{ rotuloReserva(r.estado) }}
               </span>
               <span class="leyenda">{{ leyenda(r.estado) }}</span>
             </div>
@@ -140,7 +140,7 @@
           @for (r of p.items; track r.id) {
             <div class="fila-historial">
               <span class="etiqueta-estado" [class]="claseDeEstado(r.estado)">
-                {{ r.estado }}
+                {{ rotuloReserva(r.estado) }}
               </span>
               <div class="resumen">
                 <strong>{{ r.franja_inicio | date: 'dd/MM/yyyy HH:mm' }}</strong>
@@ -149,7 +149,7 @@
                 </span>
               </div>
               <button
-                matIconButton
+                matIconButton aria-label="Ver prendas"
                 type="button"
                 matTooltip="Ver prendas"
                 (click)="alternarDetalle(r)"

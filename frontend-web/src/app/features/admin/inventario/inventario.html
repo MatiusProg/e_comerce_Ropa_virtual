@@ -77,7 +77,7 @@
               (keyup.enter)="buscarExistencias()"
               placeholder="SKU o nombre de la prenda"
             />
-            <button matIconButton matSuffix type="button" (click)="buscarExistencias()">
+            <button matIconButton matSuffix type="button" aria-label="Buscar" (click)="buscarExistencias()">
               <mat-icon>search</mat-icon>
             </button>
           </mat-form-field>
@@ -154,7 +154,7 @@
                 <th mat-header-cell *matHeaderCellDef></th>
                 <td mat-cell *matCellDef="let e" class="acciones">
                   <button
-                    matIconButton
+                    matIconButton aria-label="Ver el kardex"
                     type="button"
                     matTooltip="Ver el kardex"
                     (click)="verKardex(e)"
@@ -162,7 +162,7 @@
                     <mat-icon>receipt_long</mat-icon>
                   </button>
                   <button
-                    matIconButton
+                    matIconButton aria-label="Fijar el punto de reposición"
                     type="button"
                     matTooltip="Fijar el punto de reposición"
                     (click)="fijarMinimo(e)"
@@ -170,7 +170,7 @@
                     <mat-icon>notifications_active</mat-icon>
                   </button>
                   <button
-                    matIconButton
+                    matIconButton aria-label="Ajustar por conteo físico"
                     type="button"
                     matTooltip="Ajustar por conteo físico"
                     (click)="ajustar(e)"
@@ -179,7 +179,7 @@
                   </button>
                   @if (esAdministrador()) {
                     <button
-                      matIconButton
+                      matIconButton aria-label="Transferir a otra sucursal"
                       type="button"
                       matTooltip="Transferir a otra sucursal"
                       [disabled]="!e.cantidad_disponible"
@@ -348,7 +348,7 @@
                   <th mat-header-cell *matHeaderCellDef>Tipo</th>
                   <td mat-cell *matCellDef="let m">
                     <span class="etiqueta-tipo" [class]="claseDeTipo(m.tipo)">
-                      {{ m.tipo }}
+                      {{ rotuloMovimiento(m.tipo) }}
                     </span>
                   </td>
                 </ng-container>

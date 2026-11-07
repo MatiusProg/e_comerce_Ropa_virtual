@@ -16,7 +16,7 @@
 
   <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate id="formulario-producto">
     <div class="fila">
-      <mat-form-field appearance="outline" class="codigo">
+      <mat-form-field subscriptSizing="dynamic" appearance="outline" class="codigo">
         <mat-label>Código</mat-label>
         <input matInput formControlName="codigo" />
         <mat-hint>Se guarda en mayúsculas. Es la base del SKU de cada variante.</mat-hint>

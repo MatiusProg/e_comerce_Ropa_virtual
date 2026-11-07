@@ -15,6 +15,20 @@ export type EstadoReserva =
   | 'CANCELADA'
   | 'EXPIRADA';
 
+/** Cómo se lee cada estado en pantalla. */
+export const ROTULO_RESERVA: Record<EstadoReserva, string> = {
+  PENDIENTE: 'Pendiente',
+  PREPARADA: 'Preparada',
+  ATENDIDA: 'Atendida',
+  CANCELADA: 'Cancelada',
+  EXPIRADA: 'Expirada',
+};
+
+/** El rótulo de un estado; si llega uno nuevo, se muestra tal cual. */
+export function rotuloReserva(estado: string): string {
+  return (ROTULO_RESERVA as Record<string, string>)[estado] ?? estado;
+}
+
 /** Los dos estados en los que la reserva sigue reteniendo stock y probador. */
 export const ESTADOS_VIVOS: EstadoReserva[] = ['PENDIENTE', 'PREPARADA'];
 

@@ -2,6 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { minimoSinEspacios } from '../../../shared/validadores';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -87,11 +88,13 @@ interface Eleccion {
                 }
               </div>
               <div class="cantidad">
-                <button matIconButton type="button" [disabled]="e.cantidad === 0" (click)="mover(e, -1)">
+                <button matIconButton type="button" [disabled]="e.cantidad === 0" (click)="mover(e, -1)"
+                        [attr.aria-label]="'Una menos de ' + e.linea.producto">
                   <mat-icon>remove</mat-icon>
                 </button>
                 <span>{{ e.cantidad }} / {{ e.linea.devolvibles }}</span>
-                <button matIconButton type="button" [disabled]="e.cantidad >= e.linea.devolvibles" (click)="mover(e, 1)">
+                <button matIconButton type="button" [disabled]="e.cantidad >= e.linea.devolvibles" (click)="mover(e, 1)"
+                        [attr.aria-label]="'Una más de ' + e.linea.producto">
                   <mat-icon>add</mat-icon>
                 </button>
               </div>
@@ -177,7 +180,7 @@ export class SolicitarDevolucion implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly motivo = new FormControl('', {
     nonNullable: true,
-    validators: [Validators.required, Validators.minLength(5), Validators.maxLength(300)],
+    validators: [minimoSinEspacios(5), Validators.maxLength(300)],
   });
 
   protected readonly elegidas = computed(() => this.elecciones().filter((e) => e.cantidad > 0));

@@ -13,7 +13,7 @@
   }
 
   <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate id="formulario-direccion">
-    <mat-form-field appearance="outline" class="ancho-completo">
+    <mat-form-field subscriptSizing="dynamic" appearance="outline" class="ancho-completo">
       <mat-label>Alias</mat-label>
       <input matInput formControlName="alias" placeholder="Casa, Trabajo, Casa de mamá…" />
       <mat-hint>Un nombre corto para reconocerla al momento de la entrega.</mat-hint>

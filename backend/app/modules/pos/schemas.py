@@ -204,6 +204,8 @@ class LineaVendidaOut(BaseModel):
     cantidad: int
     #: CONGELADO. Es lo que dice el comprobante y no vuelve a cambiar.
     precio_unitario: Decimal
+    #: Promoción o mayorista, por unidad (CU-12, CU-31). 0 si no hubo.
+    descuento_unitario: Decimal = Decimal("0")
     subtotal: Decimal
 
 

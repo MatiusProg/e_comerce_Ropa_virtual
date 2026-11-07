@@ -9,7 +9,7 @@
   <!-- El origen es una existencia, no una sucursal: así el máximo se conoce
        sin preguntar nada más. -->
   @if (!datos.existencia) {
-    <mat-form-field appearance="outline" class="ancho">
+    <mat-form-field subscriptSizing="dynamic" appearance="outline" class="ancho">
       <mat-label>Buscar la prenda de origen</mat-label>
       <input
         matInput
@@ -17,10 +17,10 @@
         (keyup.enter)="buscarOrigen()"
         placeholder="SKU o nombre de la prenda"
       />
-      <button matIconButton matSuffix type="button" (click)="buscarOrigen()">
+      <button matIconButton matSuffix type="button" aria-label="Buscar" (click)="buscarOrigen()">
         <mat-icon>search</mat-icon>
       </button>
-      <mat-hint>El depósito tiene miles de saldos: buscá antes de elegir.</mat-hint>
+      <mat-hint>El depósito tiene miles de saldos: busque antes de elegir.</mat-hint>
     </mat-form-field>
   }
 
@@ -57,7 +57,7 @@
       </div>
     </div>
 
-    <mat-form-field appearance="outline" class="ancho">
+    <mat-form-field subscriptSizing="dynamic" appearance="outline" class="ancho">
       <mat-label>Unidades a transferir</mat-label>
       <input matInput type="number" min="1" [max]="maximo()" [formControl]="cantidad" />
       <mat-hint>

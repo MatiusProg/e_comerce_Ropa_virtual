@@ -252,7 +252,7 @@ def manual(db: Session, empresa_id: int, usuario_id: int) -> tuple[bytes, str]:
     proxima = proxima_manual(db)
     if proxima is not None:
         raise verificador.RechazoDelPlan(
-            f"El plan {plan} permite {_texto_intervalo(intervalo)} copia manual. "
+            f"El plan {plan} permite {_texto_intervalo(intervalo).replace('una', 'una copia manual', 1)}. "
             f"La próxima se puede generar desde el {tiempo.formatear(proxima, '%d/%m %H:%M')}. "
             "Las copias automáticas siguen saliendo igual."
         )

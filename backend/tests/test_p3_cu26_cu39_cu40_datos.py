@@ -190,7 +190,7 @@ def test_el_plan_limita_cada_cuanto_la_manual(api, cabeceras_admin, db) -> None:
         _copia(api, cabeceras_admin)
         otra = api.post(MANUAL, headers=cabeceras_admin)
         assert otra.status_code == 403
-        assert "una por día" in otra.json()["detail"]
+        assert "una copia manual por día" in otra.json()["detail"]
         assert api.get(RESPALDOS, headers=cabeceras_admin).json()["proxima_manual"] is not None
     finally:
         _reponer_plan(db, antes)

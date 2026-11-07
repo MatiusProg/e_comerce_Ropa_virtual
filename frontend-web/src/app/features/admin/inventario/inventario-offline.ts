@@ -111,7 +111,7 @@ const ETIQUETAS: Record<EstadoLocal, string> = {
                 <div class="linea">
                   <span><code>{{ l.prenda.sku }}</code> {{ l.prenda.producto }} · {{ l.prenda.talla }} · {{ l.prenda.color }}</span>
                   <span>+{{ l.cantidad }}</span>
-                  <button matIconButton type="button" matTooltip="Quitar" (click)="quitarLinea(l.prenda.variante_id)">
+                  <button matIconButton aria-label="Quitar" type="button" matTooltip="Quitar" (click)="quitarLinea(l.prenda.variante_id)">
                     <mat-icon>close</mat-icon>
                   </button>
                 </div>
@@ -138,7 +138,7 @@ const ETIQUETAS: Record<EstadoLocal, string> = {
                 ({{ prenda.disponible }} disponibles y {{ prenda.reservada }} reservadas).
               </p>
               <div class="fila">
-                <mat-form-field appearance="outline">
+                <mat-form-field subscriptSizing="dynamic" appearance="outline">
                   <mat-label>Unidades contadas</mat-label>
                   <input matInput type="number" min="0" [formControl]="contado" />
                   <mat-hint>Cuente todo lo que hay en la percha, reservadas incluidas.</mat-hint>
@@ -186,11 +186,11 @@ const ETIQUETAS: Record<EstadoLocal, string> = {
                   <span class="saldo">{{ p.disponible }} disp. · {{ p.reservada }} res.</span>
                   @if (modo() === 'ingreso') {
                     <input class="cantidad" type="number" min="1" value="1" #cant aria-label="Cantidad" />
-                    <button matIconButton type="button" matTooltip="Agregar al ingreso" (click)="agregarLinea(p, +cant.value)">
+                    <button matIconButton aria-label="Agregar al ingreso" type="button" matTooltip="Agregar al ingreso" (click)="agregarLinea(p, +cant.value)">
                       <mat-icon>add</mat-icon>
                     </button>
                   } @else {
-                    <button matIconButton type="button" matTooltip="Contar" (click)="empezarConteo(p)">
+                    <button matIconButton aria-label="Contar" type="button" matTooltip="Contar" (click)="empezarConteo(p)">
                       <mat-icon>fact_check</mat-icon>
                     </button>
                   }

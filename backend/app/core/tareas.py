@@ -35,6 +35,12 @@ consigue corre; el otro ve que está tomado y vuelve a dormir. Es un bloqueo
 de SESIÓN, así que se pide sobre una conexión propia que se sostiene toda la
 vuelta (con el session pooler de Supabase funciona: la conexión es nuestra).
 
+El bloqueo solo impide que corran A LA VEZ: el segundo worker lo tomaba un
+segundo después de que el primero lo soltaba y repetía la vuelta. Por eso,
+ya con el bloqueo, se mira `tarea_automatica.ultima_vuelta` (migración 0035):
+si la última empezó hace menos del intervalo —menos un minuto de holgura—,
+esta vuelta se saltea.
+
 SE PRENDE CON `TAREAS_AUTOMATICAS=on`
 ------------------------------------
 Apagada por omisión: en local y en las pruebas no tiene que correr nada solo.
@@ -47,6 +53,7 @@ import logging
 from collections.abc import Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
+from datetime import timedelta
 
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
@@ -71,6 +78,8 @@ class Vuelta:
     """Lo que hizo una vuelta, para el registro y para las pruebas."""
 
     tomada: bool = False
+    #: Tenía el bloqueo, pero el otro worker ya había hecho esta vuelta.
+    salteada: bool = False
     empresas: int = 0
     hechas: int = 0
     errores: list[str] = field(default_factory=list)
@@ -160,10 +169,47 @@ def _intentar(vuelta: Vuelta, db: Session, nombre: str, tarea: Callable[[], None
         log.exception("Tareas automáticas: falló «%s»", nombre)
 
 
-def correr_vuelta(fabrica_de_sesiones: Callable[[], Session] | None = None) -> Vuelta:
+CLAVE_DE_LA_MARCA = "vuelta"
+
+
+def _toca_vuelta(conexion, minimo: timedelta | None) -> bool:
+    """Con el bloqueo tomado: ¿ya pasó el mínimo desde la última vuelta?
+
+    Si toca, anota esta como la última, en la misma conexión del bloqueo
+    (la tabla es de la plataforma, sin RLS).
+    """
+    if minimo is not None and minimo > timedelta(0):
+        reciente = conexion.scalar(
+            text(
+                "SELECT ultima_vuelta > now() - :minimo FROM tarea_automatica "
+                "WHERE clave = :clave"
+            ),
+            {"minimo": minimo, "clave": CLAVE_DE_LA_MARCA},
+        )
+        if reciente:
+            conexion.commit()
+            return False
+    conexion.execute(
+        text(
+            "INSERT INTO tarea_automatica (clave, ultima_vuelta) VALUES (:clave, now()) "
+            "ON CONFLICT (clave) DO UPDATE SET ultima_vuelta = excluded.ultima_vuelta"
+        ),
+        {"clave": CLAVE_DE_LA_MARCA},
+    )
+    conexion.commit()
+    return True
+
+
+def correr_vuelta(
+    fabrica_de_sesiones: Callable[[], Session] | None = None,
+    minimo_entre_vueltas: timedelta | None = None,
+) -> Vuelta:
     """Una vuelta completa, si nadie más la está corriendo. Sincrónica.
 
     `fabrica_de_sesiones` es para las pruebas; por omisión, la de la app.
+    `minimo_entre_vueltas`: si la última vuelta (de cualquier worker) empezó
+    hace menos que esto, esta se saltea. Sin él —a mano, en las pruebas—
+    corre siempre.
     """
     from app.db.session import SessionLocal, engine
 
@@ -180,6 +226,9 @@ def correr_vuelta(fabrica_de_sesiones: Callable[[], Session] | None = None) -> V
             return vuelta  # la está corriendo el otro worker
         vuelta.tomada = True
         try:
+            if not _toca_vuelta(bloqueo, minimo_entre_vueltas):
+                vuelta.salteada = True
+                return vuelta  # el otro worker la hizo hace un momento
             _intentar(vuelta, db, "suscripciones vencidas", lambda: _suscripciones(db))
             empresas = _empresas_activas(db)
             vuelta.empresas = len(empresas)
@@ -196,7 +245,9 @@ def correr_vuelta(fabrica_de_sesiones: Callable[[], Session] | None = None) -> V
     finally:
         bloqueo.close()
         db.close()
-    if vuelta.errores:
+    if vuelta.salteada:
+        log.debug("Tareas automáticas: esta vuelta ya la hizo el otro worker.")
+    elif vuelta.errores:
         log.warning("Tareas automáticas: %d hechas, %d con error.", vuelta.hechas,
                     len(vuelta.errores))
     else:
@@ -213,12 +264,14 @@ def encendidas() -> bool:
 
 async def _bucle() -> None:
     intervalo = max(1, settings.TAREAS_INTERVALO_MINUTOS) * 60
+    # Un minuto de holgura: los dos bucles no despiertan en el mismo segundo.
+    minimo = timedelta(seconds=intervalo) - timedelta(minutes=1)
     await asyncio.sleep(ESPERA_INICIAL_SEGUNDOS)
     while True:
         try:
             # La base es sincrónica: la vuelta corre en un hilo para no
             # trabar las peticiones que atiende este mismo worker.
-            await asyncio.to_thread(correr_vuelta)
+            await asyncio.to_thread(correr_vuelta, None, minimo)
         except Exception:  # noqa: BLE001 - el bucle no se muere nunca
             log.exception("Tareas automáticas: la vuelta falló entera")
         await asyncio.sleep(intervalo)

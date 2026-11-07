@@ -82,7 +82,7 @@ export interface DatosTalla {
           }
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="ancho-completo">
+        <mat-form-field subscriptSizing="dynamic" appearance="outline" class="ancho-completo">
           <mat-label>Orden</mat-label>
           <input matInput type="number" formControlName="orden" min="0" />
           <mat-hint>

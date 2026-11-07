@@ -15,7 +15,7 @@
   }
 
   <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate id="formulario-categoria">
-    <mat-form-field appearance="outline" class="ancho-completo">
+    <mat-form-field subscriptSizing="dynamic" appearance="outline" class="ancho-completo">
       <mat-label>Nombre</mat-label>
       <input matInput formControlName="nombre" />
       @if (formulario.controls.nombre.hasError('required')) {
@@ -28,7 +28,7 @@
       }
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="ancho-completo">
+    <mat-form-field subscriptSizing="dynamic" appearance="outline" class="ancho-completo">
       <mat-label>Categoría madre</mat-label>
       <mat-select formControlName="categoria_padre_id">
         <mat-option [value]="null">— Ninguna (categoría de primer nivel) —</mat-option>
@@ -52,7 +52,7 @@
       }
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="ancho-completo">
+    <mat-form-field subscriptSizing="dynamic" appearance="outline" class="ancho-completo">
       <mat-label>Orden de presentación</mat-label>
       <input matInput type="number" formControlName="orden" min="0" />
       <mat-hint>

@@ -108,7 +108,7 @@
             <div class="acciones">
               <mat-slide-toggle
                 [checked]="rol.activo"
-                (change)="cambiarEstado(rol, $event.checked)"
+                (change)="cambiarEstado(rol, $event.checked, $event.source)"
                 [attr.aria-label]="'Activar o desactivar ' + rol.nombre"
               />
               <button matIconButton type="button" (click)="editar(rol)" aria-label="Editar">
@@ -144,7 +144,7 @@
               <mat-form-field appearance="outline" class="selector" subscriptSizing="dynamic">
                 <mat-select
                   [value]="p.rol_empresa_id"
-                  (selectionChange)="asignar(p, $event.value)"
+                  (selectionChange)="asignar(p, $event.value, $event.source)"
                   [attr.aria-label]="'Rol propio de ' + p.nombre"
                 >
                   <mat-option [value]="null">Todo lo de su rol</mat-option>
