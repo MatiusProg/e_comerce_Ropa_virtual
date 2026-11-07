@@ -523,6 +523,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/caja/pendientes/pendientes').then((m) => m.Pendientes),
       },
+      {
+        // CU-40 · los avisos del cajero, dentro de su cáscara: antes su
+        // campanita lo mandaba a la ruta suelta y perdía la navegación.
+        path: 'avisos',
+        title: 'Mis avisos · Violet Boutique',
+        loadComponent: () => import('./features/avisos/avisos').then((m) => m.Avisos),
+      },
     ],
   },
   // --- Ciclo 3 · CU-38 · El area del Proveedor --------------------------

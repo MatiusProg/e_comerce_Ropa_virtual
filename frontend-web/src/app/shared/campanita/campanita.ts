@@ -62,7 +62,7 @@ export class Campanita implements OnInit {
       case 'ENCARGADO':
         return '/sucursal/avisos';
       case 'CAJERO':
-        return '/avisos';
+        return '/caja/avisos';
       default:
         return '/avisos';
     }
