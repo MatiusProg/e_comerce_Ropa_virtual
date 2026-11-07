@@ -83,7 +83,7 @@ CATALOGO: tuple[Permiso, ...] = (
     # --- Reportes ----------------------------------------------------------
     Permiso("reportes.ver", "Generar reportes", "Reportes", _E_A, ("/reportes",)),
     Permiso("reportes_ia.usar", "Reportes con IA por texto o voz", "Reportes", _E_A,
-            ("/reportes/voz",), funcion="reportes_ia"),
+            ("/reportes/voz", "/reportes/ia"), funcion="reportes_ia"),
     Permiso("tablero.ver", "Ver el tablero de indicadores", "Reportes", _SOLO_A,
             ("/reportes/tablero",)),
     Permiso("bitacora.ver", "Ver la bitácora", "Reportes", _SOLO_A, ("/bitacora",)),

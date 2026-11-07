@@ -79,6 +79,35 @@ PEDIDO
 """
 
 
+_INSTRUCCION_CONSULTA = """Sos el analista de datos de una cadena de tiendas de ropa. Un usuario pidió un reporte en lenguaje natural. NO escribís SQL ni inventás datos: traducís el pedido a una ESPECIFICACIÓN en JSON con el vocabulario de abajo, y el sistema la valida y la ejecuta.
+
+Hoy es {hoy}.
+
+MEDIDAS (cada una con las dimensiones por las que se puede agrupar y sus filtros)
+{medidas}
+
+VALORES DE FILTRO (id es nombre)
+{valores}
+
+Reglas:
+- `medida`: UNA clave de MEDIDAS. «Ventas» o «ingresos» sin más es ventas_monto; «más vendidos» es unidades_vendidas; «menor existencia» o «stock» es existencias.
+- `agrupar`: lista de 0 a 2 dimensiones de esa medida. «por sucursal» → ["sucursal"]; «por semana» → ["semana"]; «compará las sucursales en los últimos tres meses» → ["mes", "sucursal"]. Como mucho una de tiempo (dia, semana, mes).
+- `filtros`: solo los que la medida admite. Para sucursal, categoria, producto y temporada va una LISTA DE IDS (el id, nunca el nombre). canal: PRESENCIAL o DIGITAL. tipo: DEVOLUCION o CAMBIO. bajo_minimo: true para «lo que hay que reponer».
+- `desde` y `hasta` en YYYY-MM-DD. «Septiembre» sin año es el último septiembre que ya empezó. «Este mes» es del 1 a hoy; «últimos tres meses» son los 3 meses calendario hasta hoy. Si no dice período, null (el sistema usa los últimos 30 días).
+- `orden`: "desc" (lo más alto primero) o "asc" («menor», «peores», «menos»).
+- `limite`: «los diez más…» → 10. Si no dice, null.
+- `grafico`: "barras", "lineas", "torta" o "tabla". Si pide «gráfico» y agrupa por tiempo, "lineas"; si no, "barras". «torta» o «porcentaje» → "torta".
+- `resumen`: frase corta en castellano de lo que entendiste, para que el usuario lo confirme. Ejemplo: "Monto vendido de septiembre por sucursal".
+- Si el pedido es AMBIGUO o le falta algo indispensable, o pide algo que ninguna medida cubre (por ejemplo sueldos, clima, datos de otra empresa), respondé {{"entendido": false, "motivo": "<por qué, y qué debería aclarar>"}}.
+
+Respondé SOLO el JSON, sin texto alrededor:
+{{"entendido": true, "medida": "...", "agrupar": [], "filtros": {{}}, "desde": null, "hasta": null, "orden": "desc", "limite": null, "grafico": "barras", "resumen": "..."}}
+
+PEDIDO
+{texto}
+"""
+
+
 class _Saturado(ErrorDelInterprete):
     """El modelo no pudo atender AHORA. Otro modelo puede contestar."""
 
@@ -163,6 +192,53 @@ class InterpreteGemini:
             raise ErrorDelInterprete(f"El servicio respondió {respuesta.status_code}.")
 
         return _leer(respuesta.json(), reportes)
+
+    # --- CU-27 · reporte dinámico ------------------------------------------
+
+    def interpretar_consulta(self, texto: str, vocabulario: dict, hoy: date) -> dict | None:
+        if not texto.strip():
+            return None
+        instruccion = _INSTRUCCION_CONSULTA.format(
+            hoy=hoy.isoformat(),
+            medidas=_describir_medidas(vocabulario),
+            valores=_describir_valores(vocabulario),
+            texto=texto.strip()[:500],
+        )
+        ultimo: ErrorDelInterprete | None = None
+        for modelo in self._modelos:
+            try:
+                return self._pedir_json(modelo, instruccion)
+            except _Saturado as e:
+                _log.warning("El modelo %s esta saturado; se prueba otro.", modelo)
+                ultimo = ErrorDelInterprete(str(e))
+        raise ultimo or ErrorDelInterprete("Ningún modelo respondió.")
+
+    def _pedir_json(self, modelo: str, instruccion: str) -> dict | None:
+        try:
+            respuesta = httpx.post(
+                _URL,
+                headers={"x-goog-api-key": self._clave},
+                json={"model": modelo, "input": [{"type": "text", "text": instruccion}]},
+                timeout=httpx.Timeout(22.0, connect=8.0),
+            )
+        except httpx.TimeoutException as e:
+            raise _Saturado(f"El modelo {modelo} no contestó a tiempo.") from e
+        except httpx.HTTPError as e:
+            raise ErrorDelInterprete(f"No se pudo consultar: {e}") from e
+        if respuesta.status_code in (429, 503):
+            raise _Saturado(f"El modelo {modelo} no atendió ({respuesta.status_code}).")
+        if respuesta.status_code >= 400:
+            _log.warning("El interprete devolvio %s: %s", respuesta.status_code,
+                         respuesta.text[:300])
+            raise ErrorDelInterprete(f"El servicio respondió {respuesta.status_code}.")
+        texto = _texto_de(respuesta.json())
+        if not texto:
+            raise ErrorDelInterprete("El servicio respondió sin texto.")
+        try:
+            crudo = json.loads(_solo_el_json(texto))
+        except (ValueError, TypeError) as e:
+            raise ErrorDelInterprete("La respuesta no era JSON.") from e
+        return crudo if isinstance(crudo, dict) else None
 
 
 def _describir(reportes: list[ReporteConocido]) -> str:
@@ -271,3 +347,22 @@ def _solo_el_json(texto: str) -> str:
     if inicio == -1 or fin == -1 or fin <= inicio:
         return texto
     return texto[inicio : fin + 1]
+
+
+def _describir_medidas(vocabulario: dict) -> str:
+    lineas = []
+    for clave, m in vocabulario.get("medidas", {}).items():
+        extra = "" if m.get("usa_periodo", True) else " (NO usa período: es la foto de hoy)"
+        lineas.append(
+            f"- {clave}: {m['etiqueta']}{extra} | agrupar: {', '.join(m['dimensiones'])}"
+            f" | filtros: {', '.join(m['filtros'])}"
+        )
+    return "\n".join(lineas)
+
+
+def _describir_valores(vocabulario: dict) -> str:
+    lineas = []
+    for campo, valores in vocabulario.get("valores", {}).items():
+        if valores:
+            lineas.append(f"{campo}=[" + ", ".join(f"{k} es {v}" for k, v in valores.items()) + "]")
+    return "\n".join(lineas)

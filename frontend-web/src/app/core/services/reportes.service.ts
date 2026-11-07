@@ -53,6 +53,36 @@ export interface PedidoEntendido {
   ejemplos?: string[];
 }
 
+// --- CU-27 · reporte dinámico con IA ------------------------------------------
+
+export interface SerieDeGrafico {
+  nombre: string;
+  datos: number[];
+}
+
+export interface GraficoDeReporte {
+  tipo: 'barras' | 'lineas' | 'torta' | 'tabla';
+  etiquetas: string[];
+  series: SerieDeGrafico[];
+}
+
+export interface ResultadoReporteIa {
+  entendido: boolean;
+  /** `ia` si lo interpretó el modelo; `reglas` si fue el respaldo sin IA. */
+  interprete: 'ia' | 'reglas' | null;
+  resumen: string | null;
+  motivo: string | null;
+  ejemplos: string[];
+  titulo: string | null;
+  subtitulos: string[];
+  encabezados: string[];
+  filas: (string | number)[][];
+  total: (string | number)[] | null;
+  grafico: GraficoDeReporte | null;
+  narrativa: string | null;
+  especificacion: Record<string, unknown> | null;
+}
+
 export interface ErrorReportes {
   mensaje: string;
   codigo: number;
@@ -151,6 +181,48 @@ export class ReportesService {
     return this.http
       .post<PedidoEntendido>(`${this.base}/voz`, { texto })
       .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
+
+  // --- CU-27 · reporte dinámico con IA ----------------------------------------
+
+  /** La frase (escrita o dictada) → el reporte armado con datos reales. */
+  consultarIa(texto: string): Observable<ResultadoReporteIa> {
+    return this.http
+      .post<ResultadoReporteIa>(`${this.base}/ia/consulta`, { texto })
+      .pipe(catchError((e) => throwError(() => this.traducirIa(e))));
+  }
+
+  /** Vuelve a correr la especificación y baja el archivo. */
+  exportarIa(
+    especificacion: Record<string, unknown>,
+    formato: 'pdf' | 'xlsx',
+  ): Observable<{ archivo: Blob; nombre: string }> {
+    return this.http
+      .post(`${this.base}/ia/exportar.${formato}`, especificacion, {
+        responseType: 'blob',
+        observe: 'response',
+      })
+      .pipe(
+        map((respuesta) => ({
+          archivo: respuesta.body as Blob,
+          nombre: this.nombreDe(respuesta.headers.get('content-disposition'), 'reporte-ia', formato),
+        })),
+        catchError((e) => throwError(() => this.traducir(e))),
+      );
+  }
+
+  private traducirIa(error: HttpErrorResponse): ErrorReportes {
+    const detalle = (error.error as { detail?: unknown } | null)?.detail;
+    if (error.status === 403 || error.status === 402) {
+      return {
+        mensaje:
+          typeof detalle === 'string'
+            ? detalle
+            : 'Su plan no incluye los reportes con IA o se agotó el cupo del mes.',
+        codigo: error.status,
+      };
+    }
+    return this.traducir(error);
   }
 
   private nombreDe(disposicion: string | null, tipo: string, formato: string): string {

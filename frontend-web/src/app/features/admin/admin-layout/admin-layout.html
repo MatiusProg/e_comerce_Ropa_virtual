@@ -54,6 +54,12 @@
       Reportes
     </a>
   }
+  @if (puede('reportes_ia.usar')) {
+    <a routerLink="/admin/reportes-ia" routerLinkActive="activo">
+      <mat-icon>auto_awesome</mat-icon>
+      Reportes con IA
+    </a>
+  }
   @if (puede('bitacora.ver')) {
     <a routerLink="/admin/bitacora" routerLinkActive="activo">
       <mat-icon>history</mat-icon>

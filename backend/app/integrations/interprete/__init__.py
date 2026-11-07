@@ -36,6 +36,7 @@ __all__ = [
     "ReporteConocido",
     "esta_disponible",
     "interpretar",
+    "interpretar_consulta",
     "obtener_proveedor",
 ]
 
@@ -78,3 +79,13 @@ def interpretar(
     texto: str, reportes: list[ReporteConocido], hoy: date
 ) -> Pedido | None:
     return obtener_proveedor().interpretar(texto, reportes, hoy)
+
+
+def interpretar_consulta(texto: str, vocabulario: dict, hoy: date) -> dict | None:
+    """CU-27: la frase traducida a una especificación de reporte dinámico.
+
+    Devuelve el JSON CRUDO del modelo: lo valida `reportes.dinamico.validar`,
+    que es quien conoce la lista blanca. `None` si el modelo dijo que no
+    entendió; un dict con `entendido: false` y `motivo` si pidió aclarar.
+    """
+    return obtener_proveedor().interpretar_consulta(texto, vocabulario, hoy)
