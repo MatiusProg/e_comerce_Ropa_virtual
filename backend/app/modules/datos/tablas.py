@@ -38,9 +38,31 @@ FUERA_DE_LA_COPIA = frozenset({
     "restauracion",
 })
 
-#: En la exportación (CU-39) entra casi todo; se deja afuera solo el contenido
-#: cifrado de las copias, que no se lee.
-FUERA_DE_LA_EXPORTACION = frozenset({"respaldo"})
+#: En la exportación (CU-39) entra casi todo. Se deja afuera lo que no se lee
+#: o lo que es un secreto aunque sea de la propia empresa:
+#: - el contenido cifrado de las copias;
+#: - los dispositivos push: el endpoint y sus claves bastan para mandarle
+#:   avisos a ese teléfono o navegador.
+FUERA_DE_LA_EXPORTACION = frozenset({"respaldo", "suscripcion_push"})
+
+#: Columnas sueltas que no salen en la exportación, por tabla. El cuerpo crudo
+#: de la pasarela trae datos del pago (correo, últimos dígitos, metadatos de
+#: Stripe) que la tabla ya resume en sus columnas propias.
+COLUMNAS_FUERA_DE_LA_EXPORTACION: dict[str, frozenset[str]] = {
+    "transaccion_pasarela": frozenset({"carga_util"}),
+}
+
+#: Lo que una planilla toma como fórmula si la celda empieza con eso.
+_INICIO_DE_FORMULA = ("=", "+", "-", "@", "\t", "\r")
+
+
+def sin_formula(valor):
+    """Inyección de fórmulas (CSV/Excel): un texto que empieza con `=`, `+`,
+    `-` o `@` —el nombre de un cliente, una nota— se abriría como fórmula.
+    Se le antepone un apóstrofo, que la planilla muestra como texto."""
+    if isinstance(valor, str) and valor.startswith(_INICIO_DE_FORMULA):
+        return "'" + valor
+    return valor
 
 
 def tablas_de_empresa(excluir: frozenset[str] = frozenset()) -> list[Table]:

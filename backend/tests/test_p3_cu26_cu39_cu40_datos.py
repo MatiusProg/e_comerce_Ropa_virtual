@@ -314,3 +314,66 @@ def test_restaura_una_empresa_con_ventas_y_devoluciones(
     # ...y la restauración la deja como estaba en la copia: pendiente.
     pendientes = api.get(SOLICITUDES_SUCURSAL, headers=encargado).json()
     assert [s["estado"] for s in pendientes] == ["PENDIENTE"]
+
+
+# =====================================================================
+# Tanda B de la auditoría: lo que no sale y lo que sale escapado
+# =====================================================================
+
+@pytest.mark.parametrize("texto, esperado", [
+    ("=HYPERLINK(\"http://x\")", "'=HYPERLINK(\"http://x\")"),
+    ("+591 70000000", "'+591 70000000"),
+    ("-2+3", "'-2+3"),
+    ("@SUM(A1)", "'@SUM(A1)"),
+    ("\t=1", "'\t=1"),
+    ("Blusa", "Blusa"),
+    ("", ""),
+    (-5, -5),
+    (None, None),
+])
+def test_un_texto_que_parece_formula_sale_escapado(texto, esperado) -> None:
+    from app.modules.datos import tablas
+
+    assert tablas.sin_formula(texto) == esperado
+
+
+def test_la_exportacion_escapa_formulas_y_omite_secretos(api, cabeceras_admin) -> None:
+    api.post(CATEGORIAS, headers=cabeceras_admin, json={"nombre": "=1+1", "orden": 0,
+                                                       "activa": True})
+    libro = load_workbook(io.BytesIO(api.get(EXCEL, headers=cabeceras_admin).content))
+    assert "suscripcion_push" not in libro.sheetnames
+    assert "carga_util" not in [c.value for c in libro["transaccion_pasarela"][1]]
+    celdas = [c.value for fila in libro["categoria"].iter_rows() for c in fila]
+    assert "'=1+1" in celdas
+    assert not any(isinstance(c.value, str) and c.value.startswith("=")
+                   for fila in libro["categoria"].iter_rows() for c in fila)
+
+    zf = zipfile.ZipFile(io.BytesIO(api.get(CSV, headers=cabeceras_admin).content))
+    assert "suscripcion_push.csv" not in zf.namelist()
+    assert "carga_util" not in zf.read("transaccion_pasarela.csv").decode("utf-8-sig")
+    assert "'=1+1" in zf.read("categoria.csv").decode("utf-8-sig")
+
+
+def test_las_copias_usan_su_propia_clave_y_las_viejas_se_siguen_leyendo(
+    api, cabeceras_admin, monkeypatch
+) -> None:
+    from app.core.config import settings
+    from app.modules.datos import respaldos
+
+    api.post(CATEGORIAS, headers=cabeceras_admin, json={"nombre": "Blusas", "orden": 0,
+                                                       "activa": True})
+    vieja = _copia(api, cabeceras_admin)  # firmada con la del token
+
+    monkeypatch.setattr(settings, "RESPALDO_SECRET", "clave-propia-de-las-copias-1234567890")
+    # La manual tiene un tope por semana: la «nueva» es la misma, firmada ahora.
+    cuerpo = json.loads(vieja)
+    cuerpo.pop("firma")
+    nueva = json.dumps({**cuerpo, "firma": respaldos._firmar(cuerpo)}).encode()
+    assert json.loads(nueva)["firma"] != json.loads(vieja)["firma"]
+    assert _subir(api, cabeceras_admin, vieja).status_code == 200
+    assert _subir(api, cabeceras_admin, nueva).status_code == 200
+
+    # Quien solo tiene la clave del token ya no puede fabricar una copia válida.
+    monkeypatch.setattr(settings, "RESPALDO_SECRET", "")
+    r = _subir(api, cabeceras_admin, nueva)
+    assert r.status_code == 422 and "alterada" in r.json()["detail"]

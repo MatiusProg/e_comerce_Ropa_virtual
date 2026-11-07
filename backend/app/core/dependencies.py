@@ -184,7 +184,17 @@ def _aplicar_rol_propio(
 
     rol = db.get(RolEmpresa, rol_empresa_id)
     if rol is None:
-        return
+        # Antes se volvía sin más, y la persona quedaba con TODOS los permisos
+        # de su rol base: justo lo contrario de lo que el rol propio pedía.
+        # Si no se encuentra (borrado, o de otra empresa por un dato roto),
+        # se cierra: falla cerrado, no abierto.
+        if permisos_catalogo.es_libre(peticion.url.path):
+            return
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Su rol propio ya no existe. Pídale al administrador de la "
+            "empresa que le asigne otro.",
+        )
     usuario.rol_empresa = rol.nombre
     usuario.permisos = frozenset(p.permiso for p in rol.permisos)
 

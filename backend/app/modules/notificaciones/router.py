@@ -157,8 +157,19 @@ def registrar_dispositivo(
     datos: SuscripcionPushIn, db: DbSession, usuario: Usuario
 ) -> SuscripcionPushOut:
     """Idempotente: la app lo llama en cada inicio de sesión con su token de
-    FCM, y la web con su suscripción de Web Push. No se duplica."""
-    return push_service.registrar(db, usuario.id, datos)
+    FCM, y la web con su suscripción de Web Push. No se duplica.
+
+    409 si el dispositivo está a nombre de otra persona de la tienda y la
+    petición no trae sus mismas claves (ver `push_service._puede_quedarselo`).
+    """
+    try:
+        return push_service.registrar(db, usuario.id, datos)
+    except push_service.DispositivoAjeno as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Este dispositivo recibe los avisos de otra cuenta. "
+            "Que esa persona cierre sesión en él y vuelva a intentarlo.",
+        ) from e
 
 
 @router.post(
