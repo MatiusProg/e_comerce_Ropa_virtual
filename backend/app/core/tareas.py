@@ -54,7 +54,9 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.tenencia import EMPRESA_DE_BAJA, fijar_empresa, modo_plataforma
 
-log = logging.getLogger(__name__)
+#: Bajo `violetboutique`: es el único logger que `registro.py` imprime. Con
+#: `__name__` los INFO («encendidas», «N hechas») se perdían en el raíz.
+log = logging.getLogger("violetboutique.tareas")
 
 #: La clave del advisory lock. Cualquier número fijo; este dice «VIOLET».
 CLAVE_DEL_BLOQUEO = 0x56494F4C4554
