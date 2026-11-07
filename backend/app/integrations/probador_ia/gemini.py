@@ -87,15 +87,23 @@ _URL = "https://generativelanguage.googleapis.com/v1beta/interactions"
 _MODELO_POR_DEFECTO = "gemini-3.1-flash-image"
 
 _INSTRUCCION = (
-    "Esta es la foto de una persona probandose una prenda en un vestidor "
-    "virtual. La prenda esta superpuesta de forma plana y rigida. "
-    "Genera la MISMA foto pero con la prenda ajustada al cuerpo de forma "
-    "realista: que siga la postura, se pliegue en los hombros y la cintura, y "
-    "caiga con el peso de la tela. La segunda imagen es la prenda de "
-    "referencia ({descripcion}): respeta su color, su corte y su largo.\n\n"
-    "MUY IMPORTANTE: no cambies la cara, el cuerpo, el peinado ni el fondo de "
-    "la persona. No la adelgaces ni la retoques. Lo unico que cambia es como "
-    "se asienta la prenda."
+    # 2do parcial (CU-38): la prenda llega YA ESCALADA a su tamano real por el
+    # CU-37. Lo que se le pide al modelo es que NO la acomode al cuerpo: es
+    # justo la critica de Karen a los probadores generativos (no respetan la
+    # talla), y lo que este probador viene a resolver.
+    "Esta es la foto de una persona probandose una prenda en un probador "
+    "virtual. La prenda ya esta colocada A SU TAMANO REAL: se escalo con las "
+    "medidas en centimetros del cuerpo de la persona y de la prenda en la "
+    "talla elegida ({descripcion}). Por eso puede verse holgada, ajustada, "
+    "corta o larga, y eso es lo que el cliente necesita ver.\n\n"
+    "Genera la MISMA foto con la prenda puesta de forma realista: que siga la "
+    "postura, se pliegue y caiga con el peso de la tela. La segunda imagen es "
+    "la prenda de referencia: respeta su color y su corte.\n\n"
+    "MUY IMPORTANTE: NO cambies el tamano de la prenda para que calce mejor: "
+    "conserva su ancho a la altura de los hombros, su largo (hasta donde llega "
+    "el ruedo) y su posicion tal como estan en la primera imagen. No cambies "
+    "la cara, el cuerpo, el peinado ni el fondo de la persona. No la adelgaces "
+    "ni la retoques."
 )
 
 

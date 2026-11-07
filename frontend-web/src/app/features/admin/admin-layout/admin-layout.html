@@ -140,6 +140,11 @@
       <mat-icon>inventory_2</mat-icon>
       Productos
     </a>
+    <!-- 3ra presentación · CU-36: misma área que el catálogo. -->
+    <a routerLink="/admin/probador" routerLinkActive="activo">
+      <mat-icon>checkroom</mat-icon>
+      Probador
+    </a>
   }
   @if (puede('inventario.gestionar')) {
     <a routerLink="/admin/inventario" routerLinkActive="activo">

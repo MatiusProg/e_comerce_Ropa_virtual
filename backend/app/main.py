@@ -79,6 +79,9 @@ from app.modules.reportes.tablero_router import router as tablero_router
 # necesita esto: el probado por IA, que es OPCIONAL y no puede correr en
 # el dispositivo porque necesita un modelo grande y una clave.
 from app.modules.vestidor_virtual.router import router as vestidor_router
+# 2do parcial, CU-36 a CU-38: el probador con la talla real.
+from app.modules.vestidor_virtual.probador_router import admin_router as probador_admin_router
+from app.modules.vestidor_virtual.probador_router import cliente_router as probador_cliente_router
 # from app.modules.ventas.router import router as ventas_router
 # CU-28 es el webhook de la pasarela. El paquete P8 lo tomamos entre los
 # dos: Mateo escribio `iniciar_cobro` con CU-27 y CU-28 se sumo encima.
@@ -259,6 +262,8 @@ app.include_router(pedidos_router, prefix=API)
 app.include_router(pedidos_operacion_router, prefix=API)
 app.include_router(compras_router, prefix=API)
 app.include_router(vestidor_router, prefix=API)
+app.include_router(probador_admin_router, prefix=API)
+app.include_router(probador_cliente_router, prefix=API)
 # CU-28. El webhook de la pasarela.
 app.include_router(pagos_router, prefix=API)
 app.include_router(caja_router, prefix=API)

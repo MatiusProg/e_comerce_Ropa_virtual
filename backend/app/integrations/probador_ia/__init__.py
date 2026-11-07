@@ -46,6 +46,7 @@ from app.integrations.probador_ia.base import (
 )
 from app.integrations.probador_ia.gemini import ProbadorGemini
 from app.integrations.probador_ia.no_disponible import ProbadorNoDisponible
+from app.integrations.probador_ia.simulado import ProbadorSimulado
 
 __all__ = [
     "ErrorDelProbador",
@@ -62,6 +63,7 @@ __all__ = [
 _PROVEEDORES: dict[str, type] = {
     ProbadorNoDisponible.nombre: ProbadorNoDisponible,
     ProbadorGemini.nombre: ProbadorGemini,
+    ProbadorSimulado.nombre: ProbadorSimulado,
 }
 
 
@@ -90,20 +92,22 @@ def obtener_proveedor() -> ProveedorProbador:
 
         logging.getLogger("violetboutique.probador").warning(
             "PROBADOR_IA_PROVEEDOR=%r no existe. Disponibles: %s. "
-            "El probado por IA queda apagado.",
+            "Se usa el simulado.",
             settings.PROBADOR_IA_PROVEEDOR,
             ", ".join(sorted(_PROVEEDORES)),
         )
-        return ProbadorNoDisponible()
+        return ProbadorSimulado()
     try:
         return clase()
     except Exception as e:
         import logging
 
+        # 2do parcial (CU-38): sin clave se cae al SIMULADO, no al apagado. El
+        # simulado no cuesta nada, y el caso de uso se puede recorrer igual.
         logging.getLogger("violetboutique.probador").warning(
-            "No se pudo construir el probador %r (%s). Queda apagado.", nombre, e
+            "No se pudo construir el probador %r (%s). Se usa el simulado.", nombre, e
         )
-        return ProbadorNoDisponible()
+        return ProbadorSimulado()
 
 
 def esta_disponible() -> bool:
@@ -112,5 +116,30 @@ def esta_disponible() -> bool:
 
 
 def probar(solicitud: SolicitudDeProbado) -> ResultadoDeProbado:
-    """Compone la imagen con el proveedor configurado."""
-    return obtener_proveedor().probar(solicitud)
+    """Compone la imagen con el proveedor configurado.
+
+    2do parcial (CU-38): si el proveedor real FALLA --- Gemini sin facturacion
+    contesta 429, o se cae ---, la foto sale igual con el simulado y
+    `generada_por` lo dice. `no_disponible` sigue rechazando: ese es el
+    apagado a proposito, no un fallo.
+    """
+    proveedor = obtener_proveedor()
+    try:
+        return proveedor.probar(solicitud)
+    except ProbadorNoConfigurado:
+        raise
+    except ErrorDelProbador as e:
+        if isinstance(proveedor, ProbadorSimulado):
+            raise
+        import logging
+
+        logging.getLogger("violetboutique.probador").warning(
+            "El probador %r falló (%s). Se devuelve la vista simulada.",
+            proveedor.nombre, e,
+        )
+        resultado = ProbadorSimulado().probar(solicitud)
+        return ResultadoDeProbado(
+            imagen=resultado.imagen,
+            tipo_mime=resultado.tipo_mime,
+            generada_por=f"simulado (falló {proveedor.nombre})",
+        )
