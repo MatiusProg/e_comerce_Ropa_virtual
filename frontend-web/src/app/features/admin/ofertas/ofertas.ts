@@ -221,12 +221,14 @@ export class Ofertas implements OnInit {
     });
   }
 
-  protected cambiarEstado(m: Mayorista, activo: boolean): void {
+  /** Si falla, el interruptor vuelve a como estaba (recargar no lo reescribe). */
+  protected cambiarEstado(m: Mayorista, activo: boolean, control?: { checked: boolean }): void {
     this.api.estadoMayorista(m.id, activo).subscribe({
       next: (nuevo) =>
         this.mayoristas.set(this.mayoristas().map((x) => (x.id === nuevo.id ? nuevo : x))),
       error: (e: HttpErrorResponse) => {
         this.mostrar(e, 'No se pudo cambiar el estado.');
+        if (control) control.checked = !activo;
         this.cargarMayoristas();
       },
     });

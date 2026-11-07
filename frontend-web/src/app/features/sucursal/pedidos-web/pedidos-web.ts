@@ -43,9 +43,12 @@ import { NotaDevolucionDialogo } from '../../caja/devolucion/nota-devolucion';
   template: `
     <header class="encabezado">
       <h1 class="vb-titulo">Pedidos web</h1>
-      <p class="bajada">Entregá los pedidos pagados y mirá los cambios y devoluciones que piden los clientes.</p>
+      <p class="bajada">Entregue los pedidos pagados y atienda los cambios y devoluciones que piden los clientes.</p>
     </header>
     <mat-card class="vb-filete-superior" appearance="outlined">
+      @if (cargando()) {
+        <p class="cargando" role="status"><mat-icon>hourglass_top</mat-icon> Cargando pedidos y solicitudes…</p>
+      }
       <mat-tab-group animationDuration="0ms">
         <mat-tab label="Por entregar ({{ porEntregar().length }})">
           <div class="panel">
@@ -65,7 +68,7 @@ import { NotaDevolucionDialogo } from '../../caja/devolucion/nota-devolucion';
                 </button>
               </div>
             } @empty {
-              <p class="vacio">No hay pedidos pagados esperando entrega.</p>
+              @if (!cargando()) { <p class="vacio">No hay pedidos pagados esperando entrega.</p> }
             }
           </div>
         </mat-tab>
@@ -92,17 +95,19 @@ import { NotaDevolucionDialogo } from '../../caja/devolucion/nota-devolucion';
                   <!-- CU-25: atender -->
                   @if (s.estado === 'PENDIENTE') {
                     <div class="atender">
-                      <mat-form-field appearance="outline" class="respuesta">
+                      <mat-form-field subscriptSizing="dynamic" appearance="outline" class="respuesta">
                         <mat-label>Respuesta al cliente</mat-label>
-                        <input matInput maxlength="300" #resp
+                        <input matInput maxlength="300" #resp (input)="0"
                                placeholder="Al aprobar: instrucciones. Al rechazar: el motivo." />
+                        <mat-hint>Para rechazar, el motivo es obligatorio (al menos 5 letras).</mat-hint>
                       </mat-form-field>
                       <button matButton="filled" class="vb-boton-marca" type="button"
                               [disabled]="ocupada() === s.id" (click)="atender(s, 'aprobar', resp.value)">
                         <mat-icon>check</mat-icon> Aprobar
                       </button>
                       <button matButton="outlined" type="button"
-                              [disabled]="ocupada() === s.id" (click)="atender(s, 'rechazar', resp.value)">
+                              [disabled]="ocupada() === s.id || resp.value.trim().length < 5"
+                              (click)="atender(s, 'rechazar', resp.value)">
                         <mat-icon>close</mat-icon> Rechazar
                       </button>
                     </div>
@@ -110,7 +115,7 @@ import { NotaDevolucionDialogo } from '../../caja/devolucion/nota-devolucion';
                     <div class="atender">
                       <button matButton="filled" class="vb-boton-marca" type="button"
                               [disabled]="ocupada() === s.id" (click)="atender(s, 'recibir', '')">
-                        <mat-icon>move_to_inbox</mat-icon> Recibí la prenda: reembolsar {{ s.valor_devuelto | bs }}
+                        <mat-icon>move_to_inbox</mat-icon> Prenda recibida: reembolsar {{ s.valor_devuelto | bs }}
                       </button>
                     </div>
                   } @else if (s.estado === 'APROBADA' && s.tipo === 'CAMBIO') {
@@ -130,7 +135,7 @@ import { NotaDevolucionDialogo } from '../../caja/devolucion/nota-devolucion';
                 <span class="estado" [class]="'estado-' + s.estado">{{ rotulo(s.estado) }}</span>
               </div>
             } @empty {
-              <p class="vacio">Todavía no hay solicitudes.</p>
+              @if (!cargando()) { <p class="vacio">Todavía no hay solicitudes.</p> }
             }
           </div>
         </mat-tab>
@@ -153,6 +158,8 @@ import { NotaDevolucionDialogo } from '../../caja/devolucion/nota-devolucion';
     .respuesta { flex: 1 1 280px; }
     .aviso { color: var(--mat-sys-primary); margin-top: 6px; }
     .error { color: var(--mat-sys-error); padding: 0 16px 16px; }
+    .cargando { display: flex; gap: 8px; align-items: center; padding: 12px 16px 0; margin: 0;
+                color: var(--mat-sys-on-surface-variant); }
     .estado { padding: 1px 8px; border-radius: 12px; font-size: 0.8rem; white-space: nowrap;
               background: var(--mat-sys-surface-container); }
     .estado-RECHAZADA { background: var(--mat-sys-error-container); }
@@ -170,6 +177,9 @@ export class PedidosWeb implements OnInit {
   protected readonly entregando = signal<string | null>(null);
   protected readonly ocupada = signal<number | null>(null);
   protected readonly error = signal<string | null>(null);
+  /** Las dos listas en vuelo: mientras tanto no se muestra «no hay nada». */
+  protected readonly cargando = signal(true);
+  private enVuelo = 0;
 
   protected pendientes(): number {
     return this.solicitudes().filter((s) => s.estado === 'PENDIENTE').length;
@@ -180,13 +190,25 @@ export class PedidosWeb implements OnInit {
   }
 
   private cargar(): void {
+    this.enVuelo = 2;
+    this.cargando.set(true);
+    const listo = () => {
+      this.enVuelo -= 1;
+      if (this.enVuelo <= 0) this.cargando.set(false);
+    };
     this.http.get<PedidoDeSucursal[]>(`${this.base}/pedidos`, { params: { estado: 'PAGADA' } }).subscribe({
-      next: (p) => this.porEntregar.set(p),
-      error: (e: HttpErrorResponse) => this.error.set(this.mensaje(e)),
+      next: (p) => { this.porEntregar.set(p); listo(); },
+      error: (e: HttpErrorResponse) => {
+        this.error.set(this.mensaje(e, 'No se pudieron cargar los pedidos por entregar.'));
+        listo();
+      },
     });
     this.http.get<Solicitud[]>(`${this.base}/solicitudes-devolucion`).subscribe({
-      next: (s) => this.solicitudes.set(s),
-      error: (e: HttpErrorResponse) => this.error.set(this.mensaje(e)),
+      next: (s) => { this.solicitudes.set(s); listo(); },
+      error: (e: HttpErrorResponse) => {
+        this.error.set(this.mensaje(e, 'No se pudieron cargar las solicitudes.'));
+        listo();
+      },
     });
   }
 
@@ -195,6 +217,7 @@ export class PedidosWeb implements OnInit {
     this.http.post<PedidoDeSucursal>(`${this.base}/pedidos/${p.codigo}/entregar`, {}).subscribe({
       next: () => {
         this.entregando.set(null);
+        this.error.set(null);
         this.aviso.open(`Pedido ${p.codigo} entregado. Desde ahora corre la ventana de devolución.`, 'Cerrar', {
           duration: 5000,
         });
@@ -202,7 +225,7 @@ export class PedidosWeb implements OnInit {
       },
       error: (e: HttpErrorResponse) => {
         this.entregando.set(null);
-        this.error.set(this.mensaje(e));
+        this.error.set(this.mensaje(e, `No se pudo entregar el pedido ${p.codigo}.`));
       },
     });
   }
@@ -216,8 +239,11 @@ export class PedidosWeb implements OnInit {
         this.ocupada.set(null);
         this.error.set(null);
         const textos = {
-          aprobar: 'Solicitud aprobada.',
-          rechazar: 'Solicitud rechazada.',
+          aprobar:
+            s.tipo === 'CAMBIO'
+              ? 'Cambio aprobado. El cliente lo retira en caja.'
+              : 'Devolución aprobada. Cuando llegue la prenda, márquela como recibida para reembolsar.',
+          rechazar: 'Solicitud rechazada. El cliente verá el motivo.',
           recibir: `Prenda recibida. Nota ${r.numero_nota}: reembolso de Bs ${r.reembolso_monto ?? '0.00'}.`,
         };
         this.aviso.open(textos[accion], 'Cerrar', { duration: 6000 });
@@ -225,7 +251,7 @@ export class PedidosWeb implements OnInit {
       },
       error: (e: HttpErrorResponse) => {
         this.ocupada.set(null);
-        this.error.set(this.mensaje(e));
+        this.error.set(this.mensaje(e, 'No se pudo atender la solicitud. Intente de nuevo.'));
       },
     });
   }
@@ -238,7 +264,7 @@ export class PedidosWeb implements OnInit {
     return ROTULO_SOLICITUD[estado];
   }
 
-  private mensaje(e: HttpErrorResponse): string {
-    return typeof e.error?.detail === 'string' ? e.error.detail : 'No se pudo cargar.';
+  private mensaje(e: HttpErrorResponse, porDefecto: string): string {
+    return typeof e.error?.detail === 'string' ? e.error.detail : porDefecto;
   }
 }

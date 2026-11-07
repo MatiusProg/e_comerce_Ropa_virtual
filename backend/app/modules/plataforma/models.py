@@ -212,3 +212,18 @@ class ConsumoCupo(DeEmpresa, Base):
     recurso: Mapped[str] = mapped_column(String(20), primary_key=True)
     periodo: Mapped[date] = mapped_column(Date, primary_key=True)
     usados: Mapped[int] = mapped_column(Integer, server_default=text("0"))
+
+
+class TareaAutomatica(Base):
+    """Cuándo empezó la última vuelta de las tareas automáticas (migración 0035).
+
+    Es de la plataforma, sin empresa ni RLS. gunicorn corre 2 workers y cada
+    uno tiene su bucle: el advisory lock impide que corran A LA VEZ, pero el
+    segundo lo tomaba un segundo después de que lo soltaba el primero y hacía
+    la vuelta de nuevo. Con esta marca, el que llega tarde se la saltea.
+    """
+
+    __tablename__ = "tarea_automatica"
+
+    clave: Mapped[str] = mapped_column(String(40), primary_key=True)
+    ultima_vuelta: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

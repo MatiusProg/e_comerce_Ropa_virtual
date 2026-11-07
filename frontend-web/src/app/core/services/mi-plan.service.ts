@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { Observable, of, throwError } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 
 import { environment } from '../../../environments/environment';
 import { MiPlan } from '../models/mi-plan.models';
@@ -20,6 +20,21 @@ export class MiPlanService {
     return this.http
       .get<MiPlan>(this.url)
       .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
+
+  /**
+   * ¿El plan vigente incluye esta función? Para mostrar el candado ANTES del
+   * clic. `null` si no se pudo saber: la pantalla sigue como siempre y el
+   * servidor es el que decide (CU-05).
+   */
+  incluye(codigo: string): Observable<boolean | null> {
+    return this.http.get<MiPlan>(this.url).pipe(
+      map((p) => {
+        const f = p.plan?.funciones.find((x) => x.codigo === codigo);
+        return f ? f.incluida : null;
+      }),
+      catchError(() => of(null)),
+    );
   }
 
   private traducir(error: HttpErrorResponse): ErrorMiPlan {

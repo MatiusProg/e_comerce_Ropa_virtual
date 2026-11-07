@@ -97,7 +97,7 @@
               <td>
                 <mat-slide-toggle
                   [checked]="m.activo"
-                  (change)="cambiarEstado(m, $event.checked)"
+                  (change)="cambiarEstado(m, $event.checked, $event.source)"
                   [attr.aria-label]="'Activar o desactivar el mayorista de ' + m.producto"
                 />
               </td>

@@ -601,6 +601,7 @@ def _armar_ticket(
                 color=fila.color_nombre or "—",
                 cantidad=fila.cantidad,
                 precio_unitario=fila.precio_unitario,
+                descuento_unitario=fila.descuento_unitario,
                 subtotal=(fila.precio_unitario - fila.descuento_unitario)
                 * fila.cantidad,
             )

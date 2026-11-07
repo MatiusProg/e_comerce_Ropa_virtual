@@ -190,7 +190,7 @@
         } @else {
           <a matButton routerLink="/login" [queryParams]="{ destino: aqui }" class="al-carrito">
             <mat-icon>person</mat-icon>
-            Ingresá para comprar
+            Ingrese para comprar
           </a>
         }
 
@@ -208,7 +208,7 @@
             class="reservar"
             [disabled]="!variante()"
             [matTooltip]="
-              variante() ? 'Apartala y probátela en la sucursal' : 'Elija talla y color primero'
+              variante() ? 'Apártela y pruébesela en la sucursal' : 'Elija talla y color primero'
             "
             (click)="reservar()"
           >

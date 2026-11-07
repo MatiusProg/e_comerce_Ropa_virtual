@@ -411,7 +411,7 @@
               <section class="cambio">
                 <h3 class="rotulo">Qué se lleva</h3>
 
-                <mat-form-field appearance="outline" class="campo">
+                <mat-form-field subscriptSizing="dynamic" appearance="outline" class="campo">
                   <mat-label>Buscar la prenda que se lleva</mat-label>
                   <mat-icon matIconPrefix>search</mat-icon>
                   <input
@@ -555,7 +555,7 @@
                   </p>
 
                   @if (aFavorDe() !== 'NADIE') {
-                    <mat-form-field appearance="outline" class="campo">
+                    <mat-form-field subscriptSizing="dynamic" appearance="outline" class="campo">
                       <mat-label>Cómo se salda la diferencia</mat-label>
                       <mat-select [formControl]="metodoDiferencia">
                         <mat-option value="EFECTIVO">Efectivo</mat-option>

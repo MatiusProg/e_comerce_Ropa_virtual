@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
@@ -82,10 +82,12 @@ import { NotaDevolucionDialogo } from '../../caja/devolucion/nota-devolucion';
                       <mat-label>Tu observación (opcional)</mat-label>
                       <input matInput maxlength="300" #obs />
                     </mat-form-field>
-                    <button matButton="filled" class="vb-boton-marca" type="button" (click)="conformidad(s, true, obs.value)">
+                    <button matButton="filled" class="vb-boton-marca" type="button"
+                            [disabled]="enviando() === s.id" (click)="conformidad(s, true, obs.value)">
                       Estoy conforme
                     </button>
-                    <button matButton="outlined" type="button" (click)="conformidad(s, false, obs.value)">
+                    <button matButton="outlined" type="button"
+                            [disabled]="enviando() === s.id" (click)="conformidad(s, false, obs.value)">
                       No estoy conforme
                     </button>
                   </div>
@@ -120,6 +122,8 @@ export class MisSolicitudes implements OnInit {
   private readonly aviso = inject(MatSnackBar);
   private readonly base = `${environment.apiUrl}/tienda/devoluciones`;
   protected readonly solicitudes = signal<Solicitud[]>([]);
+  /** La solicitud cuya conformidad está en vuelo: evita el doble envío. */
+  protected readonly enviando = signal<number | null>(null);
 
   ngOnInit(): void {
     this.recargar();
@@ -142,6 +146,8 @@ export class MisSolicitudes implements OnInit {
 
   /** CU-25 (RN-20): conforme cierra la nota; no conforme la deja abierta. */
   protected conformidad(s: Solicitud, conforme: boolean, observacion: string): void {
+    if (this.enviando() !== null) return;
+    this.enviando.set(s.id);
     this.http
       .post<Solicitud>(`${this.base}/${s.id}/conformidad`, {
         conforme,
@@ -149,12 +155,19 @@ export class MisSolicitudes implements OnInit {
       })
       .subscribe({
         next: () => {
+          this.enviando.set(null);
           this.aviso.open(conforme ? 'Gracias: la nota quedó cerrada.' : 'Listo: la tienda va a revisarlo.', 'Cerrar', {
             duration: 5000,
           });
           this.recargar();
         },
-        error: () => this.aviso.open('No se pudo guardar tu respuesta.', 'Cerrar', { duration: 5000 }),
+        error: (e: HttpErrorResponse) => {
+          this.enviando.set(null);
+          const d = e.error?.detail;
+          this.aviso.open(typeof d === 'string' ? d : 'No se pudo guardar tu respuesta.', 'Cerrar', {
+            duration: 5000,
+          });
+        },
       });
   }
 

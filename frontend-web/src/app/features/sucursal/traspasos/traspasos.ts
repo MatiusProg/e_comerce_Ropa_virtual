@@ -29,6 +29,7 @@ import type {
   TraspasoSugerido,
 } from '../../../core/models/traspasos.models';
 import { AuthService } from '../../../core/services/auth.service';
+import { MiPlanService } from '../../../core/services/mi-plan.service';
 import { OrganizacionService } from '../../../core/services/organizacion.service';
 import { TraspasosService } from '../../../core/services/traspasos.service';
 
@@ -68,6 +69,7 @@ export class Traspasos implements OnInit {
   private readonly api = inject(TraspasosService);
   private readonly organizacion = inject(OrganizacionService);
   private readonly auth = inject(AuthService);
+  private readonly miPlan = inject(MiPlanService);
   private readonly aviso = inject(MatSnackBar);
   private readonly destruir = inject(DestroyRef);
 
@@ -160,6 +162,13 @@ export class Traspasos implements OnInit {
       });
 
     if (this.esAdmin()) {
+      // Sin la función en el plan, la pestaña muestra el candado desde el
+      // principio en vez de ofrecer algo que el servidor va a rechazar.
+      this.miPlan.incluye('traspasos_sugeridos').subscribe((incluida) => {
+        if (incluida === false) {
+          this.bloqueoDelPlan.set('Su plan no incluye los traspasos sugeridos por lo más vendido.');
+        }
+      });
       this.organizacion.listarSucursales({ activa: true }).subscribe({
         next: (s) => this.sucursales.set(s),
         error: () => this.sucursales.set([]),
@@ -176,7 +185,16 @@ export class Traspasos implements OnInit {
   }
 
   // --- Seguimiento ------------------------------------------------------
+  /**
+   * Cada pedido lleva su número; si llega la respuesta de uno viejo (se
+   * cambió de bandeja o de página mientras tanto), se descarta. Antes ganaba
+   * la última en LLEGAR, no la última pedida, y la tabla podía mostrar otra
+   * bandeja que la elegida.
+   */
+  private pedidoActual = 0;
+
   protected cargar(): void {
+    const numero = ++this.pedidoActual;
     this.cargando.set(true);
     const bandeja = this.bandeja();
     this.api
@@ -188,11 +206,13 @@ export class Traspasos implements OnInit {
       })
       .subscribe({
         next: (p) => {
+          if (numero !== this.pedidoActual) return;
           this.filas.set(p.items);
           this.total.set(p.total);
           this.cargando.set(false);
         },
         error: (e: HttpErrorResponse) => {
+          if (numero !== this.pedidoActual) return;
           this.cargando.set(false);
           this.mostrar(e, 'No se pudieron leer los traspasos.');
         },

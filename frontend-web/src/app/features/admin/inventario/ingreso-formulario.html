@@ -40,7 +40,7 @@
     </div>
 
     <div class="fila">
-      <mat-form-field appearance="outline" class="remito">
+      <mat-form-field subscriptSizing="dynamic" appearance="outline" class="remito">
         <mat-label>Remito o factura</mat-label>
         <input matInput formControlName="referencia" maxlength="40" />
         <mat-hint>Opcional. Es el número del papel que llegó con la mercadería.</mat-hint>
@@ -65,8 +65,8 @@
         Anunciado y todavía sin llegar
       </h3>
       <p class="avisos__ayuda">
-        Tocá el que estés recibiendo: se agrega al remito con la cantidad
-        pendiente puesta, y podés cambiarla si llegó menos.
+        Toque el que esté recibiendo: se agrega al remito con la cantidad
+        pendiente puesta, y puede cambiarla si llegó menos.
       </p>
 
       <div class="avisos__lista">
@@ -191,7 +191,7 @@
             <th mat-header-cell *matHeaderCellDef></th>
             <td mat-cell *matCellDef="let l" class="numerica">
               <button
-                matIconButton
+                matIconButton aria-label="Quitar del remito"
                 type="button"
                 matTooltip="Quitar del remito"
                 (click)="quitarLinea(l.variante_id)"

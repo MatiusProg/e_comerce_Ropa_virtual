@@ -53,7 +53,7 @@
 
     <!-- Datos de la persona -->
     @if (pideCuentaExistente()) {
-      <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-form-field subscriptSizing="dynamic" appearance="outline" class="ancho-completo">
         <mat-label>Cuenta a vincular</mat-label>
         <mat-select formControlName="usuario_id">
           @for (u of vinculables(); track u.id) {
@@ -103,7 +103,7 @@
         }
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="ancho-completo">
+      <mat-form-field subscriptSizing="dynamic" appearance="outline" class="ancho-completo">
         <mat-label>Contraseña inicial</mat-label>
         <input
           matInput

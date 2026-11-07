@@ -103,7 +103,7 @@
             <th mat-header-cell *matHeaderCellDef>Estado</th>
             <td mat-cell *matCellDef="let r">
               <span class="etiqueta-estado" [class]="claseDeEstado(r.estado)">
-                {{ r.estado }}
+                {{ rotuloReserva(r.estado) }}
               </span>
             </td>
           </ng-container>
@@ -112,7 +112,7 @@
             <th mat-header-cell *matHeaderCellDef></th>
             <td mat-cell *matCellDef="let r" class="acciones">
               <button
-                matIconButton
+                matIconButton aria-label="Ver prendas"
                 type="button"
                 matTooltip="Ver prendas"
                 (click)="alternarDetalle(r)"
@@ -121,7 +121,7 @@
               </button>
               @if (r.estado === 'PENDIENTE') {
                 <button
-                  matIconButton
+                  matIconButton aria-label="Marcar como preparada"
                   type="button"
                   matTooltip="Marcar como preparada"
                   (click)="preparar(r)"
@@ -131,7 +131,7 @@
               }
               @if (estaViva(r)) {
                 <button
-                  matIconButton
+                  matIconButton aria-label="Cerrar con el resultado de la prueba"
                   type="button"
                   matTooltip="Cerrar con el resultado de la prueba"
                   (click)="atender(r)"

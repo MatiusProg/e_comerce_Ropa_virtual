@@ -23,6 +23,7 @@ import type {
   Reserva,
   ReservaResumen,
 } from '../../../core/models/reservas.models';
+import { rotuloReserva } from '../../../core/models/reservas.models';
 import { Confirmacion, type DatosConfirmacion } from '../../../shared/confirmacion/confirmacion';
 import { ReservaFormulario } from './reserva-formulario';
 import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion-cliente';
@@ -71,6 +72,7 @@ const LEYENDA: Record<EstadoReserva, string> = {
   styleUrl: './reservas.scss',
 })
 export class Reservas implements OnInit {
+  protected readonly rotuloReserva = rotuloReserva;
   private readonly api = inject(ReservasService);
   private readonly dialogo = inject(MatDialog);
   private readonly aviso = inject(MatSnackBar);

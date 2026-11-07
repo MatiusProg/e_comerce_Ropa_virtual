@@ -36,7 +36,7 @@
     <mat-progress-bar mode="indeterminate" />
   }
 
-  <mat-form-field appearance="outline" class="campo">
+  <mat-form-field subscriptSizing="dynamic" appearance="outline" class="campo">
     <mat-label>{{ etiquetaObjetivo() }}</mat-label>
     <mat-select [formControl]="objetivoId">
       @for (o of objetivos(); track o.id) {

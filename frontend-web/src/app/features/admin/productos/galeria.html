@@ -74,7 +74,7 @@
 
             <span class="acciones">
               <button
-                matIconButton
+                matIconButton aria-label="Mover antes"
                 type="button"
                 [disabled]="primera || cargando()"
                 (click)="mover(imagen, -1)"
@@ -83,7 +83,7 @@
                 <mat-icon>arrow_back</mat-icon>
               </button>
               <button
-                matIconButton
+                matIconButton aria-label="Mover después"
                 type="button"
                 [disabled]="ultima || cargando()"
                 (click)="mover(imagen, 1)"

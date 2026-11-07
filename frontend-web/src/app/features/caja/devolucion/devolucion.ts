@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { minimoSinEspacios } from '../../../shared/validadores';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -118,7 +119,7 @@ export class Devolucion implements OnInit {
   });
   protected readonly motivo = new FormControl('', {
     nonNullable: true,
-    validators: [Validators.required, Validators.minLength(3), Validators.maxLength(200)],
+    validators: [minimoSinEspacios(3), Validators.maxLength(200)],
   });
   protected readonly busqueda = new FormControl('', { nonNullable: true });
   /**

@@ -181,6 +181,22 @@ export type TipoMovimiento =
   | 'VENTA'
   | 'DEVOLUCION';
 
+/** Cómo se lee cada tipo en pantalla: el código crudo no se muestra. */
+export const ROTULO_MOVIMIENTO: Record<TipoMovimiento, string> = {
+  INGRESO: 'Ingreso',
+  TRANSFERENCIA: 'Transferencia',
+  AJUSTE: 'Ajuste',
+  RESERVA: 'Reserva',
+  LIBERACION: 'Liberación',
+  VENTA: 'Venta',
+  DEVOLUCION: 'Devolución',
+};
+
+/** El rótulo de un tipo; si llega uno nuevo, se muestra tal cual. */
+export function rotuloMovimiento(tipo: string): string {
+  return (ROTULO_MOVIMIENTO as Record<string, string>)[tipo] ?? tipo;
+}
+
 /** Fila del historial. `cantidad` conserva el signo: positiva entra, negativa sale. */
 export interface Movimiento extends VarianteResumen {
   id: number;

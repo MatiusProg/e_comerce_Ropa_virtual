@@ -128,7 +128,7 @@
           @if (abierto()?.id === t.id) {
             <div class="formulario">
               @if (abierto()?.accion === 'APROBAR') {
-                <mat-form-field appearance="outline">
+                <mat-form-field subscriptSizing="dynamic" appearance="outline">
                   <mat-label>Cantidad a enviar</mat-label>
                   <input matInput type="number" min="1" [max]="t.cantidad" [formControl]="cantidadAprobada" />
                   <mat-hint>Puede mandar menos de {{ t.cantidad }} si no le alcanza.</mat-hint>
@@ -184,7 +184,7 @@
   <!-- ============================ CU-33 ============================ -->
   <mat-tab [label]="esAdmin() ? 'Ordenar' : 'Pedir'">
     @if (!prenda()) {
-      <mat-form-field appearance="outline" class="ancho">
+      <mat-form-field subscriptSizing="dynamic" appearance="outline" class="ancho">
         <mat-label>Buscar prenda por nombre o SKU</mat-label>
         <mat-icon matPrefix>search</mat-icon>
         <input matInput [formControl]="busqueda" />

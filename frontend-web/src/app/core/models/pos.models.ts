@@ -108,6 +108,8 @@ export interface LineaVendida {
   color: string;
   cantidad: number;
   precio_unitario: string;
+  /** Promoción o mayorista, por unidad. «0.00» si no hubo. */
+  descuento_unitario: string;
   subtotal: string;
 }
 

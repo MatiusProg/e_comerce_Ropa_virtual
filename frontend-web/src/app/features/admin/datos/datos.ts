@@ -1,6 +1,6 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, inject, signal, viewChild } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -18,6 +18,7 @@ import {
   type Descarga,
   type HistorialDeCopias,
 } from '../../../core/services/datos.service';
+import { MiPlanService } from '../../../core/services/mi-plan.service';
 
 /**
  * 3ra presentación · CU-39 Exportar los datos de la empresa y CU-40 Gestionar
@@ -50,6 +51,7 @@ import {
 })
 export class Datos implements OnInit {
   private readonly api = inject(DatosService);
+  private readonly miPlan = inject(MiPlanService);
   private readonly aviso = inject(MatSnackBar);
 
   protected readonly cargando = signal(true);
@@ -60,12 +62,21 @@ export class Datos implements OnInit {
 
   // --- Restaurar --------------------------------------------------------
   protected readonly archivo = signal<File | null>(null);
+  /** El `<input type="file">`: se vacía al cancelar o terminar, para que no
+   *  siga mostrando el archivo anterior y se pueda volver a elegir el mismo. */
+  private readonly selector = viewChild<ElementRef<HTMLInputElement>>('selector');
   /** La copia guardada que se va a restaurar, o nulo si es un archivo. */
   protected readonly desdeCopia = signal<Copia | null>(null);
   protected readonly confirmacion = new FormControl('', { nonNullable: true });
 
   ngOnInit(): void {
     this.cargar();
+    // El candado se ve antes del clic, no recién cuando el servidor dice 403.
+    this.miPlan.incluye('exportar_datos').subscribe((incluida) => {
+      if (incluida === false) {
+        this.exportarBloqueado.set('Su plan no incluye la exportación completa de los datos.');
+      }
+    });
   }
 
   protected cargar(): void {
@@ -176,6 +187,7 @@ export class Datos implements OnInit {
   protected prepararRestauracion(copia: Copia): void {
     this.desdeCopia.set(copia);
     this.archivo.set(null);
+    this.limpiarSelector();
     this.confirmacion.setValue('');
   }
 
@@ -183,6 +195,12 @@ export class Datos implements OnInit {
     this.desdeCopia.set(null);
     this.archivo.set(null);
     this.confirmacion.setValue('');
+    this.limpiarSelector();
+  }
+
+  private limpiarSelector(): void {
+    const entrada = this.selector()?.nativeElement;
+    if (entrada) entrada.value = '';
   }
 
   protected restaurar(): void {
@@ -220,7 +238,9 @@ export class Datos implements OnInit {
     enlace.href = url;
     enlace.download = d.nombre;
     enlace.click();
-    URL.revokeObjectURL(url);
+    // Revocar en el acto puede cortar la descarga antes de que arranque
+    // (Firefox y Safari): se suelta un rato después.
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
   }
 
   /** Con `responseType: 'blob'` el error también llega como blob. */

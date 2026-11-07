@@ -143,7 +143,7 @@
           <td mat-cell *matCellDef="let a">
             @if (a.estado === 'ANUNCIADO') {
               <button
-                matIconButton
+                matIconButton aria-label="Retirar el aviso: deja de figurar como próxima a ingresar"
                 type="button"
                 matTooltip="Retirar el aviso: deja de figurar como próxima a ingresar"
                 (click)="cancelar(a)"

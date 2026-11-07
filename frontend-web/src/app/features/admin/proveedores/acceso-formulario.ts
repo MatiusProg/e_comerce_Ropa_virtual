@@ -92,7 +92,7 @@ import type { Proveedor } from '../../../core/models/proveedores.models';
           }
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="ancho-completo">
+        <mat-form-field subscriptSizing="dynamic" appearance="outline" class="ancho-completo">
           <mat-label>Contraseña inicial</mat-label>
           <input
             matInput

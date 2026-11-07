@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -66,10 +66,13 @@ export class Promociones implements OnInit {
   protected readonly filtroAlcance = signal<Alcance | null>(null);
   protected readonly soloVigentes = signal(false);
 
-  /** Cuántas están descontando ahora mismo. Es el número que importa. */
-  protected readonly vigentes = computed(
-    () => this.promociones().filter((p) => p.vigente).length,
-  );
+  /**
+   * Cuántas están descontando ahora mismo, en TODA la empresa. Es el número
+   * que importa. Antes se contaba sobre la página cargada: con 25
+   * promociones y 20 por página, o con un filtro puesto, mentía. Ahora sale
+   * del `total` que da el servidor con `solo_vigentes`.
+   */
+  protected readonly vigentes = signal(0);
 
   ngOnInit(): void {
     this.cargar();
@@ -91,6 +94,11 @@ export class Promociones implements OnInit {
           this.cargando.set(false);
         },
       });
+    // Una fila alcanza: lo que se quiere es el total.
+    this.api.listar(1, 1, null, true).subscribe({
+      next: (p) => this.vigentes.set(p.total),
+      error: () => this.vigentes.set(0),
+    });
   }
 
   protected paginar(evento: PageEvent): void {

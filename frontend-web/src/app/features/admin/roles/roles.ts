@@ -186,11 +186,17 @@ export class Roles implements OnInit {
     });
   }
 
-  protected cambiarEstado(rol: RolEmpresa, activo: boolean): void {
+  /**
+   * Si el servidor lo rechaza, el interruptor vuelve a como estaba. Recargar
+   * no alcanza: el dato no cambió, así que Angular no vuelve a escribir
+   * `[checked]` y el control quedaba mostrando lo que el usuario tocó.
+   */
+  protected cambiarEstado(rol: RolEmpresa, activo: boolean, control?: { checked: boolean }): void {
     this.api.estado(rol.id, activo).subscribe({
       next: () => this.cargar(),
       error: (e: HttpErrorResponse) => {
         this.mostrar(e, 'No se pudo cambiar el estado.');
+        if (control) control.checked = !activo;
         this.cargar();
       },
     });
@@ -203,7 +209,9 @@ export class Roles implements OnInit {
     );
   }
 
-  protected asignar(persona: Persona, rolId: number | null): void {
+  /** Igual que el interruptor: si falla, el desplegable vuelve al rol que tenía. */
+  protected asignar(persona: Persona, rolId: number | null, control?: { value: unknown }): void {
+    const anterior = persona.rol_empresa_id;
     this.api.asignar(persona.usuario_id, rolId).subscribe({
       next: (p) => {
         this.aviso.open(
@@ -217,6 +225,7 @@ export class Roles implements OnInit {
       },
       error: (e: HttpErrorResponse) => {
         this.mostrar(e, 'No se pudo asignar el rol.');
+        if (control) control.value = anterior;
         this.cargar();
       },
     });

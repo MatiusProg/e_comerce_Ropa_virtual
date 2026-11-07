@@ -245,7 +245,8 @@ export class Exportar implements OnInit {
     enlace.href = url;
     enlace.download = nombre;
     enlace.click();
-    URL.revokeObjectURL(url);
+    // Un rato después, no en el acto: revocar enseguida puede cortar la descarga.
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
   }
 
   protected estaBajando(tipo: string, formato: string): boolean {

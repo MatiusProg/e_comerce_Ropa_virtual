@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -60,6 +60,28 @@ export class CarritoPantalla implements OnInit {
   protected readonly carrito = this.api.carrito;
   protected readonly cargando = signal(true);
   protected readonly error = signal<ErrorCarrito | null>(null);
+
+  /**
+   * Lo que se ahorra en total y de dónde sale. El pie decía siempre «Sin
+   * promociones aplicadas todavía» —era de antes del CU-12— aunque las
+   * líneas ya trajeran su promoción o el precio mayorista (CU-31).
+   */
+  protected readonly ahorro = computed(() => {
+    let monto = 0;
+    let promocion = false;
+    let mayorista = false;
+    for (const l of this.carrito().lineas) {
+      if (!l.disponible || !l.descuento) continue;
+      monto += Number(l.descuento.monto_unitario) * l.cantidad;
+      if (l.descuento.tipo === 'MAYORISTA') mayorista = true;
+      else promocion = true;
+    }
+    const origen =
+      promocion && mayorista ? 'promociones y precio mayorista'
+        : mayorista ? 'precio mayorista'
+          : 'promociones';
+    return { monto, origen };
+  });
 
   /**
    * La línea que está esperando respuesta, para deshabilitar sólo sus botones.

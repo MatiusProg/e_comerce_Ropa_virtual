@@ -55,7 +55,7 @@
           }
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="precio">
+        <mat-form-field subscriptSizing="dynamic" appearance="outline" class="precio">
           <mat-label>Precio</mat-label>
           <input matInput formControlName="precio" inputmode="decimal" />
           <span matTextPrefix>Bs&nbsp;</span>
@@ -120,11 +120,11 @@
                 (keyup.enter)="guardarPrecio(v)"
                 (keyup.escape)="cancelarEdicionPrecio()"
               />
-              <button matIconButton type="button" (click)="guardarPrecio(v)" matTooltip="Guardar">
+              <button matIconButton aria-label="Guardar" type="button" (click)="guardarPrecio(v)" matTooltip="Guardar">
                 <mat-icon>check</mat-icon>
               </button>
               <button
-                matIconButton
+                matIconButton aria-label="Cancelar"
                 type="button"
                 (click)="cancelarEdicionPrecio()"
                 matTooltip="Cancelar"
@@ -163,7 +163,7 @@
         <th mat-header-cell *matHeaderCellDef aria-label="Acciones"></th>
         <td mat-cell *matCellDef="let v">
           <button
-            matIconButton
+            matIconButton aria-label="Eliminar variante"
             type="button"
             (click)="eliminar(v)"
             matTooltip="Eliminar variante"

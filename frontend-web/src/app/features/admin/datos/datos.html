@@ -19,11 +19,11 @@
     }
     <div class="acciones">
       <button matButton="filled" class="vb-boton-marca" type="button"
-              [disabled]="!!trabajando()" (click)="exportar('xlsx')">
+              [disabled]="!!trabajando() || !!exportarBloqueado()" (click)="exportar('xlsx')">
         <mat-icon>table_view</mat-icon>
         {{ trabajando() === 'exportar-xlsx' ? 'Preparando…' : 'Excel' }}
       </button>
-      <button matButton="outlined" type="button" [disabled]="!!trabajando()" (click)="exportar('zip')">
+      <button matButton="outlined" type="button" [disabled]="!!trabajando() || !!exportarBloqueado()" (click)="exportar('zip')">
         <mat-icon>folder_zip</mat-icon>
         {{ trabajando() === 'exportar-zip' ? 'Preparando…' : 'CSV (ZIP)' }}
       </button>
@@ -37,7 +37,7 @@
     <h2 class="subtitulo"><mat-icon>backup</mat-icon> Copias de seguridad</h2>
     @if (historial(); as h) {
       <p class="nota">
-        Plan {{ h.plan ?? '—' }}: copia manual {{ textoIntervalo(h.intervalo_manual_horas) }};
+        Plan {{ h.plan ?? '—' }}: copias manuales, {{ textoIntervalo(h.intervalo_manual_horas) }};
         se guardan cifradas las últimas {{ h.retencion_automaticas }} automáticas. Restaurar no
         tiene límite.
       </p>
@@ -68,7 +68,7 @@
       después se pierde. Solo acepta copias de esta empresa y sin alterar.
     </p>
     <label class="archivo">
-      <input type="file" accept="application/json,.json" (change)="elegirArchivo($event)" />
+      <input #selector type="file" accept="application/json,.json" (change)="elegirArchivo($event)" />
     </label>
     @if (archivo() || desdeCopia()) {
       <div class="confirmar">
