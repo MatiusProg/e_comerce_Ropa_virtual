@@ -25,7 +25,9 @@ export type TipoNotificacion =
   | 'DEVOLUCION'
   // CU-42 y CU-43 (3ra presentación)
   | 'OPERACION_OFFLINE'
-  | 'DEVOLUCION_PAGO';
+  | 'DEVOLUCION_PAGO'
+  // Aporte propio: volvió la talla que el cliente esperaba.
+  | 'STOCK_DISPONIBLE';
 
 export interface Notificacion {
   id: number;
@@ -79,6 +81,7 @@ const ICONOS: Record<TipoNotificacion, string> = {
   DEVOLUCION: 'assignment_return',
   OPERACION_OFFLINE: 'cloud_sync',
   DEVOLUCION_PAGO: 'currency_exchange',
+  STOCK_DISPONIBLE: 'notifications_active',
 };
 
 export function iconoDe(tipo: TipoNotificacion): string {

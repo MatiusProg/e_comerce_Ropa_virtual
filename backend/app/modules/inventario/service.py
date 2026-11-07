@@ -300,6 +300,16 @@ def _aplicar_movimiento(
             db, existencia, etiqueta=_etiqueta_de_variante(db, existencia.variante_id)
         )
 
+    # Aporte propio: «avísame cuando llegue mi talla». Este es el ÚNICO lugar
+    # que cambia un saldo, así que cualquier camino que reponga (ingreso,
+    # traspaso recibido, devolución, cambio, ajuste, reserva liberada) avisa
+    # sin saberlo. Importado acá adentro para no atar el inventario a la
+    # tienda en el arranque.
+    if cantidad > 0:
+        from app.modules.avisos_talla import service as avisos_talla
+
+        avisos_talla.avisar_si_volvio(db, existencia, cantidad=cantidad)
+
     return repository.agregar_movimiento(
         db,
         existencia_id=existencia.id,

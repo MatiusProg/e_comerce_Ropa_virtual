@@ -315,6 +315,15 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/sucursal/traspasos/traspasos').then((m) => m.Traspasos),
       },
+      // Aporte propio · las tallas agotadas que hay clientes esperando.
+      {
+        path: 'tallas-esperadas',
+        title: 'Tallas esperadas · Violet Boutique',
+        loadComponent: () =>
+          import('./features/sucursal/tallas-esperadas/tallas-esperadas').then(
+            (m) => m.TallasEsperadas,
+          ),
+      },
       // --- Ciclo 2 · P4 Inventario (CU-13, CU-15) ---
       {
         path: 'inventario',
@@ -403,6 +412,14 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/tienda/asistente/asistente').then((m) => m.Asistente),
   },
+  // Aporte propio · «Avísame cuando llegue mi talla».
+  {
+    path: 'mi-cuenta/avisos',
+    title: 'Mis avisos de talla · Violet Boutique',
+    canActivate: [sesionGuard, rolGuard('CLIENTE')],
+    loadComponent: () =>
+      import('./features/cliente/avisos/avisos').then((m) => m.MisAvisos),
+  },
   {
     path: 'mi-cuenta/reservas',
     title: 'Mis reservas · Violet Boutique',
@@ -486,6 +503,14 @@ export const routes: Routes = [
         title: 'Pedidos web · Violet Boutique',
         loadComponent: () =>
           import('./features/sucursal/pedidos-web/pedidos-web').then((m) => m.PedidosWeb),
+      },
+      {
+        path: 'tallas-esperadas',
+        title: 'Tallas esperadas · Violet Boutique',
+        loadComponent: () =>
+          import('./features/sucursal/tallas-esperadas/tallas-esperadas').then(
+            (m) => m.TallasEsperadas,
+          ),
       },
       {
         path: 'inventario',

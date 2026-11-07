@@ -1,0 +1,58 @@
+<header class="encabezado">
+  <div>
+    <h1>Tallas esperadas</h1>
+    <p class="bajada">
+      Tallas y colores agotados en toda la red que hay clientes esperando. Cuando entra mercadería,
+      a cada uno le llega un aviso automático y la fila desaparece de esta lista.
+    </p>
+  </div>
+  <button matButton type="button" (click)="cargar()" [disabled]="cargando()">
+    <mat-icon>refresh</mat-icon>
+    Actualizar
+  </button>
+</header>
+
+<mat-card appearance="outlined">
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Cargando las tallas esperadas" />
+  }
+  @if (error(); as mensaje) {
+    <p class="mensaje" role="alert"><mat-icon>error_outline</mat-icon> {{ mensaje }}</p>
+  } @else if (!cargando() && filas().length === 0) {
+    <p class="mensaje">
+      <mat-icon>check_circle</mat-icon>
+      Ningún cliente está esperando una talla agotada.
+    </p>
+  } @else if (filas().length) {
+    <p class="resumen">
+      {{ totalClientes() }} {{ totalClientes() === 1 ? 'pedido' : 'pedidos' }} de aviso en
+      {{ filas().length }} {{ filas().length === 1 ? 'talla' : 'tallas' }}.
+    </p>
+    <div class="tabla">
+      <table>
+        <thead>
+          <tr>
+            <th>Prenda</th>
+            <th>Talla</th>
+            <th>Color</th>
+            <th>SKU</th>
+            <th class="numero">Clientes esperando</th>
+            <th>Desde</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (f of filas(); track f.variante_id) {
+            <tr>
+              <td>{{ f.producto }}</td>
+              <td>{{ f.talla }}</td>
+              <td>{{ f.color }}</td>
+              <td class="sku">{{ f.sku }}</td>
+              <td class="numero">{{ f.clientes }}</td>
+              <td>{{ f.esperando_desde | date: 'dd/MM/yyyy' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</mat-card>

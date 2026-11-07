@@ -30,7 +30,9 @@ import '../../data/modelos/catalogo.dart';
 import '../../data/repositorios/repositorio_catalogo.dart';
 import '../compra/estado_compra.dart';
 import '../reservas/estado_reservas.dart';
+import '../auth/estado_sesion.dart';
 import 'boton_favorito.dart';
+import 'estado_avisos_talla.dart';
 import 'estado_catalogo.dart';
 import '../../core/moneda.dart';
 
@@ -701,9 +703,15 @@ class _Disponibilidad extends ConsumerWidget {
             if (!stock.hayStock) {
               // No es un error: la prenda existe y se ofrece, lo que no hay es
               // stock. Decirlo asi evita que parezca que desaparecio.
-              return const _Nota(
-                'Sin unidades disponibles por ahora en ninguna sucursal.',
-                icono: Icons.info_outline,
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _Nota(
+                    'Sin unidades disponibles por ahora en ninguna sucursal.',
+                    icono: Icons.info_outline,
+                  ),
+                  _BotonAvisame(variante: elegida),
+                ],
               );
             }
             return Column(
@@ -770,6 +778,69 @@ class _Disponibilidad extends ConsumerWidget {
             );
           },
         );
+  }
+}
+
+/// Aporte propio · «Avísame cuando llegue mi talla».
+///
+/// Solo para el cliente con sesión: el aviso es de alguien. Si ya lo pidió, se
+/// dice en lugar de ofrecerlo otra vez.
+class _BotonAvisame extends ConsumerStatefulWidget {
+  const _BotonAvisame({required this.variante});
+
+  final VariantePrenda variante;
+
+  @override
+  ConsumerState<_BotonAvisame> createState() => _BotonAvisameState();
+}
+
+class _BotonAvisameState extends ConsumerState<_BotonAvisame> {
+  bool _pidiendo = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final sesion = ref.watch(sesionProvider);
+    if (sesion is! SesionAbierta || !sesion.usuario.esCliente) {
+      return const SizedBox.shrink();
+    }
+    final yaEspera =
+        ref.watch(avisosTallaProvider).value?.contains(widget.variante.id) ?? false;
+    if (yaEspera) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 8),
+        child: _Nota(
+          'Le avisaremos cuando llegue esta talla.',
+          icono: Icons.notifications_active,
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: OutlinedButton.icon(
+        icon: const Icon(Icons.notifications),
+        label: Text(_pidiendo ? 'Pidiendo…' : 'Avísenme cuando llegue'),
+        onPressed: _pidiendo ? null : _pedir,
+      ),
+    );
+  }
+
+  Future<void> _pedir() async {
+    setState(() => _pidiendo = true);
+    String mensaje =
+        'Listo. Le avisaremos por notificación y correo cuando llegue.';
+    try {
+      await ref.read(avisosTallaProvider.notifier).pedir(widget.variante.id);
+    } on ErrorApi catch (fallo) {
+      mensaje = fallo.mensaje;
+      if (fallo.codigo == 409) {
+        ref.invalidate(disponibilidadProvider(widget.variante.id));
+      }
+    }
+    if (!mounted) return;
+    setState(() => _pidiendo = false);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(mensaje)));
   }
 }
 

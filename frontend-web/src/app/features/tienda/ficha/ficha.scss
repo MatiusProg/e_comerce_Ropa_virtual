@@ -176,6 +176,21 @@
 
 .sku,
 .pendiente,
+// Aporte propio · «Avísame cuando llegue mi talla».
+.avisame {
+  margin-top: 0.6rem;
+}
+
+.aviso-pedido {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+  color: var(--vb-malva-oscuro);
+}
+
 .sin-stock {
   display: flex;
   align-items: center;

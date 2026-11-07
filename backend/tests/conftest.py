@@ -73,6 +73,7 @@ from app.modules.catalogo import ofertas_models as modelos_ofertas  # noqa: E402
 from app.modules.roles import models as modelos_roles  # noqa: E402,F401
 from app.modules.datos import models as modelos_datos  # noqa: E402,F401
 from app.modules.analitica import models as modelos_analitica  # noqa: E402,F401
+from app.modules.avisos_talla import models as modelos_avisos_talla  # noqa: E402,F401
 from app.modules.seguridad import models as modelos_seguridad  # noqa: E402,F401
 from app.modules.ventas import carrito_models as modelos_carrito  # noqa: E402,F401
 
@@ -94,6 +95,8 @@ TABLAS_VOLATILES = (
     # huerfanos de una prueba en la siguiente --- y varias cuentan cuantos
     # asientos hay.
     "bitacora",
+    # Aporte propio (0042): apunta a cliente, variante y notificación.
+    "aviso_talla",
     # CU-40: apunta a `usuario` con ON DELETE CASCADE, asi que el CASCADE la
     # limpiaria por rebote. Se nombra igual, por el mismo motivo que
     # `empleado`: depender de un detalle del esquema para la limpieza hace que
