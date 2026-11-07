@@ -28,6 +28,7 @@ from app.modules.catalogo import promociones_models as _promociones_models  # no
 from app.modules.catalogo import ofertas_models as _ofertas_models  # noqa: F401
 from app.modules.roles import models as _roles_models  # noqa: F401
 from app.modules.datos import models as _datos_models  # noqa: F401
+from app.modules.analitica import models as _analitica_models  # noqa: F401
 
 # Ciclo 2 - descomentar al implementarlos
 from app.modules.inventario import models as _inventario_models  # noqa: F401

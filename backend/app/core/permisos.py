@@ -87,6 +87,8 @@ CATALOGO: tuple[Permiso, ...] = (
     Permiso("tablero.ver", "Ver el tablero de indicadores", "Reportes", _SOLO_A,
             ("/reportes/tablero",)),
     Permiso("bitacora.ver", "Ver la bitácora", "Reportes", _SOLO_A, ("/bitacora",)),
+    Permiso("analitica.usar", "Entrenar y consultar la analítica con ML", "Reportes", _SOLO_A,
+            ("/analitica",), funcion="analitica_ml"),
     # --- Administración ------------------------------------------------------
     Permiso("catalogo.gestionar", "Gestionar el catálogo", "Administración", _SOLO_A,
             ("/catalogo",)),

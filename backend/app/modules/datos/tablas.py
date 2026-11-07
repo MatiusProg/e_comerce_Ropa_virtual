@@ -36,6 +36,10 @@ FUERA_DE_LA_COPIA = frozenset({
     "notificacion",
     "respaldo",
     "restauracion",
+    # CU-29: los modelos se vuelven a entrenar en segundos, y restaurar un
+    # modelo serializado (joblib) desde un archivo subido sería ejecutar lo
+    # que ese archivo traiga. Nunca entra ni sale por la copia.
+    "modelo_analitica",
 })
 
 #: En la exportación (CU-39) entra casi todo. Se deja afuera lo que no se lee
@@ -43,7 +47,7 @@ FUERA_DE_LA_COPIA = frozenset({
 #: - el contenido cifrado de las copias;
 #: - los dispositivos push: el endpoint y sus claves bastan para mandarle
 #:   avisos a ese teléfono o navegador.
-FUERA_DE_LA_EXPORTACION = frozenset({"respaldo", "suscripcion_push"})
+FUERA_DE_LA_EXPORTACION = frozenset({"respaldo", "suscripcion_push", "modelo_analitica"})
 
 #: Columnas sueltas que no salen en la exportación, por tabla. El cuerpo crudo
 #: de la pasarela trae datos del pago (correo, últimos dígitos, metadatos de

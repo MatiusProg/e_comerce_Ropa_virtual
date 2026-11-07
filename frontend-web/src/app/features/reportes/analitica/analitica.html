@@ -1,0 +1,234 @@
+<header class="encabezado">
+  <div>
+    <h1 class="vb-titulo">Analítica inteligente</h1>
+    <p class="bajada">
+      Modelos de machine learning entrenados con los datos de su empresa, completados con datos
+      sintéticos: la demanda de la semana que viene y los grupos de clientes.
+    </p>
+  </div>
+  @if (error()?.tipo !== 'plan') {
+    <div class="acciones">
+      <button matButton="filled" class="vb-boton-marca" type="button"
+              [disabled]="entrenando() || cargando()" (click)="entrenar()">
+        <mat-icon>model_training</mat-icon>
+        {{ entrenando() ? 'Entrenando…' : (datos()?.entrenado ? 'Volver a entrenar' : 'Entrenar los modelos') }}
+      </button>
+      @if (datos()?.entrenado) {
+        <button matButton="outlined" type="button" [disabled]="!!descargando()" (click)="descargar('pdf')"
+                aria-label="Descargar el reporte en PDF">
+          <mat-icon>picture_as_pdf</mat-icon>
+          {{ descargando() === 'pdf' ? 'Preparando…' : 'PDF' }}
+        </button>
+        <button matButton="outlined" type="button" [disabled]="!!descargando()" (click)="descargar('xlsx')"
+                aria-label="Descargar el reporte en Excel">
+          <mat-icon>table_view</mat-icon>
+          {{ descargando() === 'xlsx' ? 'Preparando…' : 'Excel' }}
+        </button>
+      }
+    </div>
+  }
+</header>
+
+@if (cargando() || entrenando()) {
+  <mat-progress-bar mode="indeterminate" />
+  @if (entrenando()) {
+    <p class="nota">Generando los datos, entrenando y validando los dos modelos. Tarda unos segundos.</p>
+  }
+}
+
+@if (error(); as e) {
+  @if (e.tipo === 'plan') {
+    <p class="bloqueo">
+      <mat-icon>lock</mat-icon>
+      {{ e.mensaje }} <a routerLink="/admin/mi-plan">Ver mi plan</a>
+    </p>
+  } @else {
+    <p class="error" role="alert"><mat-icon>error</mat-icon> {{ e.mensaje }}</p>
+  }
+}
+
+@if (datos(); as d) {
+  @if (!d.entrenado) {
+    <mat-card class="tarjeta vacio" appearance="outlined">
+      <mat-card-content>
+        <mat-icon>insights</mat-icon>
+        <p>Todavía no se entrenaron los modelos. Presione <strong>Entrenar los modelos</strong> para ver
+          la demanda prevista y los segmentos de clientes.</p>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <!-- ======================= Métricas ======================= -->
+    @if (demanda(); as dm) {
+      <section class="kpis" aria-label="Métricas de los modelos">
+        <mat-card class="kpi" appearance="outlined">
+          <span class="etiqueta" matTooltip="Error absoluto medio en las 12 semanas de prueba: cuántas unidades se equivoca, en promedio, por producto y semana.">
+            MAE (error medio)</span>
+          <span class="valor">{{ dm.metricas.mae | number: '1.2-2' }} u.</span>
+          <span class="detalle">Línea base: {{ dm.metricas.mae_linea_base | number: '1.2-2' }} u.
+            · {{ dm.metricas.mejora_sobre_base_pct | number: '1.0-1' }} % mejor</span>
+        </mat-card>
+        <mat-card class="kpi" appearance="outlined">
+          <span class="etiqueta" matTooltip="Coeficiente de determinación: qué parte de la variación de las ventas explica el modelo (1 es perfecto).">R²</span>
+          <span class="valor">{{ dm.metricas.r2 | number: '1.3-3' }}</span>
+          <span class="detalle">RMSE {{ dm.metricas.rmse | number: '1.2-2' }} u.</span>
+        </mat-card>
+        @if (segmentos(); as sg) {
+          <mat-card class="kpi" appearance="outlined">
+            <span class="etiqueta" matTooltip="De -1 a 1: cuánto más cerca está cada cliente de su grupo que del grupo vecino. Se eligió el k con la silueta más alta.">
+              Silueta (K-means)</span>
+            <span class="valor">{{ sg.metricas.silueta | number: '1.3-3' }}</span>
+            <span class="detalle">{{ sg.metricas.k }} grupos de clientes</span>
+          </mat-card>
+        }
+        <mat-card class="kpi" appearance="outlined">
+          <span class="etiqueta">Datos de entrenamiento</span>
+          <span class="valor">{{ dm.filas_entrenamiento | number }}</span>
+          <span class="detalle">{{ dm.filas_reales | number }} semanas con ventas reales ·
+            {{ dm.filas_sinteticas | number }} sintéticas</span>
+        </mat-card>
+      </section>
+      <p class="nota">
+        Entrenado el {{ dm.entrenado_en | date: 'dd/MM/yyyy HH:mm' }}. Validación con corte temporal:
+        el modelo se mide sobre las últimas {{ dm.metricas.semanas_de_prueba }} semanas, que no vio al entrenar.
+      </p>
+    }
+
+    <!-- ======================= Demanda ======================= -->
+    @if (prediccion(); as p) {
+      <div class="rejilla">
+        <mat-card class="tarjeta" appearance="outlined">
+          <mat-card-content>
+            <h2 class="subtitulo"><mat-icon>show_chart</mat-icon> Validación: prevista vs. real</h2>
+            <p class="nota">Unidades totales por semana en el período de prueba.</p>
+            @if (graficoValidacion(); as g) {
+              <div class="lienzo"><canvas baseChart type="line" [data]="g" [options]="opcionesLinea"></canvas></div>
+            }
+          </mat-card-content>
+        </mat-card>
+        <mat-card class="tarjeta" appearance="outlined">
+          <mat-card-content>
+            <h2 class="subtitulo"><mat-icon>tune</mat-icon> Qué pesa en la predicción</h2>
+            <p class="nota">Importancia de cada variable en el modelo de gradient boosting.</p>
+            @if (graficoImportancia(); as g) {
+              <div class="lienzo"><canvas baseChart type="bar" [data]="g" [options]="opcionesBarraH"></canvas></div>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <mat-card class="tarjeta" appearance="outlined">
+        <mat-card-content>
+          <h2 class="subtitulo"><mat-icon>inventory</mat-icon>
+            Demanda prevista · semana del {{ fechaLarga(p.semana_prevista) }}</h2>
+          <p class="nota">Los {{ top().length }} productos con más unidades previstas
+            (total de la tienda: {{ p.total_previsto | number: '1.0-0' }} u.).</p>
+          <div class="tabla-envoltura">
+            <table class="tabla">
+              <thead>
+                <tr>
+                  <th scope="col">Producto</th>
+                  <th scope="col">Categoría</th>
+                  <th scope="col" class="num">Prevista</th>
+                  <th scope="col" class="num">Última semana</th>
+                  <th scope="col" class="num">Media 4 sem.</th>
+                  <th scope="col">Tendencia</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (f of top(); track f.producto) {
+                  <tr>
+                    <td>{{ f.producto }}</td>
+                    <td>{{ f.categoria }}</td>
+                    <td class="num fuerte">{{ f.prevista | number: '1.1-1' }}</td>
+                    <td class="num">{{ f.ultima_semana | number: '1.0-0' }}</td>
+                    <td class="num">{{ f.media_4_semanas | number: '1.1-1' }}</td>
+                    <td>
+                      <span class="tendencia" [class]="'tendencia ' + f.tendencia.toLowerCase()">
+                        <mat-icon aria-hidden="true">{{ tendencia(f.tendencia).icono }}</mat-icon>
+                        {{ tendencia(f.tendencia).texto }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <!-- ======================= Segmentos ======================= -->
+    <div class="rejilla">
+      <mat-card class="tarjeta" appearance="outlined">
+        <mat-card-content>
+          <h2 class="subtitulo"><mat-icon>groups</mat-icon> Segmentos de clientes</h2>
+          <p class="nota">K-means sobre recencia, frecuencia y monto (RFM).</p>
+          @if (graficoSegmentos(); as g) {
+            <div class="lienzo"><canvas baseChart type="doughnut" [data]="g" [options]="opcionesDona"></canvas></div>
+          }
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="tarjeta" appearance="outlined">
+        <mat-card-content>
+          <h2 class="subtitulo"><mat-icon>bar_chart</mat-icon> Cómo se eligió el número de grupos</h2>
+          <p class="nota">Silueta para cada k probado; el resaltado es el elegido.</p>
+          @if (graficoSiluetas(); as g) {
+            <div class="lienzo"><canvas baseChart type="bar" [data]="g" [options]="opcionesBarra"></canvas></div>
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <section class="segmentos" aria-label="Detalle de los segmentos">
+      @for (g of d.grupos; track g.grupo) {
+        <mat-card class="segmento" appearance="outlined">
+          <mat-card-content>
+            <h3>{{ g.nombre }}</h3>
+            <p class="cifras">
+              <strong>{{ g.clientes }}</strong> clientes ({{ g.clientes_reales }} reales)
+            </p>
+            <ul class="rfm">
+              <li>Última compra hace <strong>{{ g.recencia_dias | number: '1.0-0' }}</strong> días</li>
+              <li><strong>{{ g.compras | number: '1.1-1' }}</strong> compras en promedio</li>
+              <li><strong>{{ g.monto | bs }}</strong> gastados en promedio</li>
+            </ul>
+            <p class="accion"><mat-icon aria-hidden="true">lightbulb</mat-icon> {{ g.accion }}</p>
+          </mat-card-content>
+        </mat-card>
+      }
+    </section>
+
+    @if (clientes().length) {
+      <mat-card class="tarjeta" appearance="outlined">
+        <mat-card-content>
+          <h2 class="subtitulo"><mat-icon>person_search</mat-icon> Sus clientes en cada segmento</h2>
+          <p class="nota">Clasificados hoy con el modelo guardado, sin reentrenar. Los de mayor gasto primero.</p>
+          <div class="tabla-envoltura">
+            <table class="tabla">
+              <thead>
+                <tr>
+                  <th scope="col">Cliente</th>
+                  <th scope="col">Segmento</th>
+                  <th scope="col" class="num">Días desde la última compra</th>
+                  <th scope="col" class="num">Compras</th>
+                  <th scope="col" class="num">Monto</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of clientes(); track c.cliente_id) {
+                  <tr>
+                    <td>{{ c.cliente }}</td>
+                    <td>{{ c.segmento }}</td>
+                    <td class="num">{{ c.recencia_dias | number: '1.0-0' }}</td>
+                    <td class="num">{{ c.compras }}</td>
+                    <td class="num">{{ c.monto | bs }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+  }
+}
