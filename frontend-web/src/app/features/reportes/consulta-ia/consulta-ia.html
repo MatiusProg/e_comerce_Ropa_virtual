@@ -1,0 +1,152 @@
+<section class="consulta-ia">
+  <header>
+    <h1>Reportes con IA</h1>
+    <p class="ayuda">
+      Pida el reporte con sus palabras, escribiendo o hablando. Se arma con los datos reales de
+      su empresa y se puede exportar a PDF o Excel.
+    </p>
+  </header>
+
+  <mat-card class="pedido">
+    <form (ngSubmit)="consultar()">
+      <mat-form-field appearance="outline" class="campo">
+        <mat-label>¿Qué reporte necesita?</mat-label>
+        <textarea
+          matInput
+          [formControl]="pedido"
+          rows="2"
+          maxlength="500"
+          placeholder="Ej.: ventas de septiembre agrupadas por sucursal"
+          (keydown.enter)="$event.preventDefault(); consultar()"
+        ></textarea>
+        @if (dictado.escuchando()) {
+          <mat-hint>Escuchando… hable ahora.</mat-hint>
+        }
+        @if (pedido.touched && pedido.invalid) {
+          <mat-error>Escriba al menos 3 letras.</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="acciones">
+        @if (dictado.soportado()) {
+          <button
+            mat-stroked-button
+            type="button"
+            (click)="hablar()"
+            [attr.aria-label]="dictado.escuchando() ? 'Detener el dictado' : 'Dictar el pedido'"
+            [class.escuchando]="dictado.escuchando()"
+          >
+            <mat-icon>{{ dictado.escuchando() ? 'stop' : 'mic' }}</mat-icon>
+            {{ dictado.escuchando() ? 'Detener' : 'Hablar' }}
+          </button>
+        }
+        <button mat-flat-button color="primary" type="submit" [disabled]="consultando()">
+          <mat-icon>auto_awesome</mat-icon>
+          Generar
+        </button>
+      </div>
+    </form>
+    @if (consultando()) {
+      <mat-progress-bar mode="indeterminate" aria-label="Generando el reporte"></mat-progress-bar>
+    }
+
+    <div class="ejemplos" aria-label="Ejemplos de pedidos">
+      @for (e of ejemplos; track e) {
+        <button mat-stroked-button type="button" class="ejemplo" (click)="usarEjemplo(e)">
+          {{ e }}
+        </button>
+      }
+    </div>
+  </mat-card>
+
+  @if (resultado(); as r) {
+    @if (!r.entendido) {
+      <mat-card class="no-entendido" role="alert">
+        <mat-icon>help_outline</mat-icon>
+        <div>
+          <strong>No pude armar ese reporte.</strong>
+          <p>{{ r.motivo }}</p>
+        </div>
+      </mat-card>
+    } @else {
+      <mat-card class="resultado">
+        <div class="cabecera">
+          <div>
+            <p class="entendido">
+              Entendí: <strong>{{ r.resumen }}</strong>
+              @if (r.interprete === 'reglas') {
+                <span
+                  class="sin-ia"
+                  matTooltip="El modelo de IA no respondió: el pedido se interpretó con reglas."
+                  >sin IA</span
+                >
+              }
+            </p>
+            <h2>{{ r.titulo }}</h2>
+            @for (s of r.subtitulos; track s) {
+              <p class="subtitulo">{{ s }}</p>
+            }
+          </div>
+          <div class="exportar">
+            <button mat-stroked-button (click)="exportar('pdf')" [disabled]="bajando() !== null">
+              <mat-icon>picture_as_pdf</mat-icon>
+              {{ bajando() === 'pdf' ? 'Generando…' : 'PDF' }}
+            </button>
+            <button mat-stroked-button (click)="exportar('xlsx')" [disabled]="bajando() !== null">
+              <mat-icon>table_view</mat-icon>
+              {{ bajando() === 'xlsx' ? 'Generando…' : 'Excel' }}
+            </button>
+          </div>
+        </div>
+
+        @if (r.narrativa) {
+          <p class="narrativa"><mat-icon>insights</mat-icon> {{ r.narrativa }}</p>
+        }
+
+        @if (hayGrafico()) {
+          <div class="grafico">
+            <canvas
+              baseChart
+              [type]="tipoGrafico()"
+              [data]="datosGrafico()"
+              [options]="opcionesGrafico"
+              aria-label="Gráfico del reporte"
+            ></canvas>
+          </div>
+        }
+
+        @if (r.filas.length) {
+          <div class="tabla">
+            <table>
+              <thead>
+                <tr>
+                  @for (h of r.encabezados; track $index) {
+                    <th>{{ h }}</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (f of r.filas; track $index) {
+                  <tr>
+                    @for (c of f; track $index; let i = $index) {
+                      <td [class.numero]="i === f.length - 1">{{ formatear(c, i) }}</td>
+                    }
+                  </tr>
+                }
+              </tbody>
+              @if (r.total) {
+                <tfoot>
+                  <tr>
+                    @for (c of r.total; track $index; let i = $index) {
+                      <td [class.numero]="i === r.total.length - 1">{{ formatear(c, i) }}</td>
+                    }
+                  </tr>
+                </tfoot>
+              }
+            </table>
+          </div>
+        }
+      </mat-card>
+    }
+  }
+</section>

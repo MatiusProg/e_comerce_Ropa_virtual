@@ -341,6 +341,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/reportes/exportar/exportar').then((m) => m.Exportar),
       },
+      {
+        // 2do parcial · CU-27 · el reporte que se arma según lo que se pide.
+        path: 'reportes-ia',
+        title: 'Reportes con IA · Violet Boutique',
+        loadComponent: () =>
+          import('./features/reportes/consulta-ia/consulta-ia').then((m) => m.ConsultaIa),
+      },
       // CU-42 · la bitacora. Va dentro de 'admin' porque la guarda del padre
       // ya resuelve el rol, y porque es donde la va a buscar quien la
       // necesite: al lado de los reportes, no en una seccion propia.
@@ -471,6 +478,13 @@ export const routes: Routes = [
         title: 'Traspasos · Violet Boutique',
         loadComponent: () =>
           import('./features/sucursal/traspasos/traspasos').then((m) => m.Traspasos),
+      },
+      {
+        // 2do parcial · CU-27 · el reporte que se arma según lo que se pide.
+        path: 'reportes-ia',
+        title: 'Reportes con IA · Violet Boutique',
+        loadComponent: () =>
+          import('./features/reportes/consulta-ia/consulta-ia').then((m) => m.ConsultaIa),
       },
       {
         // CU-40 · la misma pantalla que /avisos, colgada de esta cáscara para

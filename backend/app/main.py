@@ -106,6 +106,7 @@ from app.modules.notificaciones.router import (
     mantenimiento_router as notificaciones_mantenimiento_router,
 )
 from app.modules.reportes.reportes_router import router as reportes_router
+from app.modules.reportes.dinamico_router import router as reportes_ia_router
 # 2do parcial
 from app.modules.plataforma.router import router as plataforma_router
 from app.modules.plataforma.mi_plan.router import router as mi_plan_router
@@ -270,6 +271,7 @@ app.include_router(devoluciones_web_cliente, prefix=API)
 app.include_router(devoluciones_web_sucursal, prefix=API)
 app.include_router(ia_router, prefix=API)
 app.include_router(asistente_router, prefix=API)
+app.include_router(reportes_ia_router, prefix=API)  # CU-27, antes que /reportes/{tipo}
 app.include_router(reportes_router, prefix=API)
 app.include_router(bitacora_router, prefix=API)
 app.include_router(notificaciones_router, prefix=API)

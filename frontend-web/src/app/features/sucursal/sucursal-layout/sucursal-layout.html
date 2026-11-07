@@ -62,6 +62,12 @@
       Traspasos
     </a>
   }
+  @if (puede('reportes_ia.usar')) {
+    <a routerLink="/sucursal/reportes-ia" routerLinkActive="activo">
+      <mat-icon>auto_awesome</mat-icon>
+      Reportes con IA
+    </a>
+  }
 </nav>
 
 <main class="contenido">

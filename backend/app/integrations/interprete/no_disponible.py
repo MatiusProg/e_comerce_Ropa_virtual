@@ -27,3 +27,6 @@ class InterpreteNoDisponible:
             "El pedido por voz no está configurado. Se habilita con "
             "IA_PROVEEDOR y IA_API_KEY."
         )
+
+    def interpretar_consulta(self, texto: str, vocabulario: dict, hoy: date) -> dict | None:
+        raise InterpreteNoConfigurado("No hay modelo configurado para los reportes con IA.")
