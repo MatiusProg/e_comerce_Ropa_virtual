@@ -41,6 +41,12 @@ class Settings(BaseSettings):
 
     # --- Seguridad (RNF01) -----------------------------------------------
     JWT_SECRET_KEY: str = "cambiar-esta-clave-en-produccion"
+    # CU-40: la clave con que se firman y cifran las copias de seguridad.
+    # Propia, para que una filtración de la del token no permita fabricar una
+    # copia «firmada» ni leer las guardadas (y al revés). Vacía = se usa la del
+    # token, como hasta la tanda B; las copias viejas, firmadas con esa, se
+    # siguen leyendo aunque se configure esta.
+    RESPALDO_SECRET: str = ""
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 8
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7

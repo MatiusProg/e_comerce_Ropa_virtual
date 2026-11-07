@@ -41,7 +41,7 @@ import hmac
 import json
 from datetime import datetime, timedelta
 
-from cryptography.fernet import Fernet, InvalidToken
+from cryptography.fernet import Fernet, InvalidToken, MultiFernet
 from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.orm import Session
 
@@ -73,22 +73,43 @@ class ErrorDeDatos(Exception):
 #  Firma y cifrado
 # =====================================================================
 
-def _secreto() -> bytes:
-    return settings.JWT_SECRET_KEY.encode()
+def _secretos() -> list[bytes]:
+    """La clave de las copias primero; después, la del token, con la que se
+    firmaron las copias hechas antes de que existiera `RESPALDO_SECRET`.
+
+    Se firma y cifra siempre con la primera; se acepta cualquiera al leer.
+    """
+    propia = settings.RESPALDO_SECRET.strip()
+    heredada = settings.JWT_SECRET_KEY
+    if not propia or propia == heredada:
+        return [heredada.encode()]
+    return [propia.encode(), heredada.encode()]
 
 
 def _canonico(cuerpo: dict) -> bytes:
     return json.dumps(cuerpo, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
 
 
+def _firma_con(secreto: bytes, cuerpo: dict) -> str:
+    return hmac.new(secreto, _canonico(cuerpo), hashlib.sha256).hexdigest()
+
+
 def _firmar(cuerpo: dict) -> str:
-    return hmac.new(_secreto(), _canonico(cuerpo), hashlib.sha256).hexdigest()
+    return _firma_con(_secretos()[0], cuerpo)
 
 
-def _fernet() -> Fernet:
-    # Una clave propia de las copias, derivada de la del servidor.
-    clave = hashlib.sha256(b"violet-respaldos:" + _secreto()).digest()
-    return Fernet(base64.urlsafe_b64encode(clave))
+def _firma_valida(firma: str, cuerpo: dict) -> bool:
+    return any(hmac.compare_digest(firma, _firma_con(s, cuerpo)) for s in _secretos())
+
+
+def _fernet() -> MultiFernet:
+    # Una clave de cifrado derivada de cada secreto. MultiFernet cifra con la
+    # primera y descifra con cualquiera: las automáticas viejas se siguen
+    # pudiendo restaurar después de configurar `RESPALDO_SECRET`.
+    return MultiFernet([
+        Fernet(base64.urlsafe_b64encode(hashlib.sha256(b"violet-respaldos:" + s).digest()))
+        for s in _secretos()
+    ])
 
 
 # =====================================================================
@@ -272,7 +293,7 @@ def _leer(archivo: bytes, empresa_id: int) -> dict:
     if cuerpo.get("version") != VERSION:
         raise ErrorDeDatos("La copia es de una versión que esta instalación no sabe leer.")
     firma = cuerpo.pop("firma", None)
-    if not isinstance(firma, str) or not hmac.compare_digest(firma, _firmar(cuerpo)):
+    if not isinstance(firma, str) or not _firma_valida(firma, cuerpo):
         raise ErrorDeDatos("La copia fue alterada o está dañada: su firma no coincide.")
     if cuerpo.get("empresa_id") != empresa_id:
         raise ErrorDeDatos("La copia es de otra empresa: solo se restaura en la suya.")

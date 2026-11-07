@@ -391,3 +391,44 @@ def test_la_configuracion_dice_si_hay_web_push(api: TestClient, cabeceras_client
 
 def test_sin_sesion_no_se_registra_un_dispositivo(api: TestClient) -> None:
     assert api.post(DISPOSITIVOS, json={"canal": "FCM", "direccion": "x" * 20}).status_code == 401
+
+
+# --- Tanda B de la auditoría: seguridad de los dispositivos -----------------
+
+_CLAVES = {"clave_p256dh": "p" * 40, "clave_auth": "a" * 16}
+
+
+def test_webpush_solo_acepta_servicios_de_push_conocidos(
+    api: TestClient, cabeceras_cliente: dict
+) -> None:
+    # El servidor le hace un POST al endpoint: una URL interna sería SSRF.
+    for url in ("https://169.254.169.254/latest/meta-data",
+                "https://fcm.googleapis.com.evil.example/x",
+                "https://localhost:8000/api/v1/x"):
+        r = _registrar(api, cabeceras_cliente, url, canal="WEBPUSH", **_CLAVES)
+        assert r.status_code == 422, url
+    for url in ("https://fcm.googleapis.com/fcm/send/abc",
+                "https://updates.push.services.mozilla.com/wpush/v2/abc",
+                "https://wns2-bl2p.notify.windows.com/w/?token=abc",
+                "https://web.push.apple.com/abc"):
+        assert _registrar(api, cabeceras_cliente, url, canal="WEBPUSH",
+                          **_CLAVES).status_code == 201, url
+
+
+def test_un_navegador_ajeno_no_se_reasigna_sin_sus_claves(
+    api: TestClient, cajero: dict, encargado: dict
+) -> None:
+    url = "https://fcm.googleapis.com/fcm/send/navegador-de-la-caja"
+    assert _registrar(api, cajero["cab"], url, canal="WEBPUSH", **_CLAVES).status_code == 201
+
+    # Con saber el endpoint no alcanza: sin las mismas claves, 409.
+    otras = {"clave_p256dh": "q" * 40, "clave_auth": "b" * 16}
+    r = _registrar(api, encargado, url, canal="WEBPUSH", **otras)
+    assert r.status_code == 409, r.text
+    assert len(api.get(DISPOSITIVOS, headers=cajero["cab"]).json()) == 1
+    assert api.get(DISPOSITIVOS, headers=encargado).json() == []
+
+    # El mismo navegador (mismas claves) sí pasa a quien inició sesión ahora.
+    assert _registrar(api, encargado, url, canal="WEBPUSH", **_CLAVES).status_code == 201
+    assert api.get(DISPOSITIVOS, headers=cajero["cab"]).json() == []
+    assert len(api.get(DISPOSITIVOS, headers=encargado).json()) == 1

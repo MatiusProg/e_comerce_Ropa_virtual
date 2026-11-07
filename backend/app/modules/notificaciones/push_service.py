@@ -24,6 +24,7 @@ deja la notificación FALLIDA con el motivo; un dispositivo que ya no existe
 
 from __future__ import annotations
 
+import hmac
 import logging
 
 from sqlalchemy import delete, exists, select
@@ -68,12 +69,21 @@ def registrar(db: Session, usuario_id: int, datos: SuscripcionPushIn) -> Suscrip
     Idempotente por la dirección: la app registra su token en cada inicio de
     sesión y el navegador reenvía su suscripción; no se duplican. Si el
     dispositivo era de otra persona de la misma tienda —el mismo teléfono de
-    la caja con otro cajero—, pasa a quien inició sesión ahora.
+    la caja con otro cajero que no cerró sesión—, pasa a quien inició sesión
+    ahora, **pero solo si demuestra tenerlo** (ver `_puede_quedarselo`): con
+    saber la dirección no alcanza para robarle los avisos a otro.
     """
-    fila = db.scalar(select(SuscripcionPush).where(SuscripcionPush.direccion == datos.direccion))
+    fila = db.scalar(
+        select(SuscripcionPush)
+        .where(SuscripcionPush.direccion == datos.direccion)
+        .with_for_update()
+    )
     if fila is None:
         fila = SuscripcionPush(direccion=datos.direccion)
         db.add(fila)
+    elif fila.usuario_id != usuario_id and not _puede_quedarselo(fila, datos):
+        db.rollback()
+        raise DispositivoAjeno()
     fila.usuario_id = usuario_id
     fila.canal = datos.canal
     fila.clave_p256dh = datos.clave_p256dh
@@ -84,6 +94,31 @@ def registrar(db: Session, usuario_id: int, datos: SuscripcionPushIn) -> Suscrip
     return SuscripcionPushOut(
         id=fila.id, canal=fila.canal, dispositivo=fila.dispositivo, creada_en=fila.creada_en
     )
+
+
+class DispositivoAjeno(Exception):
+    """El dispositivo está registrado a otra persona y quien lo pide no
+    demostró tenerlo en la mano."""
+
+
+def _puede_quedarselo(fila: SuscripcionPush, datos: SuscripcionPushIn) -> bool:
+    """¿Quien manda esta suscripción tiene el dispositivo?
+
+    - Web Push: las claves `p256dh` y `auth` las genera el navegador y no
+      viajan en ningún aviso; solo las conoce quien tiene la suscripción. Si
+      coinciden con las guardadas, es el mismo navegador.
+    - FCM: el token lo entrega Firebase a la app instalada y no se publica
+      en ningún lado; tenerlo es tener el teléfono.
+    """
+    if fila.canal != datos.canal:
+        return False
+    if datos.canal == "WEBPUSH":
+        return bool(
+            fila.clave_p256dh and fila.clave_auth
+            and hmac.compare_digest(fila.clave_p256dh, datos.clave_p256dh or "")
+            and hmac.compare_digest(fila.clave_auth, datos.clave_auth or "")
+        )
+    return True
 
 
 def dar_de_baja(db: Session, usuario_id: int, direccion: str) -> bool:
@@ -165,11 +200,22 @@ def despachar(
         if not ids:
             return DespachoOut(intentadas=0, enviadas=0, fallidas=0)
         consulta = consulta.where(Notificacion.id.in_(ids))
-    pendientes = list(
-        db.scalars(consulta.order_by(Notificacion.creada_en.asc()).limit(limite))
+    # De a una, bloqueada con SKIP LOCKED: la sincronización (con ids) y el
+    # mantenimiento pueden correr a la vez —y gunicorn tiene dos workers—.
+    # Sin el bloqueo, los dos leían la misma PENDIENTE y el teléfono vibraba
+    # dos veces. Con él, el segundo la saltea; y al confirmarla ya no es
+    # PENDIENTE, así que no vuelve a salir.
+    consulta = (
+        consulta.order_by(Notificacion.creada_en.asc(), Notificacion.id.asc())
+        .limit(1)
+        .with_for_update(skip_locked=True)
     )
-    enviadas = fallidas = 0
-    for n in pendientes:
+    intentadas = enviadas = fallidas = 0
+    while intentadas < limite:
+        n = db.scalar(consulta)
+        if n is None:
+            break
+        intentadas += 1
         llego, error = _entregar(db, n)
         if llego:
             n.push_estado = "ENVIADO"
@@ -184,7 +230,7 @@ def despachar(
             n.push_error = error
             fallidas += 1
         db.commit()
-    return DespachoOut(intentadas=len(pendientes), enviadas=enviadas, fallidas=fallidas)
+    return DespachoOut(intentadas=intentadas, enviadas=enviadas, fallidas=fallidas)
 
 
 def despachar_sin_fallar(db: Session, ids: list[int]) -> None:

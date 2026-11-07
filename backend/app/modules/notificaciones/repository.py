@@ -124,19 +124,17 @@ def marcar_leidas(
     return int(db.execute(sentencia).rowcount or 0)
 
 
-def listar_pendientes_de_correo(db: Session, *, limite: int) -> list[Notificacion]:
-    """Las que esperan salir por correo, de la mas vieja a la mas nueva.
+def tomar_pendiente_de_correo(db: Session) -> Notificacion | None:
+    """La PENDIENTE de correo más vieja, bloqueada hasta el commit.
 
-    De la mas vieja primero a proposito: si el proveedor estuvo caido un rato,
-    lo que se acumulo se manda en el orden en que ocurrio.
+    `SKIP LOCKED`: si otro despacho (el otro worker de gunicorn, la tarea
+    automática y el botón a la vez) ya la tiene, se saltea en vez de
+    esperarla, y así ningún correo sale dos veces.
     """
-    return list(
-        db.execute(
-            select(Notificacion)
-            .where(Notificacion.correo_estado == "PENDIENTE")
-            .order_by(Notificacion.creada_en.asc(), Notificacion.id.asc())
-            .limit(limite)
-        )
-        .scalars()
-        .all()
-    )
+    return db.execute(
+        select(Notificacion)
+        .where(Notificacion.correo_estado == "PENDIENTE")
+        .order_by(Notificacion.creada_en.asc(), Notificacion.id.asc())
+        .limit(1)
+        .with_for_update(skip_locked=True)
+    ).scalar_one_or_none()

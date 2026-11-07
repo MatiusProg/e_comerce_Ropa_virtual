@@ -231,3 +231,26 @@ def test_un_analista_admin_solo_entra_a_lo_suyo(api, cabeceras_admin, db) -> Non
     assert api.get("/api/v1/reportes/tablero", headers=cab).status_code == 200
     assert api.get("/api/v1/organizacion/sucursales", headers=cab).status_code == 403
     assert api.get(ROLES, headers=cab).status_code == 403
+
+
+# --- Tanda B de la auditoría ------------------------------------------------
+
+def test_un_rol_propio_que_no_se_encuentra_cierra_en_vez_de_abrir() -> None:
+    """Antes, si el rol propio no aparecía, la persona quedaba con todo su
+    rol base. Ahora es 403, salvo las rutas libres (su sesión, sus avisos)."""
+    from types import SimpleNamespace
+
+    from fastapi import HTTPException
+
+    from app.core.dependencies import _aplicar_rol_propio
+
+    db = SimpleNamespace(get=lambda *_: None)
+    usuario = SimpleNamespace(rol_empresa=None, permisos=None)
+
+    def peticion(ruta):
+        return SimpleNamespace(url=SimpleNamespace(path=ruta))
+
+    with pytest.raises(HTTPException) as e:
+        _aplicar_rol_propio(peticion("/api/v1/catalogo/prendas"), db, usuario, 999)
+    assert e.value.status_code == 403
+    _aplicar_rol_propio(peticion("/api/v1/notificaciones"), db, usuario, 999)

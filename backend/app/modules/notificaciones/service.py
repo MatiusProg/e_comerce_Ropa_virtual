@@ -506,10 +506,15 @@ def despachar_pendientes(db: Session, *, limite: int = TOPE_POR_DESPACHO) -> Des
     corrida siguiente los mandaria de nuevo --- que es el unico error que el
     usuario nota.
     """
-    pendientes = repository.listar_pendientes_de_correo(db, limite=limite)
-    enviadas = fallidas = 0
+    # De a una y bloqueada (SKIP LOCKED): dos despachos a la vez no pueden
+    # tomar la misma. Lo que se confirma deja de ser PENDIENTE y no vuelve.
+    intentadas = enviadas = fallidas = 0
 
-    for notificacion in pendientes:
+    while intentadas < limite:
+        notificacion = repository.tomar_pendiente_de_correo(db)
+        if notificacion is None:
+            break
+        intentadas += 1
         mensaje = _mensaje_de(db, notificacion)
         if mensaje is None:
             notificacion.correo_estado = "OMITIDO"
@@ -540,7 +545,7 @@ def despachar_pendientes(db: Session, *, limite: int = TOPE_POR_DESPACHO) -> Des
         db.commit()
 
     return DespachoOut(
-        intentadas=len(pendientes), enviadas=enviadas, fallidas=fallidas
+        intentadas=intentadas, enviadas=enviadas, fallidas=fallidas
     )
 
 

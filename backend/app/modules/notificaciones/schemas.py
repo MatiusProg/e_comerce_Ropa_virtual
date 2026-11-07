@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Literal
+from urllib.parse import urlsplit
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -91,6 +92,23 @@ class DespachoOut(BaseModel):
 # =====================================================================
 
 
+#: Los servicios de Web Push de los navegadores. El servidor le hace un POST
+#: al endpoint que manda el cliente: sin esta lista, cualquiera con sesión
+#: podría hacerlo pegarle a una URL interna (SSRF). Un host vale si es uno de
+#: estos o un subdominio suyo.
+HOSTS_DE_WEB_PUSH = (
+    "fcm.googleapis.com",           # Chrome, Edge nuevo, Opera, Brave
+    "push.services.mozilla.com",    # Firefox (updates.push.services...)
+    "notify.windows.com",           # Edge viejo (*.notify.windows.com)
+    "push.apple.com",               # Safari (web.push.apple.com)
+)
+
+
+def _es_servicio_de_push(url: str) -> bool:
+    host = (urlsplit(url).hostname or "").lower().rstrip(".")
+    return any(host == h or host.endswith("." + h) for h in HOSTS_DE_WEB_PUSH)
+
+
 class SuscripcionPushIn(BaseModel):
     """Un dispositivo que acepta avisos push.
 
@@ -112,6 +130,11 @@ class SuscripcionPushIn(BaseModel):
                 raise ValueError("Una suscripción web necesita sus claves p256dh y auth.")
             if not self.direccion.startswith("https://"):
                 raise ValueError("El endpoint de Web Push tiene que ser https.")
+            if not _es_servicio_de_push(self.direccion):
+                raise ValueError(
+                    "El endpoint no es de un servicio de Web Push conocido "
+                    "(Chrome, Edge, Firefox o Safari)."
+                )
         return self
 
 

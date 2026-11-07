@@ -1,10 +1,11 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { SwPush } from '@angular/service-worker';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { AuthService } from './auth.service';
 
 /** Dónde se recuerda la suscripción de ESTE navegador, para darla de baja al
  *  cerrar sesión. La lee también `AuthService.cerrarSesion`. */
@@ -32,6 +33,7 @@ export class PushWebService {
   private readonly http = inject(HttpClient);
   private readonly swPush = inject(SwPush);
   private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
   private readonly base = `${environment.apiUrl}/notificaciones/push`;
 
   private readonly clavePublica = signal<string | null>(null);
@@ -51,6 +53,20 @@ export class PushWebService {
   private iniciado = false;
 
   constructor() {
+    // Al cerrar sesión se olvida lo de la sesión: si no, quien entra después
+    // en esta misma pestaña nunca volvía a pasar por `iniciar()` (quedaba
+    // `iniciado = true`) y su navegador no se registraba a su nombre.
+    // Solo en el paso de «con sesión» a «sin sesión»: al arrancar, el usuario
+    // todavía puede estar restaurándose y no hay nada que olvidar.
+    let habiaSesion = false;
+    effect(() => {
+      const haySesion = this.auth.usuario() !== null;
+      if (habiaSesion && !haySesion) {
+        this.iniciado = false;
+        this.clavePublica.set(null);
+      }
+      habiaSesion = haySesion;
+    });
     if (!this.swPush.isEnabled) return;
     this.swPush.subscription.subscribe((s) => this._activo.set(s !== null));
     // Tocar la notificación con la app abierta: navegar dentro de ella.

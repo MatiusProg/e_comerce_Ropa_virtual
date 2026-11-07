@@ -9,7 +9,9 @@ Es una función del plan (`exportar_datos`, CU-05): la ruta la pide con
 `requiere_funcion`.
 
 Del personal sale lo que se ve en la pantalla de usuarios, nunca el hash de la
-contraseña.
+contraseña. Tampoco salen los dispositivos push ni el cuerpo crudo de la
+pasarela (`tablas.FUERA_DE_LA_EXPORTACION`), y todo texto que una planilla
+tomaría por fórmula sale escapado (`tablas.sin_formula`).
 """
 from __future__ import annotations
 
@@ -47,7 +49,8 @@ def _hojas(db: Session, empresa_id: int):
     columnas, filas = _personal(db, empresa_id)
     yield "personal", columnas, filas
     for tabla in tablas.tablas_de_empresa(tablas.FUERA_DE_LA_EXPORTACION):
-        nombres = [c.name for c in tabla.columns]
+        fuera = tablas.COLUMNAS_FUERA_DE_LA_EXPORTACION.get(tabla.name, frozenset())
+        nombres = [c.name for c in tabla.columns if c.name not in fuera]
         yield tabla.name, nombres, [[f[n] for n in nombres] for f in tablas.filas_de(db, tabla)]
 
 
@@ -60,7 +63,7 @@ def a_excel(db: Session, empresa_id: int) -> bytes:
         hoja = libro.create_sheet(nombre[:_LARGO_HOJA])
         hoja.append(columnas)
         for fila in filas:
-            hoja.append([tablas.a_celda(v) for v in fila])
+            hoja.append([tablas.sin_formula(tablas.a_celda(v)) for v in fila])
         cuentas.append((nombre, len(filas)))
     for nombre, n in cuentas:
         resumen.append([nombre, n])
@@ -74,8 +77,8 @@ def _texto(valor) -> str:
         return ""
     valor = tablas.a_json(valor)
     if isinstance(valor, (dict, list)):
-        return json.dumps(valor, ensure_ascii=False)
-    return str(valor)
+        return tablas.sin_formula(json.dumps(valor, ensure_ascii=False))
+    return tablas.sin_formula(str(valor))
 
 
 def a_zip_csv(db: Session, empresa_id: int) -> bytes:
