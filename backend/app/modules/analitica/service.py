@@ -11,6 +11,7 @@ arreglos numéricos ya filtrados por el RLS de la empresa de la sesión.
 """
 from __future__ import annotations
 
+import copy
 import time
 from datetime import date, datetime, timedelta
 
@@ -18,9 +19,10 @@ import numpy as np
 from sqlalchemy.orm import Session
 
 from app.core import tiempo
-from app.modules.analitica import modelos, repository as repo, sinteticos
+from app.modules.analitica import anomalias, modelos, repository as repo, sinteticos
 from app.modules.analitica.models import ModeloAnalitica
 from app.modules.reportes.exportador import Tabla
+from app.modules.seguridad.models import Usuario
 
 
 class ErrorDeAnalitica(Exception):
@@ -199,3 +201,207 @@ def reporte(db: Session) -> Tabla:
         ],
         total=["Total", "", pred["total_previsto"], "", "", ""],
     )
+
+
+# =====================================================================
+#  Aporte propio · Anomalías en caja y devoluciones (Isolation Forest)
+# =====================================================================
+
+#: Cuánto hacia atrás se miran los turnos y las devoluciones.
+DIAS_ANOMALIAS = 365
+GRUPOS_ANOMALIA = ("turnos", "devoluciones")
+
+
+def _f(valor) -> float:
+    return float(valor or 0)
+
+
+def _matriz_turnos(filas: list) -> np.ndarray:
+    datos = []
+    for f in filas:
+        vendido = _f(f.subtotal)
+        total = _f(f.total)
+        datos.append([
+            abs(_f(f.monto_cierre) - _f(f.monto_esperado)),
+            _f(f.devoluciones),
+            _f(f.monto_devuelto),
+            _f(f.descuento) / vendido if vendido > 0 else 0.0,
+            _f(f.efectivo) / total if total > 0 else 0.0,
+            _f(f.ventas),
+            max(0.0, (f.cerrado_en - f.abierto_en).total_seconds() / 3600),
+        ])
+    return np.array(datos, dtype=float).reshape(len(filas), len(anomalias.VARIABLES_TURNO))
+
+
+def _matriz_devoluciones(filas: list, ventas_cajero: dict[int, int]) -> np.ndarray:
+    devs_cajero: dict[int | None, int] = {}
+    for f in filas:
+        devs_cajero[f.usuario_id] = devs_cajero.get(f.usuario_id, 0) + 1
+    datos = []
+    for f in filas:
+        desde = f.entregado_en or f.venta_en
+        datos.append([
+            _f(f.valor),
+            max(0.0, (f.creado_en - desde).total_seconds() / 3600),
+            devs_cajero[f.usuario_id] / max(ventas_cajero.get(f.usuario_id, 0), 1),
+            1.0 if f.metodo_pago == "CAMBIO" else 0.0,
+            1.0 if f.tipo == "CAMBIO" else 0.0,
+            float(tiempo.en_bolivia(f.creado_en).hour),
+        ])
+    return np.array(datos, dtype=float).reshape(len(filas), len(anomalias.VARIABLES_DEVOLUCION))
+
+
+def _revisadas_previas(db: Session) -> dict[str, dict]:
+    """Lo ya revisado en el análisis anterior, para no perderlo al reentrenar."""
+    previo = repo.ultimo(db, "ANOMALIAS")
+    if previo is None:
+        return {}
+    return {
+        f"{grupo}:{item['id']}": item["revision"]
+        for grupo in GRUPOS_ANOMALIA
+        for item in previo.resultado.get(grupo, {}).get("marcadas", [])
+        if item.get("revision")
+    }
+
+
+def _items(filas: list, d: anomalias.Detectado, armar, grupo: str,
+           revisadas: dict[str, dict]) -> list[dict]:
+    items = []
+    for fila, marcada, puntaje, motivo in zip(filas, d.marcadas, d.puntajes, d.explicaciones):
+        if marcada:
+            item = {**armar(fila), "puntaje": puntaje, "explicacion": motivo}
+            item["revision"] = revisadas.get(f"{grupo}:{item['id']}")
+            items.append(item)
+    items.sort(key=lambda i: -i["puntaje"])
+    return items
+
+
+def _turno(f) -> dict:
+    arqueo = _f(f.monto_cierre) - _f(f.monto_esperado)
+    return {
+        "id": f.id,
+        "fecha": tiempo.en_bolivia(f.abierto_en).isoformat(),
+        "cajero": f.cajero,
+        "sucursal": f.sucursal,
+        "detalle": f"{f.caja} · arqueo Bs {arqueo:+.2f}",
+    }
+
+
+def _devolucion(f) -> dict:
+    clase = "cambio" if f.tipo == "CAMBIO" else "devolución"
+    return {
+        "id": f.id,
+        "fecha": tiempo.en_bolivia(f.creado_en).isoformat(),
+        "cajero": f.cajero or "—",
+        "sucursal": f.sucursal,
+        "detalle": f"ND-{f.id:06d} · {clase} de Bs {_f(f.valor):.2f}",
+    }
+
+
+def _grupo(filas: list, d: anomalias.Detectado, armar, grupo: str,
+           revisadas: dict[str, dict]) -> dict:
+    return {
+        "suficientes": True,
+        "muestras": len(filas),
+        "mensaje": None,
+        "medianas": d.medianas,
+        "marcadas": _items(filas, d, armar, grupo, revisadas),
+    }
+
+
+def entrenar_anomalias(db: Session, usuario_id: int | None,
+                       semilla: int = sinteticos.SEMILLA) -> dict:
+    """Entrena el bosque de los turnos y, si alcanza, el de las devoluciones.
+
+    Solo datos REALES: marcar un turno sintético como raro no le sirve a nadie.
+    """
+    inicio = time.perf_counter()
+    desde = tiempo.ahora() - timedelta(days=DIAS_ANOMALIAS)
+    turnos = repo.turnos_cerrados(db, desde)
+    if len(turnos) < anomalias.MIN_TURNOS:
+        raise ErrorDeAnalitica(
+            f"Hacen falta al menos {anomalias.MIN_TURNOS} turnos de caja cerrados para "
+            f"buscar anomalías; hay {len(turnos)} en el último año.", 409)
+    revisadas = _revisadas_previas(db)
+
+    dt = anomalias.detectar(_matriz_turnos(turnos), anomalias.VARIABLES_TURNO, semilla)
+    resultado = {"turnos": _grupo(turnos, dt, _turno, "turnos", revisadas)}
+    bosques = {"turnos": dt.modelo, "devoluciones": None}
+
+    devs = repo.devoluciones_recientes(db, desde)
+    if len(devs) >= anomalias.MIN_DEVOLUCIONES:
+        matriz = _matriz_devoluciones(devs, repo.ventas_por_cajero(db, desde))
+        dd = anomalias.detectar(matriz, anomalias.VARIABLES_DEVOLUCION, semilla)
+        bosques["devoluciones"] = dd.modelo
+        resultado["devoluciones"] = _grupo(devs, dd, _devolucion, "devoluciones", revisadas)
+    else:
+        resultado["devoluciones"] = {
+            "suficientes": False,
+            "muestras": len(devs),
+            "mensaje": f"Hacen falta al menos {anomalias.MIN_DEVOLUCIONES} devoluciones para "
+                       f"analizarlas; hay {len(devs)}.",
+            "medianas": {},
+            "marcadas": [],
+        }
+
+    def _pct(grupo: str) -> float:
+        g = resultado[grupo]
+        return round(100 * len(g["marcadas"]) / g["muestras"], 1) if g["suficientes"] else 0.0
+
+    metricas = {
+        "contaminacion": anomalias.CONTAMINACION,
+        "muestras_turnos": len(turnos),
+        "marcados_turnos": len(resultado["turnos"]["marcadas"]),
+        "pct_marcados_turnos": _pct("turnos"),
+        "muestras_devoluciones": len(devs),
+        "marcadas_devoluciones": len(resultado["devoluciones"]["marcadas"]),
+        "pct_marcadas_devoluciones": _pct("devoluciones"),
+    }
+    parametros = {
+        "algoritmo": "IsolationForest",
+        **anomalias.PARAMETROS_IF,
+        "contamination": anomalias.CONTAMINACION,
+        "semilla": semilla,
+        "dias": DIAS_ANOMALIAS,
+        "variables_turno": [v.clave for v in anomalias.VARIABLES_TURNO],
+        "variables_devolucion": [v.clave for v in anomalias.VARIABLES_DEVOLUCION],
+    }
+    filas = len(turnos) + (len(devs) if resultado["devoluciones"]["suficientes"] else 0)
+    e = modelos.Entrenado(
+        modelo=anomalias.serializar(bosques), parametros=parametros, metricas=metricas,
+        resultado=resultado, filas=filas, filas_reales=filas, filas_sinteticas=0,
+    )
+    _guardar(db, "ANOMALIAS", e, inicio, usuario_id)
+    db.commit()
+    return consultar_anomalias(db)
+
+
+def consultar_anomalias(db: Session) -> dict:
+    m = repo.ultimo(db, "ANOMALIAS")
+    if m is None:
+        return {"entrenado": False, "entrenamiento": None, "turnos": None, "devoluciones": None}
+    return {
+        "entrenado": True,
+        "entrenamiento": _entrenamiento(m),
+        "turnos": m.resultado["turnos"],
+        "devoluciones": m.resultado["devoluciones"],
+    }
+
+
+def marcar_revisada(db: Session, grupo: str, item_id: int, usuario_id: int) -> dict:
+    """El administrador deja constancia de que miró una anomalía."""
+    m = repo.ultimo(db, "ANOMALIAS")
+    if m is None:
+        raise ErrorDeAnalitica("Todavía no se buscaron anomalías.", 409)
+    resultado = copy.deepcopy(m.resultado)
+    item = next(
+        (i for i in resultado.get(grupo, {}).get("marcadas", []) if i["id"] == item_id), None
+    )
+    if item is None:
+        raise ErrorDeAnalitica("Esa anomalía no está en el último análisis.", 404)
+    quien = db.get(Usuario, usuario_id)
+    nombre = f"{quien.nombres} {quien.apellidos}".strip() if quien else "—"
+    item["revision"] = {"por": nombre, "en": tiempo.ahora().isoformat()}
+    m.resultado = resultado  # se reasigna: el JSONB no detecta cambios por dentro
+    db.commit()
+    return consultar_anomalias(db)

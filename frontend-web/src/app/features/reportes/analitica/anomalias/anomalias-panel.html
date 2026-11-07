@@ -1,0 +1,101 @@
+<mat-card class="tarjeta" appearance="outlined">
+  <mat-card-content>
+    <div class="cabecera">
+      <div>
+        <h2 class="subtitulo"><mat-icon>policy</mat-icon> Anomalías en caja y devoluciones</h2>
+        <p class="nota">
+          Isolation Forest sobre los turnos cerrados y las devoluciones del último año: marca lo
+          que se aparta de lo habitual y dice por qué. Es una alerta para revisar, no una acusación.
+        </p>
+      </div>
+      <button matButton="outlined" type="button" [disabled]="buscando()" (click)="buscar()">
+        <mat-icon>travel_explore</mat-icon>
+        {{ buscando() ? 'Buscando…' : (datos()?.entrenado ? 'Volver a buscar' : 'Buscar anomalías') }}
+      </button>
+    </div>
+
+    @if (buscando()) {
+      <mat-progress-bar mode="indeterminate" aria-label="Buscando anomalías" />
+    }
+    @if (error(); as e) {
+      <p class="aviso" role="alert"><mat-icon>info</mat-icon> {{ e }}</p>
+    }
+
+    @if (datos(); as d) {
+      @if (!d.entrenado) {
+        <p class="nota">Todavía no se buscaron anomalías.</p>
+      } @else {
+        @if (d.entrenamiento; as e) {
+          <p class="nota">
+            Analizado el {{ e.entrenado_en | date: 'dd/MM/yyyy HH:mm' }} ·
+            {{ e.metricas.muestras_turnos }} turnos ({{ e.metricas.marcados_turnos }} marcados,
+            {{ e.metricas.pct_marcados_turnos | number: '1.0-1' }} %) ·
+            {{ e.metricas.muestras_devoluciones }} devoluciones
+            ({{ e.metricas.marcadas_devoluciones }} marcadas) · contaminación
+            {{ e.metricas.contaminacion * 100 | number: '1.0-0' }} %.
+          </p>
+        }
+
+        <mat-tab-group animationDuration="0ms">
+          @for (g of grupos; track g.clave) {
+            @let grupo = g.clave === 'turnos' ? d.turnos : d.devoluciones;
+            <mat-tab [label]="g.titulo + ' (' + (grupo?.marcadas?.length ?? 0) + ')'">
+              @if (grupo && !grupo.suficientes) {
+                <p class="aviso"><mat-icon>info</mat-icon> {{ grupo.mensaje }}</p>
+              } @else if (grupo && !grupo.marcadas.length) {
+                <p class="nota">Nada fuera de lo común en {{ grupo.muestras }} {{ g.titulo.toLowerCase() }}.</p>
+              } @else if (grupo) {
+                <div class="tabla-envoltura">
+                  <table class="tabla">
+                    <thead>
+                      <tr>
+                        <th scope="col" class="num">Puntaje</th>
+                        <th scope="col">Fecha</th>
+                        <th scope="col">{{ g.clave === 'turnos' ? 'Cajero' : 'Atendió' }}</th>
+                        <th scope="col">Sucursal</th>
+                        <th scope="col">Qué</th>
+                        <th scope="col">Por qué es rara</th>
+                        <th scope="col">Revisión</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (a of grupo.marcadas; track a.id) {
+                        <tr [class.revisada]="a.revision">
+                          <td class="num">
+                            <span class="puntaje" [class]="'puntaje ' + nivel(a.puntaje)"
+                                  matTooltip="De 0 a 1: cuanto más cerca de 1, antes la aisló el bosque.">
+                              {{ a.puntaje | number: '1.2-2' }}
+                            </span>
+                          </td>
+                          <td>{{ a.fecha | date: 'dd/MM/yyyy HH:mm' }}</td>
+                          <td>{{ a.cajero }}</td>
+                          <td>{{ a.sucursal }}</td>
+                          <td>{{ a.detalle }}</td>
+                          <td class="motivo">{{ a.explicacion }}</td>
+                          <td>
+                            @if (a.revision; as r) {
+                              <span class="hecha">
+                                <mat-icon aria-hidden="true">task_alt</mat-icon>
+                                {{ r.por }}, {{ r.en | date: 'dd/MM HH:mm' }}
+                              </span>
+                            } @else {
+                              <button matButton type="button" (click)="revisar(g.clave, a)"
+                                      [disabled]="revisando() !== null"
+                                      [attr.aria-label]="'Marcar como revisada la anomalía ' + a.detalle">
+                                {{ revisando() === g.clave + ':' + a.id ? 'Guardando…' : 'Marcar revisada' }}
+                              </button>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </mat-tab>
+          }
+        </mat-tab-group>
+      }
+    }
+  </mat-card-content>
+</mat-card>

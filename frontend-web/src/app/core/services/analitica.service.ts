@@ -4,7 +4,12 @@ import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { environment } from '../../../environments/environment';
-import type { ClienteSegmento, ResumenAnalitica } from '../models/analitica.models';
+import type {
+  ClienteSegmento,
+  GrupoAnomalia,
+  ResultadoAnomalias,
+  ResumenAnalitica,
+} from '../models/analitica.models';
 
 export type ErrorAnalitica =
   | { tipo: 'plan'; mensaje: string }
@@ -39,6 +44,26 @@ export class AnaliticaService {
   reporte(formato: 'pdf' | 'xlsx'): Observable<Blob> {
     return this.http
       .get(`${this.base}/reporte.${formato}`, { responseType: 'blob' })
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
+
+  // --- Aporte propio · Anomalías en caja y devoluciones ---
+
+  anomalias(): Observable<ResultadoAnomalias> {
+    return this.http
+      .get<ResultadoAnomalias>(`${this.base}/anomalias`)
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
+
+  buscarAnomalias(): Observable<ResultadoAnomalias> {
+    return this.http
+      .post<ResultadoAnomalias>(`${this.base}/anomalias`, {})
+      .pipe(catchError((e) => throwError(() => this.traducir(e))));
+  }
+
+  marcarRevisada(grupo: GrupoAnomalia, id: number): Observable<ResultadoAnomalias> {
+    return this.http
+      .post<ResultadoAnomalias>(`${this.base}/anomalias/${grupo}/${id}/revisada`, {})
       .pipe(catchError((e) => throwError(() => this.traducir(e))));
   }
 

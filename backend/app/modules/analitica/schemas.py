@@ -59,6 +59,41 @@ class HistorialOut(BaseModel):
     entrenado_por: str | None
 
 
+class RevisionOut(BaseModel):
+    por: str
+    en: datetime
+
+
+class AnomaliaOut(BaseModel):
+    """Un turno o una devolución que el bosque aisló enseguida."""
+
+    id: int
+    fecha: datetime
+    cajero: str
+    sucursal: str
+    detalle: str
+    #: De 0 a 1: cuanto más cerca de 1, más rara.
+    puntaje: float
+    #: Qué variables se apartan más de lo habitual, calculado de los datos.
+    explicacion: str
+    revision: RevisionOut | None = None
+
+
+class GrupoAnomaliasOut(BaseModel):
+    suficientes: bool
+    muestras: int
+    mensaje: str | None = None
+    medianas: dict = {}
+    marcadas: list[AnomaliaOut]
+
+
+class AnomaliasOut(BaseModel):
+    entrenado: bool
+    entrenamiento: EntrenamientoOut | None
+    turnos: GrupoAnomaliasOut | None
+    devoluciones: GrupoAnomaliasOut | None
+
+
 class ClienteSegmentoOut(BaseModel):
     cliente_id: int
     cliente: str

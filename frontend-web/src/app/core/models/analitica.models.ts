@@ -87,3 +87,50 @@ export interface ClienteSegmento {
   compras: number;
   monto: number;
 }
+
+// --- Aporte propio · Anomalías en caja y devoluciones (Isolation Forest) ---
+
+export interface RevisionAnomalia {
+  por: string;
+  en: string;
+}
+
+export interface Anomalia {
+  id: number;
+  fecha: string;
+  cajero: string;
+  sucursal: string;
+  detalle: string;
+  /** De 0 a 1: cuanto más cerca de 1, más rara. */
+  puntaje: number;
+  /** Qué se aparta de lo habitual; sale de los datos, no de un modelo de lenguaje. */
+  explicacion: string;
+  revision: RevisionAnomalia | null;
+}
+
+export interface GrupoAnomalias {
+  suficientes: boolean;
+  muestras: number;
+  mensaje: string | null;
+  medianas: Record<string, number>;
+  marcadas: Anomalia[];
+}
+
+export interface MetricasAnomalias {
+  contaminacion: number;
+  muestras_turnos: number;
+  marcados_turnos: number;
+  pct_marcados_turnos: number;
+  muestras_devoluciones: number;
+  marcadas_devoluciones: number;
+  pct_marcadas_devoluciones: number;
+}
+
+export interface ResultadoAnomalias {
+  entrenado: boolean;
+  entrenamiento: Entrenamiento<MetricasAnomalias> | null;
+  turnos: GrupoAnomalias | null;
+  devoluciones: GrupoAnomalias | null;
+}
+
+export type GrupoAnomalia = 'turnos' | 'devoluciones';

@@ -7,6 +7,8 @@ P19 - Analítica con ML / CU-29 y CU-30  |  capa: modelo
   semana que viene.
 - SEGMENTOS: el no supervisado. Agrupa a los clientes por recencia,
   frecuencia y monto (RFM).
+- ANOMALIAS (aporte propio, 0043): Isolation Forest sobre los turnos de caja
+  y las devoluciones. Su `resultado` guarda lo marcado y si ya se revisó.
 
 Por cada entrenamiento se guardan los parámetros, las métricas de la
 validación, el tamaño del conjunto de datos (cuántas filas reales y cuántas
@@ -35,7 +37,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, DeEmpresa
 
-TIPOS_MODELO = ("DEMANDA", "SEGMENTOS")
+TIPOS_MODELO = ("DEMANDA", "SEGMENTOS", "ANOMALIAS")
 
 #: Cuántos entrenamientos de cada tipo se conservan.
 CONSERVAR = 5
