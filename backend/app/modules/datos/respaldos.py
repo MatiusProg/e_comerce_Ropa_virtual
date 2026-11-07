@@ -43,6 +43,7 @@ from datetime import datetime, timedelta
 
 from cryptography.fernet import Fernet, InvalidToken, MultiFernet
 from sqlalchemy import delete, func, insert, select, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from app.core import tiempo
@@ -51,7 +52,8 @@ from app.modules.datos import tablas
 from app.modules.datos.models import Respaldo, Restauracion
 from app.modules.plataforma import verificador
 from app.modules.plataforma.models import Empresa
-from app.modules.seguridad.models import Usuario
+from app.modules.catalogo.models import Categoria
+from app.modules.seguridad.models import Cliente, Usuario, cliente_categoria
 
 FORMATO = "violet-boutique/respaldo"
 VERSION = 1
@@ -120,8 +122,47 @@ def _empresa(db: Session, empresa_id: int) -> Empresa:
     return db.get(Empresa, empresa_id)
 
 
+def _preferencias(db: Session, empresa_id: int) -> list[dict]:
+    """Las categorías preferidas de los clientes (CU-36), las de esta empresa.
+
+    `cliente_categoria` no es tabla de empresa —el cliente es de la
+    plataforma—, pero cada fila apunta a una categoría de la empresa. Y al
+    restaurar se borran las categorías: el ON DELETE CASCADE se llevaba
+    puestas las preferencias de todos los clientes de la tienda.
+    """
+    return [
+        {"cliente_id": c, "categoria_id": k}
+        for c, k in db.execute(
+            select(cliente_categoria.c.cliente_id, cliente_categoria.c.categoria_id)
+            .join(Categoria, Categoria.id == cliente_categoria.c.categoria_id)
+            .where(Categoria.empresa_id == empresa_id)
+        ).all()
+    ]
+
+
+def _instantanea(db: Session) -> None:
+    """Abre una transacción REPEATABLE READ para leer la copia.
+
+    La copia lee tabla por tabla. En READ COMMITTED (el de siempre) cada
+    consulta ve lo confirmado hasta ese momento: una venta que entra a la
+    mitad podía quedar con su detalle y sin su cabecera, y esa copia después
+    no se restauraba. En REPEATABLE READ todas ven la misma foto.
+
+    Tiene que ser lo primero de la transacción, así que se cierra la que esté
+    abierta (la petición solo leyó la sesión y el usuario). El contexto del
+    RLS se vuelve a fijar solo al empezar la nueva (`tenencia`).
+    """
+    db.commit()
+    db.connection(execution_options={"isolation_level": "REPEATABLE READ"})
+
+
 def armar(db: Session, empresa_id: int) -> tuple[bytes, dict[str, int], datetime]:
-    """El archivo de la copia, sus filas por tabla y el momento de los datos."""
+    """El archivo de la copia, sus filas por tabla y el momento de los datos.
+
+    Lee en una sola foto (REPEATABLE READ) y la cierra al terminar: quien la
+    llama sigue en una transacción nueva, de las de siempre.
+    """
+    _instantanea(db)
     generado = tiempo.ahora()
     datos: dict[str, list[dict]] = {}
     for tabla in tablas.tablas_de_empresa(tablas.FUERA_DE_LA_COPIA):
@@ -138,7 +179,9 @@ def armar(db: Session, empresa_id: int) -> tuple[bytes, dict[str, int], datetime
             )
         ).all()
     ]
+    preferencias = _preferencias(db, empresa_id)
     empresa = _empresa(db, empresa_id)
+    db.commit()  # fin de la foto
     cuerpo = {
         "formato": FORMATO,
         "version": VERSION,
@@ -147,6 +190,7 @@ def armar(db: Session, empresa_id: int) -> tuple[bytes, dict[str, int], datetime
         "generado_en": generado.isoformat(),
         "tablas": datos,
         "roles_del_personal": roles_del_personal,
+        "preferencias_de_clientes": preferencias,
     }
     archivo = json.dumps({**cuerpo, "firma": _firmar(cuerpo)}, ensure_ascii=False).encode()
     return archivo, {nombre: len(filas) for nombre, filas in datos.items()}, generado
@@ -331,6 +375,13 @@ def restaurar(
                     f"La copia es de otra versión: {nombre_tabla} trae {', '.join(sorted(sobran))}."
                 )
 
+    # Las preferencias de los clientes se van con las categorías (CASCADE).
+    # Una copia vieja no las trae: entonces se conservan las de ahora.
+    if "preferencias_de_clientes" in cuerpo:
+        preferencias = cuerpo.get("preferencias_de_clientes") or []
+    else:
+        preferencias = _preferencias(db, empresa_id)
+
     try:
         # 1. Borrar lo actual, de las que apuntan a las apuntadas.
         for tabla in reversed(orden):
@@ -374,6 +425,10 @@ def restaurar(
                 .values(rol_empresa_id=asignacion["rol_empresa_id"])
             )
 
+        # 4. Las preferencias de los clientes, de los que siguen existiendo y
+        #    sobre categorías que la copia trajo.
+        _reponer_preferencias(db, preferencias, empresa_id)
+
         registro = Restauracion(
             origen=origen,
             archivo=nombre[:120],
@@ -395,6 +450,21 @@ def restaurar(
             f"No se pudo restaurar y no se cambió nada. Detalle: {str(detalle)[:300]}"
         ) from e
     return registro
+
+
+def _reponer_preferencias(db: Session, preferencias: list[dict], empresa_id: int) -> None:
+    if not preferencias:
+        return
+    categorias = set(db.scalars(select(Categoria.id).where(Categoria.empresa_id == empresa_id)))
+    pedidos = {int(p["cliente_id"]) for p in preferencias}
+    clientes = set(db.scalars(select(Cliente.id).where(Cliente.id.in_(pedidos))))
+    filas = [
+        {"cliente_id": int(p["cliente_id"]), "categoria_id": int(p["categoria_id"])}
+        for p in preferencias
+        if int(p["cliente_id"]) in clientes and int(p["categoria_id"]) in categorias
+    ]
+    if filas:
+        db.execute(pg_insert(cliente_categoria).values(filas).on_conflict_do_nothing())
 
 
 def restaurar_copia_guardada(

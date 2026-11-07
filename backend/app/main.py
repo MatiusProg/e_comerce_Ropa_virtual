@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.core.registro import configurar_logging
+from app.core.tareas import ciclo_de_vida
 
 # --- Ciclo 1 -------------------------------------------------------------
 from app.modules.seguridad.router import admin_router as seguridad_admin_router
@@ -143,6 +144,8 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
+    # Las tareas automáticas (TAREAS_AUTOMATICAS=on): ver app/core/tareas.py.
+    lifespan=ciclo_de_vida,
 )
 
 

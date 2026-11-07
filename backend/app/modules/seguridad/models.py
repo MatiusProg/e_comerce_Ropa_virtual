@@ -153,6 +153,18 @@ class Usuario(Auditoria, Base):
 
     rol: Mapped[Rol] = relationship(back_populates="usuarios")
 
+    def asignar_rol(self, rol_id: int) -> None:
+        """Cambia el rol base. Si cambia de verdad, se le quita el rol propio.
+
+        Un rol propio acota un rol base concreto (CU-41): el «Vendedor» de un
+        CAJERO no tiene sentido sobre un ENCARGADO, y dejarlo colgado le daba
+        a la persona los permisos de un rol que ya no es el suyo. Toda
+        asignación de rol pasa por acá para no olvidarlo en ningún camino.
+        """
+        if self.rol_id is not None and self.rol_id != rol_id:
+            self.rol_empresa_id = None
+        self.rol_id = rol_id
+
     # passive_deletes deja que el ON DELETE CASCADE de la base haga el trabajo.
     # Sin el, al borrar un usuario el ORM intenta primero poner en NULL la clave
     # foranea de cliente y de sesion_token, que son NOT NULL, y el borrado falla

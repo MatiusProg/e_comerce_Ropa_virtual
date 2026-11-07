@@ -377,3 +377,37 @@ def test_las_copias_usan_su_propia_clave_y_las_viejas_se_siguen_leyendo(
     monkeypatch.setattr(settings, "RESPALDO_SECRET", "")
     r = _subir(api, cabeceras_admin, nueva)
     assert r.status_code == 422 and "alterada" in r.json()["detail"]
+
+
+def test_restaurar_conserva_las_preferencias_de_los_clientes(
+    api, cabeceras_admin, cabeceras_cliente, db
+) -> None:
+    """Tanda C: borrar las categorías al restaurar se llevaba por CASCADE las
+    preferencias de los clientes (`cliente_categoria`)."""
+    from app.modules.seguridad.models import Cliente, cliente_categoria
+
+    blusas = api.post(CATEGORIAS, headers=cabeceras_admin, json={
+        "nombre": "Blusas", "orden": 0, "activa": True}).json()["id"]
+    cliente = db.scalar(select(Cliente.id).limit(1))
+    db.execute(cliente_categoria.insert().values(cliente_id=cliente, categoria_id=blusas))
+    db.commit()
+
+    copia = _copia(api, cabeceras_admin)
+    assert json.loads(copia)["preferencias_de_clientes"] == [
+        {"cliente_id": cliente, "categoria_id": blusas}]
+    assert _subir(api, cabeceras_admin, copia).status_code == 200
+
+    db.expire_all()
+    filas = db.execute(select(cliente_categoria)).all()
+    assert [(f.cliente_id, f.categoria_id) for f in filas] == [(cliente, blusas)]
+
+    # Una copia de antes de este arreglo (sin la clave) conserva las actuales.
+    from app.modules.datos import respaldos
+
+    vieja = json.loads(copia)
+    vieja.pop("firma")
+    vieja.pop("preferencias_de_clientes")
+    vieja = json.dumps({**vieja, "firma": respaldos._firmar(vieja)}).encode()
+    assert _subir(api, cabeceras_admin, vieja).status_code == 200
+    db.expire_all()
+    assert len(db.execute(select(cliente_categoria)).all()) == 1

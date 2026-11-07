@@ -201,6 +201,8 @@ def _aplicar_rol_propio(
     ruta = peticion.url.path
     if permisos_catalogo.es_libre(ruta):
         return
+    if permisos_catalogo.es_consulta_de_apoyo(peticion.method, ruta):
+        return
     codigo = permisos_catalogo.permiso_de_ruta(ruta)
     if codigo is None or codigo not in usuario.permisos:
         raise HTTPException(

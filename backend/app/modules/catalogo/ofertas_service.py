@@ -21,7 +21,10 @@ producto. Es idempotente: correrla dos veces no crea nada dos veces.
   desactivarla, y eso tiene que durar).
 - Si una automática encendida deja de cumplir el factor (se vendió el
   sobrante), se cierra poniéndole fecha de fin: deja de descontar y queda en
-  el historial.
+  el historial. Si el producto vuelve a sobrar se reabre, pero solo si la
+  cerró la regla (`cerrada_por_regla`): la que cerró el Administrador, no.
+- Apagar la regla cierra todas sus automáticas en el acto.
+- El sobrante se cuenta solo en las sucursales activas.
 
 Se dispara con `POST /ofertas/fuera-de-temporada/aplicar`, pensado para un
 planificador (como el despacho de avisos de CU-40) y para mostrarlo a mano en
@@ -201,12 +204,31 @@ def guardar_regla(db: Session, datos: ReglaIn) -> ReglaOut:
     if regla is None:
         regla = ReglaFueraDeTemporada()
         repository.agregar(db, regla)
+    se_apaga = bool(regla.activa) and not datos.activa
     regla.activa = datos.activa
     regla.dias_desde_fin = datos.dias_desde_fin
     regla.existencia_minima = datos.existencia_minima
     regla.porcentaje = datos.porcentaje
+    if se_apaga:
+        # Apagar la regla cierra en el acto las ofertas que ella creó: si no,
+        # seguían descontando hasta la próxima vuelta del planificador.
+        _cerrar(repository.automaticas_vigentes(db), _hoy())
     db.commit()
     return _regla_out(regla)
+
+
+def _cerrar(promos: list[Promocion], hoy: date) -> int:
+    """Cierra esas automáticas a nombre de la regla. No hace commit.
+
+    Con fecha de ayer: `hasta` es inclusivo y hoy ya no tiene por qué
+    descontar. Una creada HOY se cierra con fecha de hoy (el CHECK no deja
+    `hasta < desde`): descuenta hasta la noche y no más. No se apaga: apagada
+    se confundiría con la que apagó el Administrador, que no se vuelve a crear.
+    """
+    for promo in promos:
+        promo.hasta = max(promo.desde, hoy - timedelta(days=1))
+        promo.cerrada_por_regla = True
+    return len(promos)
 
 
 def _candidatas(db: Session, regla: ReglaOut, hoy: date) -> list[CandidataOut]:
@@ -222,10 +244,12 @@ def _candidatas(db: Session, regla: ReglaOut, hoy: date) -> list[CandidataOut]:
             promo = repository.promocion(db, f.promocion_id)
             if promo is not None and promo.activa and (promo.hasta is None or promo.hasta >= hoy):
                 situacion = "VIGENTE"
-            elif promo is not None and not promo.activa:
+            elif promo is not None and (not promo.activa or not promo.cerrada_por_regla):
+                # Apagada, o cerrada a mano con fecha de fin: la decisión fue
+                # del Administrador y la regla la respeta (RN-16).
                 situacion = "APAGADA"
-            # Cerrada por la regla (con `hasta` pasado) y vuelve a sobrar: se
-            # reabre como nueva, que es lo que pediría el Administrador.
+            # Cerrada por la regla y vuelve a sobrar: se reabre como nueva,
+            # que es lo que pediría el Administrador.
         salida.append(
             CandidataOut(
                 producto_id=f.producto_id,
@@ -270,6 +294,7 @@ def aplicar(db: Session) -> AplicacionOut:
                 promo.hasta = None
                 promo.desde = hoy
                 promo.porcentaje = regla.porcentaje
+                promo.cerrada_por_regla = False
             else:
                 promo = Promocion(
                     # El nombre de una promoción es único: el id del producto
@@ -288,15 +313,16 @@ def aplicar(db: Session) -> AplicacionOut:
             c.promocion_id = promo.id
             creadas += 1
 
-    cerradas = 0
-    for promo in repository.automaticas_vigentes(db):
-        # Se cierra con fecha de ayer: `hasta` es inclusivo y hoy ya no tiene
-        # por qué descontar. Una creada HOY se cierra recién mañana (el CHECK
-        # no deja `hasta < desde`), y no se apaga: apagada se confundiría con
-        # la que apagó el Administrador, que no se vuelve a crear.
-        if promo.producto_id not in califican and promo.desde < hoy:
-            promo.hasta = hoy - timedelta(days=1)
-            cerradas += 1
+    vigentes = repository.automaticas_vigentes(db)
+    if regla.activa:
+        # Una creada HOY que ya no califica se cierra recién mañana: cerrarla
+        # hoy con fecha de hoy no cambia nada y la haría parpadear.
+        a_cerrar = [p for p in vigentes if p.producto_id not in califican and p.desde < hoy]
+    else:
+        # Regla apagada: no queda ninguna en pie (normalmente ya las cerró
+        # `guardar_regla`; esto recoge las que hubiera de antes).
+        a_cerrar = vigentes
+    cerradas = _cerrar(a_cerrar, hoy)
 
     db.commit()
     return AplicacionOut(

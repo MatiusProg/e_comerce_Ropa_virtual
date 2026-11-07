@@ -229,7 +229,12 @@ def test_un_analista_admin_solo_entra_a_lo_suyo(api, cabeceras_admin, db) -> Non
     cab = {"Authorization": f"Bearer {entrada.json()['access_token']}"}
 
     assert api.get("/api/v1/reportes/tablero", headers=cab).status_code == 200
-    assert api.get("/api/v1/organizacion/sucursales", headers=cab).status_code == 403
+    # Tanda C: la lista de sucursales es una consulta de apoyo (el filtro del
+    # reporte la necesita); crear una sucursal sigue cerrado.
+    assert api.get("/api/v1/organizacion/sucursales", headers=cab).status_code == 200
+    assert api.post("/api/v1/organizacion/sucursales", headers=cab,
+                    json={"nombre": "X"}).status_code == 403
+    assert api.get("/api/v1/organizacion/empleados", headers=cab).status_code == 403
     assert api.get(ROLES, headers=cab).status_code == 403
 
 
@@ -248,9 +253,48 @@ def test_un_rol_propio_que_no_se_encuentra_cierra_en_vez_de_abrir() -> None:
     usuario = SimpleNamespace(rol_empresa=None, permisos=None)
 
     def peticion(ruta):
-        return SimpleNamespace(url=SimpleNamespace(path=ruta))
+        return SimpleNamespace(url=SimpleNamespace(path=ruta), method="GET")
 
     with pytest.raises(HTTPException) as e:
         _aplicar_rol_propio(peticion("/api/v1/catalogo/prendas"), db, usuario, 999)
     assert e.value.status_code == 403
     _aplicar_rol_propio(peticion("/api/v1/notificaciones"), db, usuario, 999)
+
+
+def test_cambiar_de_rol_base_le_quita_el_rol_propio() -> None:
+    from app.modules.seguridad.models import Usuario
+
+    u = Usuario(rol_id=3, rol_empresa_id=7)
+    u.asignar_rol(3)  # mismo rol: lo conserva
+    assert u.rol_empresa_id == 7
+    u.asignar_rol(2)  # otro rol: el «Vendedor» de un cajero no vale para él
+    assert (u.rol_id, u.rol_empresa_id) == (2, None)
+
+
+def test_el_cajero_ascendido_pierde_su_rol_propio(
+    api, cabeceras_admin, cajero, sucursal
+) -> None:
+    rol = _rol(api, cabeceras_admin).json()["id"]
+    persona = _persona(api, cabeceras_admin, "cajero61")
+    assert _asignar(api, cabeceras_admin, persona["usuario_id"], rol).status_code == 200
+
+    lista = api.get("/api/v1/organizacion/empleados", headers=cabeceras_admin).json()
+    emp = next(e for e in lista if e["correo"].startswith("cajero61"))
+    r = api.patch(f"/api/v1/organizacion/empleados/{emp['id']}", headers=cabeceras_admin,
+                  json={"cargo": "ENCARGADO"})
+    assert r.status_code == 200, r.text
+    assert _persona(api, cabeceras_admin, "cajero61")["rol_empresa_id"] is None
+
+
+def test_un_rol_parcial_puede_llenar_sus_desplegables_pero_no_escribir(
+    api, cabeceras_admin, db
+) -> None:
+    """Un analista (ADMIN con solo reportes) abre la pantalla de reportes y
+    el selector de sucursales ya no falla con 403; pero no puede crear una."""
+    from app.core import permisos
+
+    assert permisos.es_consulta_de_apoyo("GET", "/api/v1/organizacion/sucursales")
+    assert permisos.es_consulta_de_apoyo("GET", "/api/v1/catalogo/productos/5")
+    assert not permisos.es_consulta_de_apoyo("POST", "/api/v1/organizacion/sucursales")
+    assert not permisos.es_consulta_de_apoyo("GET", "/api/v1/organizacion/empleados")
+    assert not permisos.es_consulta_de_apoyo("GET", "/api/v1/catalogo/promociones")

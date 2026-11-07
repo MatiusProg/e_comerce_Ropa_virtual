@@ -161,5 +161,12 @@ class Promocion(DeEmpresa, Auditoria, Base):
         String(10), server_default=text("'MANUAL'"), index=True
     )
 
+    #: CU-32 (migración 0034): la cerró la regla de fuera de temporada. Solo
+    #: esas se reabren cuando el producto vuelve a sobrar; la que cerró el
+    #: Administrador poniéndole fecha de fin se respeta (RN-16).
+    cerrada_por_regla: Mapped[bool] = mapped_column(
+        Boolean, server_default=text("false"), default=False
+    )
+
 
 __all__ = ["ALCANCES_PROMOCION", "ORIGENES_PROMOCION", "Promocion"]

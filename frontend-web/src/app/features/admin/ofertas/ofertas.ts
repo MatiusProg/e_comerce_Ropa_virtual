@@ -13,7 +13,18 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { RouterLink } from '@angular/router';
-import { catchError, debounceTime, distinctUntilChanged, map, of, startWith, switchMap } from 'rxjs';
+import {
+  EMPTY,
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  expand,
+  map,
+  of,
+  reduce,
+  startWith,
+  switchMap,
+} from 'rxjs';
 
 import type { Aplicacion, Candidata, Mayorista } from '../../../core/models/ofertas.models';
 import type { ProductoResumen } from '../../../core/models/productos.models';
@@ -67,10 +78,7 @@ export class Ofertas implements OnInit {
   protected readonly productos = signal<ProductoResumen[]>([]);
   protected readonly producto = signal<ProductoResumen | null>(null);
   protected readonly formulario = new FormGroup({
-    cantidad_minima: new FormControl<number | null>(6, [
-      Validators.required,
-      Validators.min(2),
-    ]),
+    cantidad_minima: new FormControl<number | null>(6, [Validators.required, Validators.min(2)]),
     precio_unitario: new FormControl<number | null>(null, [
       Validators.required,
       Validators.min(0.01),
@@ -81,10 +89,7 @@ export class Ofertas implements OnInit {
   protected readonly regla = new FormGroup({
     activa: new FormControl(false, { nonNullable: true }),
     dias_desde_fin: new FormControl<number | null>(30, [Validators.required, Validators.min(0)]),
-    existencia_minima: new FormControl<number | null>(10, [
-      Validators.required,
-      Validators.min(1),
-    ]),
+    existencia_minima: new FormControl<number | null>(10, [Validators.required, Validators.min(1)]),
     porcentaje: new FormControl<number | null>(30, [
       Validators.required,
       Validators.min(0.01),
@@ -115,10 +120,12 @@ export class Ofertas implements OnInit {
         debounceTime(300),
         distinctUntilChanged(),
         switchMap((texto) =>
-          this.productosApi.listar({ busqueda: texto.trim() || undefined, activo: true, tamano: 8 }).pipe(
-            map((p) => p.items),
-            catchError(() => of([] as ProductoResumen[])),
-          ),
+          this.productosApi
+            .listar({ busqueda: texto.trim() || undefined, activo: true, tamano: 8 })
+            .pipe(
+              map((p) => p.items),
+              catchError(() => of([] as ProductoResumen[])),
+            ),
         ),
         takeUntilDestroyed(this.destruir),
       )
@@ -128,16 +135,29 @@ export class Ofertas implements OnInit {
   // --- Mayoristas -------------------------------------------------------
   private cargarMayoristas(): void {
     this.cargando.set(true);
-    this.api.listarMayoristas().subscribe({
-      next: (p) => {
-        this.mayoristas.set(p.items);
-        this.cargando.set(false);
-      },
-      error: (e: HttpErrorResponse) => {
-        this.cargando.set(false);
-        this.mostrar(e, 'No se pudieron leer los precios mayoristas.');
-      },
-    });
+    // Se traen TODAS las páginas (de a 100, el tope del backend): antes se
+    // pedía una sola de 50 y los escalones que sobraban no se veían nunca.
+    const POR_PAGINA = 100;
+    this.api
+      .listarMayoristas('', 1, POR_PAGINA)
+      .pipe(
+        expand((p) =>
+          p.pagina * p.tamano < p.total
+            ? this.api.listarMayoristas('', p.pagina + 1, POR_PAGINA)
+            : EMPTY,
+        ),
+        reduce((todos, p) => todos.concat(p.items), [] as Mayorista[]),
+      )
+      .subscribe({
+        next: (items) => {
+          this.mayoristas.set(items);
+          this.cargando.set(false);
+        },
+        error: (e: HttpErrorResponse) => {
+          this.cargando.set(false);
+          this.mostrar(e, 'No se pudieron leer los precios mayoristas.');
+        },
+      });
   }
 
   protected elegirProducto(p: ProductoResumen): void {
@@ -174,7 +194,10 @@ export class Ofertas implements OnInit {
     }
     this.guardando.set(true);
     const peticion = editando
-      ? this.api.editarMayorista(editando.id, { cantidad_minima: cantidad, precio_unitario: precio })
+      ? this.api.editarMayorista(editando.id, {
+          cantidad_minima: cantidad,
+          precio_unitario: precio,
+        })
       : this.api.crearMayorista({
           producto_id: producto!.id,
           cantidad_minima: cantidad,

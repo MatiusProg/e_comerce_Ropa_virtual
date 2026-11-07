@@ -75,6 +75,13 @@ class Settings(BaseSettings):
     # confirma cada operación al sincronizar. Un turno de tienda.
     OFFLINE_VIGENCIA_HORAS: int = 12
 
+    # --- Tareas automáticas (app/core/tareas.py) -------------------------
+    # Copias automáticas, fuera de temporada, expiración de reservas y
+    # pedidos, despacho de correos y push. Corren dentro del backend; con
+    # `on` se prenden (en Railway). Apagadas en local y en las pruebas.
+    TAREAS_AUTOMATICAS: str = "off"
+    TAREAS_INTERVALO_MINUTOS: int = 15
+
     # --- Pasarela de pago (P8, ciclo 3) ----------------------------------
     #
     # Los nombres NO llevan la marca adentro, por la misma leccion que la IA y

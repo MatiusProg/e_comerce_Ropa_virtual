@@ -278,19 +278,29 @@ export class Traspasos implements OnInit {
         return `Enviadas ${t.cantidad} u. a ${t.destino.nombre}; ya se descontaron de ${t.origen.nombre}.`;
       case 'RECIBIR':
         return `Recibidas ${t.cantidad} u. en ${t.destino.nombre}.`;
+      case 'DEVOLVER':
+        return `Devueltas ${t.cantidad} u. a ${t.origen.nombre}.`;
     }
   }
 
   protected etiquetaAccion(accion: AccionTraspaso): string {
-    return { APROBAR: 'Aprobar', RECHAZAR: 'Rechazar', ENVIAR: 'Enviar', RECIBIR: 'Recibir' }[
-      accion
-    ];
+    return {
+      APROBAR: 'Aprobar',
+      RECHAZAR: 'Rechazar',
+      ENVIAR: 'Enviar',
+      RECIBIR: 'Recibir',
+      DEVOLVER: 'Recibir de vuelta',
+    }[accion];
   }
 
   protected iconoAccion(accion: AccionTraspaso): string {
-    return { APROBAR: 'thumb_up', RECHAZAR: 'block', ENVIAR: 'local_shipping', RECIBIR: 'inventory' }[
-      accion
-    ];
+    return {
+      APROBAR: 'thumb_up',
+      RECHAZAR: 'block',
+      ENVIAR: 'local_shipping',
+      RECIBIR: 'inventory',
+      DEVOLVER: 'undo',
+    }[accion];
   }
 
   // --- Pedir / ordenar --------------------------------------------------

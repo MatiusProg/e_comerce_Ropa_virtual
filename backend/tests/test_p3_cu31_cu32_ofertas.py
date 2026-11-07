@@ -339,3 +339,75 @@ def test_se_cierra_cuando_deja_de_sobrar(api, cabeceras_admin, db, producto, var
     fila = api.get(PROMOCIONES, headers=cabeceras_admin).json()["items"][0]
     assert fila["vigente"] is False
     assert fila["hasta"] == (HOY - timedelta(days=1)).isoformat()
+
+
+# --- Tanda C de la auditoría ------------------------------------------------
+
+def _automatica(db):
+    from app.modules.catalogo.promociones_models import Promocion
+
+    db.expire_all()
+    return db.scalar(select(Promocion).where(Promocion.origen == "AUTOMATICA"))
+
+
+def test_apagar_la_regla_cierra_sus_ofertas_en_el_acto(
+    api, cabeceras_admin, db, producto, variantes
+) -> None:
+    _temporada_terminada(api, cabeceras_admin, db, producto, hace_dias=40)
+    _regla(api, cabeceras_admin)
+    api.post(APLICAR, headers=cabeceras_admin)
+    promo = _automatica(db)
+    promo.desde = HOY - timedelta(days=5)
+    db.commit()
+
+    # Sin esperar a la próxima aplicación.
+    _regla(api, cabeceras_admin, activa=False)
+    fila = api.get(PROMOCIONES, headers=cabeceras_admin).json()["items"][0]
+    assert fila["vigente"] is False
+    assert fila["hasta"] == (HOY - timedelta(days=1)).isoformat()
+    assert _automatica(db).cerrada_por_regla is True
+
+
+def test_la_que_cerro_el_admin_no_se_reabre_y_la_de_la_regla_si(
+    api, cabeceras_admin, db, producto, variantes
+) -> None:
+    _temporada_terminada(api, cabeceras_admin, db, producto, hace_dias=40)
+    _regla(api, cabeceras_admin)
+    api.post(APLICAR, headers=cabeceras_admin)
+    promo = _automatica(db)
+    promo.desde = HOY - timedelta(days=5)
+    db.commit()
+
+    # La cierra la regla (se sube la vara) y vuelve a calificar: se reabre.
+    _regla(api, cabeceras_admin, existencia=100)
+    assert api.post(APLICAR, headers=cabeceras_admin).json()["cerradas"] == 1
+    _regla(api, cabeceras_admin, existencia=10)
+    assert api.post(APLICAR, headers=cabeceras_admin).json()["creadas"] == 1
+    assert _automatica(db).hasta is None
+
+    # Ahora la cierra el admin con fecha de fin: queda cerrada.
+    promo = _automatica(db)
+    promo.desde = HOY - timedelta(days=5)
+    db.commit()
+    r = api.patch(f"{PROMOCIONES}/{promo.id}", headers=cabeceras_admin,
+                  json={"hasta": (HOY - timedelta(days=1)).isoformat()})
+    assert r.status_code == 200, r.text
+    otra = api.post(APLICAR, headers=cabeceras_admin).json()
+    assert otra["creadas"] == 0
+    assert otra["apagadas_por_admin"] == 1
+    assert _automatica(db).hasta == HOY - timedelta(days=1)
+
+
+def test_el_stock_de_una_sucursal_dada_de_baja_no_es_sobrante(
+    api, cabeceras_admin, db, producto, variantes
+) -> None:
+    from app.modules.organizacion.models import Sucursal
+
+    _temporada_terminada(api, cabeceras_admin, db, producto, hace_dias=40)
+    _regla(api, cabeceras_admin)
+    assert len(api.get(CANDIDATAS, headers=cabeceras_admin).json()) == 1
+
+    for s in db.scalars(select(Sucursal)):
+        s.activa = False
+    db.commit()
+    assert api.get(CANDIDATAS, headers=cabeceras_admin).json() == []
