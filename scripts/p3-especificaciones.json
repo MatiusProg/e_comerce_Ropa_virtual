@@ -44,7 +44,8 @@
   "CU-42": "Enviar avisos push de las operaciones sin conexión",
   "CU-43": "Devolver automáticamente el pago de una operación rechazada",
   "CU-44": "Pedir aviso de talla disponible",
-  "CU-45": "Detectar anomalías en caja y devoluciones"
+  "CU-45": "Detectar anomalías en caja y devoluciones",
+  "CU-46": "Consultar mis comprobantes por voz"
  },
  "espec": {
   "CU-21": {
@@ -643,6 +644,30 @@
    ],
    "postcondiciones": "Queda guardado un análisis de tipo «ANOMALIAS» con los casos marcados, su puntaje, su explicación y su revisión. Una anomalía es una alerta para revisar, no una prueba de fraude.",
    "rastreo": "RF-68, RF-09"
+  },
+  "CU-46": {
+   "descripcion": "Permite al cliente pedir, hablando o escribiendo, un reporte de sus comprobantes de la tienda (recibos de compra y notas de devolución) y verificar cada uno con un código QR.",
+   "actores": "Cliente",
+   "iniciador": "Cliente",
+   "precondiciones": "El cliente inició sesión en la tienda (CU-06) y está asociado a ella.",
+   "flujo": [
+    "El cliente entra a «Mis comprobantes», en la web o en el móvil.",
+    "Dicta su pedido con el micrófono, lo escribe o elige un ejemplo («mis últimas 3 compras», «mis recibos de octubre»).",
+    "El sistema transcribe la voz en el dispositivo y envía solo el texto.",
+    "El sistema interpreta el pedido por reglas, sin gastar el cupo de IA de la tienda: tipo, cantidad, período y estado.",
+    "El sistema busca los comprobantes del cliente en esa tienda, con un máximo de 50.",
+    "El sistema muestra lo que entendió y la lista: fecha, código, total, estado y el QR de cada uno.",
+    "El cliente abre la verificación, descarga el PDF del recibo o exporta la lista."
+   ],
+   "alternativos": [
+    "2a. Sin reconocimiento de voz: se oculta el micrófono y el pedido se escribe.",
+    "4a. No se entiende el pedido: el sistema responde «No entendí» con ejemplos y no muestra datos.",
+    "4b. Pide más de 50: se muestran 50 con un aviso.",
+    "5a. No hay comprobantes que coincidan: se informa que la lista está vacía.",
+    "7a. Un tercero escanea el QR: la página pública muestra solo tienda, número, fecha, total y estado; si el código fue alterado, responde que no existe."
+   ],
+   "postcondiciones": "El cliente ve sus comprobantes; no se modifica ningún dato. La consulta queda en la bitácora.",
+   "rastreo": "RF-69 · RN-13"
   }
  }
 }

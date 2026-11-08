@@ -1,0 +1,7050 @@
+{
+ "_generado_por": "scripts/p3u_bd_datos.py — no editar a mano",
+ "dominio": {
+  "locales": [
+   "FotoLocal",
+   "OperacionLocal",
+   "PaqueteLocal"
+  ],
+  "posiciones": {
+   "PagoSimulado": [
+    30,
+    -40,
+    170,
+    60
+   ],
+   "Suscripcion": [
+    30,
+    -180,
+    170,
+    60
+   ],
+   "ConsumoCupo": [
+    30,
+    -320,
+    170,
+    60
+   ],
+   "ModeloAnalitica": [
+    30,
+    -460,
+    170,
+    60
+   ],
+   "Respaldo": [
+    30,
+    -600,
+    170,
+    60
+   ],
+   "Restauracion": [
+    30,
+    -740,
+    170,
+    60
+   ],
+   "Plan": [
+    330,
+    -40,
+    170,
+    60
+   ],
+   "Rol": [
+    330,
+    -180,
+    170,
+    60
+   ],
+   "AsientoBitacora": [
+    330,
+    -320,
+    170,
+    60
+   ],
+   "Empresa": [
+    330,
+    -460,
+    170,
+    60
+   ],
+   "Empleado": [
+    330,
+    -600,
+    170,
+    60
+   ],
+   "FotoLocal": [
+    330,
+    -740,
+    170,
+    60
+   ],
+   "Permiso": [
+    630,
+    -40,
+    170,
+    60
+   ],
+   "RolEmpresa": [
+    630,
+    -180,
+    170,
+    60
+   ],
+   "Usuario": [
+    630,
+    -320,
+    170,
+    60
+   ],
+   "PaqueteLocal": [
+    630,
+    -460,
+    170,
+    60
+   ],
+   "Caja": [
+    630,
+    -600,
+    170,
+    60
+   ],
+   "Ciudad": [
+    630,
+    -740,
+    170,
+    60
+   ],
+   "SuscripcionPush": [
+    930,
+    -40,
+    170,
+    60
+   ],
+   "ClienteEmpresa": [
+    930,
+    -180,
+    170,
+    60
+   ],
+   "SesionToken": [
+    930,
+    -320,
+    170,
+    60
+   ],
+   "OperacionLocal": [
+    930,
+    -460,
+    170,
+    60
+   ],
+   "OperacionOffline": [
+    930,
+    -600,
+    170,
+    60
+   ],
+   "Sucursal": [
+    930,
+    -740,
+    170,
+    60
+   ],
+   "MedidaCliente": [
+    1230,
+    -40,
+    170,
+    60
+   ],
+   "Notificacion": [
+    1230,
+    -180,
+    170,
+    60
+   ],
+   "Venta": [
+    1230,
+    -320,
+    170,
+    60
+   ],
+   "TurnoCaja": [
+    1230,
+    -460,
+    170,
+    60
+   ],
+   "Existencia": [
+    1230,
+    -600,
+    170,
+    60
+   ],
+   "MovimientoInventario": [
+    1230,
+    -740,
+    170,
+    60
+   ],
+   "Cliente": [
+    1530,
+    -40,
+    170,
+    60
+   ],
+   "SolicitudDevolucion": [
+    1530,
+    -180,
+    170,
+    60
+   ],
+   "Devolucion": [
+    1530,
+    -320,
+    170,
+    60
+   ],
+   "Reserva": [
+    1530,
+    -460,
+    170,
+    60
+   ],
+   "Traspaso": [
+    1530,
+    -600,
+    170,
+    60
+   ],
+   "ImagenProducto": [
+    1830,
+    -40,
+    170,
+    60
+   ],
+   "Pago": [
+    1830,
+    -180,
+    170,
+    60
+   ],
+   "AvisoTalla": [
+    1830,
+    -320,
+    170,
+    60
+   ],
+   "VarianteProducto": [
+    1830,
+    -460,
+    170,
+    60
+   ],
+   "Temporada": [
+    1830,
+    -600,
+    170,
+    60
+   ],
+   "PuntoPrenda": [
+    2130,
+    -40,
+    170,
+    60
+   ],
+   "SesionVestidorVirtual": [
+    2130,
+    -180,
+    170,
+    60
+   ],
+   "Producto": [
+    2130,
+    -320,
+    170,
+    60
+   ],
+   "Promocion": [
+    2130,
+    -460,
+    170,
+    60
+   ],
+   "ReglaFueraDeTemporada": [
+    2130,
+    -600,
+    170,
+    60
+   ],
+   "PrecioMayorista": [
+    2430,
+    -40,
+    170,
+    60
+   ],
+   "MedidaTalla": [
+    2430,
+    -180,
+    170,
+    60
+   ],
+   "Talla": [
+    2430,
+    -320,
+    170,
+    60
+   ]
+  },
+  "asociaciones": [
+   [
+    "Plan",
+    "rige",
+    "Suscripcion",
+    "1",
+    "0..*"
+   ],
+   [
+    "Empresa",
+    "contrata",
+    "Suscripcion",
+    "1",
+    "0..*"
+   ],
+   [
+    "Suscripcion",
+    "se paga con",
+    "PagoSimulado",
+    "0..1",
+    "0..*"
+   ],
+   [
+    "Plan",
+    "se cobra en",
+    "PagoSimulado",
+    "1",
+    "0..*"
+   ],
+   [
+    "Empresa",
+    "consume",
+    "ConsumoCupo",
+    "1",
+    "0..*"
+   ],
+   [
+    "Empresa",
+    "tiene",
+    "Sucursal",
+    "1",
+    "1..*"
+   ],
+   [
+    "Ciudad",
+    "aloja",
+    "Sucursal",
+    "1",
+    "0..*"
+   ],
+   [
+    "Empresa",
+    "da acceso a",
+    "Usuario",
+    "0..1",
+    "0..*"
+   ],
+   [
+    "Rol",
+    "define",
+    "Usuario",
+    "1",
+    "0..*"
+   ],
+   [
+    "Usuario",
+    "inicia",
+    "SesionToken",
+    "1",
+    "0..*"
+   ],
+   [
+    "Usuario",
+    "es",
+    "Empleado",
+    "1",
+    "0..1"
+   ],
+   [
+    "Sucursal",
+    "emplea a",
+    "Empleado",
+    "0..1",
+    "0..*"
+   ],
+   [
+    "Usuario",
+    "es",
+    "Cliente",
+    "1",
+    "0..1"
+   ],
+   [
+    "Cliente",
+    "se registra en",
+    "ClienteEmpresa",
+    "1",
+    "1..*"
+   ],
+   [
+    "Empresa",
+    "atiende a",
+    "ClienteEmpresa",
+    "1",
+    "0..*"
+   ],
+   [
+    "Sucursal",
+    "tiene",
+    "Caja",
+    "1",
+    "0..*"
+   ],
+   [
+    "Caja",
+    "registra",
+    "TurnoCaja",
+    "1",
+    "0..*"
+   ],
+   [
+    "Usuario",
+    "abre",
+    "TurnoCaja",
+    "1",
+    "0..*"
+   ],
+   [
+    "TurnoCaja",
+    "registra",
+    "Venta",
+    "0..1",
+    "0..*"
+   ],
+   [
+    "Cliente",
+    "compra en",
+    "Venta",
+    "0..1",
+    "0..*"
+   ],
+   [
+    "Venta",
+    "se revierte en",
+    "Devolucion",
+    "1",
+    "0..*"
+   ],
+   [
+    "TurnoCaja",
+    "registra",
+    "Devolucion",
+    "0..1",
+    "0..*"
+   ],
+   [
+    "Producto",
+    "se ofrece como",
+    "VarianteProducto",
+    "1",
+    "1..*"
+   ],
+   [
+    "Producto",
+    "se ilustra con",
+    "ImagenProducto",
+    "1",
+    "0..*"
+   ],
+   [
+    "VarianteProducto",
+    "se almacena en",
+    "Existencia",
+    "1",
+    "0..*"
+   ],
+   [
+    "Sucursal",
+    "alberga",
+    "Existencia",
+    "1",
+    "0..*"
+   ],
+   [
+    "Venta",
+    "vende",
+    "VarianteProducto",
+    "0..*",
+    "1..*"
+   ],
+   [
+    "Cliente",
+    "realiza",
+    "Reserva",
+    "1",
+    "0..*"
+   ],
+   [
+    "Sucursal",
+    "atiende",
+    "Reserva",
+    "1",
+    "0..*"
+   ],
+   [
+    "Reserva",
+    "aparta",
+    "VarianteProducto",
+    "0..*",
+    "1..*"
+   ],
+   [
+    "Usuario",
+    "sube",
+    "OperacionOffline",
+    "1",
+    "0..*"
+   ],
+   [
+    "Sucursal",
+    "atiende",
+    "OperacionOffline",
+    "0..1",
+    "0..*"
+   ],
+   [
+    "TurnoCaja",
+    "imputa",
+    "OperacionOffline",
+    "0..1",
+    "0..*"
+   ],
+   [
+    "OperacionOffline",
+    "se confirma como",
+    "Venta",
+    "0..1",
+    "0..1"
+   ],
+   [
+    "OperacionOffline",
+    "se confirma como",
+    "Reserva",
+    "0..1",
+    "0..1"
+   ],
+   [
+    "Usuario",
+    "descarga",
+    "PaqueteLocal",
+    "1",
+    "0..*"
+   ],
+   [
+    "PaqueteLocal",
+    "copia",
+    "Existencia",
+    "0..*",
+    "0..*"
+   ],
+   [
+    "PaqueteLocal",
+    "guarda",
+    "FotoLocal",
+    "1",
+    "0..*"
+   ],
+   [
+    "Usuario",
+    "registra",
+    "OperacionLocal",
+    "1",
+    "0..*"
+   ],
+   [
+    "OperacionLocal",
+    "se sube como",
+    "OperacionOffline",
+    "1",
+    "0..1"
+   ],
+   [
+    "Usuario",
+    "deja",
+    "AsientoBitacora",
+    "0..1",
+    "0..*"
+   ],
+   [
+    "Empresa",
+    "agrupa",
+    "AsientoBitacora",
+    "0..1",
+    "0..*"
+   ],
+   [
+    "Empresa",
+    "entrena",
+    "ModeloAnalitica",
+    "1",
+    "0..*"
+   ],
+   [
+    "Empresa",
+    "define",
+    "RolEmpresa",
+    "1",
+    "0..*"
+   ],
+   [
+    "RolEmpresa",
+    "otorga",
+    "Permiso",
+    "0..*",
+    "1..*"
+   ],
+   [
+    "RolEmpresa",
+    "habilita a",
+    "Usuario",
+    "0..1",
+    "0..*"
+   ],
+   [
+    "Empresa",
+    "se respalda en",
+    "Respaldo",
+    "1",
+    "0..*"
+   ],
+   [
+    "Respaldo",
+    "se restaura en",
+    "Restauracion",
+    "0..1",
+    "0..*"
+   ],
+   [
+    "Usuario",
+    "recibe",
+    "Notificacion",
+    "0..1",
+    "0..*"
+   ],
+   [
+    "Usuario",
+    "registra",
+    "SuscripcionPush",
+    "1",
+    "0..*"
+   ],
+   [
+    "Sucursal",
+    "abre",
+    "TurnoCaja",
+    "1",
+    "0..*"
+   ],
+   [
+    "Sucursal",
+    "envía",
+    "Traspaso",
+    "1",
+    "0..*"
+   ],
+   [
+    "Sucursal",
+    "recibe",
+    "Traspaso",
+    "1",
+    "0..*"
+   ],
+   [
+    "Traspaso",
+    "mueve",
+    "MovimientoInventario",
+    "0..1",
+    "0..2"
+   ],
+   [
+    "Existencia",
+    "se explica por",
+    "MovimientoInventario",
+    "1",
+    "0..*"
+   ],
+   [
+    "Talla",
+    "dimensiona",
+    "VarianteProducto",
+    "1",
+    "0..*"
+   ],
+   [
+    "Talla",
+    "se mide en",
+    "MedidaTalla",
+    "1",
+    "0..*"
+   ],
+   [
+    "Producto",
+    "se tabula en",
+    "MedidaTalla",
+    "1",
+    "0..*"
+   ],
+   [
+    "ImagenProducto",
+    "se marca con",
+    "PuntoPrenda",
+    "1",
+    "0..*"
+   ],
+   [
+    "Producto",
+    "se rebaja con",
+    "PrecioMayorista",
+    "1",
+    "0..*"
+   ],
+   [
+    "Producto",
+    "se promociona en",
+    "Promocion",
+    "0..1",
+    "0..*"
+   ],
+   [
+    "Temporada",
+    "enmarca",
+    "Promocion",
+    "0..1",
+    "0..*"
+   ],
+   [
+    "ReglaFueraDeTemporada",
+    "genera",
+    "Promocion",
+    "0..1",
+    "0..*"
+   ],
+   [
+    "Venta",
+    "se salda con",
+    "Pago",
+    "1",
+    "0..*"
+   ],
+   [
+    "Devolucion",
+    "devuelve",
+    "VarianteProducto",
+    "0..*",
+    "1..*"
+   ],
+   [
+    "Cliente",
+    "solicita",
+    "SolicitudDevolucion",
+    "1",
+    "0..*"
+   ],
+   [
+    "Venta",
+    "se reclama en",
+    "SolicitudDevolucion",
+    "1",
+    "0..*"
+   ],
+   [
+    "SolicitudDevolucion",
+    "se resuelve en",
+    "Devolucion",
+    "0..1",
+    "0..1"
+   ],
+   [
+    "Cliente",
+    "pide",
+    "AvisoTalla",
+    "1",
+    "0..*"
+   ],
+   [
+    "AvisoTalla",
+    "espera",
+    "VarianteProducto",
+    "0..*",
+    "1"
+   ],
+   [
+    "AvisoTalla",
+    "se cumple con",
+    "Notificacion",
+    "0..1",
+    "0..1"
+   ],
+   [
+    "Cliente",
+    "registra",
+    "MedidaCliente",
+    "1",
+    "0..*"
+   ],
+   [
+    "Cliente",
+    "se prueba en",
+    "SesionVestidorVirtual",
+    "1",
+    "0..*"
+   ],
+   [
+    "SesionVestidorVirtual",
+    "prueba",
+    "VarianteProducto",
+    "0..*",
+    "1"
+   ],
+   [
+    "OperacionOffline",
+    "ajusta",
+    "MovimientoInventario",
+    "0..1",
+    "0..*"
+   ]
+  ]
+ },
+ "partes": [
+  {
+   "titulo": "3.5 Diseño de la base de datos (CU-01 a CU-46)",
+   "propias": [
+    "aviso_talla",
+    "bitacora",
+    "caja",
+    "categoria",
+    "ciudad",
+    "cliente",
+    "cliente_empresa",
+    "color",
+    "comprobante",
+    "consumo_cupo",
+    "detalle_devolucion",
+    "detalle_venta",
+    "devolucion",
+    "empleado",
+    "empresa",
+    "existencia",
+    "imagen_producto",
+    "linea_solicitud_devolucion",
+    "medida_cliente",
+    "medida_talla",
+    "modelo_analitica",
+    "movimiento_inventario",
+    "notificacion",
+    "operacion_offline",
+    "pago",
+    "pago_simulado",
+    "plan",
+    "precio_mayorista",
+    "producto",
+    "promocion",
+    "punto_prenda",
+    "regla_fuera_de_temporada",
+    "reserva",
+    "reserva_detalle",
+    "respaldo",
+    "restauracion",
+    "rol",
+    "rol_empresa",
+    "rol_empresa_permiso",
+    "sesion_probador",
+    "sesion_token",
+    "solicitud_devolucion",
+    "sucursal",
+    "suscripcion",
+    "suscripcion_push",
+    "talla",
+    "temporada",
+    "traspaso",
+    "turno_caja",
+    "usuario",
+    "variante_producto",
+    "venta"
+   ],
+   "posiciones": {
+    "suscripcion": [
+     37,
+     -40,
+     210,
+     211
+    ],
+    "pago_simulado": [
+     47,
+     -331,
+     190,
+     211
+    ],
+    "consumo_cupo": [
+     60,
+     -622,
+     163,
+     151
+    ],
+    "bitacora": [
+     47,
+     -853,
+     190,
+     331
+    ],
+    "caja": [
+     60,
+     -1264,
+     163,
+     166
+    ],
+    "turno_caja": [
+     30,
+     -1510,
+     224,
+     226
+    ],
+    "plan": [
+     401,
+     -40,
+     224,
+     271
+    ],
+    "empresa": [
+     384,
+     -391,
+     258,
+     271
+    ],
+    "empleado": [
+     408,
+     -742,
+     210,
+     256
+    ],
+    "sesion_token": [
+     418,
+     -1078,
+     190,
+     181
+    ],
+    "devolucion": [
+     384,
+     -1339,
+     258,
+     361
+    ],
+    "pago": [
+     391,
+     -1780,
+     244,
+     226
+    ],
+    "rol_empresa_permiso": [
+     796,
+     -40,
+     183,
+     151
+    ],
+    "rol_empresa": [
+     782,
+     -271,
+     210,
+     211
+    ],
+    "usuario": [
+     776,
+     -562,
+     224,
+     256
+    ],
+    "sucursal": [
+     772,
+     -898,
+     231,
+     271
+    ],
+    "solicitud_devolucion": [
+     792,
+     -1249,
+     190,
+     286
+    ],
+    "venta": [
+     772,
+     -1615,
+     231,
+     361
+    ],
+    "respaldo": [
+     1181,
+     -40,
+     176,
+     241
+    ],
+    "modelo_analitica": [
+     1160,
+     -361,
+     217,
+     286
+    ],
+    "traspaso": [
+     1157,
+     -727,
+     224,
+     451
+    ],
+    "operacion_offline": [
+     1133,
+     -1258,
+     272,
+     466
+    ],
+    "comprobante": [
+     1167,
+     -1804,
+     204,
+     211
+    ],
+    "detalle_devolucion": [
+     1181,
+     -2095,
+     176,
+     181
+    ],
+    "rol": [
+     1552,
+     -40,
+     197,
+     121
+    ],
+    "restauracion": [
+     1562,
+     -241,
+     176,
+     241
+    ],
+    "movimiento_inventario": [
+     1542,
+     -562,
+     217,
+     256
+    ],
+    "cliente_empresa": [
+     1562,
+     -898,
+     176,
+     121
+    ],
+    "linea_solicitud_devolucion": [
+     1535,
+     -1099,
+     231,
+     181
+    ],
+    "reserva": [
+     1546,
+     -1360,
+     210,
+     241
+    ],
+    "suscripcion_push": [
+     1902,
+     -40,
+     204,
+     241
+    ],
+    "ciudad": [
+     1900,
+     -361,
+     210,
+     151
+    ],
+    "existencia": [
+     1896,
+     -592,
+     217,
+     226
+    ],
+    "cliente": [
+     1900,
+     -898,
+     210,
+     211
+    ],
+    "variante_producto": [
+     1900,
+     -1189,
+     210,
+     241
+    ],
+    "color": [
+     1900,
+     -1510,
+     210,
+     196
+    ],
+    "precio_mayorista": [
+     2243,
+     -40,
+     231,
+     211
+    ],
+    "notificacion": [
+     2243,
+     -331,
+     231,
+     346
+    ],
+    "aviso_talla": [
+     2256,
+     -757,
+     204,
+     196
+    ],
+    "medida_cliente": [
+     2624,
+     -40,
+     210,
+     211
+    ],
+    "producto": [
+     2624,
+     -331,
+     210,
+     286
+    ],
+    "imagen_producto": [
+     2621,
+     -697,
+     217,
+     256
+    ],
+    "sesion_probador": [
+     2614,
+     -1033,
+     231,
+     241
+    ],
+    "reserva_detalle": [
+     2618,
+     -1354,
+     224,
+     211
+    ],
+    "detalle_venta": [
+     2604,
+     -1645,
+     251,
+     211
+    ],
+    "categoria": [
+     2985,
+     -40,
+     210,
+     211
+    ],
+    "temporada": [
+     2985,
+     -331,
+     210,
+     226
+    ],
+    "medida_talla": [
+     2985,
+     -637,
+     210,
+     241
+    ],
+    "talla": [
+     2985,
+     -958,
+     210,
+     211
+    ],
+    "promocion": [
+     3328,
+     -40,
+     210,
+     316
+    ],
+    "regla_fuera_de_temporada": [
+     3325,
+     -436,
+     217,
+     211
+    ],
+    "punto_prenda": [
+     3328,
+     -727,
+     210,
+     256
+    ]
+   },
+   "relaciones": [
+    [
+     "caja",
+     "turno_caja",
+     "caja_id"
+    ],
+    [
+     "categoria",
+     "categoria",
+     "categoria_padre_id"
+    ],
+    [
+     "categoria",
+     "producto",
+     "categoria_id"
+    ],
+    [
+     "categoria",
+     "promocion",
+     "categoria_id"
+    ],
+    [
+     "ciudad",
+     "sucursal",
+     "ciudad_id"
+    ],
+    [
+     "cliente",
+     "aviso_talla",
+     "cliente_id"
+    ],
+    [
+     "cliente",
+     "cliente_empresa",
+     "cliente_id"
+    ],
+    [
+     "cliente",
+     "medida_cliente",
+     "cliente_id"
+    ],
+    [
+     "cliente",
+     "operacion_offline",
+     "cliente_id"
+    ],
+    [
+     "cliente",
+     "reserva",
+     "cliente_id"
+    ],
+    [
+     "cliente",
+     "sesion_probador",
+     "cliente_id"
+    ],
+    [
+     "cliente",
+     "solicitud_devolucion",
+     "cliente_id"
+    ],
+    [
+     "cliente",
+     "venta",
+     "cliente_id"
+    ],
+    [
+     "color",
+     "variante_producto",
+     "color_id"
+    ],
+    [
+     "devolucion",
+     "detalle_devolucion",
+     "devolucion_id"
+    ],
+    [
+     "devolucion",
+     "solicitud_devolucion",
+     "devolucion_id"
+    ],
+    [
+     "empresa",
+     "bitacora",
+     "empresa_id"
+    ],
+    [
+     "empresa",
+     "cliente_empresa",
+     "empresa_id"
+    ],
+    [
+     "empresa",
+     "consumo_cupo",
+     "empresa_id"
+    ],
+    [
+     "empresa",
+     "modelo_analitica",
+     "empresa_id"
+    ],
+    [
+     "empresa",
+     "pago_simulado",
+     "empresa_id"
+    ],
+    [
+     "empresa",
+     "respaldo",
+     "empresa_id"
+    ],
+    [
+     "empresa",
+     "rol_empresa",
+     "empresa_id"
+    ],
+    [
+     "empresa",
+     "sucursal",
+     "empresa_id"
+    ],
+    [
+     "empresa",
+     "suscripcion",
+     "empresa_id"
+    ],
+    [
+     "empresa",
+     "usuario",
+     "empresa_id"
+    ],
+    [
+     "existencia",
+     "movimiento_inventario",
+     "existencia_id"
+    ],
+    [
+     "imagen_producto",
+     "punto_prenda",
+     "imagen_id"
+    ],
+    [
+     "movimiento_inventario",
+     "traspaso",
+     "movimiento_entrada_id"
+    ],
+    [
+     "movimiento_inventario",
+     "traspaso",
+     "movimiento_salida_id"
+    ],
+    [
+     "notificacion",
+     "aviso_talla",
+     "notificacion_id"
+    ],
+    [
+     "operacion_offline",
+     "movimiento_inventario",
+     "operacion_offline_id"
+    ],
+    [
+     "plan",
+     "pago_simulado",
+     "plan_id"
+    ],
+    [
+     "plan",
+     "suscripcion",
+     "plan_id"
+    ],
+    [
+     "producto",
+     "imagen_producto",
+     "producto_id"
+    ],
+    [
+     "producto",
+     "medida_talla",
+     "producto_id"
+    ],
+    [
+     "producto",
+     "precio_mayorista",
+     "producto_id"
+    ],
+    [
+     "producto",
+     "promocion",
+     "producto_id"
+    ],
+    [
+     "producto",
+     "variante_producto",
+     "producto_id"
+    ],
+    [
+     "reserva",
+     "operacion_offline",
+     "reserva_id"
+    ],
+    [
+     "reserva",
+     "reserva_detalle",
+     "reserva_id"
+    ],
+    [
+     "reserva",
+     "venta",
+     "reserva_id"
+    ],
+    [
+     "respaldo",
+     "restauracion",
+     "respaldo_id"
+    ],
+    [
+     "rol",
+     "usuario",
+     "rol_id"
+    ],
+    [
+     "rol_empresa",
+     "rol_empresa_permiso",
+     "rol_empresa_id"
+    ],
+    [
+     "rol_empresa",
+     "usuario",
+     "rol_empresa_id"
+    ],
+    [
+     "solicitud_devolucion",
+     "linea_solicitud_devolucion",
+     "solicitud_id"
+    ],
+    [
+     "sucursal",
+     "caja",
+     "sucursal_id"
+    ],
+    [
+     "sucursal",
+     "empleado",
+     "sucursal_id"
+    ],
+    [
+     "sucursal",
+     "existencia",
+     "sucursal_id"
+    ],
+    [
+     "sucursal",
+     "operacion_offline",
+     "sucursal_id"
+    ],
+    [
+     "sucursal",
+     "reserva",
+     "sucursal_id"
+    ],
+    [
+     "sucursal",
+     "solicitud_devolucion",
+     "sucursal_id"
+    ],
+    [
+     "sucursal",
+     "traspaso",
+     "sucursal_destino_id"
+    ],
+    [
+     "sucursal",
+     "traspaso",
+     "sucursal_origen_id"
+    ],
+    [
+     "sucursal",
+     "venta",
+     "sucursal_id"
+    ],
+    [
+     "suscripcion",
+     "pago_simulado",
+     "suscripcion_id"
+    ],
+    [
+     "talla",
+     "medida_talla",
+     "talla_id"
+    ],
+    [
+     "talla",
+     "variante_producto",
+     "talla_id"
+    ],
+    [
+     "temporada",
+     "producto",
+     "temporada_id"
+    ],
+    [
+     "temporada",
+     "promocion",
+     "temporada_id"
+    ],
+    [
+     "turno_caja",
+     "devolucion",
+     "turno_caja_id"
+    ],
+    [
+     "turno_caja",
+     "venta",
+     "turno_caja_id"
+    ],
+    [
+     "usuario",
+     "bitacora",
+     "usuario_id"
+    ],
+    [
+     "usuario",
+     "cliente",
+     "usuario_id"
+    ],
+    [
+     "usuario",
+     "devolucion",
+     "recibida_por"
+    ],
+    [
+     "usuario",
+     "empleado",
+     "usuario_id"
+    ],
+    [
+     "usuario",
+     "modelo_analitica",
+     "entrenado_por"
+    ],
+    [
+     "usuario",
+     "movimiento_inventario",
+     "usuario_id"
+    ],
+    [
+     "usuario",
+     "notificacion",
+     "destinatario_id"
+    ],
+    [
+     "usuario",
+     "operacion_offline",
+     "devuelto_por"
+    ],
+    [
+     "usuario",
+     "operacion_offline",
+     "usuario_id"
+    ],
+    [
+     "usuario",
+     "respaldo",
+     "creado_por"
+    ],
+    [
+     "usuario",
+     "restauracion",
+     "restaurado_por"
+    ],
+    [
+     "usuario",
+     "sesion_token",
+     "usuario_id"
+    ],
+    [
+     "usuario",
+     "solicitud_devolucion",
+     "atendida_por"
+    ],
+    [
+     "usuario",
+     "suscripcion_push",
+     "usuario_id"
+    ],
+    [
+     "usuario",
+     "traspaso",
+     "solicitado_por"
+    ],
+    [
+     "usuario",
+     "turno_caja",
+     "usuario_id"
+    ],
+    [
+     "variante_producto",
+     "aviso_talla",
+     "variante_id"
+    ],
+    [
+     "variante_producto",
+     "detalle_devolucion",
+     "variante_id"
+    ],
+    [
+     "variante_producto",
+     "detalle_venta",
+     "variante_id"
+    ],
+    [
+     "variante_producto",
+     "existencia",
+     "variante_id"
+    ],
+    [
+     "variante_producto",
+     "imagen_producto",
+     "variante_id"
+    ],
+    [
+     "variante_producto",
+     "linea_solicitud_devolucion",
+     "variante_id"
+    ],
+    [
+     "variante_producto",
+     "linea_solicitud_devolucion",
+     "variante_nueva_id"
+    ],
+    [
+     "variante_producto",
+     "reserva_detalle",
+     "variante_id"
+    ],
+    [
+     "variante_producto",
+     "sesion_probador",
+     "variante_id"
+    ],
+    [
+     "variante_producto",
+     "traspaso",
+     "variante_id"
+    ],
+    [
+     "venta",
+     "comprobante",
+     "venta_id"
+    ],
+    [
+     "venta",
+     "detalle_venta",
+     "venta_id"
+    ],
+    [
+     "venta",
+     "devolucion",
+     "venta_cambio_id"
+    ],
+    [
+     "venta",
+     "devolucion",
+     "venta_id"
+    ],
+    [
+     "venta",
+     "operacion_offline",
+     "venta_id"
+    ],
+    [
+     "venta",
+     "pago",
+     "venta_id"
+    ],
+    [
+     "venta",
+     "solicitud_devolucion",
+     "venta_id"
+    ]
+   ]
+  }
+ ],
+ "tablas": {
+  "abastecimiento": {
+   "nombre": "ABASTECIMIENTO",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "proveedor_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "variante_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "cantidad",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "dias_plazo",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "observacion",
+     "t": "VARCHAR(200)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "estado",
+     "t": "VARCHAR(20)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "cantidad_recibida",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "recibido_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "aviso_talla": {
+   "nombre": "AVISO_TALLA",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "cliente_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "variante_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "notificado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "notificacion_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    }
+   ]
+  },
+  "bitacora": {
+   "nombre": "BITACORA",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "ocurrido_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "usuario_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "actor",
+     "t": "VARCHAR(160)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "rol",
+     "t": "VARCHAR(40)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "accion",
+     "t": "VARCHAR(40)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "entidad",
+     "t": "VARCHAR(60)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "entidad_id",
+     "t": "VARCHAR(60)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "metodo",
+     "t": "VARCHAR(10)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "ruta",
+     "t": "VARCHAR(300)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "estado_http",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "exito",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "ip",
+     "t": "VARCHAR(60)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "agente",
+     "t": "VARCHAR(200)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "detalle",
+     "t": "JSONB",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    }
+   ]
+  },
+  "caja": {
+   "nombre": "CAJA",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "SERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "sucursal_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "nombre",
+     "t": "VARCHAR(50)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "activa",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "carrito": {
+   "nombre": "CARRITO",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "cliente_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "carrito_detalle": {
+   "nombre": "CARRITO_DETALLE",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "carrito_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "variante_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "cantidad",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "categoria": {
+   "nombre": "CATEGORIA",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "SERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "categoria_padre_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "nombre",
+     "t": "VARCHAR(60)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "orden",
+     "t": "SMALLINT",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "activa",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "ciudad": {
+   "nombre": "CIUDAD",
+   "rls": false,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "SERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "nombre",
+     "t": "VARCHAR(60)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "departamento",
+     "t": "VARCHAR(60)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    }
+   ]
+  },
+  "cliente": {
+   "nombre": "CLIENTE",
+   "rls": false,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "usuario_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "documento",
+     "t": "VARCHAR(20)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "telefono",
+     "t": "VARCHAR(20)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "talla_superior",
+     "t": "VARCHAR(10)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "talla_inferior",
+     "t": "VARCHAR(10)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    }
+   ]
+  },
+  "cliente_categoria": {
+   "nombre": "CLIENTE_CATEGORIA",
+   "rls": false,
+   "columnas": [
+    {
+     "n": "cliente_id",
+     "t": "BIGINT",
+     "k": "PK,FK",
+     "nulo": false
+    },
+    {
+     "n": "categoria_id",
+     "t": "INTEGER",
+     "k": "PK,FK",
+     "nulo": false
+    }
+   ]
+  },
+  "cliente_empresa": {
+   "nombre": "CLIENTE_EMPRESA",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "cliente_id",
+     "t": "BIGINT",
+     "k": "PK,FK",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "PK,FK",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    }
+   ]
+  },
+  "coleccion": {
+   "nombre": "COLECCION",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "SERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "temporada_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "nombre",
+     "t": "VARCHAR(60)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "descripcion",
+     "t": "VARCHAR(200)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "activa",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "color": {
+   "nombre": "COLOR",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "SERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "nombre",
+     "t": "VARCHAR(40)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "hexadecimal",
+     "t": "CHAR(7)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "activo",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "comprobante": {
+   "nombre": "COMPROBANTE",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "venta_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "tipo",
+     "t": "VARCHAR(10)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "numero",
+     "t": "VARCHAR(20)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "nit_ci",
+     "t": "VARCHAR(20)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "razon_social",
+     "t": "VARCHAR(120)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "emitido_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "consumo_cupo": {
+   "nombre": "CONSUMO_CUPO",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "PK,FK",
+     "nulo": false
+    },
+    {
+     "n": "recurso",
+     "t": "VARCHAR(20)",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "periodo",
+     "t": "DATE",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "usados",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    }
+   ]
+  },
+  "detalle_devolucion": {
+   "nombre": "DETALLE_DEVOLUCION",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "devolucion_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "variante_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "cantidad",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "detalle_venta": {
+   "nombre": "DETALLE_VENTA",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "venta_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "variante_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "cantidad",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "precio_unitario",
+     "t": "NUMERIC(10,2)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "descuento_unitario",
+     "t": "NUMERIC(10,2)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "devolucion": {
+   "nombre": "DEVOLUCION",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "venta_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "turno_caja_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "motivo",
+     "t": "VARCHAR(200)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "monto",
+     "t": "NUMERIC(10,2)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "tipo",
+     "t": "VARCHAR(12)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "venta_cambio_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "diferencia",
+     "t": "NUMERIC(10,2)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "metodo_diferencia",
+     "t": "VARCHAR(20)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "estado",
+     "t": "VARCHAR(10)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "conforme",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "observacion_cliente",
+     "t": "VARCHAR(300)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "origen",
+     "t": "VARCHAR(6)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "recibida_por",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "reembolso_referencia",
+     "t": "VARCHAR(100)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "reembolso_monto",
+     "t": "NUMERIC(10,2)",
+     "k": "",
+     "nulo": true
+    }
+   ]
+  },
+  "direccion_cliente": {
+   "nombre": "DIRECCION_CLIENTE",
+   "rls": false,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "cliente_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "ciudad_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "alias",
+     "t": "VARCHAR(40)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "direccion",
+     "t": "VARCHAR(200)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "referencia",
+     "t": "VARCHAR(200)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "predeterminada",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    }
+   ]
+  },
+  "empleado": {
+   "nombre": "EMPLEADO",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "usuario_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "sucursal_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "documento",
+     "t": "VARCHAR(20)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "telefono",
+     "t": "VARCHAR(20)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "cargo",
+     "t": "VARCHAR(30)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "fecha_ingreso",
+     "t": "DATE",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "fecha_baja",
+     "t": "DATE",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "empresa": {
+   "nombre": "EMPRESA",
+   "rls": false,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "nombre",
+     "t": "VARCHAR(120)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "razon_social",
+     "t": "VARCHAR(160)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "nit",
+     "t": "VARCHAR(30)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "slug",
+     "t": "VARCHAR(40)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "correo_contacto",
+     "t": "VARCHAR(120)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "estado",
+     "t": "VARCHAR(10)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "logo",
+     "t": "VARCHAR(255)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "color_principal",
+     "t": "VARCHAR(7)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "color_secundario",
+     "t": "VARCHAR(7)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "ventana_devolucion_horas",
+     "t": "SMALLINT",
+     "k": "",
+     "nulo": false
+    }
+   ]
+  },
+  "existencia": {
+   "nombre": "EXISTENCIA",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "variante_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "sucursal_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "cantidad_disponible",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "cantidad_reservada",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "stock_minimo",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "favorito": {
+   "nombre": "FAVORITO",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "cliente_id",
+     "t": "BIGINT",
+     "k": "PK,FK",
+     "nulo": false
+    },
+    {
+     "n": "producto_id",
+     "t": "BIGINT",
+     "k": "PK,FK",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "imagen_producto": {
+   "nombre": "IMAGEN_PRODUCTO",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "producto_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "variante_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "ruta",
+     "t": "VARCHAR(255)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "es_principal",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "es_transparente",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "orden",
+     "t": "SMALLINT",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "es_silueta_generada",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "linea_solicitud_devolucion": {
+   "nombre": "LINEA_SOLICITUD_DEVOLUCION",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "solicitud_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "variante_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "cantidad",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "variante_nueva_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    }
+   ]
+  },
+  "medida_cliente": {
+   "nombre": "MEDIDA_CLIENTE",
+   "rls": false,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "cliente_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "busto_cm",
+     "t": "NUMERIC(5,1)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "cintura_cm",
+     "t": "NUMERIC(5,1)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "cadera_cm",
+     "t": "NUMERIC(5,1)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "altura_cm",
+     "t": "NUMERIC(5,1)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    }
+   ]
+  },
+  "medida_talla": {
+   "nombre": "MEDIDA_TALLA",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "producto_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "talla_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "busto_cm",
+     "t": "NUMERIC(5,1)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "cintura_cm",
+     "t": "NUMERIC(5,1)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "cadera_cm",
+     "t": "NUMERIC(5,1)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "largo_cm",
+     "t": "NUMERIC(5,1)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "modelo_analitica": {
+   "nombre": "MODELO_ANALITICA",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "tipo",
+     "t": "VARCHAR(12)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "parametros",
+     "t": "JSONB",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "metricas",
+     "t": "JSONB",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "resultado",
+     "t": "JSONB",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "filas_entrenamiento",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "filas_reales",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "filas_sinteticas",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "duracion_ms",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "modelo",
+     "t": "BYTEA",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "entrenado_por",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "entrenado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    }
+   ]
+  },
+  "movimiento_inventario": {
+   "nombre": "MOVIMIENTO_INVENTARIO",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "existencia_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "tipo",
+     "t": "VARCHAR(15)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "cantidad",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "motivo",
+     "t": "VARCHAR(200)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "proveedor_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "referencia",
+     "t": "VARCHAR(40)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "usuario_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "operacion_offline_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    }
+   ]
+  },
+  "notificacion": {
+   "nombre": "NOTIFICACION",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "destinatario_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "tipo",
+     "t": "VARCHAR(40)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "titulo",
+     "t": "VARCHAR(160)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "cuerpo",
+     "t": "TEXT",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "enlace",
+     "t": "VARCHAR(300)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "entidad",
+     "t": "VARCHAR(60)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "entidad_id",
+     "t": "BIGINT",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "creada_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "leida_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "correo_estado",
+     "t": "VARCHAR(20)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "correo_enviado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "correo_error",
+     "t": "VARCHAR(300)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "push_estado",
+     "t": "VARCHAR(20)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "push_enviado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "push_error",
+     "t": "VARCHAR(300)",
+     "k": "",
+     "nulo": true
+    }
+   ]
+  },
+  "operacion_offline": {
+   "nombre": "OPERACION_OFFLINE",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "uuid",
+     "t": "UUID",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "tipo",
+     "t": "VARCHAR(10)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "estado",
+     "t": "VARCHAR(12)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "sucursal_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "usuario_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "dispositivo",
+     "t": "VARCHAR(80)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "creada_en_cliente",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "recibida_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "intentos",
+     "t": "SMALLINT",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "metodo_pago",
+     "t": "VARCHAR(10)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "monto_cobrado",
+     "t": "NUMERIC(12,2)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "referencia_pago",
+     "t": "VARCHAR(60)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "carga",
+     "t": "JSONB",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "venta_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "reserva_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "motivo_rechazo",
+     "t": "VARCHAR(300)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "devuelto_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "devuelto_por",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "metodo_devolucion",
+     "t": "VARCHAR(10)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "referencia_devolucion",
+     "t": "VARCHAR(60)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "observacion_devolucion",
+     "t": "VARCHAR(300)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "cliente_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "devolucion_automatica",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    }
+   ]
+  },
+  "pago": {
+   "nombre": "PAGO",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "venta_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "metodo",
+     "t": "VARCHAR(12)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "estado",
+     "t": "VARCHAR(12)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "monto",
+     "t": "NUMERIC(10,2)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "referencia_externa",
+     "t": "VARCHAR(100)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "pago_simulado": {
+   "nombre": "PAGO_SIMULADO",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "suscripcion_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "plan_id",
+     "t": "SMALLINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "concepto",
+     "t": "VARCHAR(12)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "monto",
+     "t": "NUMERIC(10,2)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "comprobante",
+     "t": "VARCHAR(24)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "pagado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    }
+   ]
+  },
+  "permiso": {
+   "nombre": "PERMISO",
+   "rls": false,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "SMALLINT",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "codigo",
+     "t": "VARCHAR(60)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "descripcion",
+     "t": "VARCHAR(150)",
+     "k": "",
+     "nulo": true
+    }
+   ]
+  },
+  "plan": {
+   "nombre": "PLAN",
+   "rls": false,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "SMALLINT",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "codigo",
+     "t": "VARCHAR(20)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "nombre",
+     "t": "VARCHAR(40)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "precio_mensual",
+     "t": "NUMERIC(10,2)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "duracion_dias",
+     "t": "SMALLINT",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "max_sucursales",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "max_empleados",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "cupo_reportes_ia",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "cupo_fotos_ia",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "funciones",
+     "t": "JSONB",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "activo",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    }
+   ]
+  },
+  "precio_mayorista": {
+   "nombre": "PRECIO_MAYORISTA",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "SERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "producto_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "cantidad_minima",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "precio_unitario",
+     "t": "NUMERIC(10,2)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "activo",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    }
+   ]
+  },
+  "producto": {
+   "nombre": "PRODUCTO",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "codigo",
+     "t": "VARCHAR(30)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "nombre",
+     "t": "VARCHAR(120)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "descripcion",
+     "t": "VARCHAR(500)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "categoria_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "proveedor_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "temporada_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "coleccion_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "precio_base",
+     "t": "NUMERIC(10,2)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "activo",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "promocion": {
+   "nombre": "PROMOCION",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "SERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "nombre",
+     "t": "VARCHAR(80)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "alcance",
+     "t": "VARCHAR(10)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "producto_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "categoria_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "temporada_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "porcentaje",
+     "t": "NUMERIC(5,2)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "desde",
+     "t": "DATE",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "hasta",
+     "t": "DATE",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "activa",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "origen",
+     "t": "VARCHAR(10)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "cerrada_por_regla",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    }
+   ]
+  },
+  "proveedor": {
+   "nombre": "PROVEEDOR",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "usuario_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "razon_social",
+     "t": "VARCHAR(120)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "identificacion_tributaria",
+     "t": "VARCHAR(30)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "contacto",
+     "t": "VARCHAR(80)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "telefono",
+     "t": "VARCHAR(20)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "correo",
+     "t": "VARCHAR(120)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "direccion",
+     "t": "VARCHAR(200)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "activo",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "punto_prenda": {
+   "nombre": "PUNTO_PRENDA",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "imagen_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "hombro_izq_x",
+     "t": "NUMERIC(5,4)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "hombro_izq_y",
+     "t": "NUMERIC(5,4)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "hombro_der_x",
+     "t": "NUMERIC(5,4)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "hombro_der_y",
+     "t": "NUMERIC(5,4)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "ruedo_x",
+     "t": "NUMERIC(5,4)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "ruedo_y",
+     "t": "NUMERIC(5,4)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    }
+   ]
+  },
+  "recomendacion": {
+   "nombre": "RECOMENDACION",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "cliente_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "generada_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "motor",
+     "t": "VARCHAR(30)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "sugerencias",
+     "t": "JSONB",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "regla_fuera_de_temporada": {
+   "nombre": "REGLA_FUERA_DE_TEMPORADA",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "SERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "activa",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "dias_desde_fin",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "existencia_minima",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "porcentaje",
+     "t": "NUMERIC(5,2)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    }
+   ]
+  },
+  "reserva": {
+   "nombre": "RESERVA",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "cliente_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "sucursal_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "franja_inicio",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "franja_fin",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "estado",
+     "t": "VARCHAR(10)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "observacion",
+     "t": "VARCHAR(200)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "reserva_detalle": {
+   "nombre": "RESERVA_DETALLE",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "reserva_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "variante_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "cantidad",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "resultado_prueba",
+     "t": "VARCHAR(10)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "respaldo": {
+   "nombre": "RESPALDO",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "SERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "tipo",
+     "t": "VARCHAR(10)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "archivo",
+     "t": "VARCHAR(120)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "tamano_bytes",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "sha256",
+     "t": "VARCHAR(64)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "filas",
+     "t": "JSONB",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "contenido",
+     "t": "BYTEA",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "creado_por",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    }
+   ]
+  },
+  "restauracion": {
+   "nombre": "RESTAURACION",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "SERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "origen",
+     "t": "VARCHAR(10)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "archivo",
+     "t": "VARCHAR(120)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "sha256",
+     "t": "VARCHAR(64)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "datos_del",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "filas",
+     "t": "JSONB",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "respaldo_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "restaurado_por",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    }
+   ]
+  },
+  "rol": {
+   "nombre": "ROL",
+   "rls": false,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "SMALLINT",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "nombre",
+     "t": "VARCHAR(30)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "descripcion",
+     "t": "VARCHAR(150)",
+     "k": "",
+     "nulo": true
+    }
+   ]
+  },
+  "rol_empresa": {
+   "nombre": "ROL_EMPRESA",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "SERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "nombre",
+     "t": "VARCHAR(40)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "descripcion",
+     "t": "VARCHAR(150)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "rol_base",
+     "t": "VARCHAR(15)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "activo",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    }
+   ]
+  },
+  "rol_empresa_permiso": {
+   "nombre": "ROL_EMPRESA_PERMISO",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "SERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "rol_empresa_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "permiso",
+     "t": "VARCHAR(60)",
+     "k": "",
+     "nulo": false
+    }
+   ]
+  },
+  "rol_permiso": {
+   "nombre": "ROL_PERMISO",
+   "rls": false,
+   "columnas": [
+    {
+     "n": "rol_id",
+     "t": "SMALLINT",
+     "k": "PK,FK",
+     "nulo": false
+    },
+    {
+     "n": "permiso_id",
+     "t": "SMALLINT",
+     "k": "PK,FK",
+     "nulo": false
+    }
+   ]
+  },
+  "sesion_probador": {
+   "nombre": "SESION_PROBADOR",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "cliente_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "variante_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "metodo",
+     "t": "VARCHAR(10)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "ajuste",
+     "t": "VARCHAR(15)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "talla_recomendada",
+     "t": "VARCHAR(10)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "foto_ruta",
+     "t": "VARCHAR(255)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "foto_generada_por",
+     "t": "VARCHAR(60)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    }
+   ]
+  },
+  "sesion_token": {
+   "nombre": "SESION_TOKEN",
+   "rls": false,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "usuario_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "jti",
+     "t": "UUID",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "emitido_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "expira_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "revocado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": true
+    }
+   ]
+  },
+  "solicitud_devolucion": {
+   "nombre": "SOLICITUD_DEVOLUCION",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "venta_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "cliente_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "sucursal_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "tipo",
+     "t": "VARCHAR(12)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "estado",
+     "t": "VARCHAR(12)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "motivo",
+     "t": "VARCHAR(300)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "respuesta",
+     "t": "VARCHAR(300)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "atendida_por",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "atendida_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "devolucion_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    }
+   ]
+  },
+  "sucursal": {
+   "nombre": "SUCURSAL",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "SERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "ciudad_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "nombre",
+     "t": "VARCHAR(80)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "direccion",
+     "t": "VARCHAR(200)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "telefono",
+     "t": "VARCHAR(20)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "horario_apertura",
+     "t": "TIME",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "horario_cierre",
+     "t": "TIME",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "capacidad_vestidores",
+     "t": "SMALLINT",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "activa",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "suscripcion": {
+   "nombre": "SUSCRIPCION",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "plan_id",
+     "t": "SMALLINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "inicio",
+     "t": "DATE",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "vencimiento",
+     "t": "DATE",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "estado",
+     "t": "VARCHAR(12)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    }
+   ]
+  },
+  "suscripcion_push": {
+   "nombre": "SUSCRIPCION_PUSH",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "usuario_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "canal",
+     "t": "VARCHAR(10)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "direccion",
+     "t": "TEXT",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "clave_p256dh",
+     "t": "VARCHAR(200)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "clave_auth",
+     "t": "VARCHAR(100)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "dispositivo",
+     "t": "VARCHAR(120)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "creada_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "usada_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": true
+    }
+   ]
+  },
+  "talla": {
+   "nombre": "TALLA",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "SERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "tipo_prenda",
+     "t": "VARCHAR(30)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "codigo",
+     "t": "VARCHAR(10)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "orden",
+     "t": "SMALLINT",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "activa",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "temporada": {
+   "nombre": "TEMPORADA",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "SERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "nombre",
+     "t": "VARCHAR(60)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "descripcion",
+     "t": "VARCHAR(200)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "fecha_inicio",
+     "t": "DATE",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "fecha_fin",
+     "t": "DATE",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "activa",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "token_recuperacion": {
+   "nombre": "TOKEN_RECUPERACION",
+   "rls": false,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "usuario_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "hash_token",
+     "t": "VARCHAR(64)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "solicitado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "expira_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "usado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": true
+    }
+   ]
+  },
+  "transaccion_pasarela": {
+   "nombre": "TRANSACCION_PASARELA",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "pago_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "evento_id",
+     "t": "VARCHAR(100)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "tipo_evento",
+     "t": "VARCHAR(50)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "firma_valida",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "carga_util",
+     "t": "TEXT",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "recibido_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    }
+   ]
+  },
+  "traspaso": {
+   "nombre": "TRASPASO",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "tipo",
+     "t": "VARCHAR(10)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "estado",
+     "t": "VARCHAR(12)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "variante_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "sucursal_origen_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "sucursal_destino_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "cantidad",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "cantidad_solicitada",
+     "t": "INTEGER",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "motivo",
+     "t": "VARCHAR(200)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "solicitado_por",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "aprobado_por",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "aprobado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "enviado_por",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "enviado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "recibido_por",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "recibido_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "rechazado_por",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "rechazado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "motivo_rechazo",
+     "t": "VARCHAR(200)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "movimiento_salida_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "movimiento_entrada_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    }
+   ]
+  },
+  "turno_caja": {
+   "nombre": "TURNO_CAJA",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "caja_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "usuario_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "abierto_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "cerrado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "monto_apertura",
+     "t": "NUMERIC(10,2)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "monto_cierre",
+     "t": "NUMERIC(10,2)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "monto_esperado",
+     "t": "NUMERIC(10,2)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "usuario": {
+   "nombre": "USUARIO",
+   "rls": false,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "correo",
+     "t": "VARCHAR(120)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "hash_contrasena",
+     "t": "VARCHAR(255)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "nombres",
+     "t": "VARCHAR(80)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "apellidos",
+     "t": "VARCHAR(80)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "rol_id",
+     "t": "SMALLINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "activo",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "rol_empresa_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": true
+    }
+   ]
+  },
+  "variante_producto": {
+   "nombre": "VARIANTE_PRODUCTO",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "producto_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "talla_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "color_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "sku",
+     "t": "VARCHAR(40)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "precio",
+     "t": "NUMERIC(10,2)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "activa",
+     "t": "BOOLEAN",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    }
+   ]
+  },
+  "venta": {
+   "nombre": "VENTA",
+   "rls": true,
+   "columnas": [
+    {
+     "n": "id",
+     "t": "BIGSERIAL",
+     "k": "PK",
+     "nulo": false
+    },
+    {
+     "n": "codigo",
+     "t": "VARCHAR(20)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "canal",
+     "t": "VARCHAR(12)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "estado",
+     "t": "VARCHAR(20)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "cliente_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "sucursal_id",
+     "t": "INTEGER",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "turno_caja_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "reserva_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "modalidad_entrega",
+     "t": "VARCHAR(10)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "direccion_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": true
+    },
+    {
+     "n": "subtotal",
+     "t": "NUMERIC(10,2)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "descuento",
+     "t": "NUMERIC(10,2)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "total",
+     "t": "NUMERIC(10,2)",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "creado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "actualizado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": false
+    },
+    {
+     "n": "metodo_pago",
+     "t": "VARCHAR(20)",
+     "k": "",
+     "nulo": true
+    },
+    {
+     "n": "empresa_id",
+     "t": "BIGINT",
+     "k": "FK",
+     "nulo": false
+    },
+    {
+     "n": "entregado_en",
+     "t": "TIMESTAMPTZ",
+     "k": "",
+     "nulo": true
+    }
+   ]
+  }
+ },
+ "relaciones": [
+  {
+   "destino": "caja",
+   "origen": "turno_caja",
+   "columna": "caja_id",
+   "verbo": "REGISTRA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "carrito",
+   "origen": "carrito_detalle",
+   "columna": "carrito_id",
+   "verbo": "SE_DESGLOSA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "categoria",
+   "origen": "categoria",
+   "columna": "categoria_padre_id",
+   "verbo": "SE_SUBDIVIDE_EN",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "categoria",
+   "origen": "cliente_categoria",
+   "columna": "categoria_id",
+   "verbo": "SE_PREFIERE_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "categoria",
+   "origen": "producto",
+   "columna": "categoria_id",
+   "verbo": "CLASIFICA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "categoria",
+   "origen": "promocion",
+   "columna": "categoria_id",
+   "verbo": "AGRUPA_PROMOCION",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "ciudad",
+   "origen": "direccion_cliente",
+   "columna": "ciudad_id",
+   "verbo": "UBICA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "ciudad",
+   "origen": "sucursal",
+   "columna": "ciudad_id",
+   "verbo": "ALOJA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "cliente",
+   "origen": "aviso_talla",
+   "columna": "cliente_id",
+   "verbo": "PIDE",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "cliente",
+   "origen": "carrito",
+   "columna": "cliente_id",
+   "verbo": "TIENE",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "cliente",
+   "origen": "cliente_categoria",
+   "columna": "cliente_id",
+   "verbo": "PREFIERE_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "cliente",
+   "origen": "cliente_empresa",
+   "columna": "cliente_id",
+   "verbo": "SE_REGISTRA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "cliente",
+   "origen": "direccion_cliente",
+   "columna": "cliente_id",
+   "verbo": "REGISTRA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "cliente",
+   "origen": "favorito",
+   "columna": "cliente_id",
+   "verbo": "MARCA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "cliente",
+   "origen": "medida_cliente",
+   "columna": "cliente_id",
+   "verbo": "SE_MIDE_EN",
+   "card_destino": "1",
+   "card_origen": "0..1"
+  },
+  {
+   "destino": "cliente",
+   "origen": "operacion_offline",
+   "columna": "cliente_id",
+   "verbo": "RESERVA_SIN_CONEXION",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "cliente",
+   "origen": "recomendacion",
+   "columna": "cliente_id",
+   "verbo": "RECIBE",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "cliente",
+   "origen": "reserva",
+   "columna": "cliente_id",
+   "verbo": "REALIZA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "cliente",
+   "origen": "sesion_probador",
+   "columna": "cliente_id",
+   "verbo": "SE_PRUEBA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "cliente",
+   "origen": "solicitud_devolucion",
+   "columna": "cliente_id",
+   "verbo": "SOLICITA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "cliente",
+   "origen": "venta",
+   "columna": "cliente_id",
+   "verbo": "COMPRA_EN",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "coleccion",
+   "origen": "producto",
+   "columna": "coleccion_id",
+   "verbo": "AGRUPA",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "color",
+   "origen": "variante_producto",
+   "columna": "color_id",
+   "verbo": "TINE",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "devolucion",
+   "origen": "detalle_devolucion",
+   "columna": "devolucion_id",
+   "verbo": "SE_DESGLOSA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "devolucion",
+   "origen": "solicitud_devolucion",
+   "columna": "devolucion_id",
+   "verbo": "RESUELVE",
+   "card_destino": "0..1",
+   "card_origen": "0..1"
+  },
+  {
+   "destino": "direccion_cliente",
+   "origen": "venta",
+   "columna": "direccion_id",
+   "verbo": "ES_DESTINO_DE",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "abastecimiento",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "aviso_talla",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "bitacora",
+   "columna": "empresa_id",
+   "verbo": "AUDITA_EN",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "caja",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "carrito",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "carrito_detalle",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "categoria",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "cliente_empresa",
+   "columna": "empresa_id",
+   "verbo": "ATIENDE_A",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "coleccion",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "color",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "comprobante",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "consumo_cupo",
+   "columna": "empresa_id",
+   "verbo": "CONSUME",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "detalle_devolucion",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "detalle_venta",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "devolucion",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "empleado",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "existencia",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "favorito",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "imagen_producto",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "linea_solicitud_devolucion",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "medida_talla",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "modelo_analitica",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "movimiento_inventario",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "notificacion",
+   "columna": "empresa_id",
+   "verbo": "NOTIFICA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "operacion_offline",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "pago",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "pago_simulado",
+   "columna": "empresa_id",
+   "verbo": "PAGA_CON",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "precio_mayorista",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "producto",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "promocion",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "proveedor",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "punto_prenda",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "recomendacion",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "regla_fuera_de_temporada",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..1"
+  },
+  {
+   "destino": "empresa",
+   "origen": "reserva",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "reserva_detalle",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "respaldo",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "restauracion",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "rol_empresa",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "rol_empresa_permiso",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "sesion_probador",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "solicitud_devolucion",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "sucursal",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "suscripcion",
+   "columna": "empresa_id",
+   "verbo": "CONTRATA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "suscripcion_push",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "talla",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "temporada",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "transaccion_pasarela",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "traspaso",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "turno_caja",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "usuario",
+   "columna": "empresa_id",
+   "verbo": "DA_ACCESO_A",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "variante_producto",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "empresa",
+   "origen": "venta",
+   "columna": "empresa_id",
+   "verbo": "AGRUPA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "existencia",
+   "origen": "movimiento_inventario",
+   "columna": "existencia_id",
+   "verbo": "SE_EXPLICA_POR",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "imagen_producto",
+   "origen": "punto_prenda",
+   "columna": "imagen_id",
+   "verbo": "SE_MARCA_CON",
+   "card_destino": "1",
+   "card_origen": "0..1"
+  },
+  {
+   "destino": "movimiento_inventario",
+   "origen": "traspaso",
+   "columna": "movimiento_entrada_id",
+   "verbo": "ENTRA_POR",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "movimiento_inventario",
+   "origen": "traspaso",
+   "columna": "movimiento_salida_id",
+   "verbo": "SALE_POR",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "notificacion",
+   "origen": "aviso_talla",
+   "columna": "notificacion_id",
+   "verbo": "CUMPLE",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "operacion_offline",
+   "origen": "movimiento_inventario",
+   "columna": "operacion_offline_id",
+   "verbo": "AJUSTA",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "pago",
+   "origen": "transaccion_pasarela",
+   "columna": "pago_id",
+   "verbo": "SE_NOTIFICA_EN",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "permiso",
+   "origen": "rol_permiso",
+   "columna": "permiso_id",
+   "verbo": "SE_OTORGA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "plan",
+   "origen": "pago_simulado",
+   "columna": "plan_id",
+   "verbo": "SE_COBRA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "plan",
+   "origen": "suscripcion",
+   "columna": "plan_id",
+   "verbo": "RIGE",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "producto",
+   "origen": "favorito",
+   "columna": "producto_id",
+   "verbo": "SE_MARCA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "producto",
+   "origen": "imagen_producto",
+   "columna": "producto_id",
+   "verbo": "SE_ILUSTRA_CON",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "producto",
+   "origen": "medida_talla",
+   "columna": "producto_id",
+   "verbo": "SE_TABULA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "producto",
+   "origen": "precio_mayorista",
+   "columna": "producto_id",
+   "verbo": "SE_REBAJA_CON",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "producto",
+   "origen": "promocion",
+   "columna": "producto_id",
+   "verbo": "SE_PROMOCIONA_EN",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "producto",
+   "origen": "variante_producto",
+   "columna": "producto_id",
+   "verbo": "SE_OFRECE_COMO",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "proveedor",
+   "origen": "abastecimiento",
+   "columna": "proveedor_id",
+   "verbo": "ANUNCIA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "proveedor",
+   "origen": "movimiento_inventario",
+   "columna": "proveedor_id",
+   "verbo": "ABASTECE_EN",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "proveedor",
+   "origen": "producto",
+   "columna": "proveedor_id",
+   "verbo": "ABASTECE",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "reserva",
+   "origen": "operacion_offline",
+   "columna": "reserva_id",
+   "verbo": "SE_ORIGINA_EN",
+   "card_destino": "0..1",
+   "card_origen": "0..1"
+  },
+  {
+   "destino": "reserva",
+   "origen": "reserva_detalle",
+   "columna": "reserva_id",
+   "verbo": "SE_DETALLA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "reserva",
+   "origen": "venta",
+   "columna": "reserva_id",
+   "verbo": "SE_CONCRETA_EN",
+   "card_destino": "0..1",
+   "card_origen": "0..1"
+  },
+  {
+   "destino": "respaldo",
+   "origen": "restauracion",
+   "columna": "respaldo_id",
+   "verbo": "SE_RESTAURA_EN",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "rol",
+   "origen": "rol_permiso",
+   "columna": "rol_id",
+   "verbo": "SE_HABILITA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "rol",
+   "origen": "usuario",
+   "columna": "rol_id",
+   "verbo": "DEFINE",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "rol_empresa",
+   "origen": "rol_empresa_permiso",
+   "columna": "rol_empresa_id",
+   "verbo": "OTORGA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "rol_empresa",
+   "origen": "usuario",
+   "columna": "rol_empresa_id",
+   "verbo": "HABILITA_A",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "solicitud_devolucion",
+   "origen": "linea_solicitud_devolucion",
+   "columna": "solicitud_id",
+   "verbo": "SE_DETALLA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "sucursal",
+   "origen": "caja",
+   "columna": "sucursal_id",
+   "verbo": "TIENE_CAJA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "sucursal",
+   "origen": "empleado",
+   "columna": "sucursal_id",
+   "verbo": "EMPLEA_A",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "sucursal",
+   "origen": "existencia",
+   "columna": "sucursal_id",
+   "verbo": "ALBERGA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "sucursal",
+   "origen": "operacion_offline",
+   "columna": "sucursal_id",
+   "verbo": "RESPONDE_POR",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "sucursal",
+   "origen": "reserva",
+   "columna": "sucursal_id",
+   "verbo": "ATIENDE",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "sucursal",
+   "origen": "solicitud_devolucion",
+   "columna": "sucursal_id",
+   "verbo": "ATIENDE_SOLICITUD",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "sucursal",
+   "origen": "traspaso",
+   "columna": "sucursal_destino_id",
+   "verbo": "RECIBE",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "sucursal",
+   "origen": "traspaso",
+   "columna": "sucursal_origen_id",
+   "verbo": "ENVIA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "sucursal",
+   "origen": "venta",
+   "columna": "sucursal_id",
+   "verbo": "VENDE_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "suscripcion",
+   "origen": "pago_simulado",
+   "columna": "suscripcion_id",
+   "verbo": "SE_PAGA_CON",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "talla",
+   "origen": "medida_talla",
+   "columna": "talla_id",
+   "verbo": "DIMENSIONA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "talla",
+   "origen": "variante_producto",
+   "columna": "talla_id",
+   "verbo": "DIMENSIONA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "temporada",
+   "origen": "coleccion",
+   "columna": "temporada_id",
+   "verbo": "CONTIENE",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "temporada",
+   "origen": "producto",
+   "columna": "temporada_id",
+   "verbo": "ENMARCA",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "temporada",
+   "origen": "promocion",
+   "columna": "temporada_id",
+   "verbo": "ENMARCA_PROMOCION",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "turno_caja",
+   "origen": "devolucion",
+   "columna": "turno_caja_id",
+   "verbo": "REGISTRA_DEVOLUCION",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "turno_caja",
+   "origen": "venta",
+   "columna": "turno_caja_id",
+   "verbo": "REGISTRA_VENTA",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "usuario",
+   "origen": "bitacora",
+   "columna": "usuario_id",
+   "verbo": "SE_AUDITA_EN",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "usuario",
+   "origen": "cliente",
+   "columna": "usuario_id",
+   "verbo": "ES",
+   "card_destino": "1",
+   "card_origen": "0..1"
+  },
+  {
+   "destino": "usuario",
+   "origen": "devolucion",
+   "columna": "recibida_por",
+   "verbo": "RECIBE_PRENDA",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "usuario",
+   "origen": "empleado",
+   "columna": "usuario_id",
+   "verbo": "ES_EMPLEADO",
+   "card_destino": "1",
+   "card_origen": "0..1"
+  },
+  {
+   "destino": "usuario",
+   "origen": "modelo_analitica",
+   "columna": "entrenado_por",
+   "verbo": "ENTRENA",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "usuario",
+   "origen": "movimiento_inventario",
+   "columna": "usuario_id",
+   "verbo": "ORIGINA",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "usuario",
+   "origen": "notificacion",
+   "columna": "destinatario_id",
+   "verbo": "RECIBE",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "usuario",
+   "origen": "operacion_offline",
+   "columna": "devuelto_por",
+   "verbo": "DEVUELVE",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "usuario",
+   "origen": "operacion_offline",
+   "columna": "usuario_id",
+   "verbo": "SUBE",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "usuario",
+   "origen": "proveedor",
+   "columna": "usuario_id",
+   "verbo": "PUEDE_SER",
+   "card_destino": "0..1",
+   "card_origen": "0..1"
+  },
+  {
+   "destino": "usuario",
+   "origen": "respaldo",
+   "columna": "creado_por",
+   "verbo": "GENERA",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "usuario",
+   "origen": "restauracion",
+   "columna": "restaurado_por",
+   "verbo": "RESTAURA",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "usuario",
+   "origen": "sesion_token",
+   "columna": "usuario_id",
+   "verbo": "INICIA_SESION_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "usuario",
+   "origen": "solicitud_devolucion",
+   "columna": "atendida_por",
+   "verbo": "ATIENDE",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "usuario",
+   "origen": "suscripcion_push",
+   "columna": "usuario_id",
+   "verbo": "REGISTRA",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "usuario",
+   "origen": "token_recuperacion",
+   "columna": "usuario_id",
+   "verbo": "RECUPERA_CON",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "usuario",
+   "origen": "traspaso",
+   "columna": "aprobado_por",
+   "verbo": "APRUEBA",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "usuario",
+   "origen": "traspaso",
+   "columna": "enviado_por",
+   "verbo": "DESPACHA",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "usuario",
+   "origen": "traspaso",
+   "columna": "rechazado_por",
+   "verbo": "RECHAZA",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "usuario",
+   "origen": "traspaso",
+   "columna": "recibido_por",
+   "verbo": "RECIBE_TRASPASO",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "usuario",
+   "origen": "traspaso",
+   "columna": "solicitado_por",
+   "verbo": "SOLICITA_TRASPASO",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "usuario",
+   "origen": "turno_caja",
+   "columna": "usuario_id",
+   "verbo": "ABRE",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "variante_producto",
+   "origen": "abastecimiento",
+   "columna": "variante_id",
+   "verbo": "SE_REPONE_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "variante_producto",
+   "origen": "aviso_talla",
+   "columna": "variante_id",
+   "verbo": "SE_ESPERA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "variante_producto",
+   "origen": "carrito_detalle",
+   "columna": "variante_id",
+   "verbo": "SE_AGREGA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "variante_producto",
+   "origen": "detalle_devolucion",
+   "columna": "variante_id",
+   "verbo": "SE_DEVUELVE_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "variante_producto",
+   "origen": "detalle_venta",
+   "columna": "variante_id",
+   "verbo": "SE_VENDE_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "variante_producto",
+   "origen": "existencia",
+   "columna": "variante_id",
+   "verbo": "SE_ALMACENA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "variante_producto",
+   "origen": "imagen_producto",
+   "columna": "variante_id",
+   "verbo": "SE_MUESTRA_EN",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "variante_producto",
+   "origen": "linea_solicitud_devolucion",
+   "columna": "variante_id",
+   "verbo": "SE_RECLAMA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "variante_producto",
+   "origen": "linea_solicitud_devolucion",
+   "columna": "variante_nueva_id",
+   "verbo": "SE_PIDE_EN",
+   "card_destino": "0..1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "variante_producto",
+   "origen": "reserva_detalle",
+   "columna": "variante_id",
+   "verbo": "SE_APARTA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "variante_producto",
+   "origen": "sesion_probador",
+   "columna": "variante_id",
+   "verbo": "SE_PRUEBA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "variante_producto",
+   "origen": "traspaso",
+   "columna": "variante_id",
+   "verbo": "SE_TRASPASA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "venta",
+   "origen": "comprobante",
+   "columna": "venta_id",
+   "verbo": "SE_ACREDITA_CON",
+   "card_destino": "1",
+   "card_origen": "0..1"
+  },
+  {
+   "destino": "venta",
+   "origen": "detalle_venta",
+   "columna": "venta_id",
+   "verbo": "SE_DETALLA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "venta",
+   "origen": "devolucion",
+   "columna": "venta_cambio_id",
+   "verbo": "ES_CAMBIO_EN",
+   "card_destino": "0..1",
+   "card_origen": "0..1"
+  },
+  {
+   "destino": "venta",
+   "origen": "devolucion",
+   "columna": "venta_id",
+   "verbo": "SE_REVIERTE_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  },
+  {
+   "destino": "venta",
+   "origen": "operacion_offline",
+   "columna": "venta_id",
+   "verbo": "SE_ORIGINA_EN",
+   "card_destino": "0..1",
+   "card_origen": "0..1"
+  },
+  {
+   "destino": "venta",
+   "origen": "pago",
+   "columna": "venta_id",
+   "verbo": "SE_SALDA_CON",
+   "card_destino": "1",
+   "card_origen": "0..1"
+  },
+  {
+   "destino": "venta",
+   "origen": "solicitud_devolucion",
+   "columna": "venta_id",
+   "verbo": "SE_RECLAMA_EN",
+   "card_destino": "1",
+   "card_origen": "0..*"
+  }
+ ]
+}

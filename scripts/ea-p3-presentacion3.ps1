@@ -29,8 +29,8 @@ $ErrorActionPreference = 'Stop'
 $modelo = 'D:\UNI\Si2\PRIMER_PARCIAL\docs\diagramas\VioletBoutique.eapx'
 if ($env:EA_MODELO) { $modelo = $env:EA_MODELO }
 $datos  = Get-Content (Join-Path $PSScriptRoot 'ea-p3.datos.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-$NUEVOS = @(21..45 | ForEach-Object { 'CU-{0:D2}' -f $_ })
-$GENERAL = '2.5 Diagrama general de casos de uso (CU-01 a CU-45)'
+$NUEVOS = @(21..46 | ForEach-Object { 'CU-{0:D2}' -f $_ })
+$GENERAL = '2.5 Diagrama general de casos de uso (CU-01 a CU-46)'
 
 $ea = New-Object -ComObject EA.Repository
 if (-not $ea.OpenFile($modelo)) { throw "No se pudo abrir $modelo" }
