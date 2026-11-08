@@ -25,6 +25,7 @@ from app.core.dependencies import DbSession, Usuario, requiere_cupo, requiere_fu
 from app.integrations.probador_ia import ErrorDelProbador, ProbadorNoConfigurado
 from app.modules.vestidor_virtual import probador_service as service
 from app.modules.vestidor_virtual.probador_schemas import (
+    ProductoParaProbar,
     MedidasDelProducto,
     PrendaParaPreparar,
     ProductoDelProbador,
@@ -94,6 +95,12 @@ cliente_router = APIRouter(
     tags=["CU-37 y CU-38 · Probador con la talla real"],
     dependencies=[Depends(requiere_roles("CLIENTE"))],
 )
+
+
+@cliente_router.get("/productos-listos", response_model=list[ProductoParaProbar],
+                    summary="CU-37 Prendas listas para probar (lo último calibrado primero)")
+def listos(db: DbSession):
+    return service.listos(db)
 
 
 @cliente_router.get("/productos/{producto_id}/prueba", response_model=PruebaDeProducto,

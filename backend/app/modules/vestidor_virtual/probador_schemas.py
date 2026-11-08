@@ -90,6 +90,14 @@ class ProductoDelProbador(BaseModel):
 
 # --- CU-37 · El cliente se prueba la prenda ---------------------------------
 
+class ProductoParaProbar(BaseModel):
+    """Un producto listo para el probador, en la lista de entrada del móvil."""
+
+    producto_id: int
+    nombre: str
+    imagen_url: str
+
+
 class PrendaDelProbador(BaseModel):
     """Una imagen calibrada que el cliente puede probarse."""
 

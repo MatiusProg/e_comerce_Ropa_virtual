@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from sqlalchemy import Row, select
+from sqlalchemy import Row, func, select
 from sqlalchemy.orm import Session
 
 from app.modules.catalogo.models import (
@@ -41,6 +41,29 @@ def productos_con_vestidor(db: Session) -> list[Row]:
             )
             .group_by(Producto.id, Producto.nombre, Producto.activo)
             .order_by(Producto.nombre)
+        ).all()
+    )
+
+
+def listos_para_probar(db: Session) -> list[Row]:
+    """Los productos activos con al menos una imagen calibrada, LA ÚLTIMA CALIBRADA PRIMERO.
+
+    Es la puerta de entrada del probador en el móvil: lo recién preparado por el
+    administrador queda arriba, sin buscarlo en el catálogo.
+    """
+    return list(
+        db.execute(
+            select(
+                Producto.id.label("producto_id"),
+                Producto.nombre,
+                func.min(ImagenProducto.ruta).label("ruta"),
+                func.max(PuntoPrenda.actualizado_en).label("ultima"),
+            )
+            .join(ImagenProducto, ImagenProducto.producto_id == Producto.id)
+            .join(PuntoPrenda, PuntoPrenda.imagen_id == ImagenProducto.id)
+            .where(Producto.activo.is_(True), ImagenProducto.es_transparente.is_(True))
+            .group_by(Producto.id, Producto.nombre)
+            .order_by(func.max(PuntoPrenda.actualizado_en).desc(), Producto.nombre)
         ).all()
     )
 

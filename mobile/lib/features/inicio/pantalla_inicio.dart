@@ -198,6 +198,13 @@ class _PendientesDelCiclo extends ConsumerWidget {
     // marcadas como siempre falsas. Declararlo nullable mantiene la lista
     // preparada para el Ciclo 3, donde vuelve a haber modulos sin ruta.
     const List<(String, String, IconData, String?)> deCliente = [
+      // 3ra presentación: el probador con la talla real, primero de todo.
+      (
+        'Probador con talla real',
+        'CU-37 · CU-38 · medite con la cámara',
+        Icons.straighten,
+        Rutas.probadorLista,
+      ),
       (
         'Reservas',
         'CU-22 · CU-23',
