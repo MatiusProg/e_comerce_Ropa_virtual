@@ -24,6 +24,7 @@
 library;
 
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -33,7 +34,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/red/excepciones.dart';
 import '../../core/tema.dart';
@@ -42,6 +45,7 @@ import '../../data/repositorios/repositorio_medidas.dart';
 import '../../data/repositorios/repositorio_probador.dart';
 import '../auth/estado_sesion.dart';
 import '../vestidor/pantalla_medidas.dart';
+import 'medicion_corporal.dart';
 import 'pintor_talla_real.dart';
 
 class PantallaProbadorTalla extends ConsumerStatefulWidget {
@@ -88,6 +92,16 @@ class _EstadoProbadorTalla extends ConsumerState<PantallaProbadorTalla>
   SesionProbador? _sesion;
   bool _guardando = false;
   bool _generando = false;
+
+  // --- medir a la persona frente a la cámara ---------------------------------
+  /// La última pose cruda (coordenadas de la imagen), para medir a la persona.
+  Pose? _ultimaPose;
+
+  /// El busto ESTIMADO de quien está frente a la cámara, medido con la cámara y
+  /// su estatura. Si existe, manda sobre las medidas guardadas en la cuenta: así
+  /// dos personas con la misma cuenta ven la prenda a SU escala.
+  double? _bustoPersona;
+  String? _quienMedida;
 
   @override
   void initState() {
@@ -212,10 +226,33 @@ class _EstadoProbadorTalla extends ConsumerState<PantallaProbadorTalla>
     }
   }
 
-  AjusteDeTalla? get _ajusteDeLaElegida {
+  /// El busto con el que se dibuja y se clasifica: el de la persona medida con la
+  /// cámara o, si no se midió, el de las medidas guardadas en la cuenta.
+  double? get _bustoActual => _bustoPersona ?? _prueba?.bustoCm;
+
+  /// Cómo le queda la talla elegida a ESTA persona, con la misma regla del
+  /// servidor (`medidas/tallaje.py`): el desvío contra la holgura de diseño.
+  Ajuste? get _ajusteLocal {
+    final busto = _bustoPersona;
+    final t = _ajusteDeLaElegidaBase;
+    if (busto == null || t == null) return null;
+    return TallajeLocal.clasificar(t.bustoCm, busto, t.codigo);
+  }
+
+  String? get _recomendadaLocal {
+    final busto = _bustoPersona;
+    final p = _prueba;
+    if (busto == null || p == null) return p?.ajuste.tallaRecomendada;
+    return TallajeLocal.recomendada(p.ajuste.tallas, busto);
+  }
+
+  AjusteDeTalla? get _ajusteDeLaElegida => _ajusteDeLaElegidaBase;
+
+  AjusteDeTalla? get _ajusteDeLaElegidaBase {
     final p = _prueba;
     final e = _elegida;
-    if (p == null || e == null || !p.ajuste.sirve) return null;
+    if (p == null || e == null || p.ajuste.tallas.isEmpty) return null;
+    if (!p.ajuste.sirve && _bustoPersona == null) return null;
     return p.ajuste.de(e.tallaId);
   }
 
@@ -255,7 +292,12 @@ class _EstadoProbadorTalla extends ConsumerState<PantallaProbadorTalla>
       );
       await control.initialize();
       _detector ??= PoseDetector(
-        options: PoseDetectorOptions(mode: PoseDetectionMode.stream),
+        // El modelo PRECISO: usa más el procesador del teléfono y ubica mejor los
+        // hombros. En un teléfono actual igual llega a un ritmo usable.
+        options: PoseDetectorOptions(
+          mode: PoseDetectionMode.stream,
+          model: PoseDetectionModel.accurate,
+        ),
       );
       await control.startImageStream(_alLlegarFotograma);
       if (!mounted) {
@@ -309,6 +351,7 @@ class _EstadoProbadorTalla extends ConsumerState<PantallaProbadorTalla>
       }
       if (!mounted) return;
       final pose = poses.isEmpty ? null : poses.first;
+      if (pose != null) _ultimaPose = pose;
       setState(() {
         _tamanoImagen = tamano;
         if (pose != null && _suavizar(pose)) {
@@ -496,6 +539,118 @@ class _EstadoProbadorTalla extends ConsumerState<PantallaProbadorTalla>
     );
   }
 
+  /// Mide a quien está frente a la cámara: pide su estatura, toma varias poses
+  /// de cuerpo entero y se queda con la mediana.
+  Future<void> _medirPersona() async {
+    final control = TextEditingController(text: '165');
+    final estatura = await showDialog<double>(
+      context: context,
+      builder: (dialogo) => AlertDialog(
+        title: const Text('Medir a esta persona'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Escribí la estatura de quien se va a probar la prenda. Después que se pare de '
+              'cuerpo entero frente a la cámara, de la cabeza a los pies, con los brazos al '
+              'costado.',
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: control,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Estatura (cm)', suffixText: 'cm'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogo).pop(), child: const Text('Cancelar')),
+          FilledButton(
+            onPressed: () {
+              final v = double.tryParse(control.text.replaceAll(',', '.'));
+              if (v != null && v >= 120 && v <= 220) Navigator.of(dialogo).pop(v);
+            },
+            child: const Text('Medir'),
+          ),
+        ],
+      ),
+    );
+    if (estatura == null || !mounted) return;
+    final mensajero = ScaffoldMessenger.of(context);
+    mensajero.showSnackBar(const SnackBar(
+      content: Text('Midiendo… quedate quieta de cuerpo entero frente a la cámara.'),
+      duration: Duration(seconds: 3),
+    ));
+    final medidas = <MedicionCorporal>[];
+    for (var i = 0; i < 24 && medidas.length < 8; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      final pose = _ultimaPose;
+      if (pose == null) continue;
+      final m = MedicionCorporal.desde(pose, estatura);
+      if (m != null) medidas.add(m);
+    }
+    if (!mounted) return;
+    final resultado = MedicionCorporal.mediana(medidas);
+    if (resultado == null || medidas.length < 3) {
+      mensajero.showSnackBar(const SnackBar(
+        content: Text('No se vio el cuerpo entero. Alejate un poco: tienen que verse la cabeza y los pies.'),
+      ));
+      return;
+    }
+    setState(() {
+      _bustoPersona = TallajeLocal.redondear(resultado.bustoCm);
+      _quienMedida = '${estatura.toStringAsFixed(0)} cm de estatura';
+      _sesion = null;
+    });
+    mensajero.showSnackBar(SnackBar(
+      content: Text(
+        'Medida: busto estimado ${_bustoPersona!.toStringAsFixed(0)} cm '
+        '(hombros ${resultado.hombrosCm.toStringAsFixed(0)} cm) · talla de cuerpo '
+        '${TallajeLocal.tallaDeCuerpo(_bustoPersona!)}.',
+      ),
+      duration: const Duration(seconds: 5),
+    ));
+  }
+
+  /// Compartir lo que se ve (cámara + prenda a escala): a la galería, WhatsApp,
+  /// Drive… con la hoja de compartir del sistema. Se captura con la resolución
+  /// de la pantalla para que salga nítida.
+  bool _compartiendo = false;
+
+  Future<void> _compartir() async {
+    if (_compartiendo) return;
+    setState(() => _compartiendo = true);
+    try {
+      final limite = _lienzo.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (limite == null) throw StateError('la vista todavía no está pintada');
+      final imagen = await limite.toImage(pixelRatio: MediaQuery.of(context).devicePixelRatio);
+      final datos = await imagen.toByteData(format: ui.ImageByteFormat.png);
+      imagen.dispose();
+      if (datos == null) throw StateError('no se pudo codificar la imagen');
+      final carpeta = await getTemporaryDirectory();
+      final prenda = _elegida;
+      final nombre = 'probador-${DateTime.now().millisecondsSinceEpoch}.png';
+      final ruta = '${carpeta.path}/$nombre';
+      await File(ruta).writeAsBytes(datos.buffer.asUint8List());
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(ruta, mimeType: 'image/png')],
+          text: prenda == null
+              ? 'Mi prueba en Violet Boutique'
+              : 'Me probé ${_prueba?.nombre ?? 'una prenda'} en talla ${prenda.talla} '
+                  '(${prenda.color}) en el probador de Violet Boutique.',
+          subject: nombre,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo compartir: $e')));
+    } finally {
+      if (mounted) setState(() => _compartiendo = false);
+    }
+  }
+
   Future<void> _abrirMedidas() async {
     final guardadas = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => const PantallaMedidas()),
@@ -604,6 +759,13 @@ class _EstadoProbadorTalla extends ConsumerState<PantallaProbadorTalla>
               onPressed: _iniciandoCamara ? null : _cambiarCamara,
             ),
           IconButton(
+            tooltip: 'Compartir foto',
+            icon: _compartiendo
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.share_outlined),
+            onPressed: _compartiendo ? null : _compartir,
+          ),
+          IconButton(
             tooltip: 'Mis pruebas',
             icon: const Icon(Icons.photo_library_outlined),
             onPressed: _abrirMisPruebas,
@@ -665,7 +827,7 @@ class _EstadoProbadorTalla extends ConsumerState<PantallaProbadorTalla>
                             puntos: prenda.puntos,
                             hombroA: hombros.$1,
                             hombroB: hombros.$2,
-                            bustoClienteCm: _prueba?.bustoCm,
+                            bustoClienteCm: _bustoActual,
                             bustoTallaCm: ajuste?.bustoCm,
                             largoTallaCm: ajuste?.largoCm,
                           ),
@@ -758,7 +920,22 @@ class _EstadoProbadorTalla extends ConsumerState<PantallaProbadorTalla>
               ],
             ),
             const SizedBox(height: 6),
-            _escala(),
+            Row(
+              children: [
+                Expanded(child: _escala()),
+                TextButton.icon(
+                  style: TextButton.styleFrom(foregroundColor: Colors.white),
+                  icon: const Icon(Icons.accessibility_new, size: 18),
+                  label: Text(_bustoPersona == null ? 'Medirme' : 'Medir otra vez'),
+                  onPressed: _medirPersona,
+                ),
+              ],
+            ),
+            if (_quienMedida != null)
+              Text(
+                'Persona medida: busto estimado ${_bustoPersona!.toStringAsFixed(0)} cm · $_quienMedida',
+                style: const TextStyle(color: Colors.white60, fontSize: 11),
+              ),
             if (prueba != null) _selector(prueba),
             const SizedBox(height: 10),
             _acciones(hayCuerpo, prueba),
@@ -770,7 +947,7 @@ class _EstadoProbadorTalla extends ConsumerState<PantallaProbadorTalla>
 
   /// A escala real, o aproximado con la invitación a cargar las medidas.
   Widget _escala() {
-    if (_prueba?.bustoCm == null) {
+    if (_bustoActual == null) {
       return Row(
         children: [
           const Icon(Icons.straighten, size: 15, color: Color(0xFFFFC46B)),
@@ -792,19 +969,22 @@ class _EstadoProbadorTalla extends ConsumerState<PantallaProbadorTalla>
         style: TextStyle(color: Colors.white70, fontSize: 12),
       );
     }
-    final color = switch (ajuste.ajuste) {
+    final como = _ajusteLocal ?? ajuste.ajuste;
+    final color = switch (como) {
       Ajuste.noEntra => const Color(0xFFFF6B6B),
       Ajuste.aTuMedida => const Color(0xFF7BD88F),
       _ => const Color(0xFFFFC46B),
     };
-    final recomendada = _prueba?.ajuste.tallaRecomendada;
-    final texto = recomendada == null || recomendada == ajuste.codigo
-        ? ajuste.ajuste.texto
-        : '${ajuste.ajuste.texto} · te va la $recomendada';
+    final recomendada = _recomendadaLocal;
+    final quien = _bustoPersona == null ? '' : ' · medida con la cámara';
+    final texto = (recomendada == null || recomendada == ajuste.codigo
+            ? como.texto
+            : '${como.texto} · te va la $recomendada') +
+        quien;
     return Row(
       children: [
         Icon(
-          ajuste.ajuste == Ajuste.aTuMedida ? Icons.check_circle : Icons.info_outline,
+          como == Ajuste.aTuMedida ? Icons.check_circle : Icons.info_outline,
           size: 15,
           color: color,
         ),
@@ -842,7 +1022,7 @@ class _EstadoProbadorTalla extends ConsumerState<PantallaProbadorTalla>
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
                     label: Text(
-                      t.key == prueba.ajuste.tallaRecomendadaId ? '${t.value} ★' : t.value,
+                      t.value == _recomendadaLocal ? '${t.value} ★' : t.value,
                     ),
                     selected: elegida?.tallaId == t.key,
                     onSelected: (_) {
