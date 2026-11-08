@@ -12,6 +12,7 @@ import { BaseChartDirective, provideCharts, withDefaultRegisterables } from 'ng2
 import type { ClienteSegmento, ResumenAnalitica } from '../../../core/models/analitica.models';
 import { AnaliticaService, type ErrorAnalitica } from '../../../core/services/analitica.service';
 import { BsPipe } from '../../../shared/bs.pipe';
+import { AnomaliasPanel } from './anomalias/anomalias-panel';
 
 /** Los mismos colores de marca que el tablero (ver `tablero.ts`). */
 const COLORES = {
@@ -51,6 +52,7 @@ const VARIABLES: Record<string, string> = {
 @Component({
   selector: 'app-analitica',
   imports: [
+    AnomaliasPanel,
     BsPipe,
     DatePipe,
     DecimalPipe,

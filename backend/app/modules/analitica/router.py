@@ -8,8 +8,12 @@ sin ella responde 403 con `plan_limit` y la pantalla muestra el candado.
 - CU-30: `GET /analitica/resumen` es el dashboard; `/clientes` clasifica a los
   clientes de hoy con el modelo guardado; `/reporte.pdf|.xlsx` es el reporte
   inteligente.
+- Aporte propio: `/analitica/anomalias` busca turnos de caja y devoluciones
+  fuera de lo común con Isolation Forest, y deja marcarlos como revisados.
 """
 from __future__ import annotations
+
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
@@ -18,6 +22,7 @@ from app.core import tiempo
 from app.core.dependencies import DbSession, Usuario, requiere_funcion, requiere_roles
 from app.modules.analitica import service
 from app.modules.analitica.schemas import (
+    AnomaliasOut,
     ClienteSegmentoOut,
     EntrenarIn,
     HistorialOut,
@@ -67,6 +72,41 @@ def resumen(db: DbSession):
 def clientes(db: DbSession):
     try:
         return service.clientes_por_segmento(db)
+    except service.ErrorDeAnalitica as e:
+        raise _traducir(e) from e
+
+
+# --- Aporte propio: anomalías en caja y devoluciones -------------------------------
+
+@router.get("/anomalias", response_model=AnomaliasOut,
+            summary="Aporte propio · Las anomalías del último análisis")
+def anomalias(db: DbSession):
+    return service.consultar_anomalias(db)
+
+
+@router.post(
+    "/anomalias",
+    response_model=AnomaliasOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Aporte propio · Buscar anomalías en caja y devoluciones (Isolation Forest)",
+)
+def entrenar_anomalias(db: DbSession, usuario: Usuario, datos: EntrenarIn | None = None):
+    try:
+        return service.entrenar_anomalias(db, usuario.id, (datos or EntrenarIn()).semilla)
+    except service.ErrorDeAnalitica as e:
+        raise _traducir(e) from e
+
+
+@router.post(
+    "/anomalias/{grupo}/{item_id}/revisada",
+    response_model=AnomaliasOut,
+    summary="Aporte propio · Marcar una anomalía como revisada",
+)
+def marcar_revisada(
+    grupo: Literal["turnos", "devoluciones"], item_id: int, db: DbSession, usuario: Usuario
+):
+    try:
+        return service.marcar_revisada(db, grupo, item_id, usuario.id)
     except service.ErrorDeAnalitica as e:
         raise _traducir(e) from e
 
