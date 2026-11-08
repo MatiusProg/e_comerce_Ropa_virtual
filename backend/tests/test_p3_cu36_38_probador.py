@@ -231,7 +231,11 @@ def test_la_prueba_trae_las_prendas_calibradas_y_la_sugerencia(api, blusa_lista,
                 headers=cabeceras_cliente)
     assert r.status_code == 200, r.text
     cuerpo = r.json()
-    assert {p["talla"] for p in cuerpo["prendas"]} == {"S", "M"}
+    # La L no tiene foto propia: usa la calibrada de su mismo color, porque la
+    # forma es la misma y lo que cambia son los centímetros (fix del 08/11).
+    assert [p["talla"] for p in cuerpo["prendas"]] == ["S", "M", "L"]
+    por_talla_img = {p["talla"]: p["imagen_url"] for p in cuerpo["prendas"]}
+    assert por_talla_img["L"] in (por_talla_img["S"], por_talla_img["M"])
     assert cuerpo["medidas"]["busto_cm"] == "92.0"
     assert cuerpo["ajuste"]["hay_medidas"] is True
     # Cuerpo de 92 de busto = talla M del tallaje; la holgura de diseño de
@@ -268,9 +272,20 @@ def test_registrar_una_prueba_calcula_el_ajuste_en_el_servidor(api, blusa_lista,
 
 
 def test_una_prenda_sin_calibrar_no_se_prueba(api, blusa_lista, cabeceras_cliente):
-    # La L no tiene imagen de vestidor.
+    # La L no tiene imagen propia, pero su color sí: se prueba con esa (08/11).
     r = api.post(f"{VESTIDOR}/sesiones", headers=cabeceras_cliente,
                  json={"variante_id": blusa_lista["variantes"]["L"], "metodo": "MANUAL"})
+    assert r.status_code == 201, r.text
+    # Un color sin ninguna imagen calibrada no se puede probar.
+    admin = blusa_lista["admin"]
+    blanco = api.post(f"{API}/catalogo/colores", headers=admin,
+                      json={"nombre": "Blanco", "hexadecimal": "#FAFAFA", "activo": True}).json()["id"]
+    r = api.post(f"{PRODUCTOS}/{blusa_lista['producto']}/variantes", headers=admin,
+                 json={"talla_id": blusa_lista["tallas"]["M"], "color_id": blanco,
+                       "precio": "200.00", "activa": True})
+    assert r.status_code == 201, r.text
+    r = api.post(f"{VESTIDOR}/sesiones", headers=cabeceras_cliente,
+                 json={"variante_id": r.json()["id"], "metodo": "MANUAL"})
     assert r.status_code == 404
     r = api.post(f"{VESTIDOR}/sesiones", headers=cabeceras_cliente,
                  json={"variante_id": blusa_lista["variantes"]["S"], "metodo": "OTRO"})

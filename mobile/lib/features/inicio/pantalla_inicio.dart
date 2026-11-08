@@ -122,11 +122,18 @@ class PantallaInicio extends ConsumerWidget {
 
 /// Lo que ya se puede usar. Hoy es solo el perfil (CU-04); el catalogo y las
 /// reservas se suman aqui cuando cada uno cierre su caso de uso.
-class _MiCuenta extends StatelessWidget {
+class _MiCuenta extends ConsumerWidget {
   const _MiCuenta();
 
+  /// Solo el cliente: el perfil (datos, tallas y direcciones de entrega) es de
+  /// la ficha de cliente, y el servidor se lo rechaza a los demás roles.
+  /// Ofrecer una puerta que después se cierra es peor que no ofrecerla.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sesion = ref.watch(sesionProvider);
+    if (sesion is! SesionAbierta || !sesion.usuario.esCliente) {
+      return const SizedBox.shrink();
+    }
     return Card(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
