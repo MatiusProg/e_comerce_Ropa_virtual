@@ -417,7 +417,11 @@ def generar_foto(
     if tipo_mime and not tipo_mime.startswith("image/"):
         raise Rechazo("El archivo no es una imagen.")
 
-    prenda = vestidor_repo.prenda_de_variante(db, sesion.variante_id)
+    # La imagen propia de la variante o, si no tiene, la calibrada de su color
+    # (la misma regla con la que se ofrece en el CU-37).
+    prenda = vestidor_repo.prenda_de_variante(db, sesion.variante_id) or repo.prenda_por_color(
+        db, sesion.variante_id
+    )
     if prenda is None:
         raise Rechazo("Esa prenda ya no está disponible en el probador.", 404)
     try:
