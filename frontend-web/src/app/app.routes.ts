@@ -124,6 +124,24 @@ export const routes: Routes = [
       import('./features/cliente/compras/compras').then((m) => m.Compras),
   },
 
+  // --- 3ra presentacion · CU-46 Consultar mis comprobantes por voz -------
+  {
+    path: 'mi-cuenta/comprobantes',
+    title: 'Mis comprobantes · Violet Boutique',
+    canActivate: [sesionGuard, rolGuard('CLIENTE')],
+    loadComponent: () =>
+      import('./features/cliente/comprobantes/mis-comprobantes').then((m) => m.MisComprobantes),
+  },
+  // PUBLICA a proposito: es lo que abre el QR de un comprobante, y quien lo
+  // escanea no tiene por que tener cuenta. El backend arma el mismo camino:
+  // `${WEB_BASE_URL}/verificar/{token}`. Si cambia aca, cambia alla.
+  {
+    path: 'verificar/:token',
+    title: 'Verificar comprobante · Violet Boutique',
+    loadComponent: () =>
+      import('./features/publico/verificar-comprobante').then((m) => m.VerificarComprobante),
+  },
+
   // --- Ciclo 3 · CU-27 Realizar pedido y pagar en línea ------------------
   {
     path: 'tienda/checkout',

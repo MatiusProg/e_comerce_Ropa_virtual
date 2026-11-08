@@ -144,6 +144,10 @@ from app.modules.datos.router import exportacion_router
 from app.modules.datos.router import mantenimiento_router as respaldos_mantenimiento_router
 from app.modules.datos.router import router as respaldos_router
 from app.modules.analitica.router import router as analitica_router
+# CU-46: el reporte transaccional del cliente (sus comprobantes por voz) y la
+# verificacion publica del QR.
+from app.modules.comprobantes.router import publico_router as comprobantes_publico_router
+from app.modules.comprobantes.router import router as mis_comprobantes_router
 
 
 # Antes de construir la aplicacion: uvicorn deja el logger raiz sin manejador
@@ -314,3 +318,5 @@ app.include_router(exportacion_router, prefix=API)
 app.include_router(respaldos_router, prefix=API)
 app.include_router(respaldos_mantenimiento_router, prefix=API)
 app.include_router(analitica_router, prefix=API)
+app.include_router(mis_comprobantes_router, prefix=API)
+app.include_router(comprobantes_publico_router, prefix=API)
