@@ -1,0 +1,1392 @@
+{
+ "_convencion": "igual que ea-p2-clases.datos.json",
+ "clases": {
+  "ConsultaIa": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/reportes/consulta-ia/consulta-ia.ts",
+   "nota": "Ruta /admin/reportes-ia y la del encargado. El micrófono usa DictadoService (Web Speech API): al servidor llega texto, no audio.",
+   "atributos": [],
+   "operaciones": [
+    "usarEjemplo(frase: string): void",
+    "hablar(): void",
+    "consultar(): void",
+    "exportar(formato: 'pdf' | 'xlsx'): void",
+    "formatear(valor: string | number, columna: number): string"
+   ]
+  },
+  "Exportar": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/reportes/exportar/exportar.ts",
+   "nota": "Ruta /admin/reportes. interpretar(frase) es privado: lo llama hablar() al terminar el dictado.",
+   "atributos": [],
+   "operaciones": [
+    "ngOnInit(): void",
+    "hablar(): void",
+    "descargarLoEntendido(): void",
+    "valorDe(tipo: string, campo: string): string",
+    "elegir(tipo: string, campo: string, valor: string): void",
+    "limpiar(tipo: string): void",
+    "cuantosFiltros(tipo: string): number",
+    "descargar(reporte: ReporteDisponible, formato: 'pdf' | 'xlsx'): void",
+    "estaBajando(tipo: string, formato: string): boolean"
+   ]
+  },
+  "Analitica": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/reportes/analitica/analitica.ts",
+   "nota": "Ruta /admin/analitica. cargarClientes() es privado: lo llaman cargar() y entrenar(). Debajo va <app-anomalias-panel> (aporte propio, no es de estos CU).",
+   "atributos": [],
+   "operaciones": [
+    "ngOnInit(): void",
+    "cargar(): void",
+    "entrenar(): void",
+    "descargar(formato: 'pdf' | 'xlsx'): void",
+    "tendencia(t: string): {icono, texto}",
+    "fechaCorta(iso: string): string",
+    "fechaLarga(iso: string): string"
+   ]
+  },
+  "ProveedorBrevo": {
+   "tipo": "interfaz",
+   "origen": "backend/app/integrations/correo/brevo.py",
+   "nota": "Frontera de salida CanalDeCorreo. Se elige con CORREO_PROVEEDOR=brevo (por omisión 'consola'); POST https://api.brevo.com/v3/smtp/email. Lo llama integrations/correo/__init__.py enviar(mensaje).",
+   "atributos": [
+    "nombre: str = 'brevo'"
+   ],
+   "operaciones": [
+    "enviar(mensaje: Mensaje): None"
+   ]
+  },
+  "InterpreteGemini": {
+   "tipo": "interfaz",
+   "origen": "backend/app/integrations/interprete/gemini.py",
+   "nota": "Frontera de salida ProveedorIA. Lo elige integrations/interprete/__init__.py obtener_proveedor() con IA_PROVEEDOR=gemini; sin clave queda InterpreteNoDisponible, que levanta ErrorDelInterprete.",
+   "atributos": [
+    "nombre: str = 'gemini'",
+    "disponible: bool"
+   ],
+   "operaciones": [
+    "interpretar(texto, reportes: list[ReporteConocido], hoy: date): Pedido | None",
+    "interpretar_consulta(texto: str, vocabulario: dict, hoy: date): dict | None",
+    "_pedir_json(modelo: str, instruccion: str): dict | None"
+   ]
+  },
+  "ReportesService": {
+   "tipo": "control",
+   "origen": "frontend-web/src/app/core/services/reportes.service.ts",
+   "atributos": [],
+   "operaciones": [
+    "catalogo(): Observable<ReporteDisponible[]>",
+    "descargar(tipo, formato, filtros): Observable<{archivo, nombre}>",
+    "hayVoz(): Observable<boolean>",
+    "interpretarVoz(texto: string): Observable<PedidoEntendido>",
+    "consultarIa(texto: string): Observable<ResultadoReporteIa>",
+    "exportarIa(especificacion, formato): Observable<{archivo, nombre}>",
+    "traducirIa(error): ErrorReportes",
+    "nombreDe(disposicion, tipo, formato): string",
+    "traducir(error): ErrorReportes"
+   ]
+  },
+  "DictadoService": {
+   "tipo": "control",
+   "origen": "frontend-web/src/app/core/services/dictado.service.ts",
+   "atributos": [
+    "soportado: Signal<boolean>",
+    "escuchando: Signal<boolean>",
+    "texto: Signal<string>",
+    "error: Signal<string | null>"
+   ],
+   "operaciones": [
+    "escuchar(alTerminar: (frase: string) => void): void",
+    "detener(): void"
+   ]
+  },
+  "AnaliticaService": {
+   "tipo": "control",
+   "origen": "frontend-web/src/app/core/services/analitica.service.ts",
+   "nota": "anomalias(), buscarAnomalias() y marcarRevisada() son del aporte propio (CU-45), fuera de estos CU.",
+   "atributos": [],
+   "operaciones": [
+    "resumen(): Observable<ResumenAnalitica>",
+    "entrenar(semilla?: number): Observable<ResumenAnalitica>",
+    "clientes(): Observable<ClienteSegmento[]>",
+    "reporte(formato: 'pdf' | 'xlsx'): Observable<Blob>",
+    "traducir(error): ErrorAnalitica"
+   ]
+  },
+  "tareas": {
+   "tipo": "control",
+   "origen": "backend/app/core/tareas.py",
+   "nota": "Modulo de funciones; la frontera TareaProgramada es _bucle(), una tarea asyncio que arranca ciclo_de_vida (lifespan de FastAPI) si TAREAS_AUTOMATICAS=on, cada TAREAS_INTERVALO_MINUTOS (15). Advisory lock pg_try_advisory_lock para los 2 workers de gunicorn. _correos llama a notificaciones/service.py despachar_pendientes. No pasa por HTTP: el middleware de la bitacora no la anota.",
+   "atributos": [
+    "CLAVE_DEL_BLOQUEO = 0x56494F4C4554",
+    "ESPERA_INICIAL_SEGUNDOS = 60",
+    "TAREAS_POR_EMPRESA: tuple"
+   ],
+   "operaciones": [
+    "ciclo_de_vida(_app)",
+    "encendidas(): bool",
+    "_bucle(): None",
+    "correr_vuelta(fabrica_de_sesiones, minimo_entre_vueltas): Vuelta",
+    "_toca_vuelta(conexion, minimo): bool",
+    "_empresas_activas(db): list[int]",
+    "_intentar(vuelta, db, nombre, tarea): None",
+    "_correos(db, empresa_id): None",
+    "_push(db, empresa_id): None"
+   ]
+  },
+  "notificaciones_service": {
+   "tipo": "control",
+   "origen": "backend/app/modules/notificaciones/service.py",
+   "nota": "Modulo de funciones. Los avisar_* los llaman otros paquetes (reservas, pagos, inventario, traspasos, devoluciones web, offline) dentro de su transaccion. Endpoint manual: POST /mantenimiento/notificaciones/despacho y /reintento (ADMINISTRADOR).",
+   "atributos": [
+    "TOPE_POR_DESPACHO = 50"
+   ],
+   "operaciones": [
+    "notificar(db, *, destinatario, tipo, titulo, cuerpo, enlace, entidad, entidad_id): Notificacion",
+    "avisar_reserva_en_sucursal(db, reserva): list[Notificacion]",
+    "avisar_pedido_pagado(db, venta): Notificacion | None",
+    "avisar_stock_bajo(db, existencia, *, etiqueta): list[Notificacion]",
+    "avisar_devolucion_solicitada(db, solicitud): list[Notificacion]",
+    "avisar_devolucion_resuelta(db, solicitud): Notificacion | None",
+    "_encargados_de(db, sucursal_id): list[Usuario]",
+    "_cuerpo_html(notificacion, url): str",
+    "_mensaje_de(db, notificacion): Mensaje | None",
+    "despachar_pendientes(db, *, limite): DespachoOut",
+    "reintentar_fallidas(db, *, limite): int"
+   ]
+  },
+  "verificador": {
+   "tipo": "control",
+   "origen": "backend/app/modules/plataforma/verificador.py",
+   "nota": "VerificadorPlan (CU-05). Los routers no lo llaman a mano: declaran requiere_funcion / requiere_cupo de core/dependencies.py, que responden 403 plan_limit.",
+   "atributos": [
+    "FUNCIONES: dict[str, str]",
+    "CUPOS: dict[str, tuple]"
+   ],
+   "operaciones": [
+    "suscripcion_vigente(db): Suscripcion | None",
+    "plan_vigente(db): Plan",
+    "incluye(db, funcion): bool",
+    "verificar_funcion(db, funcion): None",
+    "uso_del_mes(db, cupo): int",
+    "verificar_cupo(db, cupo): None",
+    "consumir_cupo(db, cupo): int"
+   ]
+  },
+  "dinamico_router": {
+   "tipo": "control",
+   "origen": "backend/app/modules/reportes/dinamico_router.py",
+   "nota": "Rutas POST /reportes/ia/consulta y POST /reportes/ia/exportar.{pdf|xlsx}. Dependencias del router: requiere_roles(ADMINISTRADOR, ENCARGADO), requiere_funcion('reportes_ia'); la consulta ademas requiere_cupo('reportes_ia').",
+   "atributos": [
+    "EJEMPLOS: list[str]"
+   ],
+   "operaciones": [
+    "consultar(datos: ConsultaIn, db, usuario): ResultadoOut",
+    "exportar(formato, datos: EspecificacionIn, db, usuario): Response",
+    "_sucursal_forzada(usuario): int | None",
+    "_no_entendido(motivo, interprete): ResultadoOut"
+   ]
+  },
+  "dinamico": {
+   "tipo": "control",
+   "origen": "backend/app/modules/reportes/dinamico.py",
+   "nota": "8 medidas (ventas_monto, unidades_vendidas, cantidad_ventas, ticket_promedio, devoluciones_monto, unidades_devueltas, existencias, reservas) y 13 dimensiones. La consulta la arma SIEMPRE este codigo con SQLAlchemy; el RLS aisla la empresa.",
+   "atributos": [
+    "MEDIDAS: dict[str, Medida]",
+    "DIMENSIONES: dict[str, Dimension]",
+    "LIMITE_MAXIMO = 200"
+   ],
+   "operaciones": [
+    "vocabulario(db, *, sucursal_forzada): dict",
+    "validar(db, crudo: dict): Especificacion",
+    "ejecutar(db, espec, *, sucursal_forzada): Resultado",
+    "_describir_filtros(db, espec, forzada): list[str]",
+    "_grafico(espec, filas, medida): dict",
+    "_narrar(espec, filas, medida): str"
+   ]
+  },
+  "interprete_reglas": {
+   "tipo": "control",
+   "origen": "backend/app/modules/reportes/interprete_reglas.py",
+   "nota": "El respaldo sin IA: lo usa consultar() cuando el proveedor levanta ErrorDelInterprete; la pantalla muestra «sin IA».",
+   "atributos": [],
+   "operaciones": [
+    "interpretar(texto: str, vocabulario: dict, hoy: date): dict | None",
+    "_periodo(t, hoy): tuple[date | None, date | None]"
+   ]
+  },
+  "reportes_router": {
+   "tipo": "control",
+   "origen": "backend/app/modules/reportes/reportes_router.py",
+   "nota": "Rutas GET /reportes/catalogo, GET /reportes/{tipo}.{formato}, GET /reportes/voz/disponible y POST /reportes/voz (este con requiere_funcion y requiere_cupo 'reportes_ia'). requiere_roles(ADMINISTRADOR, ENCARGADO).",
+   "atributos": [],
+   "operaciones": [
+    "catalogo_de_reportes(db, usuario): list[dict]",
+    "descargar(tipo, formato, db, usuario, desde, hasta, sucursal_id, ...): Response",
+    "hay_pedido_por_voz(db): dict",
+    "pedir_por_voz(datos: PedidoPorVozIn, db, usuario): PedidoEntendidoOut"
+   ]
+  },
+  "reportes_service": {
+   "tipo": "control",
+   "origen": "backend/app/modules/reportes/reportes_service.py",
+   "atributos": [
+    "REPORTES: dict[str, Definicion]"
+   ],
+   "operaciones": [
+    "generar(db, *, tipo, desde, hasta, sucursal_id, extras): Tabla",
+    "opciones_de(db, filtro): list[dict]",
+    "_rango(desde, hasta): tuple[datetime, datetime]",
+    "_totales(definicion, filas): list | None",
+    "catalogo_para_el_interprete(db, es_admin): list"
+   ]
+  },
+  "exportador": {
+   "tipo": "control",
+   "origen": "backend/app/modules/reportes/exportador.py",
+   "atributos": [
+    "FORMATOS: dict"
+   ],
+   "operaciones": [
+    "a_pdf(tabla: Tabla): bytes",
+    "a_excel(tabla: Tabla): bytes"
+   ]
+  },
+  "analitica_router": {
+   "tipo": "control",
+   "origen": "backend/app/modules/analitica/router.py",
+   "nota": "Dependencias: requiere_roles('ADMINISTRADOR') y requiere_funcion('analitica_ml'). Las rutas /anomalias son del aporte propio.",
+   "atributos": [],
+   "operaciones": [
+    "entrenar(db, usuario, datos: EntrenarIn | None): ResumenOut",
+    "historial(db): list[HistorialOut]",
+    "resumen(db): ResumenOut",
+    "clientes(db): list[ClienteSegmentoOut]",
+    "reporte_pdf(db): Response",
+    "reporte_excel(db): Response"
+   ]
+  },
+  "analitica_service": {
+   "tipo": "control",
+   "origen": "backend/app/modules/analitica/service.py",
+   "atributos": [],
+   "operaciones": [
+    "entrenar(db, usuario_id, semilla): dict",
+    "_productos(db): list[ProductoBase]",
+    "_matriz_real(db, productos, lunes): ndarray",
+    "_rfm_real(db): tuple[list, ndarray]",
+    "_guardar(db, tipo, e: Entrenado, inicio, usuario_id): ModeloAnalitica",
+    "resumen(db): dict",
+    "historial(db): list[dict]",
+    "clientes_por_segmento(db): list[dict]",
+    "reporte(db): Tabla"
+   ]
+  },
+  "modelos": {
+   "tipo": "control",
+   "origen": "backend/app/modules/analitica/modelos.py",
+   "nota": "Funciones puras con scikit-learn: no tocan la base. GradientBoostingRegressor(n_estimators=200, max_depth=3, learning_rate=0.05, subsample=0.9), validacion con corte temporal de 12 semanas; KMeans con k de 2 a 6 elegido por silueta.",
+   "atributos": [
+    "SEMANAS_DE_PRUEBA = 12",
+    "PARAMETROS_GB: dict",
+    "K_CANDIDATOS = range(2, 7)"
+   ],
+   "operaciones": [
+    "entrenar_demanda(productos, sinteticas, reales, lunes, semilla): Entrenado",
+    "entrenar_segmentos(sinteticos, reales, semilla): Entrenado",
+    "clasificar(modelo: bytes, rfm): list[str]",
+    "_preprocesar(rfm): ndarray",
+    "_nombrar(centros): dict[int, str]"
+   ]
+  },
+  "sinteticos": {
+   "tipo": "control",
+   "origen": "backend/app/modules/analitica/sinteticos.py",
+   "atributos": [
+    "SEMILLA = 2026",
+    "SEMANAS = 104",
+    "CLIENTES_SINTETICOS = 240"
+   ],
+   "operaciones": [
+    "productos_de_relleno(cantidad): list[ProductoBase]",
+    "demanda_semanal(productos, semana_iso, semilla): ndarray",
+    "clientes_rfm(cantidad, semilla): ndarray"
+   ]
+  },
+  "BitacoraMiddleware": {
+   "tipo": "control",
+   "origen": "backend/app/modules/bitacora/middleware.py",
+   "nota": "Anota toda peticion POST/PUT/PATCH/DELETE (y las exportaciones GET /reportes/{tipo}.pdf|xlsx). _anotar llama a bitacora/service.py registrar(db, accion, metodo, ruta, estado_http, exito, usuario_id, actor, rol, entidad, entidad_id, ip, agente, detalle), que inserta con bitacora/repository.py agregar(db, **campos). Los GET no se anotan.",
+   "atributos": [],
+   "operaciones": [
+    "dispatch(peticion: Request, siguiente): Response",
+    "_anotar(peticion: Request, respuesta): None"
+   ]
+  },
+  "Notificacion": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/notificaciones/models.py",
+   "tabla": "notificacion",
+   "nota": "tipo IN (RESERVA_EN_SUCURSAL, RESERVA_PREPARADA, PEDIDO_PAGADO, STOCK_BAJO, TRASPASO, DEVOLUCION, OPERACION_OFFLINE, DEVOLUCION_PAGO, STOCK_DISPONIBLE); correo_estado IN (OMITIDO, PENDIENTE, ENVIADO, FALLIDO).",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "destinatario_id: BIGINT (FK usuario, ON DELETE CASCADE)",
+    "tipo: VARCHAR(40)",
+    "titulo: VARCHAR(160)",
+    "cuerpo: TEXT",
+    "enlace: VARCHAR(300)",
+    "entidad: VARCHAR(60)",
+    "entidad_id: BIGINT",
+    "creada_en: TIMESTAMPTZ",
+    "leida_en: TIMESTAMPTZ",
+    "correo_estado: VARCHAR(20)",
+    "correo_enviado_en: TIMESTAMPTZ",
+    "correo_error: VARCHAR(300)",
+    "push_estado: VARCHAR(20)",
+    "push_enviado_en: TIMESTAMPTZ",
+    "push_error: VARCHAR(300)"
+   ],
+   "operaciones": [
+    "crear(db, *, destinatario_id, tipo, titulo, cuerpo, enlace, entidad, entidad_id, correo_estado, correo_error, push_estado): Notificacion  [notificaciones/repository.py]",
+    "tomar_pendiente_de_correo(db): Notificacion | None  [notificaciones/repository.py]",
+    "listar_de(db, destinatario_id, ...): list[Notificacion]  [notificaciones/repository.py]",
+    "contar_de(db, destinatario_id, *, solo_no_leidas): int  [notificaciones/repository.py]",
+    "marcar_leidas(db, destinatario_id, notificacion_id): int  [notificaciones/repository.py]"
+   ]
+  },
+  "TareaAutomatica": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/plataforma/models.py",
+   "tabla": "tarea_automatica",
+   "nota": "De la plataforma: sin empresa ni RLS (migracion 0035). Una sola fila, clave 'vuelta'.",
+   "atributos": [
+    "clave: VARCHAR(40) (PK)",
+    "ultima_vuelta: TIMESTAMPTZ"
+   ],
+   "operaciones": [
+    "_toca_vuelta(conexion, minimo): bool  [core/tareas.py, SQL directo: SELECT y INSERT ... ON CONFLICT]"
+   ]
+  },
+  "Empresa": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/plataforma/models.py",
+   "tabla": "empresa",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "nombre: VARCHAR(120)",
+    "razon_social: VARCHAR(160)",
+    "nit: VARCHAR(30)",
+    "slug: VARCHAR(40) (UNIQUE)",
+    "correo_contacto: VARCHAR(120)",
+    "estado: VARCHAR(10)",
+    "logo: VARCHAR(255)",
+    "color_principal: VARCHAR(7)",
+    "color_secundario: VARCHAR(7)",
+    "ventana_devolucion_horas: SMALLINT"
+   ],
+   "operaciones": [
+    "_empresas_activas(db): list[int]  [core/tareas.py, estado != BAJA]"
+   ]
+  },
+  "Plan": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/plataforma/models.py",
+   "tabla": "plan",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ.",
+   "atributos": [
+    "id: SMALLINT (PK)",
+    "codigo: VARCHAR(20) (UNIQUE)",
+    "nombre: VARCHAR(40) (UNIQUE)",
+    "precio_mensual: NUMERIC(10,2)",
+    "duracion_dias: SMALLINT",
+    "max_sucursales: INTEGER",
+    "max_empleados: INTEGER",
+    "cupo_reportes_ia: INTEGER",
+    "cupo_fotos_ia: INTEGER",
+    "funciones: JSONB",
+    "activo: BOOLEAN"
+   ],
+   "operaciones": [
+    "plan_vigente(db): Plan  [plataforma/verificador.py]",
+    "incluye(db, funcion): bool  [plataforma/verificador.py]"
+   ]
+  },
+  "Suscripcion": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/plataforma/models.py",
+   "tabla": "suscripcion",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "plan_id: SMALLINT (FK plan)",
+    "inicio: DATE",
+    "vencimiento: DATE",
+    "estado: VARCHAR(12)"
+   ],
+   "operaciones": [
+    "suscripcion_vigente(db): Suscripcion | None  [plataforma/verificador.py]"
+   ]
+  },
+  "ConsumoCupo": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/plataforma/models.py",
+   "tabla": "consumo_cupo",
+   "nota": "PK compuesta (empresa_id, recurso, periodo). periodo = primer dia del mes en hora de Bolivia.",
+   "atributos": [
+    "empresa_id: BIGINT (PK, FK empresa)",
+    "recurso: VARCHAR(20) (PK)",
+    "periodo: DATE (PK)",
+    "usados: INTEGER"
+   ],
+   "operaciones": [
+    "uso_del_mes(db, cupo): int  [plataforma/verificador.py]",
+    "consumir_cupo(db, cupo): int  [plataforma/verificador.py, INSERT ... ON CONFLICT DO UPDATE]"
+   ]
+  },
+  "Usuario": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/seguridad/models.py",
+   "tabla": "usuario",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "correo: VARCHAR(120)",
+    "hash_contrasena: VARCHAR(255)",
+    "nombres: VARCHAR(80)",
+    "apellidos: VARCHAR(80)",
+    "rol_id: SMALLINT (FK rol)",
+    "activo: BOOLEAN",
+    "empresa_id: BIGINT (FK empresa)"
+   ],
+   "operaciones": [
+    "_encargados_de(db, sucursal_id): list[Usuario]  [notificaciones/service.py]",
+    "db.get(Usuario, destinatario_id)  [notificaciones/service.py _mensaje_de]"
+   ]
+  },
+  "Sucursal": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/organizacion/models.py",
+   "tabla": "sucursal",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ.",
+   "atributos": [
+    "id: INTEGER (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "ciudad_id: INTEGER (FK ciudad)",
+    "nombre: VARCHAR(80)",
+    "direccion: VARCHAR(200)",
+    "telefono: VARCHAR(20)",
+    "horario_apertura: TIME",
+    "horario_cierre: TIME",
+    "capacidad_vestidores: SMALLINT",
+    "activa: BOOLEAN"
+   ],
+   "operaciones": [
+    "opciones_de_sucursal(db): list[tuple[str, str]]  [reportes/reportes_repository.py]",
+    "nombre_de_sucursal(db, sucursal_id): str | None  [reportes/reportes_repository.py]",
+    "vocabulario(db, *, sucursal_forzada): dict  [reportes/dinamico.py, pares id -> nombre]"
+   ]
+  },
+  "Venta": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/ventas/models.py",
+   "tabla": "venta",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "codigo: VARCHAR(20) (UNIQUE)",
+    "canal: VARCHAR(12)",
+    "estado: VARCHAR(20)",
+    "cliente_id: BIGINT (FK cliente)",
+    "sucursal_id: INTEGER (FK sucursal)",
+    "turno_caja_id: BIGINT (FK turno_caja)",
+    "reserva_id: BIGINT (FK reserva, UNIQUE)",
+    "modalidad_entrega: VARCHAR(10)",
+    "direccion_id: BIGINT (FK direccion_cliente)",
+    "metodo_pago: VARCHAR(20)",
+    "subtotal: NUMERIC(10,2)",
+    "descuento: NUMERIC(10,2)",
+    "total: NUMERIC(10,2)",
+    "creado_en: TIMESTAMPTZ",
+    "actualizado_en: TIMESTAMPTZ"
+   ],
+   "operaciones": [
+    "ventas_semanales(db, desde): list[Row]  [analitica/repository.py, JOIN detalle_venta]",
+    "rfm_de_clientes(db): list[Row]  [analitica/repository.py, JOIN cliente y usuario]",
+    "ejecutar(db, espec, *, sucursal_forzada): Resultado  [reportes/dinamico.py, hecho 'venta']"
+   ]
+  },
+  "DetalleVenta": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/ventas/models.py",
+   "tabla": "detalle_venta",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "venta_id: BIGINT (FK venta, ON DELETE CASCADE)",
+    "variante_id: BIGINT (FK variante_producto)",
+    "cantidad: INTEGER",
+    "precio_unitario: NUMERIC(10,2)",
+    "descuento_unitario: NUMERIC(10,2)",
+    "creado_en: TIMESTAMPTZ"
+   ],
+   "operaciones": [
+    "devoluciones(db, *, desde, hasta, sucursal_id, tipo): list[tuple]  [reportes/reportes_repository.py, JOIN por (venta, variante)]"
+   ]
+  },
+  "Devolucion": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/ventas/models.py",
+   "tabla": "devolucion",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "venta_id: BIGINT (FK venta)",
+    "turno_caja_id: BIGINT (FK turno_caja)",
+    "origen: VARCHAR(6)",
+    "recibida_por: BIGINT (FK usuario)",
+    "reembolso_referencia: VARCHAR(100)",
+    "reembolso_monto: NUMERIC(10,2)",
+    "tipo: VARCHAR(12)",
+    "venta_cambio_id: BIGINT (FK venta, UNIQUE)",
+    "motivo: VARCHAR(200)",
+    "monto: NUMERIC(10,2)",
+    "diferencia: NUMERIC(10,2)",
+    "metodo_diferencia: VARCHAR(20)",
+    "creado_en: TIMESTAMPTZ",
+    "estado: VARCHAR(10)",
+    "conforme: BOOLEAN",
+    "observacion_cliente: VARCHAR(300)"
+   ],
+   "operaciones": [
+    "devoluciones(db, *, desde, hasta, sucursal_id, tipo): list[tuple]  [reportes/reportes_repository.py]",
+    "ejecutar(db, espec, *, sucursal_forzada): Resultado  [reportes/dinamico.py, hecho 'devolucion']"
+   ]
+  },
+  "DetalleDevolucion": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/ventas/models.py",
+   "tabla": "detalle_devolucion",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "devolucion_id: BIGINT (FK devolucion, ON DELETE CASCADE)",
+    "variante_id: BIGINT (FK variante_producto)",
+    "cantidad: INTEGER",
+    "creado_en: TIMESTAMPTZ"
+   ],
+   "operaciones": [
+    "devoluciones(db, *, desde, hasta, sucursal_id, tipo): list[tuple]  [reportes/reportes_repository.py, una fila por linea devuelta]"
+   ]
+  },
+  "Producto": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/catalogo/models.py",
+   "tabla": "producto",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "codigo: VARCHAR(30)",
+    "nombre: VARCHAR(120)",
+    "descripcion: VARCHAR(500)",
+    "categoria_id: INTEGER (FK categoria)",
+    "proveedor_id: BIGINT (FK proveedor)",
+    "temporada_id: INTEGER (FK temporada)",
+    "coleccion_id: INTEGER (FK coleccion)",
+    "precio_base: NUMERIC(10,2)",
+    "activo: BOOLEAN"
+   ],
+   "operaciones": [
+    "productos_activos(db): list[Row]  [analitica/repository.py]"
+   ]
+  },
+  "ModeloAnalitica": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/analitica/models.py",
+   "tabla": "modelo_analitica",
+   "nota": "tipo IN (DEMANDA, SEGMENTOS, ANOMALIAS); se conservan los ultimos 5 de cada tipo (CONSERVAR).",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "tipo: VARCHAR(12)",
+    "parametros: JSONB",
+    "metricas: JSONB",
+    "resultado: JSONB",
+    "filas_entrenamiento: INTEGER",
+    "filas_reales: INTEGER",
+    "filas_sinteticas: INTEGER",
+    "duracion_ms: INTEGER",
+    "modelo: BYTEA",
+    "entrenado_por: BIGINT (FK usuario, ON DELETE SET NULL)",
+    "entrenado_en: TIMESTAMPTZ"
+   ],
+   "operaciones": [
+    "guardar(db, modelo): ModeloAnalitica  [analitica/repository.py]",
+    "ultimo(db, tipo): ModeloAnalitica | None  [analitica/repository.py]",
+    "historial(db): list[Row]  [analitica/repository.py]"
+   ]
+  },
+  "AsientoBitacora": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/bitacora/models.py",
+   "tabla": "bitacora",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "ocurrido_en: TIMESTAMPTZ",
+    "usuario_id: BIGINT (FK usuario, ON DELETE SET NULL)",
+    "actor: VARCHAR(160)",
+    "rol: VARCHAR(40)",
+    "accion: VARCHAR(40)",
+    "entidad: VARCHAR(60)",
+    "entidad_id: VARCHAR(60)",
+    "metodo: VARCHAR(10)",
+    "ruta: VARCHAR(300)",
+    "estado_http: INTEGER",
+    "exito: BOOLEAN",
+    "ip: VARCHAR(60)",
+    "agente: VARCHAR(200)",
+    "detalle: JSONB"
+   ],
+   "operaciones": [
+    "agregar(db, **campos): AsientoBitacora",
+    "contar(db, **filtros): int",
+    "listar(db, limite, desplazamiento, **filtros): list[tuple]",
+    "acciones(db): list[str]",
+    "roles(db): list[str]",
+    "entidades(db): list[str]",
+    "ultimo(db): AsientoBitacora | None"
+   ]
+  }
+ },
+ "cus": {
+  "CU-26": {
+   "actores": [
+    "Sistema"
+   ],
+   "clases": [
+    "tareas",
+    "notificaciones_service",
+    "verificador",
+    "ProveedorBrevo",
+    "Notificacion",
+    "Usuario",
+    "Suscripcion",
+    "Plan",
+    "TareaAutomatica",
+    "Empresa"
+   ],
+   "operaciones_en_cu": {
+    "tareas": [
+     "_bucle()",
+     "correr_vuelta(fabrica_de_sesiones, minimo_entre_vueltas)",
+     "_toca_vuelta(conexion, minimo)",
+     "_empresas_activas(db)",
+     "_intentar(vuelta, db, nombre, tarea)",
+     "_correos(db, empresa_id)"
+    ],
+    "notificaciones_service": [
+     "notificar(...)",
+     "avisar_reserva_en_sucursal(db, reserva)",
+     "_encargados_de(db, sucursal_id)",
+     "_mensaje_de(db, notificacion)",
+     "_cuerpo_html(notificacion, url)",
+     "despachar_pendientes(db, *, limite)"
+    ],
+    "verificador": [
+     "incluye(db, funcion)",
+     "plan_vigente(db)",
+     "suscripcion_vigente(db)"
+    ],
+    "Notificacion": [
+     "crear(...)",
+     "tomar_pendiente_de_correo(db)"
+    ]
+   },
+   "nota": "Sin BitacoraMiddleware: la tarea automatica no es una peticion HTTP y el middleware no la ve (solo el boton manual POST /mantenimiento/notificaciones/despacho deja asiento). El plan se mira al CREAR el aviso (notificar -> verificador.incluye('correo')): sin la funcion nace OMITIDO con motivo y queda solo en la campanita. La vuelta corre con fijar_empresa (RLS) por cada empresa activa. Omitidos por el tope: push_service (CU-42, despacha el push en la misma vuelta) y los modulos que llaman a avisar_* (reservas, pagos, inventario, traspasos, devoluciones web, offline).",
+   "relaciones": [
+    [
+     "Sistema",
+     "tareas",
+     "DISPARA",
+     "1",
+     "1"
+    ],
+    [
+     "tareas",
+     "notificaciones_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "tareas",
+     "TareaAutomatica",
+     "ACTUALIZA",
+     "1",
+     "1"
+    ],
+    [
+     "tareas",
+     "Empresa",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "notificaciones_service",
+     "verificador",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "verificador",
+     "Suscripcion",
+     "CONSULTA",
+     "1",
+     "0..1"
+    ],
+    [
+     "verificador",
+     "Plan",
+     "CONSULTA",
+     "1",
+     "1"
+    ],
+    [
+     "notificaciones_service",
+     "Usuario",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "notificaciones_service",
+     "Notificacion",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "notificaciones_service",
+     "Notificacion",
+     "ACTUALIZA",
+     "1",
+     "0..*"
+    ],
+    [
+     "notificaciones_service",
+     "ProveedorBrevo",
+     "ENVIA_POR",
+     "1",
+     "1"
+    ],
+    [
+     "Usuario",
+     "Notificacion",
+     "RECIBE",
+     "1",
+     "0..*"
+    ],
+    [
+     "Empresa",
+     "Notificacion",
+     "TIENE",
+     "1",
+     "0..*"
+    ],
+    [
+     "Empresa",
+     "Suscripcion",
+     "CONTRATA",
+     "1",
+     "0..*"
+    ],
+    [
+     "Plan",
+     "Suscripcion",
+     "RIGE",
+     "1",
+     "0..*"
+    ]
+   ]
+  },
+  "CU-27": {
+   "actores": [
+    "Administrador",
+    "Encargado"
+   ],
+   "clases": [
+    "ConsultaIa",
+    "ReportesService",
+    "DictadoService",
+    "dinamico_router",
+    "dinamico",
+    "interprete_reglas",
+    "InterpreteGemini",
+    "verificador",
+    "ConsumoCupo",
+    "BitacoraMiddleware",
+    "AsientoBitacora",
+    "Venta"
+   ],
+   "operaciones_en_cu": {
+    "ReportesService": [
+     "consultarIa(texto)",
+     "exportarIa(especificacion, formato)",
+     "traducirIa(error)",
+     "nombreDe(disposicion, tipo, formato)"
+    ],
+    "InterpreteGemini": [
+     "interpretar_consulta(texto, vocabulario, hoy)",
+     "_pedir_json(modelo, instruccion)"
+    ],
+    "verificador": [
+     "verificar_funcion(db, funcion)",
+     "verificar_cupo(db, cupo)",
+     "uso_del_mes(db, cupo)",
+     "consumir_cupo(db, cupo)",
+     "plan_vigente(db)"
+    ],
+    "Venta": [
+     "ejecutar(db, espec, *, sucursal_forzada)"
+    ]
+   },
+   "nota": "La medida elige el hecho: Venta+DetalleVenta, Devolucion+DetalleDevolucion, Existencia o Reserva+DetalleReserva, con joins a Producto, Categoria, Talla, Color, Temporada y Sucursal (omitidas por el tope; Venta queda como ejemplo). El cupo se descuenta solo con el reporte armado; el pedido no entendido no gasta. exportar() vuelve a validar y ejecutar la especificacion y la convierte con reportes/exportador.py (omitido). El encargado tiene la sucursal impuesta (_sucursal_forzada).",
+   "relaciones": [
+    [
+     "Administrador",
+     "ConsultaIa",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Encargado",
+     "ConsultaIa",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "ConsultaIa",
+     "DictadoService",
+     "DICTA_CON",
+     "1",
+     "1"
+    ],
+    [
+     "ConsultaIa",
+     "ReportesService",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "ReportesService",
+     "dinamico_router",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "dinamico_router",
+     "verificador",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "dinamico_router",
+     "InterpreteGemini",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "dinamico_router",
+     "interprete_reglas",
+     "SOLICITA",
+     "1",
+     "0..1"
+    ],
+    [
+     "dinamico_router",
+     "dinamico",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "dinamico",
+     "Venta",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "verificador",
+     "ConsumoCupo",
+     "ACTUALIZA",
+     "1",
+     "0..1"
+    ],
+    [
+     "dinamico_router",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "BitacoraMiddleware",
+     "AsientoBitacora",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ]
+   ]
+  },
+  "CU-28": {
+   "actores": [
+    "Administrador",
+    "Encargado"
+   ],
+   "clases": [
+    "Exportar",
+    "ReportesService",
+    "reportes_router",
+    "reportes_service",
+    "exportador",
+    "BitacoraMiddleware",
+    "AsientoBitacora",
+    "Devolucion",
+    "DetalleDevolucion",
+    "DetalleVenta",
+    "Venta",
+    "Sucursal"
+   ],
+   "operaciones_en_cu": {
+    "ReportesService": [
+     "catalogo()",
+     "descargar(tipo, formato, filtros)",
+     "hayVoz()",
+     "interpretarVoz(texto)",
+     "traducir(error)"
+    ],
+    "reportes_router": [
+     "catalogo_de_reportes(db, usuario)",
+     "descargar(tipo, formato, db, usuario, desde, hasta, sucursal_id, ...)"
+    ],
+    "reportes_service": [
+     "generar(db, *, tipo, desde, hasta, sucursal_id, extras)",
+     "opciones_de(db, filtro)",
+     "_rango(desde, hasta)",
+     "_totales(definicion, filas)"
+    ],
+    "Venta": []
+   },
+   "nota": "El reporte 'devoluciones' de REPORTES: una fila por linea devuelta (fecha, sucursal, tipo, venta, cajero, prenda, talla, color, cantidad, valor devuelto) y suma cantidad y valor. El valor sale del precio congelado de detalle_venta (join por venta y variante), no de variante_producto.precio. La sucursal sale de la caja del turno o, en la devolucion web (CU-25), de la venta. Omitidas por el tope: TurnoCaja, Caja, Usuario, VarianteProducto, Producto, Talla, Color. El GET de la exportacion SI deja asiento (EXPORTACIONES del middleware). El pedido por voz (hablar) es el CU-35 del primer parcial y pasa por el verificador con 'reportes_ia'.",
+   "relaciones": [
+    [
+     "Administrador",
+     "Exportar",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Encargado",
+     "Exportar",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Exportar",
+     "ReportesService",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "ReportesService",
+     "reportes_router",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "reportes_router",
+     "reportes_service",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "reportes_router",
+     "exportador",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "reportes_service",
+     "Devolucion",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "reportes_service",
+     "DetalleDevolucion",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "reportes_service",
+     "DetalleVenta",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "reportes_service",
+     "Venta",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "reportes_service",
+     "Sucursal",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "reportes_router",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "BitacoraMiddleware",
+     "AsientoBitacora",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "Venta",
+     "Devolucion",
+     "SE_DEVUELVE_EN",
+     "1",
+     "0..*"
+    ],
+    [
+     "Venta",
+     "DetalleVenta",
+     "CONTIENE",
+     "1",
+     "0..*"
+    ],
+    [
+     "Devolucion",
+     "DetalleDevolucion",
+     "CONTIENE",
+     "1",
+     "0..*"
+    ],
+    [
+     "Sucursal",
+     "Venta",
+     "VENDE",
+     "1",
+     "0..*"
+    ]
+   ]
+  },
+  "CU-29": {
+   "actores": [
+    "Administrador"
+   ],
+   "clases": [
+    "Analitica",
+    "AnaliticaService",
+    "analitica_router",
+    "analitica_service",
+    "modelos",
+    "sinteticos",
+    "verificador",
+    "BitacoraMiddleware",
+    "AsientoBitacora",
+    "ModeloAnalitica",
+    "Producto",
+    "Venta"
+   ],
+   "operaciones_en_cu": {
+    "Analitica": [
+     "entrenar()"
+    ],
+    "AnaliticaService": [
+     "entrenar(semilla)"
+    ],
+    "analitica_router": [
+     "entrenar(db, usuario, datos)"
+    ],
+    "analitica_service": [
+     "entrenar(db, usuario_id, semilla)",
+     "_productos(db)",
+     "_matriz_real(db, productos, lunes)",
+     "_rfm_real(db)",
+     "_guardar(db, tipo, e, inicio, usuario_id)",
+     "resumen(db)"
+    ],
+    "modelos": [
+     "entrenar_demanda(productos, sinteticas, reales, lunes, semilla)",
+     "entrenar_segmentos(sinteticos, reales, semilla)",
+     "_preprocesar(rfm)",
+     "_nombrar(centros)"
+    ],
+    "verificador": [
+     "verificar_funcion(db, funcion)",
+     "plan_vigente(db)"
+    ],
+    "ModeloAnalitica": [
+     "guardar(db, modelo)",
+     "ultimo(db, tipo)"
+    ],
+    "Venta": [
+     "ventas_semanales(db, desde)",
+     "rfm_de_clientes(db)"
+    ]
+   },
+   "nota": "Lo dispara el Administrador (POST /analitica/entrenamientos); ninguna tarea automatica lo llama. Datos: productos activos y unidades por producto y semana de las ventas PAGADA o ENTREGADA, mas RFM por cliente; se suman a 104 semanas y 240 clientes sinteticos con semilla 2026. repo.guardar borra los entrenamientos viejos del tipo (conserva 5). Omitidas por el tope: DetalleVenta y Cliente (joins de ventas_semanales y rfm_de_clientes), Categoria.",
+   "relaciones": [
+    [
+     "Administrador",
+     "Analitica",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Analitica",
+     "AnaliticaService",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "AnaliticaService",
+     "analitica_router",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "analitica_router",
+     "verificador",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "analitica_router",
+     "analitica_service",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "analitica_service",
+     "sinteticos",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "analitica_service",
+     "modelos",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "analitica_service",
+     "Producto",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "analitica_service",
+     "Venta",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "analitica_service",
+     "ModeloAnalitica",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "analitica_router",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "BitacoraMiddleware",
+     "AsientoBitacora",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ]
+   ]
+  },
+  "CU-30": {
+   "actores": [
+    "Administrador"
+   ],
+   "clases": [
+    "Analitica",
+    "AnaliticaService",
+    "analitica_router",
+    "analitica_service",
+    "modelos",
+    "verificador",
+    "exportador",
+    "ModeloAnalitica",
+    "Venta",
+    "Plan"
+   ],
+   "operaciones_en_cu": {
+    "Analitica": [
+     "ngOnInit()",
+     "cargar()",
+     "descargar(formato)",
+     "tendencia(t)",
+     "fechaCorta(iso)",
+     "fechaLarga(iso)"
+    ],
+    "AnaliticaService": [
+     "resumen()",
+     "clientes()",
+     "reporte(formato)",
+     "traducir(error)"
+    ],
+    "analitica_router": [
+     "resumen(db)",
+     "clientes(db)",
+     "reporte_pdf(db)",
+     "reporte_excel(db)"
+    ],
+    "analitica_service": [
+     "resumen(db)",
+     "clientes_por_segmento(db)",
+     "_rfm_real(db)",
+     "reporte(db)"
+    ],
+    "modelos": [
+     "clasificar(modelo, rfm)"
+    ],
+    "verificador": [
+     "verificar_funcion(db, funcion)",
+     "plan_vigente(db)"
+    ],
+    "ModeloAnalitica": [
+     "ultimo(db, tipo)"
+    ],
+    "Venta": [
+     "rfm_de_clientes(db)"
+    ]
+   },
+   "nota": "Solo lectura: GET /analitica/resumen, /clientes y /reporte.pdf|xlsx. Sin bitacora: el middleware no anota GET y /analitica/reporte.* no esta en sus EXPORTACIONES (que solo mira /reportes/{tipo}.pdf|xlsx). Los clientes de hoy se clasifican con el modelo guardado, sin reentrenar; la pantalla muestra los 20 de mayor monto. La web no llama al historial (GET /analitica/entrenamientos).",
+   "relaciones": [
+    [
+     "Administrador",
+     "Analitica",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Analitica",
+     "AnaliticaService",
+     "CONSULTA",
+     "1",
+     "1"
+    ],
+    [
+     "AnaliticaService",
+     "analitica_router",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "analitica_router",
+     "verificador",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "verificador",
+     "Plan",
+     "CONSULTA",
+     "1",
+     "1"
+    ],
+    [
+     "analitica_router",
+     "analitica_service",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "analitica_router",
+     "exportador",
+     "USA",
+     "1",
+     "0..1"
+    ],
+    [
+     "analitica_service",
+     "ModeloAnalitica",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "analitica_service",
+     "modelos",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "analitica_service",
+     "Venta",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ]
+   ]
+  }
+ }
+}

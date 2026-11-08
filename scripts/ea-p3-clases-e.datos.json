@@ -1,0 +1,1378 @@
+{
+ "_convencion": "igual que ea-p2-clases.datos.json",
+ "clases": {
+  "Campanita": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/shared/campanita/campanita.ts",
+   "nota": "El botón «Recibir avisos en este dispositivo» solo aparece si push.disponible() (service worker registrado, es decir build de producción, y clave VAPID configurada).",
+   "atributos": [],
+   "operaciones": [
+    "ngOnInit(): void",
+    "alternarPush(): void",
+    "abrir(): void",
+    "entrar(aviso: Notificacion): void",
+    "marcarTodas(): void"
+   ]
+  },
+  "Pendientes": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/caja/pendientes/pendientes.ts",
+   "nota": "Muestra «reintegrado por QR (ref. …)» cuando la operación trae reintegro_qr (CU-43).",
+   "atributos": [],
+   "operaciones": [
+    "preparar(): Promise<void>",
+    "sincronizar(): Promise<void>",
+    "limpiar(): void"
+   ]
+  },
+  "Rechazadas": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/sucursal/rechazadas/rechazadas.ts",
+   "nota": "Muestra la marca de devolución automática (fila.devolucion_automatica).",
+   "atributos": [],
+   "operaciones": [
+    "cambiarVista(vista: 'por-devolver' | 'todas'): void",
+    "abrir(fila: OperacionDeSucursal): void",
+    "devolver(fila: OperacionDeSucursal): void"
+   ]
+  },
+  "Ficha": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/tienda/ficha/ficha.ts",
+   "atributos": [],
+   "operaciones": [
+    "ngOnInit(): void",
+    "pedirAviso(): void",
+    "elegirTalla(tallaId: number): void",
+    "elegirColor(colorId: number): void",
+    "verFoto(indice: number): void",
+    "urlDe(url: string | null): string | null",
+    "agregarAlCarrito(): void",
+    "reservar(): void"
+   ]
+  },
+  "MisAvisos": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/cliente/avisos/avisos.ts",
+   "atributos": [],
+   "operaciones": [
+    "ngOnInit(): void",
+    "foto(a: AvisoTalla): string | null",
+    "cancelar(a: AvisoTalla): void"
+   ]
+  },
+  "TallasEsperadas": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/sucursal/tallas-esperadas/tallas-esperadas.ts",
+   "nota": "La misma pantalla en /admin/tallas-esperadas y /sucursal/tallas-esperadas.",
+   "atributos": [],
+   "operaciones": [
+    "ngOnInit(): void",
+    "cargar(): void"
+   ]
+  },
+  "AnomaliasPanel": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/reportes/analitica/anomalias/anomalias-panel.ts",
+   "atributos": [],
+   "operaciones": [
+    "ngOnInit(): void",
+    "buscar(): void",
+    "revisar(grupo: GrupoAnomalia, a: Anomalia): void",
+    "nivel(puntaje: number): 'alto' | 'medio'"
+   ]
+  },
+  "PushWebService": {
+   "tipo": "control",
+   "origen": "frontend-web/src/app/core/services/push-web.service.ts",
+   "nota": "Usa SwPush de @angular/service-worker. registrar(), olvidar() y nombreDelDispositivo() son privados.",
+   "atributos": [
+    "activo: Signal<boolean>",
+    "ocupado: Signal<boolean>",
+    "disponible: Signal<boolean>",
+    "permisoDenegado: Signal<boolean>"
+   ],
+   "operaciones": [
+    "iniciar(): Promise<void>",
+    "activar(): Promise<void>",
+    "desactivar(): Promise<void>",
+    "registrar(sub: PushSubscription): Promise<void>",
+    "olvidar(): void",
+    "nombreDelDispositivo(): string"
+   ]
+  },
+  "ServicioPush": {
+   "tipo": "control",
+   "origen": "mobile/lib/core/push/servicio_push.dart",
+   "nota": "Singleton (ServicioPush.instancia). estado_sesion.dart llama a registrar() al iniciar sesión y a darDeBaja() antes del logout. Sin google-services.json queda disponible = false.",
+   "atributos": [
+    "_disponible: bool",
+    "_tokenRegistrado: String?",
+    "alTocar: void Function(String)?"
+   ],
+   "operaciones": [
+    "inicializar(): Future<void>",
+    "_abrir(mensaje: RemoteMessage): void",
+    "registrar(dio: Dio): Future<void>",
+    "_enviar(dio: Dio, token: String): Future<void>",
+    "darDeBaja(dio: Dio): Future<void>"
+   ]
+  },
+  "OfflineService": {
+   "tipo": "control",
+   "origen": "frontend-web/src/app/core/services/offline.service.ts",
+   "atributos": [
+    "enLinea: Signal<boolean>",
+    "operaciones: Signal<OperacionGuardada[]>",
+    "pendientes: Signal<OperacionGuardada[]>"
+   ],
+   "operaciones": [
+    "sincronizar(): Promise<{confirmadas, rechazadas} | null>",
+    "enviar(lote, cuenta): Promise<'seguir' | 'parar'>",
+    "actualizar(uuid, cambios): Promise<void>",
+    "deSucursal(porDevolver): Observable<OperacionDeSucursal[]>",
+    "registrarDevolucion(uuid, datos): Observable<OperacionDeSucursal>"
+   ]
+  },
+  "AvisosTallaService": {
+   "tipo": "control",
+   "origen": "frontend-web/src/app/core/services/avisos-talla.service.ts",
+   "atributos": [],
+   "operaciones": [
+    "misAvisos(): Observable<AvisoTalla[]>",
+    "variantesEsperadas(): Observable<number[]>",
+    "pedir(varianteId: number): Observable<AvisoTalla>",
+    "cancelar(avisoId: number): Observable<void>",
+    "demanda(): Observable<DemandaTalla[]>",
+    "urlDeImagen(url: string | null): string | null"
+   ]
+  },
+  "AnaliticaService": {
+   "tipo": "control",
+   "origen": "frontend-web/src/app/core/services/analitica.service.ts",
+   "atributos": [],
+   "operaciones": [
+    "resumen(): Observable<ResumenAnalitica>",
+    "entrenar(semilla?: number): Observable<ResumenAnalitica>",
+    "clientes(): Observable<ClienteSegmento[]>",
+    "reporte(formato: 'pdf' | 'xlsx'): Observable<Blob>",
+    "anomalias(): Observable<ResultadoAnomalias>",
+    "buscarAnomalias(): Observable<ResultadoAnomalias>",
+    "marcarRevisada(grupo: GrupoAnomalia, id: number): Observable<ResultadoAnomalias>"
+   ]
+  },
+  "push_service": {
+   "tipo": "control",
+   "origen": "backend/app/modules/notificaciones/push_service.py",
+   "nota": "Módulo de funciones. Rutas en notificaciones/router.py: GET /notificaciones/push/configuracion, GET y POST /notificaciones/push/dispositivos, POST /notificaciones/push/dispositivos/baja y POST /mantenimiento/notificaciones/despacho-push. despachar() toma de a una con FOR UPDATE SKIP LOCKED y confirma por aviso.",
+   "atributos": [
+    "TOPE_POR_DESPACHO: int = 100"
+   ],
+   "operaciones": [
+    "configuracion(): ConfiguracionPushOut",
+    "tiene_dispositivos(db, usuario_id): bool",
+    "registrar(db, usuario_id, datos): SuscripcionPushOut",
+    "_puede_quedarselo(fila, datos): bool",
+    "dar_de_baja(db, usuario_id, direccion): bool",
+    "mis_dispositivos(db, usuario_id): list[SuscripcionPushOut]",
+    "_aviso_de(n): AvisoPush",
+    "_entregar(db, n): tuple[bool, str | None]",
+    "despachar(db, ids, limite): DespachoOut",
+    "despachar_sin_fallar(db, ids): None"
+   ]
+  },
+  "push_integracion": {
+   "tipo": "control",
+   "origen": "backend/app/integrations/push/__init__.py",
+   "nota": "La costura hacia el push. Con PUSH_PROVEEDOR=real usa ProveedorFcm (fcm.py: API HTTP v1 con un JWT RS256 de la cuenta de servicio) y ProveedorWebPush (webpush.py: pywebpush con VAPID); con simulado, ProveedorSimulado. Un 404/410 o UNREGISTERED levanta ErrorDePush(invalida=True).",
+   "atributos": [],
+   "operaciones": [
+    "enviar(destino: Destino, aviso: AvisoPush): None",
+    "proveedor_de(canal: str): ProveedorPush",
+    "_proveedores(): dict[str, ProveedorPush]"
+   ]
+  },
+  "notificaciones_service": {
+   "tipo": "control",
+   "origen": "backend/app/modules/notificaciones/service.py",
+   "atributos": [],
+   "operaciones": [
+    "notificar(db, destinatario, tipo, titulo, cuerpo, enlace, entidad, entidad_id): Notificacion",
+    "avisar_a(db, destinatarios, tipo, titulo, cuerpo, enlace, entidad, entidad_id): list[Notificacion]",
+    "usuario_del_cliente(db, cliente_id): Usuario | None",
+    "encargados_de(db, sucursal_id): list[Usuario]",
+    "despachar_pendientes(db, limite): DespachoOut"
+   ]
+  },
+  "tareas": {
+   "tipo": "control",
+   "origen": "backend/app/core/tareas.py",
+   "nota": "Tarea asyncio dentro del backend (TAREAS_AUTOMATICAS=on), cada TAREAS_INTERVALO_MINUTOS; un pg_try_advisory_lock evita que los dos workers corran la misma vuelta.",
+   "atributos": [
+    "CLAVE_DEL_BLOQUEO: int",
+    "ESPERA_INICIAL_SEGUNDOS: int = 60"
+   ],
+   "operaciones": [
+    "correr_vuelta(fabrica_de_sesiones, minimo_entre_vueltas): Vuelta",
+    "_push(db, empresa_id): None",
+    "_correos(db, empresa_id): None",
+    "_intentar(vuelta, db, nombre, tarea): None",
+    "_bucle(): None",
+    "ciclo_de_vida(app)"
+   ]
+  },
+  "offline_service": {
+   "tipo": "control",
+   "origen": "backend/app/modules/offline/service.py",
+   "nota": "Módulo de funciones. Ruta POST /offline/sincronizar (CU-17) y POST /offline/operaciones/{uuid}/devolucion (CU-19).",
+   "atributos": [],
+   "operaciones": [
+    "sincronizar(db, usuario_id, rol, sucursal_del_usuario, lote): LoteOut",
+    "_sincronizar_una(db, op, usuario_id, rol, sucursal_del_usuario, dispositivo, avisos): ResultadoOut",
+    "_resultado(db, fila, repetida): ResultadoOut",
+    "_por_devolver(fila): bool",
+    "_reintegrar_qr(fila): str",
+    "_devolver_automaticamente(fila): None",
+    "_que_es(fila): str",
+    "_avisar_resultado(db, fila): list",
+    "_avisar_lote(db, resultados, usuario_id, rol): list[int]",
+    "registrar_devolucion(db, uuid, datos, usuario_id, sucursal_id): OperacionOut"
+   ]
+  },
+  "avisos_talla_service": {
+   "tipo": "control",
+   "origen": "backend/app/modules/avisos_talla/service.py",
+   "nota": "Rutas en avisos_talla/router.py: /tienda/avisos-talla (GET, GET /variantes, POST, DELETE /{id}; rol CLIENTE) e /inventario/avisos-talla (GET; ENCARGADO y ADMINISTRADOR).",
+   "atributos": [
+    "VIGENCIA_DE_LOS_AVISADOS: timedelta = 30 días"
+   ],
+   "operaciones": [
+    "total_disponible(db, variante_id): int",
+    "_variante_ofrecible(db, variante_id): VarianteProducto | None",
+    "_detalle_de_variantes(db, ids): dict[int, dict]",
+    "suscribir(db, usuario_id, variante_id): AvisoOut",
+    "mis_avisos(db, usuario_id): list[AvisoOut]",
+    "variantes_esperadas(db, usuario_id): list[int]",
+    "cancelar(db, usuario_id, aviso_id): None",
+    "_a_salida(db, avisos): list[AvisoOut]",
+    "demanda(db): list[DemandaOut]",
+    "avisar_si_volvio(db, existencia, cantidad): int"
+   ]
+  },
+  "inventario_service": {
+   "tipo": "control",
+   "origen": "backend/app/modules/inventario/service.py",
+   "nota": "Solo lo que toca CU-44: _aplicar_movimiento es el único lugar que cambia un saldo y llama al gancho avisar_si_volvio cuando la cantidad es positiva.",
+   "atributos": [],
+   "operaciones": [
+    "_aplicar_movimiento(db, existencia, tipo, cantidad, reservada_delta, motivo, proveedor_id, referencia, usuario_id): MovimientoInventario",
+    "registrar_ingreso(db, datos, usuario_id, confirmar, movimientos): IngresoOut"
+   ]
+  },
+  "analitica_service": {
+   "tipo": "control",
+   "origen": "backend/app/modules/analitica/service.py",
+   "nota": "Rutas en analitica/router.py (ADMINISTRADOR + requiere_funcion('analitica_ml')): GET y POST /analitica/anomalias, POST /analitica/anomalias/{grupo}/{item_id}/revisada.",
+   "atributos": [
+    "DIAS_ANOMALIAS: int = 365"
+   ],
+   "operaciones": [
+    "entrenar_anomalias(db, usuario_id, semilla): dict",
+    "consultar_anomalias(db): dict",
+    "marcar_revisada(db, grupo, item_id, usuario_id): dict",
+    "_matriz_turnos(filas): np.ndarray",
+    "_matriz_devoluciones(filas, ventas_cajero): np.ndarray",
+    "_revisadas_previas(db): dict[str, dict]",
+    "_items(filas, d, armar, grupo, revisadas): list[dict]",
+    "_turno(f): dict",
+    "_devolucion(f): dict",
+    "_grupo(filas, d, armar, grupo, revisadas): dict",
+    "_guardar(db, tipo, e, inicio, usuario_id): ModeloAnalitica"
+   ]
+  },
+  "anomalias": {
+   "tipo": "control",
+   "origen": "backend/app/modules/analitica/anomalias.py",
+   "nota": "Es el DetectorAnomalias del .md del aporte. Usa sklearn.ensemble.IsolationForest.",
+   "atributos": [
+    "CONTAMINACION: float = 0.05",
+    "PARAMETROS_IF: dict = {n_estimators: 200}",
+    "MIN_TURNOS: int = 20",
+    "MIN_DEVOLUCIONES: int = 15",
+    "VARIABLES_TURNO: tuple[Variable]",
+    "VARIABLES_DEVOLUCION: tuple[Variable]"
+   ],
+   "operaciones": [
+    "detectar(matriz, variables, semilla): Detectado",
+    "explicar(x, matriz, variables): str",
+    "_frase(v, x, mediana): str",
+    "_formatear(valor, unidad): str",
+    "serializar(modelos): bytes"
+   ]
+  },
+  "verificador": {
+   "tipo": "control",
+   "origen": "backend/app/modules/plataforma/verificador.py",
+   "nota": "CU-05. requiere_funcion('analitica_ml') de core/dependencies.py llama a verificar_funcion.",
+   "atributos": [],
+   "operaciones": [
+    "verificar_funcion(db, funcion): None",
+    "incluye(db, funcion): bool"
+   ]
+  },
+  "BitacoraMiddleware": {
+   "tipo": "control",
+   "origen": "backend/app/modules/bitacora/middleware.py",
+   "nota": "Anota toda peticion POST/PUT/PATCH/DELETE (y las exportaciones GET). _anotar llama a bitacora/service.py registrar(db, accion, metodo, ruta, estado_http, exito, usuario_id, actor, rol, entidad, entidad_id, ip, agente, detalle), que inserta con bitacora/repository.py agregar(db, **campos). Los GET no se anotan.",
+   "atributos": [],
+   "operaciones": [
+    "dispatch(peticion: Request, siguiente): Response",
+    "_anotar(peticion: Request, respuesta): None"
+   ]
+  },
+  "SuscripcionPush": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/notificaciones/models.py",
+   "tabla": "suscripcion_push",
+   "nota": "UNIQUE (empresa_id, direccion). CHECK canal IN ('FCM','WEBPUSH') y WEBPUSH con sus dos claves. No hay repository: las consultas están en push_service.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "usuario_id: BIGINT (FK usuario, ON DELETE CASCADE)",
+    "canal: VARCHAR(10)",
+    "direccion: TEXT",
+    "clave_p256dh: VARCHAR(200)",
+    "clave_auth: VARCHAR(100)",
+    "dispositivo: VARCHAR(120)",
+    "creada_en: TIMESTAMPTZ",
+    "usada_en: TIMESTAMPTZ"
+   ],
+   "operaciones": [
+    "tiene_dispositivos(db, usuario_id): bool  [notificaciones/push_service.py]",
+    "registrar(db, usuario_id, datos): SuscripcionPushOut  [notificaciones/push_service.py, FOR UPDATE]",
+    "dar_de_baja(db, usuario_id, direccion): bool  [notificaciones/push_service.py]",
+    "mis_dispositivos(db, usuario_id): list[SuscripcionPushOut]  [notificaciones/push_service.py]",
+    "_entregar(db, n): tuple[bool, str | None]  [notificaciones/push_service.py]"
+   ]
+  },
+  "Notificacion": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/notificaciones/models.py",
+   "tabla": "notificacion",
+   "nota": "tipo incluye OPERACION_OFFLINE, DEVOLUCION_PAGO y STOCK_DISPONIBLE. push_estado: OMITIDO | PENDIENTE | ENVIADO | FALLIDO; ENVIADO si y solo si push_enviado_en no es nulo.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "destinatario_id: BIGINT (FK usuario, ON DELETE CASCADE)",
+    "tipo: VARCHAR(40)",
+    "titulo: VARCHAR(160)",
+    "cuerpo: TEXT",
+    "enlace: VARCHAR(300)",
+    "entidad: VARCHAR(60)",
+    "entidad_id: BIGINT",
+    "creada_en: TIMESTAMPTZ",
+    "leida_en: TIMESTAMPTZ",
+    "correo_estado: VARCHAR(20)",
+    "correo_enviado_en: TIMESTAMPTZ",
+    "correo_error: VARCHAR(300)",
+    "push_estado: VARCHAR(20)",
+    "push_enviado_en: TIMESTAMPTZ",
+    "push_error: VARCHAR(300)"
+   ],
+   "operaciones": [
+    "crear(db, destinatario_id, tipo, titulo, cuerpo, enlace, entidad, entidad_id, correo_estado, correo_error, push_estado): Notificacion  [notificaciones/repository.py]",
+    "contar_de(db, destinatario_id, solo_no_leidas): int  [notificaciones/repository.py]",
+    "listar_de(db, destinatario_id, ...): list[Notificacion]  [notificaciones/repository.py]",
+    "marcar_leidas(db, ...): int  [notificaciones/repository.py]",
+    "tomar_pendiente_de_correo(db): Notificacion | None  [notificaciones/repository.py]",
+    "despachar(db, ids, limite): DespachoOut  [notificaciones/push_service.py, FOR UPDATE SKIP LOCKED]"
+   ]
+  },
+  "OperacionOffline": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/offline/models.py",
+   "tabla": "operacion_offline",
+   "nota": "CHECK devolucion_con_responsable: devuelto_en IS NULL OR devolucion_automatica OR devuelto_por IS NOT NULL.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "uuid: UUID (UNIQUE)",
+    "tipo: VARCHAR(10)",
+    "estado: VARCHAR(12)",
+    "sucursal_id: INTEGER (FK sucursal)",
+    "usuario_id: BIGINT (FK usuario)",
+    "dispositivo: VARCHAR(80)",
+    "creada_en_cliente: TIMESTAMPTZ",
+    "recibida_en: TIMESTAMPTZ",
+    "intentos: SMALLINT",
+    "metodo_pago: VARCHAR(10)",
+    "monto_cobrado: NUMERIC(12,2)",
+    "referencia_pago: VARCHAR(60)",
+    "carga: JSONB",
+    "venta_id: BIGINT (FK venta, UNIQUE)",
+    "reserva_id: BIGINT (FK reserva, UNIQUE)",
+    "motivo_rechazo: VARCHAR(300)",
+    "devuelto_en: TIMESTAMPTZ",
+    "devuelto_por: BIGINT (FK usuario)",
+    "metodo_devolucion: VARCHAR(10)",
+    "referencia_devolucion: VARCHAR(60)",
+    "observacion_devolucion: VARCHAR(300)",
+    "cliente_id: BIGINT (FK cliente)",
+    "devolucion_automatica: BOOLEAN"
+   ],
+   "operaciones": [
+    "operacion_por_uuid(db, uuid, bloquear): OperacionOffline | None  [offline/repository.py]",
+    "operaciones(db, sucursal_id, usuario_id, estado, por_devolver, limite): list[tuple[OperacionOffline, Usuario]]  [offline/repository.py]",
+    "efectivo_por_devolver(db, turno_id): tuple[int, Decimal]  [caja/repository.py]"
+   ]
+  },
+  "Cliente": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/seguridad/models.py",
+   "tabla": "cliente",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ. Sin empresa_id: la cuenta del cliente es única en la plataforma (RN-13).",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "usuario_id: BIGINT (FK usuario, UNIQUE)",
+    "documento: VARCHAR(20) (UNIQUE)",
+    "telefono: VARCHAR(20)",
+    "talla_superior: VARCHAR(10)",
+    "talla_inferior: VARCHAR(10)"
+   ],
+   "operaciones": [
+    "_usuario_del_cliente(db, cliente_id): Usuario | None  [notificaciones/service.py]",
+    "cliente_id_de_usuario(db, usuario_id): int  [seguridad/service.py]"
+   ]
+  },
+  "Usuario": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/seguridad/models.py",
+   "tabla": "usuario",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "correo: VARCHAR(120)",
+    "hash_contrasena: VARCHAR(255)",
+    "nombres: VARCHAR(80)",
+    "apellidos: VARCHAR(80)",
+    "rol_id: SMALLINT (FK rol)",
+    "activo: BOOLEAN",
+    "empresa_id: BIGINT (FK empresa)"
+   ],
+   "operaciones": [
+    "_usuario_activo(db, usuario_id): Usuario | None  [notificaciones/service.py]",
+    "_encargados_de(db, sucursal_id): list[Usuario]  [notificaciones/service.py, JOIN empleado]"
+   ]
+  },
+  "AvisoTalla": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/avisos_talla/models.py",
+   "tabla": "aviso_talla",
+   "nota": "Migración 0042, RLS con FORCE. Índice único parcial uq_aviso_talla_pendiente (cliente_id, variante_id) WHERE notificado_en IS NULL (RN-24). No hay repository: las consultas están en avisos_talla/service.py.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "cliente_id: BIGINT (FK cliente, ON DELETE CASCADE)",
+    "variante_id: BIGINT (FK variante_producto, ON DELETE CASCADE)",
+    "creado_en: TIMESTAMPTZ",
+    "notificado_en: TIMESTAMPTZ",
+    "notificacion_id: BIGINT (FK notificacion, ON DELETE SET NULL)"
+   ],
+   "operaciones": [
+    "suscribir(db, usuario_id, variante_id): AvisoOut  [avisos_talla/service.py]",
+    "mis_avisos(db, usuario_id): list[AvisoOut]  [avisos_talla/service.py]",
+    "cancelar(db, usuario_id, aviso_id): None  [avisos_talla/service.py]",
+    "demanda(db): list[DemandaOut]  [avisos_talla/service.py, GROUP BY variante_id]",
+    "avisar_si_volvio(db, existencia, cantidad): int  [avisos_talla/service.py, FOR UPDATE]"
+   ]
+  },
+  "VarianteProducto": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/catalogo/models.py",
+   "tabla": "variante_producto",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "producto_id: BIGINT (FK producto)",
+    "talla_id: INTEGER (FK talla)",
+    "color_id: INTEGER (FK color)",
+    "sku: VARCHAR(40)",
+    "precio: NUMERIC(10,2)",
+    "activa: BOOLEAN"
+   ],
+   "operaciones": [
+    "_variante_ofrecible(db, variante_id): VarianteProducto | None  [avisos_talla/service.py]",
+    "_detalle_de_variantes(db, ids): dict[int, dict]  [avisos_talla/service.py]"
+   ]
+  },
+  "Existencia": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/inventario/models.py",
+   "tabla": "existencia",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "variante_id: BIGINT (FK variante_producto)",
+    "sucursal_id: INTEGER (FK sucursal)",
+    "cantidad_disponible: INTEGER",
+    "cantidad_reservada: INTEGER",
+    "stock_minimo: INTEGER"
+   ],
+   "operaciones": [
+    "obtener_existencia(db, variante_id, sucursal_id, bloquear): Existencia | None  [inventario/repository.py]",
+    "agregar_movimiento(db, existencia_id, tipo, cantidad, ...): MovimientoInventario  [inventario/repository.py]",
+    "total_disponible(db, variante_id): int  [avisos_talla/service.py, JOIN sucursal activa]"
+   ]
+  },
+  "ModeloAnalitica": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/analitica/models.py",
+   "tabla": "modelo_analitica",
+   "nota": "Migración 0040; la 0043 amplía el CHECK del tipo a ('DEMANDA', 'SEGMENTOS', 'ANOMALIAS'). En resultado quedan turnos y devoluciones con {suficientes, muestras, mensaje, medianas, marcadas[]}.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "tipo: VARCHAR(12)",
+    "parametros: JSONB",
+    "metricas: JSONB",
+    "resultado: JSONB",
+    "filas_entrenamiento: INTEGER",
+    "filas_reales: INTEGER",
+    "filas_sinteticas: INTEGER",
+    "duracion_ms: INTEGER",
+    "modelo: BYTEA",
+    "entrenado_por: BIGINT (FK usuario, ON DELETE SET NULL)",
+    "entrenado_en: TIMESTAMPTZ"
+   ],
+   "operaciones": [
+    "guardar(db, modelo): ModeloAnalitica  [analitica/repository.py]",
+    "ultimo(db, tipo): ModeloAnalitica | None  [analitica/repository.py]",
+    "historial(db): list[Row]  [analitica/repository.py]"
+   ]
+  },
+  "TurnoCaja": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/ventas/models.py",
+   "tabla": "turno_caja",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "caja_id: INTEGER (FK caja)",
+    "usuario_id: BIGINT (FK usuario)",
+    "abierto_en: TIMESTAMPTZ",
+    "cerrado_en: TIMESTAMPTZ",
+    "monto_apertura: NUMERIC(10,2)",
+    "monto_cierre: NUMERIC(10,2)",
+    "monto_esperado: NUMERIC(10,2)"
+   ],
+   "operaciones": [
+    "turnos_cerrados(db, desde): list[Row]  [analitica/repository.py, JOIN caja, sucursal, usuario, venta, devolucion]",
+    "turno_por_id(db, turno_id): TurnoCaja | None  [caja/repository.py]"
+   ]
+  },
+  "Devolucion": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/ventas/models.py",
+   "tabla": "devolucion",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "venta_id: BIGINT (FK venta)",
+    "turno_caja_id: BIGINT (FK turno_caja)",
+    "origen: VARCHAR(6)",
+    "recibida_por: BIGINT (FK usuario)",
+    "reembolso_referencia: VARCHAR(100)",
+    "reembolso_monto: NUMERIC(10,2)",
+    "tipo: VARCHAR(12)",
+    "venta_cambio_id: BIGINT (FK venta, UNIQUE)",
+    "motivo: VARCHAR(200)",
+    "monto: NUMERIC(10,2)",
+    "diferencia: NUMERIC(10,2)",
+    "metodo_diferencia: VARCHAR(20)",
+    "creado_en: TIMESTAMPTZ",
+    "estado: VARCHAR(10)",
+    "conforme: BOOLEAN",
+    "observacion_cliente: VARCHAR(300)"
+   ],
+   "operaciones": [
+    "devoluciones_recientes(db, desde): list[Row]  [analitica/repository.py, JOIN detalle_devolucion, detalle_venta]",
+    "devoluciones_del_turno(db, turno_id): Decimal  [caja/repository.py]"
+   ]
+  },
+  "Venta": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/ventas/models.py",
+   "tabla": "venta",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "codigo: VARCHAR(20) (UNIQUE)",
+    "canal: VARCHAR(12)",
+    "estado: VARCHAR(20)",
+    "cliente_id: BIGINT (FK cliente)",
+    "sucursal_id: INTEGER (FK sucursal)",
+    "turno_caja_id: BIGINT (FK turno_caja)",
+    "metodo_pago: VARCHAR(20)",
+    "subtotal: NUMERIC(10,2)",
+    "descuento: NUMERIC(10,2)",
+    "total: NUMERIC(10,2)",
+    "creado_en: TIMESTAMPTZ"
+   ],
+   "nota": "Solo las columnas que lee el análisis; el resto, en el 3.4 de la P2.",
+   "operaciones": [
+    "ventas_por_cajero(db, desde): dict[int, int]  [analitica/repository.py]",
+    "efectivo_cobrado(db, turno_id): Decimal  [caja/repository.py]"
+   ]
+  },
+  "AsientoBitacora": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/bitacora/models.py",
+   "tabla": "bitacora",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "ocurrido_en: TIMESTAMPTZ",
+    "usuario_id: BIGINT (FK usuario, ON DELETE SET NULL)",
+    "actor: VARCHAR(160)",
+    "rol: VARCHAR(40)",
+    "accion: VARCHAR(40)",
+    "entidad: VARCHAR(60)",
+    "entidad_id: VARCHAR(60)",
+    "metodo: VARCHAR(10)",
+    "ruta: VARCHAR(300)",
+    "estado_http: INTEGER",
+    "exito: BOOLEAN",
+    "ip: VARCHAR(60)",
+    "agente: VARCHAR(200)",
+    "detalle: JSONB"
+   ],
+   "operaciones": [
+    "agregar(db, **campos): AsientoBitacora",
+    "contar(db, **filtros): int",
+    "listar(db, limite, desplazamiento, **filtros): list[tuple]",
+    "acciones(db): list[str]",
+    "roles(db): list[str]",
+    "entidades(db): list[str]",
+    "ultimo(db): AsientoBitacora | None"
+   ]
+  }
+ },
+ "cus": {
+  "CU-42": {
+   "actores": [
+    "Sistema",
+    "Cliente",
+    "Cajero"
+   ],
+   "clases": [
+    "Campanita",
+    "PushWebService",
+    "ServicioPush",
+    "push_service",
+    "push_integracion",
+    "notificaciones_service",
+    "offline_service",
+    "tareas",
+    "BitacoraMiddleware",
+    "AsientoBitacora",
+    "SuscripcionPush",
+    "Notificacion"
+   ],
+   "operaciones_en_cu": {
+    "offline_service": [
+     "sincronizar(db, usuario_id, rol, sucursal_del_usuario, lote)",
+     "_avisar_resultado(db, fila)",
+     "_avisar_lote(db, resultados, usuario_id, rol)"
+    ],
+    "notificaciones_service": [
+     "notificar(...)",
+     "avisar_a(...)"
+    ],
+    "tareas": [
+     "correr_vuelta(fabrica_de_sesiones, minimo_entre_vueltas)",
+     "_push(db, empresa_id)",
+     "_bucle()"
+    ],
+    "Campanita": [
+     "ngOnInit()",
+     "alternarPush()"
+    ]
+   },
+   "nota": "El registro del dispositivo (POST /notificaciones/push/dispositivos) es lo que anota la bitácora; el despacho de la tarea automática no pasa por HTTP y no deja asiento. sincronizar() llama a push_service.despachar_sin_fallar(db, ids) con los avisos del lote. Omitida por el tope la entidad Usuario (FK de suscripcion_push.usuario_id y notificacion.destinatario_id). En el móvil, estado_sesion.dart llama a ServicioPush.registrar() al iniciar sesión (no hay botón).",
+   "relaciones": [
+    [
+     "Cliente",
+     "Campanita",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Cajero",
+     "Campanita",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Cliente",
+     "ServicioPush",
+     "RECIBE_AVISOS_EN",
+     "1",
+     "1"
+    ],
+    [
+     "Campanita",
+     "PushWebService",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "PushWebService",
+     "push_service",
+     "REGISTRA_DISPOSITIVO_EN",
+     "1",
+     "1"
+    ],
+    [
+     "ServicioPush",
+     "push_service",
+     "REGISTRA_DISPOSITIVO_EN",
+     "1",
+     "1"
+    ],
+    [
+     "push_service",
+     "SuscripcionPush",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "push_service",
+     "Notificacion",
+     "ACTUALIZA",
+     "1",
+     "0..*"
+    ],
+    [
+     "push_service",
+     "push_integracion",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "notificaciones_service",
+     "push_service",
+     "CONSULTA",
+     "1",
+     "1"
+    ],
+    [
+     "notificaciones_service",
+     "Notificacion",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "offline_service",
+     "notificaciones_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "offline_service",
+     "push_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "Sistema",
+     "tareas",
+     "EJECUTA",
+     "1",
+     "1"
+    ],
+    [
+     "tareas",
+     "push_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "push_service",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "offline_service",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "BitacoraMiddleware",
+     "AsientoBitacora",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ]
+   ]
+  },
+  "CU-43": {
+   "actores": [
+    "Sistema",
+    "Cajero",
+    "Encargado"
+   ],
+   "clases": [
+    "Pendientes",
+    "Rechazadas",
+    "OfflineService",
+    "offline_service",
+    "notificaciones_service",
+    "push_service",
+    "BitacoraMiddleware",
+    "AsientoBitacora",
+    "OperacionOffline",
+    "Cliente",
+    "Usuario",
+    "Notificacion"
+   ],
+   "operaciones_en_cu": {
+    "offline_service": [
+     "sincronizar(...)",
+     "_sincronizar_una(...)",
+     "_resultado(db, fila, repetida)",
+     "_por_devolver(fila)",
+     "_reintegrar_qr(fila)",
+     "_devolver_automaticamente(fila)",
+     "_que_es(fila)",
+     "_avisar_resultado(db, fila)",
+     "_avisar_lote(db, resultados, usuario_id, rol)",
+     "registrar_devolucion(db, uuid, datos, usuario_id, sucursal_id)"
+    ],
+    "OfflineService": [
+     "sincronizar()",
+     "enviar(lote, cuenta)",
+     "actualizar(uuid, cambios)",
+     "deSucursal(porDevolver)"
+    ],
+    "notificaciones_service": [
+     "avisar_a(...)",
+     "usuario_del_cliente(db, cliente_id)",
+     "encargados_de(db, sucursal_id)"
+    ],
+    "push_service": [
+     "despachar_sin_fallar(db, ids)",
+     "despachar(db, ids, limite)"
+    ],
+    "Pendientes": [
+     "sincronizar()"
+    ],
+    "Rechazadas": [
+     "cambiarVista(vista)"
+    ]
+   },
+   "nota": "El actor del caso de uso es el Sistema: la devolución ocurre dentro de POST /offline/sincronizar, que dispara el dispositivo solo (evento 'online' y cada 60 s); el Cajero y el Encargado solo ven el resultado. El reintegro del QR es simulado (_reintegrar_qr devuelve 'REINT-QR-' + 10 hex del uuid). El efectivo no se devuelve solo: queda en CU-19 y caja/repository.py efectivo_por_devolver lo suma al arqueo. registrar_devolucion responde 409 si devolucion_automatica ya es verdadero. Omitida Sucursal por el tope.",
+   "relaciones": [
+    [
+     "Sistema",
+     "OfflineService",
+     "DISPARA_SINCRONIZACION",
+     "1",
+     "1"
+    ],
+    [
+     "Cajero",
+     "Pendientes",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Encargado",
+     "Rechazadas",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Pendientes",
+     "OfflineService",
+     "CONSULTA",
+     "1",
+     "1"
+    ],
+    [
+     "Rechazadas",
+     "OfflineService",
+     "CONSULTA",
+     "1",
+     "1"
+    ],
+    [
+     "OfflineService",
+     "offline_service",
+     "ENVIA_LOTE_A",
+     "1",
+     "1"
+    ],
+    [
+     "offline_service",
+     "OperacionOffline",
+     "ACTUALIZA",
+     "1",
+     "0..*"
+    ],
+    [
+     "offline_service",
+     "notificaciones_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "offline_service",
+     "push_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "notificaciones_service",
+     "Cliente",
+     "CONSULTA",
+     "1",
+     "0..1"
+    ],
+    [
+     "notificaciones_service",
+     "Usuario",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "notificaciones_service",
+     "Notificacion",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "push_service",
+     "Notificacion",
+     "ACTUALIZA",
+     "1",
+     "0..*"
+    ],
+    [
+     "offline_service",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "BitacoraMiddleware",
+     "AsientoBitacora",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "Usuario",
+     "Notificacion",
+     "RECIBE",
+     "1",
+     "0..*"
+    ],
+    [
+     "Usuario",
+     "OperacionOffline",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "Usuario",
+     "OperacionOffline",
+     "DEVUELVE",
+     "0..1",
+     "0..*"
+    ],
+    [
+     "Cliente",
+     "OperacionOffline",
+     "ES_CLIENTE_DE",
+     "0..1",
+     "0..*"
+    ],
+    [
+     "Usuario",
+     "Cliente",
+     "ES",
+     "1",
+     "0..1"
+    ],
+    [
+     "Usuario",
+     "AsientoBitacora",
+     "DEJA_RASTRO_EN",
+     "0..1",
+     "0..*"
+    ]
+   ]
+  },
+  "CU-44": {
+   "actores": [
+    "Cliente",
+    "Encargado",
+    "Administrador"
+   ],
+   "clases": [
+    "Ficha",
+    "MisAvisos",
+    "TallasEsperadas",
+    "AvisosTallaService",
+    "avisos_talla_service",
+    "inventario_service",
+    "notificaciones_service",
+    "BitacoraMiddleware",
+    "AsientoBitacora",
+    "AvisoTalla",
+    "VarianteProducto",
+    "Existencia"
+   ],
+   "operaciones_en_cu": {
+    "Ficha": [
+     "ngOnInit()",
+     "pedirAviso()",
+     "elegirTalla(tallaId)",
+     "elegirColor(colorId)"
+    ],
+    "notificaciones_service": [
+     "notificar(...)",
+     "usuario_del_cliente(db, cliente_id)"
+    ]
+   },
+   "nota": "El cliente se resuelve con seguridad/service.py cliente_id_de_usuario. Omitidas por el tope: Cliente y Notificacion (FK de aviso_talla), push_service y tareas (el despacho es el de CU-42) y el móvil (pantalla_ficha.dart _BotonAvisame, estado_avisos_talla.dart ControlAvisosTalla y repositorio_avisos_talla.dart RepositorioAvisosTalla, que solo piden el aviso). La ficha decide mostrar el botón con la disponibilidad del catálogo público.",
+   "relaciones": [
+    [
+     "Cliente",
+     "Ficha",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Cliente",
+     "MisAvisos",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Encargado",
+     "TallasEsperadas",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Administrador",
+     "TallasEsperadas",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Ficha",
+     "AvisosTallaService",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "MisAvisos",
+     "AvisosTallaService",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "TallasEsperadas",
+     "AvisosTallaService",
+     "CONSULTA",
+     "1",
+     "1"
+    ],
+    [
+     "AvisosTallaService",
+     "avisos_talla_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "avisos_talla_service",
+     "AvisoTalla",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "avisos_talla_service",
+     "VarianteProducto",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "avisos_talla_service",
+     "Existencia",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "inventario_service",
+     "Existencia",
+     "ACTUALIZA",
+     "1",
+     "0..*"
+    ],
+    [
+     "inventario_service",
+     "avisos_talla_service",
+     "AVISA_A",
+     "1",
+     "1"
+    ],
+    [
+     "avisos_talla_service",
+     "notificaciones_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "avisos_talla_service",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "inventario_service",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "BitacoraMiddleware",
+     "AsientoBitacora",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "VarianteProducto",
+     "AvisoTalla",
+     "ES_ESPERADA_EN",
+     "1",
+     "0..*"
+    ],
+    [
+     "VarianteProducto",
+     "Existencia",
+     "TIENE_SALDO_EN",
+     "1",
+     "0..*"
+    ]
+   ]
+  },
+  "CU-45": {
+   "actores": [
+    "Administrador"
+   ],
+   "clases": [
+    "AnomaliasPanel",
+    "AnaliticaService",
+    "analitica_service",
+    "anomalias",
+    "verificador",
+    "BitacoraMiddleware",
+    "AsientoBitacora",
+    "ModeloAnalitica",
+    "TurnoCaja",
+    "Devolucion",
+    "Venta",
+    "Usuario"
+   ],
+   "operaciones_en_cu": {
+    "AnaliticaService": [
+     "anomalias()",
+     "buscarAnomalias()",
+     "marcarRevisada(grupo, id)"
+    ]
+   },
+   "nota": "Solo datos reales, sin sintéticos (filas_sinteticas = 0). turnos_cerrados lee además caja y sucursal; devoluciones_recientes lee detalle_devolucion y detalle_venta para el valor devuelto (omitidas por el tope). repository.guardar borra los análisis viejos y conserva los últimos 5 (CONSERVAR). La revisión queda dentro del JSONB resultado como {por, en}.",
+   "relaciones": [
+    [
+     "Administrador",
+     "AnomaliasPanel",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "AnomaliasPanel",
+     "AnaliticaService",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "AnaliticaService",
+     "analitica_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "analitica_service",
+     "verificador",
+     "VERIFICA_CON",
+     "1",
+     "1"
+    ],
+    [
+     "analitica_service",
+     "anomalias",
+     "ENTRENA_CON",
+     "1",
+     "1"
+    ],
+    [
+     "analitica_service",
+     "ModeloAnalitica",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "analitica_service",
+     "TurnoCaja",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "analitica_service",
+     "Devolucion",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "analitica_service",
+     "Venta",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "analitica_service",
+     "Usuario",
+     "CONSULTA",
+     "1",
+     "0..1"
+    ],
+    [
+     "analitica_service",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "BitacoraMiddleware",
+     "AsientoBitacora",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "Usuario",
+     "ModeloAnalitica",
+     "ENTRENA",
+     "0..1",
+     "0..*"
+    ],
+    [
+     "Usuario",
+     "TurnoCaja",
+     "ABRE",
+     "1",
+     "0..*"
+    ],
+    [
+     "TurnoCaja",
+     "Venta",
+     "AGRUPA",
+     "0..1",
+     "0..*"
+    ],
+    [
+     "TurnoCaja",
+     "Devolucion",
+     "PROCESA",
+     "0..1",
+     "0..*"
+    ],
+    [
+     "Venta",
+     "Devolucion",
+     "SE_DEVUELVE_EN",
+     "1",
+     "0..*"
+    ],
+    [
+     "Venta",
+     "Devolucion",
+     "SE_CAMBIA_POR",
+     "0..1",
+     "0..1"
+    ],
+    [
+     "Usuario",
+     "Devolucion",
+     "RECIBE",
+     "0..1",
+     "0..*"
+    ],
+    [
+     "Usuario",
+     "AsientoBitacora",
+     "DEJA_RASTRO_EN",
+     "0..1",
+     "0..*"
+    ]
+   ]
+  }
+ }
+}

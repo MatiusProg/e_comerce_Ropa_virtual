@@ -1,0 +1,1443 @@
+{
+ "_convencion": "igual que ea-p2-clases.datos.json",
+ "clases": {
+  "Inventario": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/admin/inventario/inventario.ts",
+   "nota": "La usan el Administrador (/admin/inventario) y el Encargado (/sucursal/inventario). Los diálogos que abre (IngresoFormulario, AjusteFormulario, MinimoFormulario, TransferenciaFormulario, KardexDialogo) llaman a InventarioService.",
+   "atributos": [],
+   "operaciones": [
+    "ngOnInit(): void",
+    "refrescarTodo(): void",
+    "paginarExistencias(evento: PageEvent): void",
+    "buscarExistencias(): void",
+    "paginarIngresos(evento: PageEvent): void",
+    "paginarMovimientos(evento: PageEvent): void",
+    "alternarDetalle(ingreso: IngresoResumen): void",
+    "estaAbierto(ingreso: IngresoResumen): boolean",
+    "registrarIngreso(): void",
+    "ajustar(existencia: Existencia): void",
+    "fijarMinimo(existencia: Existencia): void",
+    "transferir(existencia: Existencia | null): void",
+    "verKardex(existencia: Existencia): void",
+    "conSigno(cantidad: number): string",
+    "claseDeTipo(tipo: TipoMovimiento): string"
+   ]
+  },
+  "PantallaInventario": {
+   "tipo": "interfaz",
+   "origen": "mobile/lib/features/inventario/pantalla_inventario.dart",
+   "nota": "Los métodos viven en _PantallaInventarioState. En el mismo archivo están PantallaIngresoSinRed (_guardar(paquete) llama a ControlOffline.registrarIngreso) y PantallaKardex (initState pide RepositorioOffline.kardex).",
+   "atributos": [],
+   "operaciones": [
+    "initState(): void",
+    "_preparar({bool silencioso}): Future<void>",
+    "_abrirPrenda(context, p: PrendaInventario, enLinea: bool): void",
+    "_contar(context, p: PrendaInventario): Future<void>"
+   ]
+  },
+  "Devolucion_PWA": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/caja/devolucion/devolucion.ts",
+   "nota": "En el código la clase se llama `Devolucion`; se renombra para no chocar con la entidad Devolucion. registrarCambio(venta) es privado y lo llama registrar() en modo CAMBIO.",
+   "atributos": [],
+   "operaciones": [
+    "ngOnInit(): void",
+    "elegirModo(modo: Modo): void",
+    "agregar(prenda: PrendaEnMostrador): void",
+    "cantidadLlevada(prenda: PrendaQueSeLleva, cantidad: number): void",
+    "quitar(prenda: PrendaQueSeLleva): void",
+    "buscar(): void",
+    "cambiar(fila: LineaEnDevolucion, cantidad: number): void",
+    "todo(): void",
+    "registrar(): void",
+    "verNota(id: number): void",
+    "plazoTexto(horas: number): string",
+    "otra(): void",
+    "subtotalLlevado(prenda: PrendaQueSeLleva): number",
+    "subtotalDe(fila: LineaEnDevolucion): number"
+   ]
+  },
+  "NotaDevolucionDialogo": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/caja/devolucion/nota-devolucion.ts",
+   "nota": "Pide GET /pos/notas-devolucion/{id} con HttpClient (o la URL /tienda/devoluciones/{id}/nota, desde «Mis solicitudes»).",
+   "atributos": [],
+   "operaciones": [
+    "ngOnInit(): void",
+    "sinSigno(monto: string): string",
+    "esCero(monto: string): boolean",
+    "imprimir(): void"
+   ]
+  },
+  "VentanaDevolucion": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/admin/mi-tienda/ventana-devolucion.ts",
+   "nota": "Tarjeta dentro de MiTienda. Llama con HttpClient a GET y PUT /plataforma/mi-tienda/devoluciones (no hay service del front). Los atajos de 24, 48 y 72 h son horas.setValue(atajo) en la plantilla.",
+   "atributos": [
+    "atajos: number[]",
+    "horas: FormControl<number>",
+    "guardadas: Signal<number | null>"
+   ],
+   "operaciones": [
+    "ngOnInit(): void",
+    "comoTexto(): string",
+    "guardar(): void"
+   ]
+  },
+  "Compras": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/cliente/compras/compras.ts",
+   "atributos": [],
+   "operaciones": [
+    "ngOnInit(): void",
+    "paginar(evento: PageEvent): void",
+    "pedirDevolucion(compra: Pedido): void",
+    "tieneComprobante(compra: Pedido): boolean",
+    "descargar(compra: Pedido): void",
+    "rotulo(estado: EstadoPedido): string"
+   ]
+  },
+  "SolicitarDevolucion": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/cliente/compras/solicitar-devolucion.ts",
+   "nota": "Diálogo. Llama con HttpClient a GET /tienda/devoluciones/pedidos/{codigo} y POST /tienda/devoluciones.",
+   "atributos": [],
+   "operaciones": [
+    "ngOnInit(): void",
+    "enTexto(monto: number): string",
+    "cambiarTipo(tipo: TipoSolicitud): void",
+    "mover(e: Eleccion, paso: number): void",
+    "elegirNueva(e: Eleccion, variante: number): void",
+    "enviar(): void"
+   ]
+  },
+  "MisSolicitudes": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/cliente/compras/mis-solicitudes.ts",
+   "nota": "Llama con HttpClient a GET /tienda/devoluciones y POST /tienda/devoluciones/{id}/conformidad.",
+   "atributos": [],
+   "operaciones": [
+    "ngOnInit(): void",
+    "recargar(): void",
+    "verNota(s: Solicitud): void",
+    "conformidad(s: Solicitud, conforme: boolean, observacion: string): void",
+    "rotulo(estado: EstadoSolicitud): string"
+   ]
+  },
+  "PedidosWeb": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/sucursal/pedidos-web/pedidos-web.ts",
+   "nota": "Llama con HttpClient a /sucursal/pedidos y /sucursal/solicitudes-devolucion/{id}/{aprobar|rechazar|recibir}.",
+   "atributos": [],
+   "operaciones": [
+    "pendientes(): number",
+    "ngOnInit(): void",
+    "entregar(p: PedidoDeSucursal): void",
+    "atender(s: Solicitud, accion: 'aprobar' | 'rechazar' | 'recibir', respuesta: string): void",
+    "verNota(id: number): void",
+    "rotulo(estado: EstadoSolicitud): string"
+   ]
+  },
+  "InventarioService": {
+   "tipo": "control",
+   "origen": "frontend-web/src/app/core/services/inventario.service.ts",
+   "atributos": [],
+   "operaciones": [
+    "avisosDeIngreso(): Observable<AvisoDeIngreso[]>",
+    "registrarIngreso(datos: IngresoCrear): Observable<IngresoRegistrado>",
+    "listarIngresos(filtros: FiltrosIngresos): Observable<PaginaIngresos>",
+    "detalleDeIngreso(ingreso: IngresoResumen): Observable<Movimiento[]>",
+    "listarExistencias(filtros: FiltrosExistencias): Observable<PaginaExistencias>",
+    "kardex(variante_id: number, sucursal_id: number, pagina: number, tamano: number): Observable<Kardex>",
+    "listarMovimientos(filtros: FiltrosMovimientos): Observable<PaginaMovimientos>",
+    "tiposManuales(): Observable<TipoManual[]>",
+    "listarAlertas(sucursal_id?: number): Observable<Existencia[]>",
+    "fijarStockMinimo(existencia_id, stock_minimo): Observable<Existencia>",
+    "registrarAjuste(datos: AjusteCrear): Observable<AjusteRegistrado>",
+    "registrarTransferencia(datos): Observable<TransferenciaRegistrada>",
+    "traducir(error: HttpErrorResponse): ErrorInventario"
+   ]
+  },
+  "ControlOffline": {
+   "tipo": "control",
+   "origen": "mobile/lib/features/offline/estado_offline.dart",
+   "nota": "Notifier<EstadoOffline> (offlineProvider). Baja el paquete por RepositorioOffline.descargarPaqueteInventario() (GET /offline/paquete-inventario) y guarda en SQLite por BaseLocal (guardarPaqueteInventario, leerPaqueteInventario, aplicarAInventario).",
+   "atributos": [
+    "state: EstadoOffline",
+    "_base: BaseLocal"
+   ],
+   "operaciones": [
+    "prepararInventario(): Future<PaqueteInventario>",
+    "registrarIngreso({proveedor: ProveedorLocal, remito: String?, prendas: Map<PrendaInventario, int>}): Future<OperacionGuardada>",
+    "registrarConteo({prenda: PrendaInventario, contado: int, motivo: String}): Future<OperacionGuardada>",
+    "_guardarDeInventario({resumen: String, cuerpo: Map<String, dynamic>}): Future<OperacionGuardada>",
+    "_efecto(cuerpo: Map<String, dynamic>): Map<int, int>",
+    "sincronizar(): Future<({int confirmadas, int rechazadas})?>"
+   ]
+  },
+  "DevolucionesService": {
+   "tipo": "control",
+   "origen": "frontend-web/src/app/core/services/devoluciones.service.ts",
+   "atributos": [],
+   "operaciones": [
+    "buscarVenta(codigo: string): Observable<VentaDevolvible>",
+    "registrar(datos: Devolucion): Observable<ComprobanteDevolucion>",
+    "registrarCambio(datos: Cambio): Observable<ComprobanteCambio>",
+    "traducir(error: HttpErrorResponse): ErrorDevolucion"
+   ]
+  },
+  "inventario_service": {
+   "tipo": "control",
+   "origen": "backend/app/modules/inventario/service.py",
+   "nota": "Módulo de funciones. Rutas en inventario/router.py: GET /inventario/existencias, POST /inventario/ingresos, POST /inventario/movimientos/ajuste, GET /inventario/kardex, PATCH /inventario/existencias/{id}/stock-minimo (Administrador y Encargado, este limitado a su sucursal por verificar_ambito_sucursal); POST /inventario/movimientos/transferencia solo el Administrador.",
+   "atributos": [],
+   "operaciones": [
+    "listar_existencias(db, pagina, tamano, sucursal_id, producto_id, solo_con_saldo, busqueda): PaginaExistencias",
+    "registrar_ingreso(db, datos: IngresoIn, usuario_id, confirmar, movimientos): IngresoOut",
+    "registrar_ajuste(db, datos: AjusteIn, usuario_id): AjusteOut",
+    "ajustar_por_diferencia(db, variante_id, sucursal_id, diferencia, motivo, usuario_id): MovimientoInventario | None",
+    "kardex(db, variante_id, sucursal_id, pagina, tamano): KardexOut",
+    "registrar_transferencia(db, datos: TransferenciaIn, usuario_id): TransferenciaOut",
+    "fijar_stock_minimo(db, existencia_id, stock_minimo): ExistenciaOut",
+    "reingresar_por_devolucion(db, variante_id, sucursal_id, cantidad, usuario_id, motivo): Existencia",
+    "descontar_por_venta(db, variante_id, sucursal_id, cantidad, usuario_id, motivo, movimientos): Existencia",
+    "_aplicar_movimiento(db, existencia, tipo, cantidad, reservada_delta, motivo, proveedor_id, referencia, usuario_id): MovimientoInventario",
+    "_existencia_o_crearla(db, variante_id, sucursal_id): Existencia",
+    "_variantes_validas(db, ids): dict[int, Row]"
+   ]
+  },
+  "offline_service": {
+   "tipo": "control",
+   "origen": "backend/app/modules/offline/service.py",
+   "nota": "Módulo de funciones. GET /offline/paquete-inventario (solo ENCARGADO) y POST /offline/sincronizar. _sincronizar_una marca cada movimiento escrito con operacion_offline_id.",
+   "atributos": [],
+   "operaciones": [
+    "paquete_de_inventario(db, usuario_id, sucursal_id): PaqueteDeInventarioOut",
+    "sincronizar(db, usuario_id, rol, sucursal_del_usuario, lote): LoteOut",
+    "_sincronizar_una(db, op, usuario_id, rol, sucursal_del_usuario, dispositivo): ResultadoOut",
+    "_confirmar_inventario(db, op, usuario_id, rol, sucursal_del_usuario, movimientos): int",
+    "_resultado(db, fila, repetida): ResultadoOut"
+   ]
+  },
+  "devolucion_service": {
+   "tipo": "control",
+   "origen": "backend/app/modules/pos/devolucion_service.py",
+   "nota": "Módulo de funciones. Rutas en pos/devolucion_router.py: GET /pos/devoluciones/ventas/{codigo}, POST /pos/devoluciones, POST /pos/devoluciones/cambios (CAJERO y ENCARGADO) y GET /pos/notas-devolucion/{id} (también ADMINISTRADOR). El turno sale de pos/service.py mostrador_de; los precios del cambio, de promociones.descuentos_por_variante.",
+   "atributos": [],
+   "operaciones": [
+    "ventana_en_horas(db): int",
+    "_vence_en(venta, horas): datetime",
+    "_exigir_plazo(db, venta, cambio_aprobado): None",
+    "_por_que_solo_cambio(venta): str | None",
+    "_aprobada_cubre(aprobada, pedidas): bool",
+    "_sale_del_cajon(venta): bool",
+    "_lineas_que_vuelven(db, venta, pedidas, en_la_web): tuple[list, dict]",
+    "buscar_venta(db, usuario_id, codigo): VentaDevolvibleOut",
+    "registrar(db, usuario_id, datos: DevolucionIn): DevolucionOut",
+    "registrar_cambio(db, usuario_id, datos: CambioIn): CambioOut",
+    "_a_favor_de(diferencia): str",
+    "nota(db, devolucion_id, sucursal_id): NotaDevolucionOut"
+   ]
+  },
+  "mi_tienda_router": {
+   "tipo": "control",
+   "origen": "backend/app/modules/plataforma/mi_tienda/router.py",
+   "nota": "Router /plataforma/mi-tienda, solo ADMINISTRADOR. La ventana no depende del plan (las rutas de la marca sí, con requiere_funcion).",
+   "atributos": [],
+   "operaciones": [
+    "obtener_ventana(db, usuario): VentanaDevolucionOut",
+    "guardar_ventana(datos: VentanaDevolucionIn, db, usuario): VentanaDevolucionOut"
+   ]
+  },
+  "mi_tienda_service": {
+   "tipo": "control",
+   "origen": "backend/app/modules/plataforma/mi_tienda/service.py",
+   "atributos": [],
+   "operaciones": [
+    "_empresa(db, empresa_id): Empresa",
+    "obtener_ventana(db, empresa_id): VentanaDevolucionOut",
+    "guardar_ventana(db, empresa_id, datos: VentanaDevolucionIn): VentanaDevolucionOut"
+   ]
+  },
+  "devoluciones_web_service": {
+   "tipo": "control",
+   "origen": "backend/app/modules/devoluciones_web/service.py",
+   "nota": "Módulo de funciones. Rutas en devoluciones_web/router.py: /tienda/devoluciones (CLIENTE) y /sucursal/solicitudes-devolucion (ENCARGADO de su sucursal y ADMINISTRADOR de todas).",
+   "atributos": [],
+   "operaciones": [
+    "_cliente_id(db, usuario_id): int",
+    "_venta_del_cliente(db, codigo, cliente_id): Venta",
+    "_plazo(db, venta): tuple[int, datetime, bool]",
+    "_comprometidas(db, venta_id): dict[int, int]",
+    "pedido_devolvible(db, usuario_id, codigo): PedidoDevolvibleOut",
+    "solicitar(db, usuario_id, datos: SolicitudIn): SolicitudOut",
+    "solicitud_out(db, solicitud_id): SolicitudOut",
+    "mis_solicitudes(db, usuario_id): list[SolicitudOut]",
+    "solicitudes_de_sucursal(db, sucursal_id, estado): list[SolicitudOut]",
+    "_solicitud_de_sucursal(db, solicitud_id, sucursal_id): SolicitudDevolucion",
+    "aprobar(db, solicitud_id, usuario_id, sucursal_id, respuesta): SolicitudOut",
+    "rechazar(db, solicitud_id, usuario_id, sucursal_id, respuesta): SolicitudOut",
+    "recibir(db, solicitud_id, usuario_id, sucursal_id): SolicitudOut",
+    "cambio_aprobado_de(db, venta_id): SolicitudDevolucion | None",
+    "completar_con(db, solicitud, devolucion_id): None",
+    "conformidad(db, usuario_id, solicitud_id, conforme, observacion): SolicitudOut",
+    "nota_del_cliente(db, usuario_id, solicitud_id): NotaDevolucionOut"
+   ]
+  },
+  "notificaciones_service": {
+   "tipo": "control",
+   "origen": "backend/app/modules/notificaciones/service.py",
+   "nota": "notificar() deja el aviso en la transacción, con el correo PENDIENTE u OMITIDO según el plan (verificador.incluye 'correo'); lo manda después despachar_pendientes (CU-26).",
+   "atributos": [],
+   "operaciones": [
+    "notificar(db, destinatario, tipo, titulo, cuerpo, enlace, entidad, entidad_id): Notificacion",
+    "avisar_devolucion_solicitada(db, solicitud): list[Notificacion]",
+    "avisar_devolucion_resuelta(db, solicitud): Notificacion | None"
+   ]
+  },
+  "pasarela_pago": {
+   "tipo": "control",
+   "origen": "backend/app/integrations/pasarela_pago/__init__.py",
+   "nota": "Fachada del proveedor configurado (simulada.py o stripe_hospedado.py). reembolsar es idempotente por la clave devolucion-web-{id}; si falla levanta ErrorDePasarela y recibir() hace rollback.",
+   "atributos": [],
+   "operaciones": [
+    "obtener_proveedor(): ProveedorPasarela",
+    "reembolsar(referencia_sesion: str, monto, clave: str): str"
+   ]
+  },
+  "BitacoraMiddleware": {
+   "tipo": "control",
+   "origen": "backend/app/modules/bitacora/middleware.py",
+   "nota": "Anota toda petición POST/PUT/PATCH/DELETE (y las exportaciones GET). _anotar llama a bitacora/service.py registrar(db, accion, metodo, ruta, estado_http, exito, usuario_id, actor, rol, entidad, entidad_id, ip, agente, detalle), que inserta con bitacora/repository.py agregar(db, **campos). Los GET no se anotan.",
+   "atributos": [],
+   "operaciones": [
+    "dispatch(peticion: Request, siguiente): Response",
+    "_anotar(peticion: Request, respuesta): None"
+   ]
+  },
+  "prenda_inventario": {
+   "tipo": "entidad",
+   "origen": "mobile/lib/core/almacenamiento/base_local.dart",
+   "nota": "SQLite violet_offline.db (versión 3). Junto a ella está proveedor_local (id, razon_social), omitida por el tope.",
+   "atributos": [
+    "variante_id: INTEGER (PK)",
+    "sku: TEXT",
+    "producto: TEXT",
+    "talla: TEXT",
+    "color: TEXT",
+    "disponible: INTEGER",
+    "reservada: INTEGER",
+    "stock_minimo: INTEGER"
+   ],
+   "operaciones": [
+    "guardarPaqueteInventario(paquete: PaqueteInventario): Future<void>",
+    "leerPaqueteInventario(): Future<PaqueteInventario?>",
+    "aplicarAInventario(delta: Map<int, int>): Future<void>"
+   ]
+  },
+  "Existencia": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/inventario/models.py",
+   "tabla": "existencia",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "variante_id: BIGINT (FK variante_producto)",
+    "sucursal_id: INTEGER (FK sucursal)",
+    "cantidad_disponible: INTEGER",
+    "cantidad_reservada: INTEGER",
+    "stock_minimo: INTEGER"
+   ],
+   "operaciones": [
+    "obtener_existencia(db, variante_id, sucursal_id, bloquear): Existencia | None  [inventario/repository.py]",
+    "obtener_existencia_con_detalle(db, existencia_id): Row | None  [inventario/repository.py]",
+    "agregar_existencia(db, variante_id, sucursal_id): Existencia  [inventario/repository.py]",
+    "contar_existencias(db, ...): int  [inventario/repository.py]",
+    "obtener_existencia_por_id(db, existencia_id): Existencia | None  [inventario/repository.py]",
+    "listar_alertas(db, sucursal_id): list[Row]  [inventario/repository.py]",
+    "prendas_para_inventario(db, sucursal_id): list[Row]  [offline/repository.py]"
+   ]
+  },
+  "MovimientoInventario": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/inventario/models.py",
+   "tabla": "movimiento_inventario",
+   "nota": "Inmutable: sin actualizado_en. tipo IN (INGRESO, RESERVA, LIBERACION, VENTA, DEVOLUCION, TRANSFERENCIA, AJUSTE); cantidad con signo y <> 0.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "existencia_id: BIGINT (FK existencia)",
+    "tipo: VARCHAR(15)",
+    "cantidad: INTEGER",
+    "motivo: VARCHAR(200)",
+    "proveedor_id: BIGINT (FK proveedor)",
+    "referencia: VARCHAR(40)",
+    "usuario_id: BIGINT (FK usuario)",
+    "operacion_offline_id: BIGINT (FK operacion_offline)",
+    "creado_en: TIMESTAMPTZ"
+   ],
+   "operaciones": [
+    "agregar_movimiento(db, existencia_id, tipo, cantidad, motivo, proveedor_id, referencia, usuario_id): MovimientoInventario  [inventario/repository.py]",
+    "obtener_movimiento(db, movimiento_id): Row | None  [inventario/repository.py]",
+    "listar_movimientos(db, ...): list[Row]  [inventario/repository.py]",
+    "kardex(db, existencia_id, pagina, tamano): tuple[int, list[Row]]  [inventario/repository.py]",
+    "fisico_al_momento(db, variante_id, sucursal_id, momento): int  [offline/repository.py]",
+    "unidades_de_operacion(db, operacion_id): int  [offline/repository.py]"
+   ]
+  },
+  "OperacionOffline": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/offline/models.py",
+   "tabla": "operacion_offline",
+   "nota": "tipo IN (VENTA, RESERVA, INGRESO, AJUSTE); INGRESO y AJUSTE (CU-21) van sin pago. Omitidas por espacio las columnas de devolución (devuelto_en, devuelto_por, metodo_devolucion, referencia_devolucion, observacion_devolucion, devolucion_automatica) y cliente_id.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "uuid: UUID (UNIQUE)",
+    "tipo: VARCHAR(10)",
+    "estado: VARCHAR(12)",
+    "sucursal_id: INTEGER (FK sucursal)",
+    "usuario_id: BIGINT (FK usuario)",
+    "dispositivo: VARCHAR(80)",
+    "creada_en_cliente: TIMESTAMPTZ",
+    "recibida_en: TIMESTAMPTZ",
+    "intentos: SMALLINT",
+    "carga: JSONB",
+    "motivo_rechazo: VARCHAR(300)"
+   ],
+   "operaciones": [
+    "operacion_por_uuid(db, uuid, bloquear): OperacionOffline | None  [offline/repository.py]"
+   ]
+  },
+  "Venta": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/ventas/models.py",
+   "tabla": "venta",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "codigo: VARCHAR(20) (UNIQUE)",
+    "canal: VARCHAR(12)",
+    "estado: VARCHAR(20)",
+    "cliente_id: BIGINT (FK cliente)",
+    "sucursal_id: INTEGER (FK sucursal)",
+    "turno_caja_id: BIGINT (FK turno_caja)",
+    "reserva_id: BIGINT (FK reserva, UNIQUE)",
+    "modalidad_entrega: VARCHAR(10)",
+    "direccion_id: BIGINT (FK direccion_cliente)",
+    "metodo_pago: VARCHAR(20)",
+    "subtotal: NUMERIC(10,2)",
+    "descuento: NUMERIC(10,2)",
+    "total: NUMERIC(10,2)",
+    "entregado_en: TIMESTAMPTZ",
+    "creado_en: TIMESTAMPTZ",
+    "actualizado_en: TIMESTAMPTZ"
+   ],
+   "operaciones": [
+    "venta_devolvible(db, codigo, sucursal_id): Venta | None  [pos/devolucion_repository.py]",
+    "bloquear_venta(db, venta_id): Venta | None  [pos/devolucion_repository.py]",
+    "codigo_de_venta(db, venta_id): str | None  [pos/devolucion_repository.py]",
+    "agregar_venta_presencial(db, codigo, cliente_id, sucursal_id, turno_caja_id, reserva_id, metodo_pago, subtotal, descuento, total): Venta  [pos/repository.py]",
+    "venta_digital(db, codigo, bloquear): Venta | None  [devoluciones_web/repository.py]",
+    "venta_por_id(db, venta_id, bloquear): Venta | None  [devoluciones_web/repository.py]"
+   ]
+  },
+  "DetalleVenta": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/ventas/models.py",
+   "tabla": "detalle_venta",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "venta_id: BIGINT (FK venta, ON DELETE CASCADE)",
+    "variante_id: BIGINT (FK variante_producto)",
+    "cantidad: INTEGER",
+    "precio_unitario: NUMERIC(10,2)",
+    "descuento_unitario: NUMERIC(10,2)",
+    "creado_en: TIMESTAMPTZ"
+   ],
+   "operaciones": [
+    "lineas_vendidas(db, venta_id): list[Row]  [pos/devolucion_repository.py]",
+    "agregar_detalle(db, venta_id, variante_id, cantidad, precio_unitario, descuento_unitario): DetalleVenta  [pos/repository.py]"
+   ]
+  },
+  "TurnoCaja": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/ventas/models.py",
+   "tabla": "turno_caja",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "caja_id: INTEGER (FK caja)",
+    "usuario_id: BIGINT (FK usuario)",
+    "abierto_en: TIMESTAMPTZ",
+    "cerrado_en: TIMESTAMPTZ",
+    "monto_apertura: NUMERIC(10,2)",
+    "monto_cierre: NUMERIC(10,2)",
+    "monto_esperado: NUMERIC(10,2)"
+   ],
+   "operaciones": [
+    "turno_abierto_de_usuario(db, usuario_id): TurnoCaja | None  [caja/repository.py]",
+    "contexto_de_turno(db, turno_caja_id): Row  [pos/devolucion_repository.py]"
+   ]
+  },
+  "Devolucion": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/ventas/models.py",
+   "tabla": "devolucion",
+   "nota": "La nota de devolución (numero_nota = ND-{id:06d}, propiedad). origen CAJA exige turno; WEB va sin turno, con recibida_por y monto 0. estado ABIERTA o CERRADA; CERRADA exige conforme distinto de false (RN-20).",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "venta_id: BIGINT (FK venta)",
+    "turno_caja_id: BIGINT (FK turno_caja)",
+    "origen: VARCHAR(6)",
+    "recibida_por: BIGINT (FK usuario)",
+    "reembolso_referencia: VARCHAR(100)",
+    "reembolso_monto: NUMERIC(10,2)",
+    "tipo: VARCHAR(12)",
+    "venta_cambio_id: BIGINT (FK venta, UNIQUE)",
+    "motivo: VARCHAR(200)",
+    "monto: NUMERIC(10,2)",
+    "diferencia: NUMERIC(10,2)",
+    "metodo_diferencia: VARCHAR(20)",
+    "creado_en: TIMESTAMPTZ",
+    "estado: VARCHAR(10)",
+    "conforme: BOOLEAN",
+    "observacion_cliente: VARCHAR(300)"
+   ],
+   "operaciones": [
+    "agregar_devolucion(db, venta_id, turno_caja_id, motivo, monto, tipo, venta_cambio_id, diferencia, metodo_diferencia, observacion_cliente): Devolucion  [pos/devolucion_repository.py]",
+    "devolucion_con_venta(db, devolucion_id): tuple[Devolucion | None, Venta | None]  [pos/devolucion_repository.py]",
+    "Devolucion(origen='WEB', estado='ABIERTA', ...) + db.add  [devoluciones_web/service.py recibir]",
+    "db.get(Devolucion, id) y cierre con conforme  [devoluciones_web/service.py conformidad]"
+   ]
+  },
+  "DetalleDevolucion": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/ventas/models.py",
+   "tabla": "detalle_devolucion",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "devolucion_id: BIGINT (FK devolucion, ON DELETE CASCADE)",
+    "variante_id: BIGINT (FK variante_producto)",
+    "cantidad: INTEGER",
+    "creado_en: TIMESTAMPTZ"
+   ],
+   "operaciones": [
+    "agregar_detalle(db, devolucion_id, variante_id, cantidad): DetalleDevolucion  [pos/devolucion_repository.py]",
+    "ya_devuelto(db, venta_id): dict[int, int]  [pos/devolucion_repository.py]",
+    "detalles_de(db, devolucion_id): list[DetalleDevolucion]  [pos/devolucion_repository.py]"
+   ]
+  },
+  "Empresa": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/plataforma/models.py",
+   "tabla": "empresa",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ. CHECK ventana_devolucion_horas BETWEEN 1 AND 720.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "nombre: VARCHAR(120)",
+    "razon_social: VARCHAR(160)",
+    "nit: VARCHAR(30)",
+    "slug: VARCHAR(40) (UNIQUE)",
+    "correo_contacto: VARCHAR(120)",
+    "estado: VARCHAR(10)",
+    "logo: VARCHAR(255)",
+    "color_principal: VARCHAR(7)",
+    "color_secundario: VARCHAR(7)",
+    "ventana_devolucion_horas: SMALLINT"
+   ],
+   "operaciones": [
+    "db.get(Empresa, empresa_id)  [plataforma/mi_tienda/service.py _empresa]",
+    "db.get(Empresa, empresa_actual(db))  [pos/devolucion_service.py ventana_en_horas]"
+   ]
+  },
+  "SolicitudDevolucion": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/devoluciones_web/models.py",
+   "tabla": "solicitud_devolucion",
+   "nota": "tipo IN (DEVOLUCION, CAMBIO); estado IN (PENDIENTE, APROBADA, RECHAZADA, COMPLETADA); RECHAZADA exige respuesta.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "venta_id: BIGINT (FK venta)",
+    "cliente_id: BIGINT (FK cliente)",
+    "sucursal_id: INTEGER (FK sucursal)",
+    "tipo: VARCHAR(12)",
+    "estado: VARCHAR(12)",
+    "motivo: VARCHAR(300)",
+    "respuesta: VARCHAR(300)",
+    "atendida_por: BIGINT (FK usuario)",
+    "atendida_en: TIMESTAMPTZ",
+    "devolucion_id: BIGINT (FK devolucion, UNIQUE)",
+    "creado_en: TIMESTAMPTZ"
+   ],
+   "operaciones": [
+    "solicitud(db, solicitud_id, bloquear): SolicitudDevolucion | None  [devoluciones_web/repository.py]",
+    "cabecera_de_solicitud(db, solicitud_id): Row  [devoluciones_web/repository.py]",
+    "ids_de_solicitudes(db, cliente_id, sucursal_id, estado): list[int]  [devoluciones_web/repository.py]",
+    "cambio_aprobado(db, venta_id): SolicitudDevolucion | None  [devoluciones_web/repository.py]"
+   ]
+  },
+  "LineaSolicitudDevolucion": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/devoluciones_web/models.py",
+   "tabla": "linea_solicitud_devolucion",
+   "nota": "UNIQUE (solicitud_id, variante_id); variante_nueva_id distinta de variante_id.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "solicitud_id: BIGINT (FK solicitud_devolucion, ON DELETE CASCADE)",
+    "variante_id: BIGINT (FK variante_producto)",
+    "cantidad: INTEGER",
+    "variante_nueva_id: BIGINT (FK variante_producto)"
+   ],
+   "operaciones": [
+    "pedido_en_solicitudes_abiertas(db, venta_id): dict[int, int]  [devoluciones_web/repository.py]",
+    "lineas_de_solicitud(db, solicitud_id): list[Row]  [devoluciones_web/repository.py]",
+    "opciones_de_cambio(db, variante_id, sucursal_id): list[Row]  [devoluciones_web/repository.py]"
+   ]
+  },
+  "Pago": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/pagos/models.py",
+   "tabla": "pago",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "venta_id: BIGINT (FK venta, UNIQUE)",
+    "metodo: VARCHAR(12)",
+    "estado: VARCHAR(12)",
+    "monto: NUMERIC(10,2)",
+    "referencia_externa: VARCHAR(100) (UNIQUE)",
+    "creado_en: TIMESTAMPTZ",
+    "actualizado_en: TIMESTAMPTZ"
+   ],
+   "operaciones": [
+    "db.query(Pago).filter(Pago.venta_id == venta.id).one_or_none()  [devoluciones_web/service.py recibir]"
+   ]
+  },
+  "AsientoBitacora": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/bitacora/models.py",
+   "tabla": "bitacora",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "ocurrido_en: TIMESTAMPTZ",
+    "usuario_id: BIGINT (FK usuario, ON DELETE SET NULL)",
+    "actor: VARCHAR(160)",
+    "rol: VARCHAR(40)",
+    "accion: VARCHAR(40)",
+    "entidad: VARCHAR(60)",
+    "entidad_id: VARCHAR(60)",
+    "metodo: VARCHAR(10)",
+    "ruta: VARCHAR(300)",
+    "estado_http: INTEGER",
+    "exito: BOOLEAN",
+    "ip: VARCHAR(60)",
+    "agente: VARCHAR(200)",
+    "detalle: JSONB"
+   ],
+   "operaciones": [
+    "agregar(db, **campos): AsientoBitacora",
+    "contar(db, **filtros): int",
+    "listar(db, limite, desplazamiento, **filtros): list[tuple]",
+    "acciones(db): list[str]",
+    "roles(db): list[str]",
+    "entidades(db): list[str]",
+    "ultimo(db): AsientoBitacora | None"
+   ]
+  }
+ },
+ "cus": {
+  "CU-21": {
+   "actores": [
+    "Encargado",
+    "Administrador"
+   ],
+   "clases": [
+    "Inventario",
+    "PantallaInventario",
+    "InventarioService",
+    "ControlOffline",
+    "inventario_service",
+    "offline_service",
+    "BitacoraMiddleware",
+    "AsientoBitacora",
+    "Existencia",
+    "MovimientoInventario",
+    "OperacionOffline",
+    "prenda_inventario"
+   ],
+   "operaciones_en_cu": {
+    "InventarioService": [
+     "listarExistencias(filtros)",
+     "registrarIngreso(datos)",
+     "registrarAjuste(datos)",
+     "kardex(variante_id, sucursal_id, pagina, tamano)",
+     "listarMovimientos(filtros)",
+     "fijarStockMinimo(existencia_id, stock_minimo)"
+    ],
+    "ControlOffline": [
+     "prepararInventario()",
+     "registrarIngreso({proveedor, remito, prendas})",
+     "registrarConteo({prenda, contado, motivo})",
+     "_guardarDeInventario({resumen, cuerpo})",
+     "_efecto(cuerpo)",
+     "sincronizar()"
+    ],
+    "inventario_service": [
+     "listar_existencias(...)",
+     "registrar_ingreso(db, datos, usuario_id, confirmar, movimientos)",
+     "registrar_ajuste(db, datos, usuario_id)",
+     "ajustar_por_diferencia(db, variante_id, sucursal_id, diferencia, motivo, usuario_id)",
+     "kardex(db, variante_id, sucursal_id, pagina, tamano)",
+     "fijar_stock_minimo(db, existencia_id, stock_minimo)",
+     "_aplicar_movimiento(...)",
+     "_existencia_o_crearla(db, variante_id, sucursal_id)"
+    ],
+    "offline_service": [
+     "paquete_de_inventario(db, usuario_id, sucursal_id)",
+     "sincronizar(...)",
+     "_sincronizar_una(...)",
+     "_confirmar_inventario(...)"
+    ]
+   },
+   "nota": "El mismo panel sin conexión existe en la web (InventarioOffline en inventario-offline.ts, con OfflineService.prepararInventario/registrarIngresoOffline/registrarConteoOffline y el object store 'operaciones' de IndexedDB); se omite por el tope de 12 porque repite al móvil. Omitidas también PantallaIngresoSinRed y PantallaKardex (mismo .dart), operacion_pendiente (la cola de CU-17), VarianteProducto y Proveedor. El conteo offline aplica la diferencia contra repository.fisico_al_momento, no contra el saldo del paquete.",
+   "relaciones": [
+    [
+     "Encargado",
+     "Inventario",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Administrador",
+     "Inventario",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Encargado",
+     "PantallaInventario",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Inventario",
+     "InventarioService",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "PantallaInventario",
+     "ControlOffline",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "InventarioService",
+     "inventario_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "ControlOffline",
+     "offline_service",
+     "SINCRONIZA_CON",
+     "1",
+     "1"
+    ],
+    [
+     "ControlOffline",
+     "prenda_inventario",
+     "ACTUALIZA",
+     "1",
+     "0..*"
+    ],
+    [
+     "offline_service",
+     "inventario_service",
+     "DELEGA_EN",
+     "1",
+     "1"
+    ],
+    [
+     "offline_service",
+     "OperacionOffline",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "offline_service",
+     "Existencia",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "inventario_service",
+     "Existencia",
+     "ACTUALIZA",
+     "1",
+     "0..*"
+    ],
+    [
+     "inventario_service",
+     "MovimientoInventario",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "inventario_service",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "offline_service",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "BitacoraMiddleware",
+     "AsientoBitacora",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "Existencia",
+     "MovimientoInventario",
+     "SE_MUEVE_EN",
+     "1",
+     "0..*"
+    ],
+    [
+     "OperacionOffline",
+     "MovimientoInventario",
+     "ORIGINA",
+     "0..1",
+     "0..*"
+    ]
+   ]
+  },
+  "CU-22": {
+   "actores": [
+    "Cajero"
+   ],
+   "clases": [
+    "Devolucion_PWA",
+    "NotaDevolucionDialogo",
+    "DevolucionesService",
+    "devolucion_service",
+    "inventario_service",
+    "BitacoraMiddleware",
+    "AsientoBitacora",
+    "Devolucion",
+    "DetalleDevolucion",
+    "Venta",
+    "DetalleVenta",
+    "TurnoCaja"
+   ],
+   "operaciones_en_cu": {
+    "devolucion_service": [
+     "ventana_en_horas(db)",
+     "_vence_en(venta, horas)",
+     "_exigir_plazo(db, venta, cambio_aprobado)",
+     "_por_que_solo_cambio(venta)",
+     "_aprobada_cubre(aprobada, pedidas)",
+     "_sale_del_cajon(venta)",
+     "_lineas_que_vuelven(...)",
+     "buscar_venta(db, usuario_id, codigo)",
+     "registrar(db, usuario_id, datos)",
+     "registrar_cambio(db, usuario_id, datos)",
+     "_a_favor_de(diferencia)",
+     "nota(db, devolucion_id, sucursal_id)"
+    ],
+    "inventario_service": [
+     "reingresar_por_devolucion(db, variante_id, sucursal_id, cantidad, usuario_id, motivo)",
+     "descontar_por_venta(db, variante_id, sucursal_id, cantidad, usuario_id, motivo, movimientos)"
+    ],
+    "Venta": [
+     "venta_devolvible(db, codigo, sucursal_id)",
+     "bloquear_venta(db, venta_id)",
+     "codigo_de_venta(db, venta_id)",
+     "agregar_venta_presencial(...)"
+    ],
+    "Devolucion": [
+     "agregar_devolucion(...)",
+     "devolucion_con_venta(db, devolucion_id)"
+    ]
+   },
+   "nota": "El turno lo resuelve pos/service.py mostrador_de (TurnoCaja vía caja/repository.py); los precios del cambio, promociones.descuentos_por_variante; la ventana, Empresa.ventana_devolucion_horas (CU-23); el cambio aprobado por la web, devoluciones_web (SolicitudDevolucion, completar_con). Omitidos por el tope: Empresa, SolicitudDevolucion, MovimientoInventario, Existencia, CajaService y PosService (Devolucion_PWA busca la prenda nueva con PosService.prendas). La conformidad viaja en DevolucionIn/CambioIn y la nota nace CERRADA y conforme.",
+   "relaciones": [
+    [
+     "Cajero",
+     "Devolucion_PWA",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Cajero",
+     "NotaDevolucionDialogo",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Devolucion_PWA",
+     "DevolucionesService",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "Devolucion_PWA",
+     "NotaDevolucionDialogo",
+     "ABRE",
+     "1",
+     "0..1"
+    ],
+    [
+     "DevolucionesService",
+     "devolucion_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "NotaDevolucionDialogo",
+     "devolucion_service",
+     "CONSULTA",
+     "1",
+     "1"
+    ],
+    [
+     "devolucion_service",
+     "inventario_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "devolucion_service",
+     "Venta",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "devolucion_service",
+     "DetalleVenta",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "devolucion_service",
+     "Devolucion",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "devolucion_service",
+     "DetalleDevolucion",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "devolucion_service",
+     "TurnoCaja",
+     "CONSULTA",
+     "1",
+     "0..1"
+    ],
+    [
+     "devolucion_service",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "BitacoraMiddleware",
+     "AsientoBitacora",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "Venta",
+     "DetalleVenta",
+     "CONTIENE",
+     "1",
+     "0..*"
+    ],
+    [
+     "TurnoCaja",
+     "Venta",
+     "AGRUPA",
+     "0..1",
+     "0..*"
+    ],
+    [
+     "TurnoCaja",
+     "Devolucion",
+     "PROCESA",
+     "0..1",
+     "0..*"
+    ],
+    [
+     "Venta",
+     "Devolucion",
+     "SE_DEVUELVE_EN",
+     "1",
+     "0..*"
+    ],
+    [
+     "Venta",
+     "Devolucion",
+     "SE_CAMBIA_POR",
+     "0..1",
+     "0..1"
+    ],
+    [
+     "Devolucion",
+     "DetalleDevolucion",
+     "CONTIENE",
+     "1",
+     "0..*"
+    ]
+   ]
+  },
+  "CU-23": {
+   "actores": [
+    "Administrador"
+   ],
+   "clases": [
+    "VentanaDevolucion",
+    "mi_tienda_router",
+    "mi_tienda_service",
+    "devolucion_service",
+    "devoluciones_web_service",
+    "BitacoraMiddleware",
+    "AsientoBitacora",
+    "Empresa"
+   ],
+   "operaciones_en_cu": {
+    "devolucion_service": [
+     "ventana_en_horas(db)",
+     "_vence_en(venta, horas)",
+     "_exigir_plazo(db, venta, cambio_aprobado)"
+    ],
+    "devoluciones_web_service": [
+     "_plazo(db, venta)"
+    ]
+   },
+   "nota": "VentanaDevolucion habla con el backend por HttpClient, sin service del front. La ventana vale desde que se guarda, también para ventas anteriores: devolucion_service.ventana_en_horas la lee en cada pedido (si la empresa no la tiene, usa DEVOLUCION_PLAZO_DIAS * 24) y devoluciones_web_service._plazo la cuenta desde entregado_en.",
+   "relaciones": [
+    [
+     "Administrador",
+     "VentanaDevolucion",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "VentanaDevolucion",
+     "mi_tienda_router",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "mi_tienda_router",
+     "mi_tienda_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "mi_tienda_service",
+     "Empresa",
+     "ACTUALIZA",
+     "1",
+     "1"
+    ],
+    [
+     "devolucion_service",
+     "Empresa",
+     "CONSULTA",
+     "1",
+     "1"
+    ],
+    [
+     "devoluciones_web_service",
+     "devolucion_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "mi_tienda_service",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "BitacoraMiddleware",
+     "AsientoBitacora",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ]
+   ]
+  },
+  "CU-24": {
+   "actores": [
+    "Cliente"
+   ],
+   "clases": [
+    "Compras",
+    "SolicitarDevolucion",
+    "MisSolicitudes",
+    "devoluciones_web_service",
+    "devolucion_service",
+    "notificaciones_service",
+    "BitacoraMiddleware",
+    "AsientoBitacora",
+    "SolicitudDevolucion",
+    "LineaSolicitudDevolucion",
+    "Venta",
+    "DetalleVenta"
+   ],
+   "operaciones_en_cu": {
+    "devoluciones_web_service": [
+     "_cliente_id(db, usuario_id)",
+     "_venta_del_cliente(db, codigo, cliente_id)",
+     "_plazo(db, venta)",
+     "_comprometidas(db, venta_id)",
+     "pedido_devolvible(db, usuario_id, codigo)",
+     "solicitar(db, usuario_id, datos)",
+     "solicitud_out(db, solicitud_id)",
+     "mis_solicitudes(db, usuario_id)"
+    ],
+    "devolucion_service": [
+     "ventana_en_horas(db)"
+    ],
+    "notificaciones_service": [
+     "notificar(...)",
+     "avisar_devolucion_solicitada(db, solicitud)"
+    ],
+    "MisSolicitudes": [
+     "ngOnInit()",
+     "recargar()",
+     "rotulo(estado)"
+    ],
+    "Venta": [
+     "venta_digital(db, codigo, bloquear)"
+    ],
+    "DetalleVenta": [
+     "lineas_vendidas(db, venta_id)"
+    ]
+   },
+   "nota": "Las tres interfaces llaman al backend con HttpClient (no hay service del front para devoluciones web). Lo ya devuelto sale de pos/devolucion_repository.py ya_devuelto (DetalleDevolucion, omitida por el tope); Notificacion y Empresa también omitidas. El correo al encargado lo manda después CU-26.",
+   "relaciones": [
+    [
+     "Cliente",
+     "Compras",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Compras",
+     "SolicitarDevolucion",
+     "ABRE",
+     "1",
+     "0..1"
+    ],
+    [
+     "Cliente",
+     "MisSolicitudes",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Compras",
+     "MisSolicitudes",
+     "CONTIENE",
+     "1",
+     "1"
+    ],
+    [
+     "SolicitarDevolucion",
+     "devoluciones_web_service",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "MisSolicitudes",
+     "devoluciones_web_service",
+     "CONSULTA",
+     "1",
+     "1"
+    ],
+    [
+     "devoluciones_web_service",
+     "devolucion_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "devoluciones_web_service",
+     "notificaciones_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "devoluciones_web_service",
+     "Venta",
+     "CONSULTA",
+     "1",
+     "0..1"
+    ],
+    [
+     "devoluciones_web_service",
+     "DetalleVenta",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "devoluciones_web_service",
+     "SolicitudDevolucion",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "devoluciones_web_service",
+     "LineaSolicitudDevolucion",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "devoluciones_web_service",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "BitacoraMiddleware",
+     "AsientoBitacora",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "Venta",
+     "DetalleVenta",
+     "CONTIENE",
+     "1",
+     "0..*"
+    ],
+    [
+     "Venta",
+     "SolicitudDevolucion",
+     "SE_PIDE_EN",
+     "1",
+     "0..*"
+    ],
+    [
+     "SolicitudDevolucion",
+     "LineaSolicitudDevolucion",
+     "CONTIENE",
+     "1",
+     "0..*"
+    ]
+   ]
+  },
+  "CU-25": {
+   "actores": [
+    "Encargado",
+    "Cliente"
+   ],
+   "clases": [
+    "PedidosWeb",
+    "MisSolicitudes",
+    "devoluciones_web_service",
+    "inventario_service",
+    "pasarela_pago",
+    "notificaciones_service",
+    "BitacoraMiddleware",
+    "AsientoBitacora",
+    "SolicitudDevolucion",
+    "Devolucion",
+    "DetalleDevolucion",
+    "Pago"
+   ],
+   "operaciones_en_cu": {
+    "devoluciones_web_service": [
+     "solicitudes_de_sucursal(db, sucursal_id, estado)",
+     "_solicitud_de_sucursal(db, solicitud_id, sucursal_id)",
+     "aprobar(db, solicitud_id, usuario_id, sucursal_id, respuesta)",
+     "rechazar(db, solicitud_id, usuario_id, sucursal_id, respuesta)",
+     "recibir(db, solicitud_id, usuario_id, sucursal_id)",
+     "conformidad(db, usuario_id, solicitud_id, conforme, observacion)",
+     "nota_del_cliente(db, usuario_id, solicitud_id)",
+     "solicitud_out(db, solicitud_id)"
+    ],
+    "inventario_service": [
+     "reingresar_por_devolucion(db, variante_id, sucursal_id, cantidad, usuario_id, motivo)"
+    ],
+    "notificaciones_service": [
+     "notificar(...)",
+     "avisar_devolucion_resuelta(db, solicitud)"
+    ],
+    "MisSolicitudes": [
+     "verNota(s)",
+     "conformidad(s, conforme, observacion)"
+    ],
+    "pasarela_pago": [
+     "reembolsar(referencia_sesion, monto, clave)"
+    ]
+   },
+   "nota": "recibir() hace todo en una transacción: nota ABIERTA de origen WEB sin turno, sus líneas, el reingreso (MovimientoInventario DEVOLUCION) y el reembolso; si la pasarela falla, rollback. Un CAMBIO aprobado no se recibe acá: lo completa la caja (CU-22, completar_con). Omitidas por el tope: Venta (venta_por_id con bloqueo), Existencia, MovimientoInventario, Notificacion y NotaDevolucionDialogo.",
+   "relaciones": [
+    [
+     "Encargado",
+     "PedidosWeb",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Cliente",
+     "MisSolicitudes",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "PedidosWeb",
+     "devoluciones_web_service",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "MisSolicitudes",
+     "devoluciones_web_service",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "devoluciones_web_service",
+     "inventario_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "devoluciones_web_service",
+     "pasarela_pago",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "devoluciones_web_service",
+     "notificaciones_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "devoluciones_web_service",
+     "SolicitudDevolucion",
+     "ACTUALIZA",
+     "1",
+     "0..*"
+    ],
+    [
+     "devoluciones_web_service",
+     "Devolucion",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "devoluciones_web_service",
+     "DetalleDevolucion",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "devoluciones_web_service",
+     "Pago",
+     "CONSULTA",
+     "1",
+     "0..1"
+    ],
+    [
+     "devoluciones_web_service",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "BitacoraMiddleware",
+     "AsientoBitacora",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "Devolucion",
+     "DetalleDevolucion",
+     "CONTIENE",
+     "1",
+     "0..*"
+    ],
+    [
+     "Devolucion",
+     "SolicitudDevolucion",
+     "CIERRA",
+     "0..1",
+     "0..1"
+    ]
+   ]
+  }
+ }
+}
