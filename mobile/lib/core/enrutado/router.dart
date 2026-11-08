@@ -32,6 +32,7 @@ import '../../features/gestion/pantalla_bitacora.dart';
 import '../../features/gestion/pantalla_reportes.dart';
 import '../../features/gestion/pantalla_tablero.dart';
 import '../../features/reportes/pantalla_reporte_por_voz.dart';
+import '../../features/probador_talla/pantalla_probador_talla.dart';
 import '../../features/vestidor/pantalla_vestidor.dart';
 import '../../features/inicio/pantalla_inicio.dart';
 import '../../features/inventario/pantalla_inventario.dart';
@@ -106,6 +107,11 @@ class Rutas {
   /// riesgo que se construye en el Ciclo 2 para saber, antes del Ciclo 3, si
   /// la deteccion de pose sobre este telefono da un ritmo usable.
   static const String vestidor = '/vestidor';
+
+  /// CU-37 y CU-38 (2do parcial, 3ra presentación) · el probador con la talla
+  /// real: la prenda calibrada por el administrador, a escala, en vivo.
+  static const String probadorTallaPatron = '/probador/:id';
+  static String probadorTalla(int productoId) => '/probador/$productoId';
 
   /// CU-34 · conversar con el asistente (RF25).
   static const String asistente = '/asistente';
@@ -259,6 +265,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Rutas.reportePorVoz,
         builder: (context, estado) => const PantallaReportePorVoz(),
+      ),
+
+      GoRoute(
+        path: Rutas.probadorTallaPatron,
+        builder: (context, estado) {
+          final id = int.tryParse(estado.pathParameters['id'] ?? '');
+          if (id == null) return const PantallaVestidor();
+          return PantallaProbadorTalla(productoId: id);
+        },
       ),
 
       GoRoute(
