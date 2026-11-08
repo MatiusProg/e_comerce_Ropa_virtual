@@ -9,6 +9,8 @@ alguien adivine un id.
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 from sqlalchemy import Row, select
 from sqlalchemy.orm import Session
 
@@ -148,6 +150,49 @@ def variante_preparada(db: Session, variante_id: int) -> Row | None:
         .limit(1)
     )
     return fila if db.scalar(del_mismo_color) is not None else None
+
+
+def prenda_por_color(db: Session, variante_id: int) -> Row | None:
+    """La imagen calibrada del MISMO color para una variante que no tiene foto propia.
+
+    Devuelve la ruta de esa imagen con el nombre, la talla y el color de la
+    variante pedida: la foto realista (CU-38) describe la talla que el cliente
+    se probó, aunque la imagen sea la de otra talla del mismo color.
+    """
+    v = db.execute(
+        select(
+            VarianteProducto.producto_id,
+            VarianteProducto.color_id,
+            Producto.nombre.label("producto"),
+            Talla.codigo.label("talla"),
+            Color.nombre.label("color"),
+        )
+        .join(Producto, Producto.id == VarianteProducto.producto_id)
+        .join(Talla, Talla.id == VarianteProducto.talla_id)
+        .join(Color, Color.id == VarianteProducto.color_id)
+        .where(
+            VarianteProducto.id == variante_id,
+            VarianteProducto.activa.is_(True),
+            Producto.activo.is_(True),
+        )
+    ).first()
+    if v is None:
+        return None
+    ruta = db.scalar(
+        select(ImagenProducto.ruta)
+        .join(VarianteProducto, VarianteProducto.id == ImagenProducto.variante_id)
+        .join(PuntoPrenda, PuntoPrenda.imagen_id == ImagenProducto.id)
+        .where(
+            ImagenProducto.producto_id == v.producto_id,
+            ImagenProducto.es_transparente.is_(True),
+            VarianteProducto.color_id == v.color_id,
+        )
+        .order_by(ImagenProducto.id)
+        .limit(1)
+    )
+    if ruta is None:
+        return None
+    return SimpleNamespace(ruta=ruta, producto=v.producto, talla=v.talla, color=v.color)
 
 
 def variantes_activas(db: Session, producto_id: int) -> list[Row]:

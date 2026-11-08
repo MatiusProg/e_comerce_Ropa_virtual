@@ -433,3 +433,15 @@ def test_otra_tienda_no_ve_la_prenda_ni_las_pruebas(api, blusa_lista, cabeceras_
         finally:
             sesion.close()
         assert (puntos, pruebas) == esperadas, empresa
+
+
+def test_la_foto_de_una_talla_sin_imagen_propia_usa_la_de_su_color(api, blusa_lista, cabeceras_cliente):
+    # La L no tiene PNG propio: se prueba con el de su color (08/11) y la foto tiene que salir igual.
+    r = api.post(f"{VESTIDOR}/sesiones", headers=cabeceras_cliente,
+                 json={"variante_id": blusa_lista["variantes"]["L"], "metodo": "POSE"})
+    assert r.status_code == 201, r.text
+    r = api.post(f"{VESTIDOR}/sesiones/{r.json()['id']}/foto", headers=cabeceras_cliente,
+                 files={"composicion": ("c.png", _png(), "image/png")})
+    assert r.status_code == 200, r.text
+    assert r.json()["foto_url"]
+    assert r.json()["talla"] == "L"
