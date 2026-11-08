@@ -24,6 +24,10 @@ import '../../data/repositorios/repositorio_probador.dart';
 /// Hombros sobre busto: ver la explicación en `probador.ts` de la web.
 const double hombrosSobreBusto = 0.42;
 
+/// Cuánto subir la línea de hombros sobre los puntos de ML Kit, como fracción
+/// del ancho entre ellos. Medido en el teléfono el 08/11 (la prenda quedaba baja).
+const double subidaDeHombros = 0.16;
+
 class PintorTallaReal extends CustomPainter {
   PintorTallaReal({
     required this.prenda,
@@ -64,10 +68,14 @@ class PintorTallaReal extends CustomPainter {
     if (gHombros < 1 || gLargo < 1) return;
 
     // El cuerpo, en píxeles de la pantalla.
-    final bMedio = (hombroA + hombroB) / 2;
     final bHombros = (hombroB - hombroA).distance;
     if (bHombros < 10) return;
     final angulo = math.atan2(hombroB.dy - hombroA.dy, hombroB.dx - hombroA.dx);
+    // Los puntos de hombro de ML Kit están en la ARTICULACIÓN, más abajo que la
+    // costura del hombro de la prenda: sin corregirlo, la prenda queda caída.
+    // Se sube la línea de hombros, perpendicular a ella, una fracción de su ancho.
+    final arriba = Offset(math.sin(angulo), -math.cos(angulo));
+    final bMedio = (hombroA + hombroB) / 2 + arriba * (bHombros * subidaDeHombros);
 
     double anchoObjetivo;
     double largoObjetivo;
