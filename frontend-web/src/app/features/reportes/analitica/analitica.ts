@@ -253,6 +253,24 @@ export class Analitica implements OnInit {
     return `${dia}/${mes}`;
   }
 
+  /** «1 semana», «3 semanas»: el número decide el plural. */
+  protected semanas(n: number | null | undefined): string {
+    const cantidad = n ?? 0;
+    return `${cantidad.toLocaleString('es-BO')} ${cantidad === 1 ? 'semana' : 'semanas'}`;
+  }
+
+  /**
+   * La predicción es de la semana siguiente AL ENTRENAMIENTO. Si se entrenó
+   * hace rato, esa semana ya pudo empezar o pasar: se avisa en vez de
+   * mostrarla como si fuera futura.
+   */
+  protected semanaVencida(iso: string): boolean {
+    const hoy = new Date();
+    const lunes = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - ((hoy.getDay() + 6) % 7));
+    const [anio, mes, dia] = iso.split('-').map(Number);
+    return new Date(anio, mes - 1, dia) < lunes;
+  }
+
   protected fechaLarga(iso: string): string {
     const [anio, mes, dia] = iso.split('-');
     return `${dia}/${mes}/${anio}`;

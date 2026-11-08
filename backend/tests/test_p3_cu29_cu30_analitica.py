@@ -70,7 +70,8 @@ def test_la_demanda_valida_con_corte_temporal_y_le_gana_a_la_linea_base() -> Non
     assert m["mae"] < m["mae_linea_base"]  # si no le gana, no sirve
     assert len(e.resultado["predicciones"]) == 30
     assert all(f["prevista"] >= 0 for f in e.resultado["predicciones"])
-    assert e.resultado["semana_prevista"] == (lunes[-1] + timedelta(days=7)).isoformat()
+    # lunes[-1] es la semana pasada; +7 la semana en curso; +14 la que viene.
+    assert e.resultado["semana_prevista"] == (lunes[-1] + timedelta(days=14)).isoformat()
     assert len(e.resultado["serie_validacion"]) == modelos.SEMANAS_DE_PRUEBA
     assert e.filas_reales == 0 and e.filas_sinteticas == e.filas
 

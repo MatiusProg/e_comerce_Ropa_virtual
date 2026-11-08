@@ -10,7 +10,6 @@ import { registerLocaleData } from '@angular/common';
 import localeEsBo from '@angular/common/locales/es-BO';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { MatPaginatorIntl } from '@angular/material/paginator';
-import { provideNativeDateAdapter } from '@angular/material/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideServiceWorker } from '@angular/service-worker';
 import { firstValueFrom } from 'rxjs';
@@ -18,6 +17,7 @@ import { firstValueFrom } from 'rxjs';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { AuthService } from './core/services/auth.service';
 import { paginadorEnEspanol } from './core/paginador-es';
+import { proveerFechasBo } from './core/fechas-bo';
 import { routes } from './app.routes';
 
 // Sin esto, `date` y `number` formatean en inglés (12/25/2026 en vez de
@@ -57,7 +57,9 @@ export const appConfig: ApplicationConfig = {
     // El nativo alcanza: las fechas viajan como cadena ISO y el `LOCALE_ID` de
     // arriba ya las formatea en es-BO. Los otros adaptadores existen para
     // trabajar con Luxon, date-fns o Moment, que este proyecto no usa.
-    provideNativeDateAdapter(),
+    // Es el nativo con el formato boliviano (dd/mm/aaaa) al mostrar y al
+    // leer: ver `core/fechas-bo.ts`.
+    ...proveerFechasBo(),
     // 2do parcial · CU-13: la web como PWA. El service worker guarda la
     // aplicación (HTML, JS, CSS, íconos y fuentes) para que la caja abra sin
     // red. Los DATOS no pasan por acá: el paquete y la cola viven en IndexedDB

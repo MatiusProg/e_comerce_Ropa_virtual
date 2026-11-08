@@ -83,13 +83,13 @@
         <mat-card class="kpi" appearance="outlined">
           <span class="etiqueta">Datos de entrenamiento</span>
           <span class="valor">{{ dm.filas_entrenamiento | number }}</span>
-          <span class="detalle">{{ dm.filas_reales | number }} semanas con ventas reales ·
+          <span class="detalle">{{ semanas(dm.filas_reales) }} con ventas reales ·
             {{ dm.filas_sinteticas | number }} sintéticas</span>
         </mat-card>
       </section>
       <p class="nota">
         Entrenado el {{ dm.entrenado_en | date: 'dd/MM/yyyy HH:mm' }}. Validación con corte temporal:
-        el modelo se mide sobre las últimas {{ dm.metricas.semanas_de_prueba }} semanas, que no vio al entrenar.
+        el modelo se mide sobre {{ dm.metricas.semanas_de_prueba === 1 ? 'la última semana' : 'las últimas ' + semanas(dm.metricas.semanas_de_prueba) }}, que no vio al entrenar.
       </p>
     }
 
@@ -120,6 +120,9 @@
         <mat-card-content>
           <h2 class="subtitulo"><mat-icon>inventory</mat-icon>
             Demanda prevista · semana del {{ fechaLarga(p.semana_prevista) }}</h2>
+          @if (semanaVencida(p.semana_prevista)) {
+            <p class="nota" role="status">Esa semana ya empezó: vuelva a entrenar el modelo para prever la próxima.</p>
+          }
           <p class="nota">Los {{ top().length }} productos con más unidades previstas
             (total de la tienda: {{ p.total_previsto | number: '1.0-0' }} u.).</p>
           <div class="tabla-envoltura">
