@@ -275,19 +275,36 @@ def prueba(db: Session, producto_id: int, usuario_id: int) -> PruebaDeProducto:
     producto = _producto_o_404(db, producto_id)
     if not producto.activo:
         raise Rechazo("El producto indicado no existe.", 404)
-    prendas = [
-        PrendaDelProbador(
-            variante_id=i.variante_id,
-            talla_id=i.talla_id,
-            talla=i.talla,
-            color_id=i.color_id,
-            color=i.color,
-            imagen_url=almacen.url_de(i.ruta),
-            puntos=_puntos(i.PuntoPrenda),
-        )
-        for i in repo.imagenes_de_vestidor(db, producto_id, solo_activas=True)
+    # Una imagen calibrada por variante y, de respaldo, una por color: la
+    # imagen calibrada de un color sirve para TODAS sus tallas, porque la forma
+    # de la prenda es la misma y lo que cambia son los centimetros (que se
+    # dibujan a escala). Asi el cliente compara la S con la XL aunque el
+    # administrador haya fotografiado una sola talla.
+    calibradas = [
+        i for i in repo.imagenes_de_vestidor(db, producto_id, solo_activas=True)
         if i.PuntoPrenda is not None
     ]
+    por_variante: dict[int, object] = {}
+    por_color: dict[int, object] = {}
+    for i in calibradas:
+        por_variante.setdefault(i.variante_id, i)
+        por_color.setdefault(i.color_id, i)
+    prendas = []
+    for v in repo.variantes_activas(db, producto_id):
+        img = por_variante.get(v.variante_id) or por_color.get(v.color_id)
+        if img is None:
+            continue
+        prendas.append(
+            PrendaDelProbador(
+                variante_id=v.variante_id,
+                talla_id=v.talla_id,
+                talla=v.talla,
+                color_id=v.color_id,
+                color=v.color,
+                imagen_url=almacen.url_de(img.ruta),
+                puntos=_puntos(img.PuntoPrenda),
+            )
+        )
     cliente_id = _cliente_o_404(db, usuario_id)
     cuerpo = medidas_repo.medidas_de(db, cliente_id)
     return PruebaDeProducto(

@@ -108,15 +108,18 @@ def medida_talla(db: Session, producto_id: int, talla_id: int) -> MedidaTalla | 
 
 
 def variante_preparada(db: Session, variante_id: int) -> Row | None:
-    """La variante con su producto y talla, si tiene imagen de vestidor CON puntos.
+    """La variante con su producto y talla, si se puede probar.
 
-    Es la condicion para que una prueba tenga sentido: sin puntos no hay escala,
-    y sin escala lo que se dibuja no respeta la talla.
+    Se puede probar si tiene imagen de vestidor CON puntos, o si la tiene OTRA
+    talla del mismo color del mismo producto: la forma de la prenda es la misma
+    y lo que cambia entre tallas son los centimetros, que se dibujan a escala.
+    Sin puntos no hay escala, y sin escala lo que se dibuja no respeta la talla.
     """
-    return db.execute(
+    fila = db.execute(
         select(
             VarianteProducto.id,
             VarianteProducto.producto_id,
+            VarianteProducto.color_id,
             Producto.nombre.label("producto"),
             Talla.id.label("talla_id"),
             Talla.codigo.label("talla"),
@@ -125,16 +128,48 @@ def variante_preparada(db: Session, variante_id: int) -> Row | None:
         .join(Producto, Producto.id == VarianteProducto.producto_id)
         .join(Talla, Talla.id == VarianteProducto.talla_id)
         .join(Color, Color.id == VarianteProducto.color_id)
-        .join(ImagenProducto, ImagenProducto.variante_id == VarianteProducto.id)
-        .join(PuntoPrenda, PuntoPrenda.imagen_id == ImagenProducto.id)
         .where(
             VarianteProducto.id == variante_id,
             VarianteProducto.activa.is_(True),
             Producto.activo.is_(True),
+        )
+    ).first()
+    if fila is None:
+        return None
+    del_mismo_color = (
+        select(ImagenProducto.id)
+        .join(VarianteProducto, VarianteProducto.id == ImagenProducto.variante_id)
+        .join(PuntoPrenda, PuntoPrenda.imagen_id == ImagenProducto.id)
+        .where(
+            ImagenProducto.producto_id == fila.producto_id,
             ImagenProducto.es_transparente.is_(True),
+            VarianteProducto.color_id == fila.color_id,
         )
         .limit(1)
-    ).first()
+    )
+    return fila if db.scalar(del_mismo_color) is not None else None
+
+
+def variantes_activas(db: Session, producto_id: int) -> list[Row]:
+    """Las variantes que se venden del producto, en el orden de las tallas."""
+    return list(
+        db.execute(
+            select(
+                VarianteProducto.id.label("variante_id"),
+                Talla.id.label("talla_id"),
+                Talla.codigo.label("talla"),
+                Color.id.label("color_id"),
+                Color.nombre.label("color"),
+            )
+            .join(Talla, Talla.id == VarianteProducto.talla_id)
+            .join(Color, Color.id == VarianteProducto.color_id)
+            .where(
+                VarianteProducto.producto_id == producto_id,
+                VarianteProducto.activa.is_(True),
+            )
+            .order_by(Talla.orden, Color.nombre)
+        ).all()
+    )
 
 
 def sesion(db: Session, sesion_id: int) -> SesionVestidorVirtual | None:
