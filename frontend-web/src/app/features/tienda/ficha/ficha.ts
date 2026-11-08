@@ -24,6 +24,10 @@ import { NavegacionCliente } from '../../../shared/navegacion-cliente/navegacion
 import { ReservaFormulario } from '../../cliente/reservas/reserva-formulario';
 import type { Reserva } from '../../../core/models/reservas.models';
 import { BsPipe, formatoBs } from '../../../shared/bs.pipe';
+import {
+  AvisosTallaService,
+  type ErrorAvisoTalla,
+} from '../../../core/services/avisos-talla.service';
 
 /**
  * CU-18 · Consultar ficha de producto — «boundary» PantallaFichaProducto.
@@ -90,6 +94,17 @@ export class Ficha implements OnInit {
    *  y así el endpoint no se llama para recibir un 403. */
   protected readonly puedeComprar = computed(() => this.auth.rol() === 'CLIENTE');
   protected readonly agregando = signal(false);
+
+  // --- Aporte propio · «Avísame cuando llegue mi talla» --------------------
+  private readonly avisosTalla = inject(AvisosTallaService);
+  /** Las variantes que este cliente ya está esperando. */
+  private readonly esperadas = signal<ReadonlySet<number>>(new Set());
+  protected readonly pidiendoAviso = signal(false);
+  /** La variante elegida ya tiene un aviso pendiente de este cliente. */
+  protected readonly yaEspera = computed(() => {
+    const v = this.variante();
+    return !!v && this.esperadas().has(v.id);
+  });
 
   protected readonly cargando = signal(true);
   protected readonly error = signal<string | null>(null);
@@ -180,6 +195,38 @@ export class Ficha implements OnInit {
         return;
       }
       this.consultar(id);
+    });
+    if (this.puedeComprar()) {
+      // Si falla, la ficha sigue igual: el botón ofrece pedir el aviso y el
+      // servidor responde lo mismo aunque ya estuviera pedido (idempotente).
+      this.avisosTalla.variantesEsperadas().subscribe({
+        next: (ids) => this.esperadas.set(new Set(ids)),
+        error: () => undefined,
+      });
+    }
+  }
+
+  /** Aporte propio: pide que le avisen cuando esta talla y color vuelvan. */
+  protected pedirAviso(): void {
+    const elegida = this.variante();
+    if (!elegida || this.pidiendoAviso()) return;
+    this.pidiendoAviso.set(true);
+    this.avisosTalla.pedir(elegida.id).subscribe({
+      next: () => {
+        this.pidiendoAviso.set(false);
+        this.esperadas.set(new Set([...this.esperadas(), elegida.id]));
+        this.aviso.open(
+          'Listo. Le avisaremos por la campanita, el correo y el teléfono cuando llegue.',
+          'Ver mis avisos',
+          { duration: 6000 },
+        ).onAction().subscribe(() => this.router.navigate(['/mi-cuenta/avisos']));
+      },
+      error: (e: ErrorAvisoTalla) => {
+        this.pidiendoAviso.set(false);
+        // 409: llegaron unidades mientras miraba. Se vuelve a consultar.
+        if (e.estado === 409) this.consultarDisponibilidad();
+        this.aviso.open(e.mensaje, 'Cerrar', { duration: 6000 });
+      },
     });
   }
 

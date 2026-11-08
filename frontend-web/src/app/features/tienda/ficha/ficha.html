@@ -151,6 +151,32 @@
                 <mat-icon>info_outline</mat-icon>
                 Sin unidades disponibles por ahora en ninguna sucursal.
               </p>
+              <!-- Aporte propio · «Avísame cuando llegue mi talla». -->
+              @if (puedeComprar()) {
+                @if (yaEspera()) {
+                  <p class="aviso-pedido">
+                    <mat-icon>notifications_active</mat-icon>
+                    Le avisaremos cuando llegue esta talla.
+                    <a routerLink="/mi-cuenta/avisos">Ver mis avisos</a>
+                  </p>
+                } @else {
+                  <button
+                    matButton="outlined"
+                    type="button"
+                    class="avisame"
+                    [disabled]="pidiendoAviso()"
+                    (click)="pedirAviso()"
+                  >
+                    <mat-icon>notifications</mat-icon>
+                    Avísenme cuando llegue
+                  </button>
+                }
+              } @else {
+                <a matButton routerLink="/login" [queryParams]="{ destino: aqui }" class="avisame">
+                  <mat-icon>notifications</mat-icon>
+                  Ingrese para que le avisemos cuando llegue
+                </a>
+              }
             } @else {
               <ul class="sucursales">
                 @for (sucursal of stock.sucursales; track sucursal.sucursal_id) {

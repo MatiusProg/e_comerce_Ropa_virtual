@@ -89,6 +89,8 @@ TIPOS_NOTIFICACION = (
     # conexión, y la devolución del dinero de una que se rechazó.
     "OPERACION_OFFLINE",
     "DEVOLUCION_PAGO",
+    # Aporte propio (0042): volvió la talla que el cliente esperaba.
+    "STOCK_DISPONIBLE",
 )
 
 #: OMITIDO es para el aviso que nace sin destinatario de correo ---un usuario
@@ -170,7 +172,7 @@ class Notificacion(DeEmpresa, Base):
         CheckConstraint(
             "tipo IN ('RESERVA_EN_SUCURSAL', 'RESERVA_PREPARADA', "
             "'PEDIDO_PAGADO', 'STOCK_BAJO', 'TRASPASO', 'DEVOLUCION', "
-            "'OPERACION_OFFLINE', 'DEVOLUCION_PAGO')",
+            "'OPERACION_OFFLINE', 'DEVOLUCION_PAGO', 'STOCK_DISPONIBLE')",
             name="tipo_valido",
         ),
         CheckConstraint(

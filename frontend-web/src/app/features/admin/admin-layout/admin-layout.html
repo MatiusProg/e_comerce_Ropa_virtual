@@ -164,6 +164,12 @@
       Consolidado
     </a>
   }
+  @if (puede('inventario.gestionar')) {
+    <a routerLink="/admin/tallas-esperadas" routerLinkActive="activo">
+      <mat-icon>notifications_active</mat-icon>
+      Tallas esperadas
+    </a>
+  }
   @if (puede('traspasos.gestionar')) {
     <a routerLink="/admin/traspasos" routerLinkActive="activo">
       <mat-icon>swap_horiz</mat-icon>

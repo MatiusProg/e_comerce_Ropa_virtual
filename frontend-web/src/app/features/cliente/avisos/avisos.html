@@ -1,0 +1,77 @@
+<!-- Aporte propio · «Avísame cuando llegue mi talla» — Mis avisos. -->
+<app-navegacion-cliente />
+
+<header class="encabezado">
+  <h1 class="vb-titulo">Mis avisos de talla</h1>
+  <p class="bajada">
+    Las tallas agotadas que pidió que le avisemos. Cuando llegan, le llega un aviso a la
+    campanita, al correo y al teléfono.
+  </p>
+</header>
+
+<mat-card class="panel vb-filete-superior" appearance="outlined">
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Cargando sus avisos" />
+  }
+
+  @if (error(); as mensaje) {
+    <p class="mensaje error" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      {{ mensaje }}
+    </p>
+  } @else if (!cargando() && avisos().length === 0) {
+    <div class="mensaje vacio">
+      <mat-icon>notifications_none</mat-icon>
+      <p>
+        No está esperando ninguna talla. Cuando una talla y color estén agotados, en la ficha de
+        la prenda aparece «Avísenme cuando llegue».
+      </p>
+      <a matButton="filled" routerLink="/tienda" class="vb-boton-marca">Ir al catálogo</a>
+    </div>
+  } @else {
+    <ul class="lista">
+      @for (a of avisos(); track a.id) {
+        <li class="aviso" [class.avisado]="a.estado === 'AVISADO'">
+          <div class="foto">
+            @if (foto(a); as url) {
+              <img [src]="url" [alt]="a.producto" loading="lazy" />
+            } @else {
+              <mat-icon>checkroom</mat-icon>
+            }
+          </div>
+          <div class="datos">
+            <strong>{{ a.producto }}</strong>
+            <span>Talla {{ a.talla }} · {{ a.color }}</span>
+            @if (a.estado === 'AVISADO') {
+              <span class="estado listo">
+                <mat-icon>check_circle</mat-icon>
+                Llegó el {{ a.notificado_en | date: 'dd/MM/yyyy HH:mm' }}
+              </span>
+            } @else {
+              <span class="estado">
+                <mat-icon>schedule</mat-icon>
+                Esperando desde el {{ a.creado_en | date: 'dd/MM/yyyy' }}
+              </span>
+            }
+          </div>
+          <div class="acciones">
+            @if (a.producto_id && a.ofrecible) {
+              <a matButton [routerLink]="['/tienda/producto', a.producto_id]">Ver prenda</a>
+            }
+            @if (a.estado === 'ESPERANDO') {
+              <button
+                matButton
+                type="button"
+                [disabled]="cancelando() === a.id"
+                [attr.aria-label]="'Cancelar el aviso de ' + a.producto + ' talla ' + a.talla"
+                (click)="cancelar(a)"
+              >
+                Cancelar
+              </button>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</mat-card>

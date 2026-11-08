@@ -176,6 +176,8 @@ TABLAS_DE_EMPRESA = (
     # CU-36 y CU-37 (0041)
     "punto_prenda",
     "sesion_probador",
+    # Aporte propio: avísame cuando llegue mi talla (0042)
+    "aviso_talla",
     # inventario
     "existencia",
     "movimiento_inventario",
