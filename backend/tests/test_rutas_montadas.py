@@ -52,6 +52,7 @@ MODULOS_CON_ROUTER = (
     "app.modules.reportes.tablero_router",
     "app.modules.pagos.router",
     "app.modules.ventas.historial_router",
+    "app.modules.comprobantes.router",
 )
 
 

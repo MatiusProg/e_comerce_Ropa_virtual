@@ -28,6 +28,7 @@ import '../../features/catalogo/pantalla_favoritos.dart';
 import '../../features/catalogo/pantalla_para_vos.dart';
 import '../../features/asistente/pantalla_asistente.dart';
 import '../../features/compra/pantalla_mis_compras.dart';
+import '../../features/compra/pantalla_mis_comprobantes.dart';
 import '../../features/gestion/pantalla_bitacora.dart';
 import '../../features/gestion/pantalla_reportes.dart';
 import '../../features/gestion/pantalla_tablero.dart';
@@ -138,6 +139,10 @@ class Rutas {
   /// de ahi haria que el boton de volver del telefono llevara al carrito, que
   /// no es de donde se vino.
   static const String misCompras = '/compras';
+
+  /// CU-46 · mis comprobantes pedidos por voz, con su QR. Se entra desde
+  /// «Mis compras».
+  static const String misComprobantes = '/comprobantes';
 
   /// CU-26 · el carrito. Es la puerta del paquete de compra, igual que
   /// `/reservas` lo es del de reservas: se llega a pagar desde aca.
@@ -307,6 +312,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Rutas.misCompras,
         builder: (context, estado) => const PantallaMisCompras(),
+      ),
+      GoRoute(
+        path: Rutas.misComprobantes,
+        builder: (context, estado) => const PantallaMisComprobantes(),
       ),
 
       // Mateo: reservas (CU-22, CU-23).

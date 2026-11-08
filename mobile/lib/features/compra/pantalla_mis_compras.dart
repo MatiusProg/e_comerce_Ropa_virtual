@@ -46,7 +46,17 @@ class PantallaMisCompras extends ConsumerWidget {
     final compras = ref.watch(misComprasProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mis compras')),
+      appBar: AppBar(
+        title: const Text('Mis compras'),
+        actions: [
+          // CU-46: los mismos comprobantes, pedidos por voz y con su QR.
+          IconButton(
+            tooltip: 'Mis comprobantes por voz',
+            icon: const Icon(Icons.qr_code_2),
+            onPressed: () => context.push(Rutas.misComprobantes),
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         color: ColoresVB.malva,
         // Tirar para refrescar es lo que el cliente va a hacer al volver de

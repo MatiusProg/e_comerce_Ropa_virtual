@@ -1,0 +1,177 @@
+<app-navegacion-cliente />
+
+<main class="contenido">
+  <header class="encabezado">
+    <h1 class="vb-titulo">Mis comprobantes</h1>
+    <p class="bajada">
+      Pedí tus recibos y notas de devolución con tus palabras, escribiendo o hablando. Cada
+      comprobante trae su código QR para verificarlo.
+    </p>
+  </header>
+
+  <mat-card class="pedido vb-filete-superior" appearance="outlined">
+    <mat-card-content>
+      <!-- (submit) y no (ngSubmit): es un FormControl suelto, sin formGroup. -->
+      <form class="formulario" (submit)="$event.preventDefault(); consultar()">
+        <mat-form-field appearance="outline" class="campo" subscriptSizing="dynamic">
+          <mat-label>¿Qué comprobantes querés ver?</mat-label>
+          <input
+            matInput
+            [formControl]="pedido"
+            maxlength="300"
+            placeholder="Ej.: mis últimas 3 compras"
+            autocomplete="off"
+          />
+          @if (dictado.soportado()) {
+            <button
+              matIconButton
+              matSuffix
+              type="button"
+              class="microfono"
+              [class.escuchando]="dictado.escuchando()"
+              [matTooltip]="dictado.escuchando() ? 'Detener el dictado' : 'Dictar el pedido'"
+              [attr.aria-label]="dictado.escuchando() ? 'Detener el dictado' : 'Dictar el pedido'"
+              (click)="hablar()"
+            >
+              <mat-icon>{{ dictado.escuchando() ? 'stop' : 'mic' }}</mat-icon>
+            </button>
+          }
+          @if (dictado.escuchando()) {
+            <mat-hint>Escuchando… {{ dictado.texto() }}</mat-hint>
+          } @else if (pedido.touched && pedido.invalid) {
+            <mat-error>Escribí al menos 2 letras.</mat-error>
+          }
+        </mat-form-field>
+
+        <button
+          matButton="filled"
+          class="vb-boton-marca buscar"
+          type="submit"
+          [disabled]="consultando()"
+        >
+          <mat-icon>search</mat-icon>
+          Buscar
+        </button>
+      </form>
+
+      <div class="ejemplos" aria-label="Ejemplos de pedidos">
+        @for (e of ejemplos; track e) {
+          <button type="button" class="chip" (click)="usarEjemplo(e)">{{ e }}</button>
+        }
+      </div>
+    </mat-card-content>
+    @if (consultando()) {
+      <mat-progress-bar mode="indeterminate" aria-label="Buscando tus comprobantes" />
+    }
+  </mat-card>
+
+  @if (resultado(); as r) {
+    @if (!r.entendido) {
+      <mat-card class="no-entendido" appearance="outlined" role="alert">
+        <mat-icon>help_outline</mat-icon>
+        <div>
+          <strong>No entendí tu pedido.</strong>
+          <p>{{ r.motivo }}</p>
+          <p class="prueba">Probá con:</p>
+          <div class="ejemplos">
+            @for (e of r.ejemplos; track e) {
+              <button type="button" class="chip" (click)="usarEjemplo(e)">{{ e }}</button>
+            }
+          </div>
+        </div>
+      </mat-card>
+    } @else {
+      <section class="resultado" aria-live="polite">
+        <div class="cabecera">
+          <div>
+            <p class="entendido">Entendí: <strong>{{ r.resumen }}</strong></p>
+            @for (a of r.avisos; track a) {
+              <p class="aviso-chico"><mat-icon>info</mat-icon>{{ a }}</p>
+            }
+          </div>
+          @if (r.items.length) {
+            <button matButton="outlined" type="button" (click)="exportar()">
+              <mat-icon>download</mat-icon>
+              Exportar lista
+            </button>
+          }
+        </div>
+
+        @if (!r.items.length) {
+          <div class="vacio">
+            <mat-icon>receipt_long</mat-icon>
+            <p>No hay comprobantes que coincidan con tu pedido.</p>
+          </div>
+        } @else {
+          <ul class="tarjetas">
+            @for (c of r.items; track c.tipo + c.codigo) {
+              <li class="tarjeta" [class.devolucion]="c.tipo === 'DEVOLUCION'">
+                <div class="qr">
+                  @if (c.token) {
+                    <a
+                      [routerLink]="['/verificar', c.token]"
+                      target="_blank"
+                      matTooltip="Abrir la verificación"
+                      [attr.aria-label]="'Verificar ' + c.codigo"
+                    >
+                      <img [src]="qr(c.token)" [alt]="'Código QR de ' + c.codigo" loading="lazy" />
+                    </a>
+                  } @else {
+                    <div class="sin-qr" matTooltip="Se emite al pagar">
+                      <mat-icon>hourglass_empty</mat-icon>
+                      <span>Sin comprobante</span>
+                    </div>
+                  }
+                </div>
+
+                <div class="datos">
+                  <span class="documento">
+                    <mat-icon>{{ c.tipo === 'COMPRA' ? 'receipt_long' : 'assignment_return' }}</mat-icon>
+                    {{ documento(c) }}
+                  </span>
+                  <span class="codigo">{{ c.codigo }}</span>
+                  <span class="fecha">{{ c.fecha_texto }}</span>
+                  @if (c.detalle) {
+                    <span class="detalle">{{ c.detalle }}</span>
+                  }
+                  @if (c.codigo !== c.referencia) {
+                    <span class="detalle">Pedido {{ c.referencia }}</span>
+                  }
+                  <div class="pie">
+                    <span class="importe">{{ c.total | bs }}</span>
+                    <span
+                      class="estado"
+                      [class.bueno]="c.estado === 'PAGADA' || c.estado === 'ENTREGADA' || c.estado === 'CERRADA'"
+                      [class.malo]="c.estado === 'CANCELADA'"
+                      [class.espera]="c.estado === 'PENDIENTE_PAGO' || c.estado === 'ABIERTA'"
+                      >{{ estado(c) }}</span
+                    >
+                  </div>
+                  <div class="acciones">
+                    @if (c.token) {
+                      <a matButton [routerLink]="['/verificar', c.token]" target="_blank">
+                        <mat-icon>qr_code_2</mat-icon>
+                        Ver
+                      </a>
+                    }
+                    @if (c.descargable) {
+                      <button
+                        matButton
+                        type="button"
+                        [disabled]="descargando() === c.referencia"
+                        (click)="descargar(c)"
+                      >
+                        <mat-icon>picture_as_pdf</mat-icon>
+                        PDF
+                      </button>
+                    }
+                  </div>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    }
+  }
+</main>

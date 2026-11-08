@@ -140,6 +140,37 @@ def comprobante_en_pdf(db: Session, usuario_id: int, codigo: str) -> tuple[str, 
     return f"{comprobante.numero}.pdf", cuerpo
 
 
+def _dibujar_qr(pdf, comprobante: Comprobante, *, x: float, y: float, lado: float) -> None:
+    """CU-46: el QR de la verificación pública, abajo a la derecha del recibo.
+
+    Lleva a la misma página que el QR de «Mis comprobantes»: el token se firma
+    con lo que identifica al recibo y por eso es el mismo en los dos lados.
+    Si algo falla al dibujarlo, el recibo sale igual, sin QR.
+    """
+    try:
+        from reportlab.graphics import renderPDF
+        from reportlab.graphics.barcode.qr import QrCodeWidget
+        from reportlab.graphics.shapes import Drawing
+
+        from app.modules.comprobantes import verificacion
+
+        token = verificacion.firmar(
+            verificacion.RECIBO, comprobante.empresa_id, comprobante.venta_id
+        )
+        widget = QrCodeWidget(verificacion.url_publica(token), barLevel="M")
+        izquierda, abajo, derecha, arriba = widget.getBounds()
+        dibujo = Drawing(
+            lado, lado,
+            transform=[lado / (derecha - izquierda), 0, 0, lado / (arriba - abajo), 0, 0],
+        )
+        dibujo.add(widget)
+        renderPDF.draw(dibujo, pdf, x, y)
+        pdf.setFont("Helvetica", 7)
+        pdf.drawCentredString(x + lado / 2, y - 3, "Verificá este recibo")
+    except Exception:  # pragma: no cover - el QR es un agregado, no el recibo
+        _log.exception("No se pudo dibujar el QR del comprobante %s", comprobante.numero)
+
+
 def _dibujar_pdf(comprobante: Comprobante, pedido) -> bytes:
     """El PDF, con ReportLab.
 
@@ -254,6 +285,8 @@ def _dibujar_pdf(comprobante: Comprobante, pedido) -> bytes:
         20 * mm,
         tiempo.formatear(tiempo.ahora(), "Descargado el %d/%m/%Y"),
     )
+
+    _dibujar_qr(pdf, comprobante, x=ancho - 48 * mm, y=27 * mm, lado=28 * mm)
 
     pdf.showPage()
     pdf.save()
