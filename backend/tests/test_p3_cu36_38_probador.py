@@ -445,3 +445,10 @@ def test_la_foto_de_una_talla_sin_imagen_propia_usa_la_de_su_color(api, blusa_li
     assert r.status_code == 200, r.text
     assert r.json()["foto_url"]
     assert r.json()["talla"] == "L"
+
+
+def test_la_lista_del_probador_trae_lo_calibrado(api, blusa_lista, cabeceras_cliente):
+    r = api.get(f"{VESTIDOR}/productos-listos", headers=cabeceras_cliente)
+    assert r.status_code == 200, r.text
+    assert [p["producto_id"] for p in r.json()] == [blusa_lista["producto"]]
+    assert r.json()[0]["imagen_url"]

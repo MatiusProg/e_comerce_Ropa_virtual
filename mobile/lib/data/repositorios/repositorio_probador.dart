@@ -97,6 +97,21 @@ class EstadoFotoIa {
   );
 }
 
+/// Un producto listo para el probador (la lista de entrada).
+class ProductoParaProbar {
+  const ProductoParaProbar({required this.productoId, required this.nombre, required this.imagenUrl});
+
+  final int productoId;
+  final String nombre;
+  final String imagenUrl;
+
+  factory ProductoParaProbar.desdeJson(Map<String, dynamic> json) => ProductoParaProbar(
+    productoId: json['producto_id'] as int,
+    nombre: json['nombre'] as String,
+    imagenUrl: json['imagen_url'] as String,
+  );
+}
+
 /// Todo lo que hace falta para probarse un producto.
 class PruebaDeProducto {
   const PruebaDeProducto({
@@ -188,6 +203,18 @@ class RepositorioProbador {
   const RepositorioProbador(this._dio);
 
   final Dio _dio;
+
+  /// CU-37 · las prendas listas para probar, la última calibrada primero.
+  Future<List<ProductoParaProbar>> listos() async {
+    try {
+      final r = await _dio.get<List<dynamic>>('/vestidor/productos-listos');
+      return (r.data ?? const [])
+          .map((e) => ProductoParaProbar.desdeJson(e as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (fallo) {
+      throw traducirError(fallo);
+    }
+  }
 
   /// CU-37 · las prendas calibradas, el ajuste por talla y si hay foto con IA.
   Future<PruebaDeProducto> prueba(int productoId) async {

@@ -53,6 +53,7 @@ from app.modules.vestidor_virtual import repository as vestidor_repo
 from app.modules.vestidor_virtual import service as vestidor_service
 from app.modules.vestidor_virtual.models import PuntoPrenda, SesionVestidorVirtual
 from app.modules.vestidor_virtual.probador_schemas import (
+    ProductoParaProbar,
     ImagenParaPreparar,
     MedidaDeTalla,
     MedidasDelCuerpo,
@@ -270,6 +271,14 @@ def guardar_medidas(
 
 
 # --- CU-37 · Probarse una prenda con su talla real -------------------------
+
+def listos(db: Session) -> list[ProductoParaProbar]:
+    """Lo que se puede probar ya, lo último calibrado primero."""
+    return [
+        ProductoParaProbar(producto_id=f.producto_id, nombre=f.nombre, imagen_url=almacen.url_de(f.ruta))
+        for f in repo.listos_para_probar(db)
+    ]
+
 
 def prueba(db: Session, producto_id: int, usuario_id: int) -> PruebaDeProducto:
     producto = _producto_o_404(db, producto_id)
