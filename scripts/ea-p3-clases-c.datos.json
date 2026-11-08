@@ -1,0 +1,1506 @@
+{
+ "_convencion": "igual que ea-p2-clases.datos.json",
+ "clases": {
+  "Ofertas": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/admin/ofertas/ofertas.ts",
+   "nota": "Pestañas «Precios mayoristas», «Fuera de temporada» y «Ofertas manuales» (esta solo enlaza a Promociones). cargarMayoristas() y cargarRegla() son privados y los llama ngOnInit().",
+   "atributos": [],
+   "operaciones": [
+    "elegirProducto(p: ProductoResumen): void",
+    "editar(m: Mayorista): void",
+    "cancelar(): void",
+    "guardar(): void",
+    "cambiarEstado(m: Mayorista, activo: boolean, control?: { checked: boolean }): void",
+    "cargarCandidatas(): void",
+    "guardarRegla(): void",
+    "aplicar(): void"
+   ]
+  },
+  "Promociones": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/admin/promociones/promociones.ts",
+   "atributos": [],
+   "operaciones": [
+    "paginar(evento: PageEvent): void",
+    "filtrarPorAlcance(alcance: Alcance | null): void",
+    "alternarVigentes(): void",
+    "nueva(): void",
+    "editar(promocion: Promocion): void",
+    "cambiarEstado(promocion: Promocion, activa: boolean): void"
+   ]
+  },
+  "Traspasos": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/sucursal/traspasos/traspasos.ts",
+   "nota": "La misma pantalla en /sucursal/traspasos y /admin/traspasos. Pestañas «Seguimiento» (CU-34), «Pedir» u «Ordenar» (CU-33) y «Sugeridos» (CU-35, solo administrador). ejecutar() es privado y lo llaman accionar() y confirmar().",
+   "atributos": [],
+   "operaciones": [
+    "cambiarPestana(indice: number): void",
+    "cargar(): void",
+    "cambiarBandeja(valor: Bandeja | 'TODAS'): void",
+    "cambiarAbiertos(valor: boolean): void",
+    "irAPagina(pagina: number): void",
+    "accionar(t: Traspaso, accion: AccionTraspaso): void",
+    "confirmar(t: Traspaso): void",
+    "etiquetaAccion(accion: AccionTraspaso): string",
+    "iconoAccion(accion: AccionTraspaso): string",
+    "elegirPrenda(p: PrendaPedible): void",
+    "elegirOrigen(o: OrigenPosible): void",
+    "volverABuscar(): void",
+    "pedir(): void",
+    "cambiarDias(dias: number): void",
+    "cargarSugeridos(): void",
+    "claveSugerido(s: TraspasoSugerido): string",
+    "ordenarSugerido(s: TraspasoSugerido): void"
+   ]
+  },
+  "OfertasService": {
+   "tipo": "control",
+   "origen": "frontend-web/src/app/core/services/ofertas.service.ts",
+   "atributos": [],
+   "operaciones": [
+    "listarMayoristas(busqueda: string, pagina: number, tamano: number): Observable<PaginaMayoristas>",
+    "crearMayorista(datos: CrearMayorista): Observable<Mayorista>",
+    "editarMayorista(id: number, datos: EditarMayorista): Observable<Mayorista>",
+    "estadoMayorista(id: number, activo: boolean): Observable<Mayorista>",
+    "regla(): Observable<ReglaFueraDeTemporada>",
+    "guardarRegla(datos: ReglaFueraDeTemporada): Observable<ReglaFueraDeTemporada>",
+    "candidatas(): Observable<Candidata[]>",
+    "aplicar(): Observable<Aplicacion>"
+   ]
+  },
+  "PromocionesService": {
+   "tipo": "control",
+   "origen": "frontend-web/src/app/core/services/promociones.service.ts",
+   "atributos": [],
+   "operaciones": [
+    "listar(pagina: number, tamano: number, alcance?: Alcance | null, soloVigentes?: boolean): Observable<PaginaPromociones>",
+    "crear(datos: CrearPromocion): Observable<Promocion>",
+    "editar(id: number, datos: EditarPromocion): Observable<Promocion>",
+    "cambiarEstado(id: number, activa: boolean): Observable<Promocion>"
+   ]
+  },
+  "TraspasosService": {
+   "tipo": "control",
+   "origen": "frontend-web/src/app/core/services/traspasos.service.ts",
+   "atributos": [],
+   "operaciones": [
+    "listar(filtros: FiltrosTraspasos): Observable<PaginaTraspasos>",
+    "prendas(busqueda: string): Observable<PrendaPedible[]>",
+    "origenes(varianteId: number): Observable<OrigenPosible[]>",
+    "solicitar(datos: SolicitarTraspaso): Observable<Traspaso>",
+    "atender(id: number, accion: AccionTraspaso, cuerpo: object): Observable<Traspaso>",
+    "sugeridos(dias: number): Observable<Sugerencias>"
+   ]
+  },
+  "MiPlanService": {
+   "tipo": "control",
+   "origen": "frontend-web/src/app/core/services/mi-plan.service.ts",
+   "nota": "Solo la operación que usa CU-35: al abrir la pantalla el administrador ve el candado si el plan no incluye traspasos_sugeridos.",
+   "atributos": [],
+   "operaciones": [
+    "incluye(codigo: string): Observable<boolean | null>"
+   ]
+  },
+  "ofertas_service": {
+   "tipo": "control",
+   "origen": "backend/app/modules/catalogo/ofertas_service.py",
+   "nota": "Módulo de funciones. Rutas en catalogo/ofertas_router.py, todas con requiere_roles('ADMINISTRADOR'): GET/POST /ofertas/mayoristas, PATCH /ofertas/mayoristas/{id}, PATCH /ofertas/mayoristas/{id}/estado, GET/PUT /ofertas/fuera-de-temporada/regla, GET /ofertas/fuera-de-temporada/candidatas, POST /ofertas/fuera-de-temporada/aplicar.",
+   "atributos": [
+    "REGLA_POR_OMISION: ReglaOut"
+   ],
+   "operaciones": [
+    "listar_mayoristas(db, *, busqueda, pagina, tamano): tuple[int, list[MayoristaOut]]",
+    "obtener_mayorista(db, mayorista_id): MayoristaOut",
+    "_validar_precio(db, producto_id, precio): None",
+    "crear_mayorista(db, datos: MayoristaCrearIn): MayoristaOut",
+    "editar_mayorista(db, mayorista_id, datos: MayoristaEditarIn): MayoristaOut",
+    "cambiar_estado_mayorista(db, mayorista_id, activo): MayoristaOut",
+    "obtener_regla(db): ReglaOut",
+    "guardar_regla(db, datos: ReglaIn): ReglaOut",
+    "_cerrar(promos: list[Promocion], hoy: date): int",
+    "_candidatas(db, regla: ReglaOut, hoy: date): list[CandidataOut]",
+    "candidatas(db): list[CandidataOut]",
+    "aplicar(db): AplicacionOut",
+    "_hoy(): date"
+   ]
+  },
+  "promociones_service": {
+   "tipo": "control",
+   "origen": "backend/app/modules/catalogo/promociones_service.py",
+   "nota": "Rutas en catalogo/promociones_router.py (/catalogo/promociones). descuentos_por_variante es la costura de precios que usan la caja (pos/service.py), el carrito y la vitrina: con las cantidades llama a _aplicar_mayorista.",
+   "atributos": [],
+   "operaciones": [
+    "listar(db, *, pagina, tamano, alcance, solo_vigentes): tuple[int, list[PromocionOut]]",
+    "obtener(db, promocion_id): PromocionOut",
+    "crear(db, datos: PromocionCrearIn): PromocionOut",
+    "editar(db, promocion_id, datos: PromocionEditarIn): PromocionOut",
+    "cambiar_estado(db, promocion_id, datos: CambioEstadoIn): PromocionOut",
+    "descuentos_por_variante(db, precios: dict[int, Decimal], cantidades: dict[int, int] | None): dict[int, Descuento]",
+    "_aplicar_mayorista(db, precios, cantidades, salida): None",
+    "_hoy(): date"
+   ]
+  },
+  "tareas": {
+   "tipo": "control",
+   "origen": "backend/app/core/tareas.py",
+   "nota": "Tarea asyncio dentro del backend (se prende con TAREAS_AUTOMATICAS=on): cada TAREAS_INTERVALO_MINUTOS toma pg_try_advisory_lock y, por cada empresa activa, fija la empresa y corre sus tareas; _fuera_de_temporada llama a ofertas_service.aplicar(db). No pasa por HTTP: el BitacoraMiddleware no la anota.",
+   "atributos": [
+    "CLAVE_DEL_BLOQUEO: int",
+    "TAREAS_POR_EMPRESA: tuple"
+   ],
+   "operaciones": [
+    "ciclo_de_vida(_app)",
+    "_bucle(): None",
+    "correr_vuelta(fabrica_de_sesiones, minimo_entre_vueltas): Vuelta",
+    "_toca_vuelta(conexion, minimo): bool",
+    "_empresas_activas(db): list[int]",
+    "_intentar(vuelta, db, nombre, tarea): None",
+    "_fuera_de_temporada(db, _: int): None",
+    "encendidas(): bool"
+   ]
+  },
+  "traspasos_service": {
+   "tipo": "control",
+   "origen": "backend/app/modules/traspasos/service.py",
+   "nota": "Módulo de funciones. Rutas en traspasos/router.py con requiere_roles('ADMINISTRADOR', 'ENCARGADO'): GET /traspasos/sugeridos (además requiere_roles('ADMINISTRADOR') y requiere_funcion('traspasos_sugeridos')), GET /traspasos, GET /traspasos/prendas, GET /traspasos/origenes, GET /traspasos/{id}, POST /traspasos, POST /traspasos/{id}/aprobar|rechazar|enviar|recibir|devolver. Quien(usuario_id, rol, sucursal_id) sale del token.",
+   "atributos": [
+    "TOPE_SUGERENCIAS: int = 100"
+   ],
+   "operaciones": [
+    "listar(db, quien, *, bandeja, estado, abiertos, sucursal_id, pagina, tamano): PaginaTraspasos",
+    "obtener(db, quien, traspaso_id): TraspasoOut",
+    "prendas_pedibles(db, quien, busqueda): list[PrendaPedibleOut]",
+    "origenes_posibles(db, quien, variante_id): list[OrigenPosibleOut]",
+    "solicitar(db, quien, datos: SolicitarTraspasoIn): TraspasoOut",
+    "_bloquear(db, quien, traspaso_id, accion): Traspaso",
+    "aprobar(db, quien, traspaso_id, datos: AprobarIn): TraspasoOut",
+    "rechazar(db, quien, traspaso_id, datos: RechazarIn): TraspasoOut",
+    "enviar(db, quien, traspaso_id): TraspasoOut",
+    "recibir(db, quien, traspaso_id): TraspasoOut",
+    "devolver(db, quien, traspaso_id): TraspasoOut",
+    "sugeridos(db, *, dias): SugerenciasOut",
+    "_acciones(t, quien, *, destino_activo): list[str]",
+    "_exigir(t, quien, accion, *, destino_activo): None",
+    "_visible(t, quien): Traspaso",
+    "_destino_activo(db, t): bool",
+    "_a_salida(db, fila, quien): TraspasoOut",
+    "_sin_stock(disponible, pedido): ErrorDeTraspaso"
+   ]
+  },
+  "inventario_service": {
+   "tipo": "control",
+   "origen": "backend/app/modules/inventario/service.py",
+   "nota": "Solo las funciones que usan los traspasos. _aplicar_movimiento es la misma que usa la venta: cambia el saldo y escribe el MovimientoInventario; si quedaría negativo lanza StockInsuficiente (RN-09).",
+   "atributos": [],
+   "operaciones": [
+    "_aplicar_movimiento(db, existencia, *, tipo, cantidad, reservada_delta, motivo, proveedor_id, referencia, usuario_id)",
+    "_existencia_o_crearla(db, *, variante_id, sucursal_id): Existencia",
+    "_sucursal_activa(db, sucursal_id)",
+    "_variantes_validas(db, ids: list[int]): dict[int, object]",
+    "_etiqueta_de_variante(db, variante_id): str"
+   ]
+  },
+  "notificaciones_service": {
+   "tipo": "control",
+   "origen": "backend/app/modules/notificaciones/service.py",
+   "nota": "Solo lo que usan los traspasos. notificar deja la fila en la transacción en curso; el correo y el push salen después, en la tarea automática.",
+   "atributos": [],
+   "operaciones": [
+    "avisar_traspaso(db, traspaso, *, sucursal_id, titulo, cuerpo): list[Notificacion]",
+    "notificar(db, *, destinatario, tipo, titulo, cuerpo, enlace, entidad, entidad_id): Notificacion",
+    "_encargados_de(db, sucursal_id): list[Usuario]"
+   ]
+  },
+  "verificador": {
+   "tipo": "control",
+   "origen": "backend/app/modules/plataforma/verificador.py",
+   "nota": "CU-05. Lo llama la dependencia requiere_funcion('traspasos_sugeridos') de core/dependencies.py antes de la ruta; si falta la función lanza RechazoDelPlan (403 plan_limit).",
+   "atributos": [],
+   "operaciones": [
+    "suscripcion_vigente(db): Suscripcion | None",
+    "plan_vigente(db): Plan",
+    "verificar_funcion(db, funcion: str): None"
+   ]
+  },
+  "BitacoraMiddleware": {
+   "tipo": "control",
+   "origen": "backend/app/modules/bitacora/middleware.py",
+   "nota": "Anota toda peticion POST/PUT/PATCH/DELETE (y las exportaciones GET). _anotar llama a bitacora/service.py registrar(db, accion, metodo, ruta, estado_http, exito, usuario_id, actor, rol, entidad, entidad_id, ip, agente, detalle), que inserta con bitacora/repository.py agregar(db, **campos). Los GET no se anotan.",
+   "atributos": [],
+   "operaciones": [
+    "dispatch(peticion: Request, siguiente): Response",
+    "_anotar(peticion: Request, respuesta): None"
+   ]
+  },
+  "PrecioMayorista": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/catalogo/ofertas_models.py",
+   "tabla": "precio_mayorista",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ. UNIQUE (empresa_id, producto_id, cantidad_minima); CHECK cantidad_minima >= 2 y precio_unitario > 0.",
+   "atributos": [
+    "id: INTEGER (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "producto_id: BIGINT (FK producto)",
+    "cantidad_minima: INTEGER",
+    "precio_unitario: NUMERIC(10,2)",
+    "activo: BOOLEAN"
+   ],
+   "operaciones": [
+    "escalones_de_variantes(db, variante_ids): list[Row]  [catalogo/ofertas_repository.py]",
+    "escalones_de_productos(db, producto_ids): list[PrecioMayorista]  [catalogo/ofertas_repository.py]",
+    "listar_mayoristas(db, *, busqueda, pagina, tamano): tuple[int, list[Row]]  [catalogo/ofertas_repository.py]",
+    "mayorista(db, mayorista_id): PrecioMayorista | None  [catalogo/ofertas_repository.py]",
+    "fila_de_mayorista(db, mayorista_id): Row | None  [catalogo/ofertas_repository.py]",
+    "existe_escalon(db, producto_id, cantidad_minima, *, excepto_id): bool  [catalogo/ofertas_repository.py]",
+    "agregar(db, entidad): None  [catalogo/ofertas_repository.py]"
+   ]
+  },
+  "ReglaFueraDeTemporada": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/catalogo/ofertas_models.py",
+   "tabla": "regla_fuera_de_temporada",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ. CHECK dias_desde_fin >= 0, existencia_minima >= 1, 0 < porcentaje <= 90.",
+   "atributos": [
+    "id: INTEGER (PK)",
+    "empresa_id: BIGINT (FK empresa, UNIQUE)",
+    "activa: BOOLEAN",
+    "dias_desde_fin: INTEGER",
+    "existencia_minima: INTEGER",
+    "porcentaje: NUMERIC(5,2)"
+   ],
+   "operaciones": [
+    "regla(db): ReglaFueraDeTemporada | None  [catalogo/ofertas_repository.py]",
+    "agregar(db, entidad): None  [catalogo/ofertas_repository.py]"
+   ]
+  },
+  "Promocion": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/catalogo/promociones_models.py",
+   "tabla": "promocion",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ. CHECK: exactamente uno de producto_id, categoria_id, temporada_id; hasta IS NULL OR hasta >= desde. origen: MANUAL | AUTOMATICA.",
+   "atributos": [
+    "id: INTEGER (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "nombre: VARCHAR(80)",
+    "alcance: VARCHAR(10)",
+    "producto_id: BIGINT (FK producto)",
+    "categoria_id: INTEGER (FK categoria)",
+    "temporada_id: INTEGER (FK temporada)",
+    "porcentaje: NUMERIC(5,2)",
+    "desde: DATE",
+    "hasta: DATE",
+    "activa: BOOLEAN",
+    "origen: VARCHAR(10)",
+    "cerrada_por_regla: BOOLEAN"
+   ],
+   "operaciones": [
+    "descuentos_de_variantes(db, *, variante_ids, hoy): list[Row]  [catalogo/promociones_repository.py]",
+    "listar(db, *, pagina, tamano, alcance, solo_vigentes, hoy): tuple[int, list[Row]]  [catalogo/promociones_repository.py]",
+    "entidad(db, promocion_id): Promocion | None  [catalogo/promociones_repository.py]",
+    "existe_nombre(db, nombre, *, excepto_id): bool  [catalogo/promociones_repository.py]",
+    "agregar(db, promocion): Promocion  [catalogo/promociones_repository.py]",
+    "automaticas_vigentes(db): list[Promocion]  [catalogo/ofertas_repository.py]",
+    "promocion(db, promocion_id): Promocion | None  [catalogo/ofertas_repository.py]"
+   ]
+  },
+  "Producto": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/catalogo/models.py",
+   "tabla": "producto",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "codigo: VARCHAR(30)",
+    "nombre: VARCHAR(120)",
+    "descripcion: VARCHAR(500)",
+    "categoria_id: INTEGER (FK categoria)",
+    "proveedor_id: BIGINT (FK proveedor)",
+    "temporada_id: INTEGER (FK temporada)",
+    "coleccion_id: INTEGER (FK coleccion)",
+    "precio_base: NUMERIC(10,2)",
+    "activo: BOOLEAN"
+   ],
+   "operaciones": [
+    "producto(db, producto_id): Producto | None  [catalogo/ofertas_repository.py]",
+    "candidatas_fuera_de_temporada(db, *, hasta_fin, existencia_minima): list[Row]  [catalogo/ofertas_repository.py]"
+   ]
+  },
+  "Temporada": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/catalogo/models.py",
+   "tabla": "temporada",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ.",
+   "atributos": [
+    "id: INTEGER (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "nombre: VARCHAR(60)",
+    "descripcion: VARCHAR(200)",
+    "fecha_inicio: DATE",
+    "fecha_fin: DATE",
+    "activa: BOOLEAN"
+   ],
+   "operaciones": [
+    "candidatas_fuera_de_temporada(db, *, hasta_fin, existencia_minima): list[Row]  [catalogo/ofertas_repository.py, JOIN temporada]"
+   ]
+  },
+  "VarianteProducto": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/catalogo/models.py",
+   "tabla": "variante_producto",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "producto_id: BIGINT (FK producto)",
+    "talla_id: INTEGER (FK talla)",
+    "color_id: INTEGER (FK color)",
+    "sku: VARCHAR(40)",
+    "precio: NUMERIC(10,2)",
+    "activa: BOOLEAN"
+   ],
+   "operaciones": [
+    "precio_minimo_del_producto(db, producto_id): Decimal | None  [catalogo/ofertas_repository.py]",
+    "prendas_en_otras(db, *, busqueda, excluir, limite): list[Row]  [traspasos/repository.py]",
+    "variantes(db, ids): dict[int, Row]  [traspasos/repository.py]",
+    "candidatas_fuera_de_temporada(db, *, hasta_fin, existencia_minima): list[Row]  [catalogo/ofertas_repository.py, JOIN variante_producto]"
+   ]
+  },
+  "Existencia": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/inventario/models.py",
+   "tabla": "existencia",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "variante_id: BIGINT (FK variante_producto)",
+    "sucursal_id: INTEGER (FK sucursal)",
+    "cantidad_disponible: INTEGER",
+    "cantidad_reservada: INTEGER",
+    "stock_minimo: INTEGER"
+   ],
+   "operaciones": [
+    "disponible(db, *, variante_id, sucursal_id): int | None  [traspasos/repository.py]",
+    "origenes_posibles(db, *, variante_id, excluir): list[Row]  [traspasos/repository.py]",
+    "existencias_de(db, variante_ids): list[Row]  [traspasos/repository.py]",
+    "obtener_existencia(db, *, variante_id, sucursal_id, bloquear): Existencia | None  [inventario/repository.py]",
+    "agregar_existencia(db, *, variante_id, sucursal_id): Existencia  [inventario/repository.py]",
+    "candidatas_fuera_de_temporada(db, *, hasta_fin, existencia_minima): list[Row]  [catalogo/ofertas_repository.py, SUM(cantidad_disponible)]"
+   ]
+  },
+  "Sucursal": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/organizacion/models.py",
+   "tabla": "sucursal",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ.",
+   "atributos": [
+    "id: INTEGER (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "ciudad_id: INTEGER (FK ciudad)",
+    "nombre: VARCHAR(80)",
+    "direccion: VARCHAR(200)",
+    "telefono: VARCHAR(20)",
+    "horario_apertura: TIME",
+    "horario_cierre: TIME",
+    "capacidad_vestidores: SMALLINT",
+    "activa: BOOLEAN"
+   ],
+   "operaciones": [
+    "obtener_sucursal(db, sucursal_id): Sucursal | None  [inventario/repository.py]",
+    "sucursales_activas(db): dict[int, str]  [traspasos/repository.py]"
+   ]
+  },
+  "Traspaso": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/traspasos/models.py",
+   "tabla": "traspaso",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ. tipo: PEDIDO | ORDEN | SUGERIDO. estado: SOLICITADO | APROBADO | ENVIADO | RECIBIDO | RECHAZADO. CHECK origen <> destino; motivo_rechazo solo si RECHAZADO; movimiento_salida_id desde ENVIADO; movimiento_entrada_id solo si RECIBIDO.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "tipo: VARCHAR(10)",
+    "estado: VARCHAR(12)",
+    "variante_id: BIGINT (FK variante_producto)",
+    "sucursal_origen_id: INTEGER (FK sucursal)",
+    "sucursal_destino_id: INTEGER (FK sucursal)",
+    "cantidad: INTEGER",
+    "cantidad_solicitada: INTEGER",
+    "motivo: VARCHAR(200)",
+    "solicitado_por: BIGINT (FK usuario)",
+    "aprobado_por: BIGINT (FK usuario)",
+    "aprobado_en: TIMESTAMPTZ",
+    "enviado_por: BIGINT (FK usuario)",
+    "enviado_en: TIMESTAMPTZ",
+    "recibido_por: BIGINT (FK usuario)",
+    "recibido_en: TIMESTAMPTZ",
+    "rechazado_por: BIGINT (FK usuario)",
+    "rechazado_en: TIMESTAMPTZ",
+    "motivo_rechazo: VARCHAR(200)",
+    "movimiento_salida_id: BIGINT (FK movimiento_inventario)",
+    "movimiento_entrada_id: BIGINT (FK movimiento_inventario)"
+   ],
+   "operaciones": [
+    "agregar(db, **valores): Traspaso  [traspasos/repository.py]",
+    "obtener(db, traspaso_id, *, bloquear): Traspaso | None  [traspasos/repository.py]",
+    "hay_abierto(db, *, variante_id, origen_id, destino_id): bool  [traspasos/repository.py]",
+    "listar(db, *, sucursal_id, bandeja, estado, abiertos, pagina, tamano): tuple[int, list[Row]]  [traspasos/repository.py]",
+    "detalle(db, traspaso_id): Row | None  [traspasos/repository.py]",
+    "en_traspaso(db, variante_ids): tuple[dict, dict]  [traspasos/repository.py]"
+   ]
+  },
+  "MovimientoInventario": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/inventario/models.py",
+   "tabla": "movimiento_inventario",
+   "nota": "No hereda Auditoria: solo creado_en. cantidad con signo (positiva entra, negativa sale). Los traspasos escriben tipo TRANSFERENCIA con referencia TRASPASO-{id}.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "existencia_id: BIGINT (FK existencia)",
+    "tipo: VARCHAR(15)",
+    "cantidad: INTEGER",
+    "motivo: VARCHAR(200)",
+    "proveedor_id: BIGINT (FK proveedor)",
+    "referencia: VARCHAR(40)",
+    "usuario_id: BIGINT (FK usuario)",
+    "operacion_offline_id: BIGINT (FK operacion_offline)",
+    "creado_en: TIMESTAMPTZ"
+   ],
+   "operaciones": [
+    "agregar_movimiento(db, *, existencia_id, tipo, cantidad, motivo, proveedor_id, referencia, usuario_id): MovimientoInventario  [inventario/repository.py]"
+   ]
+  },
+  "Notificacion": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/notificaciones/models.py",
+   "tabla": "notificacion",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "destinatario_id: BIGINT (FK usuario, ON DELETE CASCADE)",
+    "tipo: VARCHAR(40)",
+    "titulo: VARCHAR(160)",
+    "cuerpo: TEXT",
+    "enlace: VARCHAR(300)",
+    "entidad: VARCHAR(60)",
+    "entidad_id: BIGINT",
+    "creada_en: TIMESTAMPTZ",
+    "leida_en: TIMESTAMPTZ",
+    "correo_estado: VARCHAR(20)",
+    "correo_enviado_en: TIMESTAMPTZ",
+    "correo_error: VARCHAR(300)"
+   ],
+   "operaciones": [
+    "crear(db, *, destinatario_id, tipo, titulo, cuerpo, enlace, entidad, entidad_id): Notificacion  [notificaciones/repository.py]"
+   ]
+  },
+  "Venta": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/ventas/models.py",
+   "tabla": "venta",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "codigo: VARCHAR(20) (UNIQUE)",
+    "canal: VARCHAR(12)",
+    "estado: VARCHAR(20)",
+    "cliente_id: BIGINT (FK cliente)",
+    "sucursal_id: INTEGER (FK sucursal)",
+    "turno_caja_id: BIGINT (FK turno_caja)",
+    "reserva_id: BIGINT (FK reserva, UNIQUE)",
+    "modalidad_entrega: VARCHAR(10)",
+    "direccion_id: BIGINT (FK direccion_cliente)",
+    "metodo_pago: VARCHAR(20)",
+    "subtotal: NUMERIC(10,2)",
+    "descuento: NUMERIC(10,2)",
+    "total: NUMERIC(10,2)",
+    "creado_en: TIMESTAMPTZ",
+    "actualizado_en: TIMESTAMPTZ"
+   ],
+   "operaciones": [
+    "vendidas_por_sucursal(db, *, desde): list[Row]  [traspasos/repository.py, JOIN detalle_venta]"
+   ]
+  },
+  "Plan": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/plataforma/models.py",
+   "tabla": "plan",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ. Tabla de la plataforma, sin empresa_id. funciones es el JSONB donde va traspasos_sugeridos.",
+   "atributos": [
+    "id: SMALLINT (PK)",
+    "codigo: VARCHAR(20) (UNIQUE)",
+    "nombre: VARCHAR(40) (UNIQUE)",
+    "precio_mensual: NUMERIC(10,2)",
+    "duracion_dias: SMALLINT",
+    "max_sucursales: INTEGER",
+    "max_empleados: INTEGER",
+    "cupo_reportes_ia: INTEGER",
+    "cupo_fotos_ia: INTEGER",
+    "funciones: JSONB",
+    "activo: BOOLEAN"
+   ],
+   "operaciones": [
+    "plan_vigente(db): Plan  [plataforma/verificador.py, JOIN suscripcion]"
+   ]
+  },
+  "AsientoBitacora": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/bitacora/models.py",
+   "tabla": "bitacora",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "ocurrido_en: TIMESTAMPTZ",
+    "usuario_id: BIGINT (FK usuario, ON DELETE SET NULL)",
+    "actor: VARCHAR(160)",
+    "rol: VARCHAR(40)",
+    "accion: VARCHAR(40)",
+    "entidad: VARCHAR(60)",
+    "entidad_id: VARCHAR(60)",
+    "metodo: VARCHAR(10)",
+    "ruta: VARCHAR(300)",
+    "estado_http: INTEGER",
+    "exito: BOOLEAN",
+    "ip: VARCHAR(60)",
+    "agente: VARCHAR(200)",
+    "detalle: JSONB"
+   ],
+   "operaciones": [
+    "agregar(db, **campos): AsientoBitacora",
+    "contar(db, **filtros): int",
+    "listar(db, limite, desplazamiento, **filtros): list[tuple]",
+    "acciones(db): list[str]",
+    "roles(db): list[str]",
+    "entidades(db): list[str]",
+    "ultimo(db): AsientoBitacora | None"
+   ]
+  }
+ },
+ "cus": {
+  "CU-31": {
+   "actores": [
+    "Administrador"
+   ],
+   "clases": [
+    "Ofertas",
+    "Promociones",
+    "OfertasService",
+    "PromocionesService",
+    "ofertas_service",
+    "promociones_service",
+    "BitacoraMiddleware",
+    "AsientoBitacora",
+    "PrecioMayorista",
+    "Producto",
+    "VarianteProducto",
+    "Promocion"
+   ],
+   "operaciones_en_cu": {
+    "Ofertas": [
+     "elegirProducto(p)",
+     "editar(m)",
+     "cancelar()",
+     "guardar()",
+     "cambiarEstado(m, activo, control)"
+    ],
+    "OfertasService": [
+     "listarMayoristas(busqueda, pagina, tamano)",
+     "crearMayorista(datos)",
+     "editarMayorista(id, datos)",
+     "estadoMayorista(id, activo)"
+    ],
+    "ofertas_service": [
+     "listar_mayoristas(db, *, busqueda, pagina, tamano)",
+     "obtener_mayorista(db, mayorista_id)",
+     "_validar_precio(db, producto_id, precio)",
+     "crear_mayorista(db, datos)",
+     "editar_mayorista(db, mayorista_id, datos)",
+     "cambiar_estado_mayorista(db, mayorista_id, activo)"
+    ],
+    "promociones_service": [
+     "listar(db, *, pagina, tamano, alcance, solo_vigentes)",
+     "crear(db, datos)",
+     "editar(db, promocion_id, datos)",
+     "cambiar_estado(db, promocion_id, datos)",
+     "descuentos_por_variante(db, precios, cantidades)",
+     "_aplicar_mayorista(db, precios, cantidades, salida)"
+    ],
+    "Promocion": [
+     "listar(db, *, pagina, tamano, alcance, solo_vigentes, hoy)",
+     "entidad(db, promocion_id)",
+     "existe_nombre(db, nombre, *, excepto_id)",
+     "agregar(db, promocion)",
+     "descuentos_de_variantes(db, *, variante_ids, hoy)"
+    ],
+    "VarianteProducto": [
+     "precio_minimo_del_producto(db, producto_id)"
+    ],
+    "Producto": [
+     "producto(db, producto_id)"
+    ]
+   },
+   "nota": "Las ofertas manuales de RF-58 son las promociones de CU-12 del primer parcial (Promociones y /catalogo/promociones); no se duplican. El mayorista se cobra en la caja, el carrito y el pedido web por promociones_service.descuentos_por_variante -> _aplicar_mayorista, que deja el precio más bajo sin sumar descuentos (RN-15); la vitrina y el mostrador lo muestran con escalones_de_productos. Omitidos los routers (ofertas_router.py, promociones_router.py) y ProductosService del buscador de productos. Ningún paso pasa por requiere_funcion: las funciones vienen en todos los planes.",
+   "relaciones": [
+    [
+     "Administrador",
+     "Ofertas",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Administrador",
+     "Promociones",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Ofertas",
+     "OfertasService",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "Promociones",
+     "PromocionesService",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "OfertasService",
+     "ofertas_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "PromocionesService",
+     "promociones_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "ofertas_service",
+     "PrecioMayorista",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "ofertas_service",
+     "Producto",
+     "CONSULTA",
+     "1",
+     "0..1"
+    ],
+    [
+     "ofertas_service",
+     "VarianteProducto",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "promociones_service",
+     "Promocion",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "promociones_service",
+     "PrecioMayorista",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "ofertas_service",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "promociones_service",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "BitacoraMiddleware",
+     "AsientoBitacora",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "Producto",
+     "PrecioMayorista",
+     "TIENE_ESCALON",
+     "1",
+     "0..*"
+    ],
+    [
+     "Producto",
+     "VarianteProducto",
+     "TIENE",
+     "1",
+     "1..*"
+    ],
+    [
+     "Producto",
+     "Promocion",
+     "SE_OFERTA_EN",
+     "0..1",
+     "0..*"
+    ]
+   ]
+  },
+  "CU-32": {
+   "actores": [
+    "Sistema",
+    "Administrador"
+   ],
+   "clases": [
+    "tareas",
+    "Ofertas",
+    "OfertasService",
+    "ofertas_service",
+    "BitacoraMiddleware",
+    "AsientoBitacora",
+    "ReglaFueraDeTemporada",
+    "Promocion",
+    "Producto",
+    "Temporada",
+    "Existencia",
+    "VarianteProducto"
+   ],
+   "operaciones_en_cu": {
+    "Ofertas": [
+     "cargarCandidatas()",
+     "guardarRegla()",
+     "aplicar()"
+    ],
+    "OfertasService": [
+     "regla()",
+     "guardarRegla(datos)",
+     "candidatas()",
+     "aplicar()"
+    ],
+    "ofertas_service": [
+     "obtener_regla(db)",
+     "guardar_regla(db, datos)",
+     "_cerrar(promos, hoy)",
+     "_candidatas(db, regla, hoy)",
+     "candidatas(db)",
+     "aplicar(db)",
+     "_hoy()"
+    ],
+    "Promocion": [
+     "automaticas_vigentes(db)",
+     "promocion(db, promocion_id)"
+    ],
+    "Producto": [
+     "candidatas_fuera_de_temporada(db, *, hasta_fin, existencia_minima)"
+    ],
+    "Existencia": [
+     "candidatas_fuera_de_temporada(db, *, hasta_fin, existencia_minima)"
+    ],
+    "VarianteProducto": [
+     "candidatas_fuera_de_temporada(db, *, hasta_fin, existencia_minima)"
+    ]
+   },
+   "nota": "El camino del Sistema es tareas._fuera_de_temporada -> ofertas_service.aplicar(db), sin HTTP, por eso no lo anota el BitacoraMiddleware; sí anota el PUT de la regla y el POST /ofertas/fuera-de-temporada/aplicar que dispara el administrador con «Aplicar ahora». La oferta automática no tiene tabla propia: es una Promocion con origen AUTOMATICA sobre el producto, y la caja y la vitrina la cobran sin cambios. candidatas_fuera_de_temporada es una sola consulta: JOIN producto-temporada, SUM de existencia por variante en sucursales activas (Sucursal, omitida por el tope de 12) y la última promoción automática del producto.",
+   "relaciones": [
+    [
+     "Sistema",
+     "tareas",
+     "DISPARA",
+     "1",
+     "1"
+    ],
+    [
+     "Administrador",
+     "Ofertas",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Ofertas",
+     "OfertasService",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "OfertasService",
+     "ofertas_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "tareas",
+     "ofertas_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "ofertas_service",
+     "ReglaFueraDeTemporada",
+     "CONSULTA",
+     "1",
+     "0..1"
+    ],
+    [
+     "ofertas_service",
+     "Promocion",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "ofertas_service",
+     "Producto",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "ofertas_service",
+     "Temporada",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "ofertas_service",
+     "Existencia",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "ofertas_service",
+     "VarianteProducto",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "ofertas_service",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "BitacoraMiddleware",
+     "AsientoBitacora",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "Producto",
+     "VarianteProducto",
+     "TIENE",
+     "1",
+     "1..*"
+    ],
+    [
+     "Producto",
+     "Promocion",
+     "SE_OFERTA_EN",
+     "0..1",
+     "0..*"
+    ],
+    [
+     "Temporada",
+     "Producto",
+     "AGRUPA",
+     "0..1",
+     "0..*"
+    ],
+    [
+     "Temporada",
+     "Promocion",
+     "SE_OFERTA_EN",
+     "0..1",
+     "0..*"
+    ],
+    [
+     "VarianteProducto",
+     "Existencia",
+     "TIENE_SALDO_EN",
+     "1",
+     "0..*"
+    ]
+   ]
+  },
+  "CU-33": {
+   "actores": [
+    "Encargado",
+    "Administrador"
+   ],
+   "clases": [
+    "Traspasos",
+    "TraspasosService",
+    "traspasos_service",
+    "inventario_service",
+    "notificaciones_service",
+    "BitacoraMiddleware",
+    "AsientoBitacora",
+    "Traspaso",
+    "Existencia",
+    "VarianteProducto",
+    "Sucursal",
+    "Notificacion"
+   ],
+   "operaciones_en_cu": {
+    "Traspasos": [
+     "cambiarPestana(indice)",
+     "elegirPrenda(p)",
+     "elegirOrigen(o)",
+     "volverABuscar()",
+     "pedir()"
+    ],
+    "TraspasosService": [
+     "prendas(busqueda)",
+     "origenes(varianteId)",
+     "solicitar(datos)"
+    ],
+    "traspasos_service": [
+     "prendas_pedibles(db, quien, busqueda)",
+     "origenes_posibles(db, quien, variante_id)",
+     "solicitar(db, quien, datos)",
+     "_sin_stock(disponible, pedido)",
+     "_a_salida(db, fila, quien)"
+    ],
+    "inventario_service": [
+     "_sucursal_activa(db, sucursal_id)",
+     "_variantes_validas(db, ids)",
+     "_etiqueta_de_variante(db, variante_id)"
+    ],
+    "notificaciones_service": [
+     "avisar_traspaso(db, traspaso, *, sucursal_id, titulo, cuerpo)",
+     "notificar(db, *, destinatario, tipo, titulo, cuerpo, enlace, entidad, entidad_id)",
+     "_encargados_de(db, sucursal_id)"
+    ],
+    "Traspaso": [
+     "agregar(db, **valores)",
+     "hay_abierto(db, *, variante_id, origen_id, destino_id)",
+     "detalle(db, traspaso_id)"
+    ],
+    "Existencia": [
+     "disponible(db, *, variante_id, sucursal_id)",
+     "origenes_posibles(db, *, variante_id, excluir)"
+    ],
+    "VarianteProducto": [
+     "prendas_en_otras(db, *, busqueda, excluir, limite)"
+    ],
+    "Sucursal": [
+     "obtener_sucursal(db, sucursal_id)"
+    ]
+   },
+   "nota": "El encargado pide para SU sucursal (el destino sale del token) y queda PEDIDO/SOLICITADO; el administrador elige origen y destino y nace ORDEN/APROBADO (RF-40), o SUGERIDO si viene de CU-35. La escritura sin suscripción vigente la corta _exigir_suscripcion_para_escribir de core/dependencies.py (CU-05, 2a). Omitidos OrganizacionService (lista de destinos del administrador) y Usuario (los encargados que reciben el aviso).",
+   "relaciones": [
+    [
+     "Encargado",
+     "Traspasos",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Administrador",
+     "Traspasos",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Traspasos",
+     "TraspasosService",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "TraspasosService",
+     "traspasos_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "traspasos_service",
+     "inventario_service",
+     "VALIDA_CON",
+     "1",
+     "1"
+    ],
+    [
+     "traspasos_service",
+     "notificaciones_service",
+     "AVISA_CON",
+     "1",
+     "1"
+    ],
+    [
+     "traspasos_service",
+     "Traspaso",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "traspasos_service",
+     "Existencia",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "traspasos_service",
+     "VarianteProducto",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "inventario_service",
+     "Sucursal",
+     "CONSULTA",
+     "1",
+     "0..1"
+    ],
+    [
+     "notificaciones_service",
+     "Notificacion",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "traspasos_service",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "BitacoraMiddleware",
+     "AsientoBitacora",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "VarianteProducto",
+     "Existencia",
+     "TIENE_SALDO_EN",
+     "1",
+     "0..*"
+    ],
+    [
+     "Sucursal",
+     "Existencia",
+     "GUARDA",
+     "1",
+     "0..*"
+    ],
+    [
+     "VarianteProducto",
+     "Traspaso",
+     "SE_TRASPASA_EN",
+     "1",
+     "0..*"
+    ],
+    [
+     "Sucursal",
+     "Traspaso",
+     "ENVIA",
+     "1",
+     "0..*"
+    ],
+    [
+     "Sucursal",
+     "Traspaso",
+     "RECIBE",
+     "1",
+     "0..*"
+    ]
+   ]
+  },
+  "CU-34": {
+   "actores": [
+    "Encargado"
+   ],
+   "clases": [
+    "Traspasos",
+    "TraspasosService",
+    "traspasos_service",
+    "inventario_service",
+    "notificaciones_service",
+    "BitacoraMiddleware",
+    "AsientoBitacora",
+    "Traspaso",
+    "Existencia",
+    "MovimientoInventario",
+    "Sucursal",
+    "Notificacion"
+   ],
+   "operaciones_en_cu": {
+    "Traspasos": [
+     "cargar()",
+     "cambiarBandeja(valor)",
+     "cambiarAbiertos(valor)",
+     "irAPagina(pagina)",
+     "accionar(t, accion)",
+     "confirmar(t)",
+     "etiquetaAccion(accion)",
+     "iconoAccion(accion)"
+    ],
+    "TraspasosService": [
+     "listar(filtros)",
+     "atender(id, accion, cuerpo)"
+    ],
+    "traspasos_service": [
+     "listar(db, quien, *, bandeja, estado, abiertos, sucursal_id, pagina, tamano)",
+     "_bloquear(db, quien, traspaso_id, accion)",
+     "aprobar(db, quien, traspaso_id, datos)",
+     "rechazar(db, quien, traspaso_id, datos)",
+     "enviar(db, quien, traspaso_id)",
+     "recibir(db, quien, traspaso_id)",
+     "devolver(db, quien, traspaso_id)",
+     "_acciones(t, quien, *, destino_activo)",
+     "_exigir(t, quien, accion, *, destino_activo)",
+     "_visible(t, quien)",
+     "_destino_activo(db, t)",
+     "_sin_stock(disponible, pedido)"
+    ],
+    "inventario_service": [
+     "_aplicar_movimiento(db, existencia, *, tipo, cantidad, ...)",
+     "_existencia_o_crearla(db, *, variante_id, sucursal_id)",
+     "_etiqueta_de_variante(db, variante_id)"
+    ],
+    "notificaciones_service": [
+     "avisar_traspaso(db, traspaso, *, sucursal_id, titulo, cuerpo)",
+     "notificar(db, *, destinatario, tipo, titulo, cuerpo, enlace, entidad, entidad_id)"
+    ],
+    "Traspaso": [
+     "obtener(db, traspaso_id, *, bloquear)",
+     "listar(db, *, sucursal_id, bandeja, estado, abiertos, pagina, tamano)",
+     "detalle(db, traspaso_id)"
+    ],
+    "Existencia": [
+     "disponible(db, *, variante_id, sucursal_id)",
+     "obtener_existencia(db, *, variante_id, sucursal_id, bloquear)",
+     "agregar_existencia(db, *, variante_id, sucursal_id)"
+    ],
+    "Sucursal": [
+     "obtener_sucursal(db, sucursal_id)"
+    ]
+   },
+   "nota": "Aprobar no aparta unidades; enviar descuenta del origen con bloqueo de fila y recibir suma al destino, cada uno con su MovimientoInventario TRANSFERENCIA (RN-09). obtener(..., bloquear=True) usa FOR UPDATE: dos «Enviar» a la vez no descuentan dos veces. El administrador puede hacer cualquier paso en cualquier sucursal. Omitido Usuario (quién hizo cada paso y los encargados avisados).",
+   "relaciones": [
+    [
+     "Encargado",
+     "Traspasos",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Traspasos",
+     "TraspasosService",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "TraspasosService",
+     "traspasos_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "traspasos_service",
+     "inventario_service",
+     "MUEVE_SALDO_CON",
+     "1",
+     "1"
+    ],
+    [
+     "traspasos_service",
+     "notificaciones_service",
+     "AVISA_CON",
+     "1",
+     "1"
+    ],
+    [
+     "traspasos_service",
+     "Traspaso",
+     "ACTUALIZA",
+     "1",
+     "0..*"
+    ],
+    [
+     "traspasos_service",
+     "Existencia",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "traspasos_service",
+     "Sucursal",
+     "CONSULTA",
+     "1",
+     "0..2"
+    ],
+    [
+     "inventario_service",
+     "Existencia",
+     "ACTUALIZA",
+     "1",
+     "0..*"
+    ],
+    [
+     "inventario_service",
+     "MovimientoInventario",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "notificaciones_service",
+     "Notificacion",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "traspasos_service",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "BitacoraMiddleware",
+     "AsientoBitacora",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "Sucursal",
+     "Existencia",
+     "GUARDA",
+     "1",
+     "0..*"
+    ],
+    [
+     "Sucursal",
+     "Traspaso",
+     "ENVIA",
+     "1",
+     "0..*"
+    ],
+    [
+     "Sucursal",
+     "Traspaso",
+     "RECIBE",
+     "1",
+     "0..*"
+    ],
+    [
+     "MovimientoInventario",
+     "Traspaso",
+     "ES_SALIDA_DE",
+     "0..1",
+     "0..1"
+    ],
+    [
+     "MovimientoInventario",
+     "Traspaso",
+     "ES_ENTRADA_DE",
+     "0..1",
+     "0..1"
+    ],
+    [
+     "Existencia",
+     "MovimientoInventario",
+     "SE_EXPLICA_EN",
+     "1",
+     "0..*"
+    ]
+   ]
+  },
+  "CU-35": {
+   "actores": [
+    "Administrador"
+   ],
+   "clases": [
+    "Traspasos",
+    "TraspasosService",
+    "MiPlanService",
+    "traspasos_service",
+    "verificador",
+    "BitacoraMiddleware",
+    "AsientoBitacora",
+    "Plan",
+    "Venta",
+    "Existencia",
+    "Traspaso",
+    "VarianteProducto"
+   ],
+   "operaciones_en_cu": {
+    "Traspasos": [
+     "cambiarPestana(indice)",
+     "cambiarDias(dias)",
+     "cargarSugeridos()",
+     "claveSugerido(s)",
+     "ordenarSugerido(s)"
+    ],
+    "TraspasosService": [
+     "sugeridos(dias)",
+     "solicitar(datos)"
+    ],
+    "traspasos_service": [
+     "sugeridos(db, *, dias)",
+     "solicitar(db, quien, datos)"
+    ],
+    "verificador": [
+     "plan_vigente(db)",
+     "verificar_funcion(db, funcion)"
+    ],
+    "Existencia": [
+     "existencias_de(db, variante_ids)"
+    ],
+    "Traspaso": [
+     "en_traspaso(db, variante_ids)",
+     "agregar(db, **valores)"
+    ],
+    "VarianteProducto": [
+     "variantes(db, ids)"
+    ]
+   },
+   "nota": "La consulta es un GET y no escribe; la bitácora aparece por «Ordenar N u.» (7a), que es POST /traspasos con desde_sugerencia y extiende CU-33. sugeridos(): objetivo = max(vendidas en el período, stock_minimo); falta = objetivo - disponible - en camino; sobra = disponible - prometido - objetivo; se reparte a la que más vende desde la que más le sobra; tope 100. Omitidas Sucursal (sucursales_activas) y DetalleVenta (JOIN de vendidas_por_sucursal) por el tope de 12.",
+   "relaciones": [
+    [
+     "Administrador",
+     "Traspasos",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Traspasos",
+     "TraspasosService",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "Traspasos",
+     "MiPlanService",
+     "CONSULTA",
+     "1",
+     "1"
+    ],
+    [
+     "TraspasosService",
+     "traspasos_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "traspasos_service",
+     "verificador",
+     "ES_CONTROLADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "verificador",
+     "Plan",
+     "CONSULTA",
+     "1",
+     "1"
+    ],
+    [
+     "traspasos_service",
+     "Venta",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "traspasos_service",
+     "Existencia",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "traspasos_service",
+     "Traspaso",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "traspasos_service",
+     "VarianteProducto",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "traspasos_service",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "BitacoraMiddleware",
+     "AsientoBitacora",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "VarianteProducto",
+     "Existencia",
+     "TIENE_SALDO_EN",
+     "1",
+     "0..*"
+    ],
+    [
+     "VarianteProducto",
+     "Traspaso",
+     "SE_TRASPASA_EN",
+     "1",
+     "0..*"
+    ]
+   ]
+  }
+ }
+}

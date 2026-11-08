@@ -1,0 +1,2952 @@
+{
+ "actores": {
+  "Usuario": {
+   "abstracto": true,
+   "notas": "Actor abstracto: cualquiera que inicia sesión en una empresa (CU-06)."
+  },
+  "Administrador de la plataforma": {
+   "padre": "Usuario",
+   "notas": "Opera la plataforma SaaS, fuera de los tenants. Entra sin slug."
+  },
+  "Administrador de la empresa": {
+   "padre": "Usuario",
+   "notas": "Administra su empresa (tenant) y todas sus sucursales."
+  },
+  "Encargado de sucursal": {
+   "padre": "Usuario",
+   "notas": "Opera su sucursal dentro de una empresa."
+  },
+  "Cajero": {
+   "padre": "Usuario",
+   "notas": "Vende en caja dentro de su sucursal."
+  },
+  "Proveedor": {
+   "padre": "Usuario",
+   "notas": "Consulta y actualiza sus productos."
+  },
+  "Cliente": {
+   "padre": "Usuario",
+   "notas": "Una sola cuenta en la plataforma, que usa en varias empresas (RN-13)."
+  },
+  "Empresa interesada": {
+   "notas": "Visitante de la página pública que contrata un plan (CU-11)."
+  },
+  "Sistema": {
+   "notas": "Procesos automáticos: el dispositivo que sincroniza solo al volver la conexión (CU-17)."
+  }
+ },
+ "casos": [
+  {
+   "id": "CU-01",
+   "n": "Gestionar empresas",
+   "actores": [
+    "Administrador de la plataforma"
+   ],
+   "incluye": [],
+   "notas": "Registrar, editar y dar de baja empresas, con su administrador. RF-01, RF-02, RF-03.",
+   "extiende": []
+  },
+  {
+   "id": "CU-02",
+   "n": "Gestionar planes",
+   "actores": [
+    "Administrador de la plataforma"
+   ],
+   "incluye": [],
+   "notas": "Precio simulado, límites y funciones de cada plan. RF-04.",
+   "extiende": []
+  },
+  {
+   "id": "CU-03",
+   "n": "Gestionar suscripciones",
+   "actores": [
+    "Administrador de la plataforma"
+   ],
+   "incluye": [],
+   "notas": "Asignar, cambiar, renovar, suspender y reactivar, con el cobro simulado. RF-05, RF-07, RF-08.",
+   "extiende": []
+  },
+  {
+   "id": "CU-04",
+   "n": "Consultar plan y consumo",
+   "actores": [
+    "Administrador de la empresa"
+   ],
+   "incluye": [],
+   "notas": "Plan, estado de la suscripción, uso de límites y cupos. RF-06, RF-50.",
+   "extiende": []
+  },
+  {
+   "id": "CU-05",
+   "n": "Verificar límites y funciones del plan",
+   "actores": [],
+   "incluye": [],
+   "notas": "Lo incluyen los casos de uso que crean recursos limitados o usan funciones de pago. RF-09.",
+   "extiende": []
+  },
+  {
+   "id": "CU-06",
+   "n": "Iniciar sesión en una empresa",
+   "actores": [
+    "Usuario"
+   ],
+   "incluye": [],
+   "notas": "Reemplaza al CU-02 del primer parcial. Login con el slug de la empresa; token con empresa y rol. RN-12.",
+   "extiende": []
+  },
+  {
+   "id": "CU-07",
+   "n": "Registrar cliente con cuenta única",
+   "actores": [
+    "Cliente"
+   ],
+   "incluye": [],
+   "notas": "Reemplaza al CU-01 del primer parcial. Una cuenta por persona en toda la plataforma. RF-51, RN-13.",
+   "extiende": []
+  },
+  {
+   "id": "CU-08",
+   "n": "Gestionar usuarios de la empresa",
+   "actores": [
+    "Administrador de la empresa"
+   ],
+   "incluye": [
+    "CU-05"
+   ],
+   "notas": "Reemplaza al CU-03 del primer parcial. Solo los usuarios de su empresa, dentro del límite. RF-03, RF-09.",
+   "extiende": []
+  },
+  {
+   "id": "CU-09",
+   "n": "Gestionar sucursales de la empresa",
+   "actores": [
+    "Administrador de la empresa"
+   ],
+   "incluye": [
+    "CU-05"
+   ],
+   "notas": "Reemplaza al CU-05 del primer parcial. Límite de sucursales activas. RF-03, RF-09.",
+   "extiende": []
+  },
+  {
+   "id": "CU-10",
+   "n": "Gestionar empleados de la empresa",
+   "actores": [
+    "Administrador de la empresa"
+   ],
+   "incluye": [
+    "CU-05"
+   ],
+   "notas": "Reemplaza al CU-06 del primer parcial. Límite de empleados activos. RF-09.",
+   "extiende": []
+  },
+  {
+   "id": "CU-11",
+   "n": "Contratar un plan desde la web",
+   "actores": [
+    "Empresa interesada"
+   ],
+   "incluye": [],
+   "notas": "Aporte propio. Alta de la empresa con el cobro simulado. RF-47.",
+   "extiende": []
+  },
+  {
+   "id": "CU-12",
+   "n": "Personalizar la tienda de la empresa",
+   "actores": [
+    "Administrador de la empresa"
+   ],
+   "incluye": [
+    "CU-05"
+   ],
+   "notas": "Aporte propio. Logo y colores en la tienda en línea. RF-46.",
+   "extiende": []
+  },
+  {
+   "id": "CU-13",
+   "n": "Preparar el dispositivo para trabajar offline",
+   "actores": [
+    "Cajero",
+    "Cliente"
+   ],
+   "incluye": [],
+   "notas": "Descarga a IndexedDB (PWA) o SQLite (móvil) lo necesario para trabajar sin conexión, con 12 horas de vigencia. RF-10 a RF-13.",
+   "extiende": []
+  },
+  {
+   "id": "CU-14",
+   "n": "Registrar venta offline",
+   "actores": [
+    "Cajero"
+   ],
+   "incluye": [
+    "CU-16"
+   ],
+   "notas": "Evoluciona el CU-31 del primer parcial. La venta queda en la cola del navegador hasta que el servidor la confirma. RF-15.",
+   "extiende": []
+  },
+  {
+   "id": "CU-15",
+   "n": "Registrar reserva offline",
+   "actores": [
+    "Cliente"
+   ],
+   "incluye": [],
+   "notas": "Evoluciona el CU-22 del primer parcial. Vitrina con fotos guardada en el teléfono; la confirma el servidor al sincronizar. RF-14.",
+   "extiende": []
+  },
+  {
+   "id": "CU-16",
+   "n": "Registrar pago sin conexión",
+   "actores": [
+    "Cajero"
+   ],
+   "incluye": [],
+   "notas": "Lo incluye la venta offline: efectivo o QR con su referencia. Cobrar no confirma la venta. RF-54, RN-05.",
+   "extiende": []
+  },
+  {
+   "id": "CU-17",
+   "n": "Sincronizar operaciones pendientes",
+   "actores": [
+    "Sistema",
+    "Cajero",
+    "Cliente"
+   ],
+   "incluye": [],
+   "notas": "Lotes de hasta 50 operaciones con su UUID; gana la que llega primero al servidor. RF-18 a RF-21, RN-06, RN-07.",
+   "extiende": [
+    "CU-15",
+    "CU-18",
+    "CU-20"
+   ]
+  },
+  {
+   "id": "CU-18",
+   "n": "Consultar operaciones pendientes",
+   "actores": [
+    "Cajero",
+    "Cliente"
+   ],
+   "incluye": [],
+   "notas": "La cola local con el estado de cada operación y el motivo de las rechazadas. RF-16, RF-17, RF-20, RF-23.",
+   "extiende": []
+  },
+  {
+   "id": "CU-19",
+   "n": "Atender operaciones rechazadas y devolver el dinero",
+   "actores": [
+    "Encargado de sucursal"
+   ],
+   "incluye": [],
+   "notas": "Devolución del dinero de las operaciones cobradas que el servidor rechazó. RF-22, RF-55.",
+   "extiende": []
+  },
+  {
+   "id": "CU-20",
+   "n": "Abrir y cerrar caja con ventas offline",
+   "actores": [
+    "Cajero"
+   ],
+   "incluye": [],
+   "notas": "Evoluciona el CU-30 del primer parcial. El arqueo cuenta lo vendido sin conexión y el turno no se cierra con ventas sin subir. RF-15, RF-21.",
+   "extiende": []
+  },
+  {
+   "id": "CU-21",
+   "n": "Gestionar el inventario de la sucursal",
+   "actores": [
+    "Encargado de sucursal",
+    "Administrador de la empresa"
+   ],
+   "incluye": [
+    "CU-17"
+   ],
+   "notas": "Reemplaza a CU-13, CU-15 y CU-16 del primer parcial. Existencias, ingresos, ajustes por conteo y kardex; el encargado registra ingresos y conteos también sin conexión y se confirman al sincronizar. RF-52, RF-53.",
+   "extiende": []
+  },
+  {
+   "id": "CU-22",
+   "n": "Registrar cambio o devolución en caja",
+   "actores": [
+    "Cajero"
+   ],
+   "incluye": [],
+   "notas": "Reemplaza al CU-32 del primer parcial. Devolución o cambio con la diferencia de precio, nota de devolución y conformidad del cliente; mueve el inventario y el arqueo. También lo usa el encargado. RF-24, RF-37, RF-59.",
+   "extiende": []
+  },
+  {
+   "id": "CU-23",
+   "n": "Configurar la ventana de devolución",
+   "actores": [
+    "Administrador de la empresa"
+   ],
+   "incluye": [],
+   "notas": "Horas desde la compra o la entrega (1 a 720) en que se aceptan cambios y devoluciones; no depende del plan. RF-35, RN-08.",
+   "extiende": []
+  },
+  {
+   "id": "CU-24",
+   "n": "Solicitar cambio o devolución por la web",
+   "actores": [
+    "Cliente"
+   ],
+   "incluye": [
+    "CU-26"
+   ],
+   "notas": "El cliente pide desde «Mis compras» el cambio o la devolución de un pedido entregado, dentro de la ventana. RF-34, RF-59.",
+   "extiende": []
+  },
+  {
+   "id": "CU-25",
+   "n": "Atender solicitud de devolución",
+   "actores": [
+    "Encargado de sucursal",
+    "Cliente"
+   ],
+   "incluye": [
+    "CU-26"
+   ],
+   "notas": "El encargado aprueba o rechaza con su motivo; al recibir la prenda nace la nota y se reembolsa por la pasarela; el cliente da la conformidad. RF-36, RF-37.",
+   "extiende": []
+  },
+  {
+   "id": "CU-26",
+   "n": "Notificar eventos por correo según el plan",
+   "actores": [
+    "Sistema"
+   ],
+   "incluye": [
+    "CU-05"
+   ],
+   "notas": "Reemplaza al CU-40 del primer parcial. El aviso nace con el hecho y la tarea automática lo manda por Brevo cada 15 minutos, solo si el plan incluye la función «correo». RF-49.",
+   "extiende": []
+  },
+  {
+   "id": "CU-27",
+   "n": "Generar reporte con IA por texto o voz",
+   "actores": [
+    "Administrador de la empresa",
+    "Encargado de sucursal"
+   ],
+   "incluye": [
+    "CU-05"
+   ],
+   "notas": "Reemplaza al CU-35 del primer parcial. Gemini traduce el pedido a una especificación que el backend valida contra una lista blanca y ejecuta dentro del tenant; gasta el cupo reportes_ia. RF-25 a RF-30, RN-10, RN-11.",
+   "extiende": []
+  },
+  {
+   "id": "CU-28",
+   "n": "Generar reportes de gestión con devoluciones",
+   "actores": [
+    "Administrador de la empresa",
+    "Encargado de sucursal"
+   ],
+   "incluye": [],
+   "notas": "Reemplaza al CU-37 del primer parcial. Los reportes fijos en PDF y Excel, con el de devoluciones y cambios por prenda y su valor al precio de la venta. RF-28, RF-38.",
+   "extiende": []
+  },
+  {
+   "id": "CU-29",
+   "n": "Entrenar los modelos de analítica",
+   "actores": [
+    "Administrador de la empresa"
+   ],
+   "incluye": [
+    "CU-05"
+   ],
+   "notas": "GradientBoosting para la demanda semanal y KMeans sobre RFM para los segmentos, con datos reales completados con sintéticos; se guarda en modelo_analitica. Función analitica_ml. RF-31.",
+   "extiende": []
+  },
+  {
+   "id": "CU-30",
+   "n": "Consultar el dashboard analítico",
+   "actores": [
+    "Administrador de la empresa"
+   ],
+   "incluye": [
+    "CU-05"
+   ],
+   "notas": "Métricas, demanda prevista, segmentos y los clientes de hoy clasificados con el modelo guardado; reporte inteligente en PDF y Excel. Función analitica_ml. RF-32, RF-33.",
+   "extiende": []
+  },
+  {
+   "id": "CU-31",
+   "n": "Gestionar ofertas y precios mayoristas",
+   "actores": [
+    "Administrador de la empresa"
+   ],
+   "incluye": [],
+   "notas": "Reemplaza al CU-12 del primer parcial. Escalones de precio mayorista por producto (desde N prendas, a Bs X cada una) y las ofertas manuales con su vigencia, que siguen siendo las promociones. RF-56, RF-58, RN-15.",
+   "extiende": []
+  },
+  {
+   "id": "CU-32",
+   "n": "Aplicar ofertas de fuera de temporada",
+   "actores": [
+    "Sistema",
+    "Administrador de la empresa"
+   ],
+   "incluye": [],
+   "notas": "La tarea automática del backend crea una promoción AUTOMATICA para cada producto que cumple el factor guardado en la base (días desde el fin de la temporada y existencia sobrante) y cierra las que dejan de cumplirlo. El administrador configura el factor y puede apagar cada oferta. RF-57, RN-16.",
+   "extiende": []
+  },
+  {
+   "id": "CU-33",
+   "n": "Solicitar traspaso entre sucursales",
+   "actores": [
+    "Encargado de sucursal",
+    "Administrador de la empresa"
+   ],
+   "incluye": [
+    "CU-05"
+   ],
+   "notas": "Reemplaza al CU-15 del primer parcial. El encargado pide a otra sucursal y queda SOLICITADO; el administrador lo ordena sin pedido previo y nace APROBADO. Con la suscripción vencida no se registra (RN-03). RF-39, RF-40.",
+   "extiende": [
+    "CU-35"
+   ]
+  },
+  {
+   "id": "CU-34",
+   "n": "Atender traspaso",
+   "actores": [
+    "Encargado de sucursal"
+   ],
+   "incluye": [
+    "CU-05"
+   ],
+   "notas": "Seguimiento y pasos del traspaso: aprobar, enviar (descuenta del origen), recibir (suma al destino) o rechazar, con su movimiento de inventario. RF-41, RN-09.",
+   "extiende": []
+  },
+  {
+   "id": "CU-35",
+   "n": "Consultar traspasos sugeridos",
+   "actores": [
+    "Administrador de la empresa"
+   ],
+   "incluye": [
+    "CU-05"
+   ],
+   "notas": "Calcula qué mover de dónde a dónde con las ventas del período y la existencia de cada sucursal. Lo controla la función traspasos_sugeridos del plan. RF-42.",
+   "extiende": []
+  },
+  {
+   "id": "CU-36",
+   "n": "Preparar prenda para el probador",
+   "actores": [
+    "Administrador de la empresa"
+   ],
+   "incluye": [],
+   "notas": "Aporte propio. Reemplaza al CU-11 del primer parcial en lo del vestidor. Marca hombros y ruedo sobre el PNG sin fondo y carga busto, cintura, cadera y largo por talla. RF-43.",
+   "extiende": []
+  },
+  {
+   "id": "CU-37",
+   "n": "Probarse una prenda con su talla real",
+   "actores": [
+    "Cliente"
+   ],
+   "incluye": [],
+   "notas": "Aporte propio. Evoluciona el CU-21 del primer parcial. En la web: la prenda se dibuja con los cm de la talla sobre la foto del cliente, que no sale del navegador; el servidor calcula el ajuste. RF-44.",
+   "extiende": []
+  },
+  {
+   "id": "CU-38",
+   "n": "Generar foto realista de la prueba",
+   "actores": [
+    "Cliente"
+   ],
+   "incluye": [
+    "CU-05"
+   ],
+   "notas": "Aporte propio. Foto con IA a partir de la composición del CU-37; función foto_ia y cupo mensual de la tienda, que se descuenta solo si la foto salió. RF-45, RN-11.",
+   "extiende": [
+    "CU-37"
+   ]
+  },
+  {
+   "id": "CU-39",
+   "n": "Exportar los datos de la empresa",
+   "actores": [
+    "Administrador de la empresa"
+   ],
+   "incluye": [
+    "CU-05"
+   ],
+   "notas": "Aporte propio. Excel con una hoja por tabla o ZIP con un CSV por tabla; función exportar_datos del plan. RF-48.",
+   "extiende": []
+  },
+  {
+   "id": "CU-40",
+   "n": "Gestionar copias de seguridad de la empresa",
+   "actores": [
+    "Administrador de la empresa",
+    "Sistema"
+   ],
+   "incluye": [
+    "CU-05"
+   ],
+   "notas": "Aporte propio. Copia manual firmada que se descarga, automática cifrada con retención, restauración en una transacción e historial. RF-60 a RF-63, RN-18, RN-19.",
+   "extiende": []
+  },
+  {
+   "id": "CU-41",
+   "n": "Gestionar roles y permisos de la empresa",
+   "actores": [
+    "Administrador de la empresa"
+   ],
+   "incluye": [
+    "CU-05"
+   ],
+   "notas": "Pedido en clase. Roles propios que parten de un rol base y solo le quitan permisos; los que dependen del plan piden su función. RF-64, RN-22.",
+   "extiende": []
+  },
+  {
+   "id": "CU-42",
+   "n": "Enviar avisos push de las operaciones sin conexión",
+   "actores": [
+    "Sistema",
+    "Usuario"
+   ],
+   "incluye": [],
+   "notas": "El usuario registra su dispositivo (Web Push con VAPID en la PWA, FCM en el móvil) y el Sistema le manda por push los avisos: al instante los del lote de la sincronización y en la tarea automática los demás. RF-65.",
+   "extiende": [
+    "CU-17"
+   ]
+  },
+  {
+   "id": "CU-43",
+   "n": "Devolver automáticamente el pago de una operación rechazada",
+   "actores": [
+    "Sistema"
+   ],
+   "incluye": [],
+   "notas": "Al rechazar una operación cobrada, el QR se reintegra solo (simulado) y el efectivo queda por devolver en la sucursal (CU-19); se avisa al cliente y a los encargados. RF-66, RF-55, RN-21.",
+   "extiende": [
+    "CU-17"
+   ]
+  },
+  {
+   "id": "CU-44",
+   "n": "Pedir aviso de talla disponible",
+   "actores": [
+    "Cliente",
+    "Encargado de sucursal",
+    "Administrador de la empresa",
+    "Sistema"
+   ],
+   "incluye": [],
+   "notas": "Aporte propio. El cliente pide el aviso de una talla y color agotados; el inventario avisa al pasar la red de 0 a más de 0 y el personal consulta las tallas esperadas. RF-67, RN-24.",
+   "extiende": []
+  },
+  {
+   "id": "CU-45",
+   "n": "Detectar anomalías en caja y devoluciones",
+   "actores": [
+    "Administrador de la empresa"
+   ],
+   "incluye": [
+    "CU-05"
+   ],
+   "notas": "Aporte propio. Isolation Forest sobre los turnos de caja cerrados y las devoluciones, con la explicación de cada caso por mediana y MAD. Pide la función analitica_ml del plan. RF-68.",
+   "extiende": []
+  }
+ ],
+ "robustez": [
+  {
+   "cu": "CU-21",
+   "n": "Gestionar el inventario de la sucursal",
+   "a": [
+    "Encargado de sucursal"
+   ],
+   "f": [
+    "PantallaInventario"
+   ],
+   "c": [
+    "GestorInventario",
+    "ControlOffline",
+    "GestorOffline",
+    "GestorAutenticacion",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "Existencia",
+    "MovimientoInventario",
+    "VarianteProducto",
+    "Proveedor",
+    "PaqueteLocal",
+    "OperacionLocal",
+    "OperacionOffline",
+    "AsientoBitacora"
+   ],
+   "grupos": [
+    "flujo principal: ajuste por conteo físico en línea",
+    "alternativo 3a: registrar un ingreso de mercadería",
+    "alternativo 3b: ver el kardex de la prenda",
+    "alternativo 4a: sin conexión, se guarda en el dispositivo y se sincroniza después",
+    "alternativo 5a: el conteo coincide o no cubre lo reservado"
+   ],
+   "pares": [
+    [
+     "A:Encargado de sucursal",
+     "PantallaInventario"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorInventario"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorOffline"
+    ],
+    [
+     "ControlOffline",
+     "GestorOffline"
+    ],
+    [
+     "ControlOffline",
+     "OperacionLocal"
+    ],
+    [
+     "ControlOffline",
+     "PantallaInventario"
+    ],
+    [
+     "ControlOffline",
+     "PaqueteLocal"
+    ],
+    [
+     "Existencia",
+     "GestorInventario"
+    ],
+    [
+     "Existencia",
+     "GestorOffline"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorInventario"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorOffline"
+    ],
+    [
+     "GestorInventario",
+     "GestorOffline"
+    ],
+    [
+     "GestorInventario",
+     "MovimientoInventario"
+    ],
+    [
+     "GestorInventario",
+     "PantallaInventario"
+    ],
+    [
+     "GestorInventario",
+     "Proveedor"
+    ],
+    [
+     "GestorInventario",
+     "VarianteProducto"
+    ],
+    [
+     "GestorOffline",
+     "MovimientoInventario"
+    ],
+    [
+     "GestorOffline",
+     "OperacionOffline"
+    ],
+    [
+     "GestorOffline",
+     "Proveedor"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-22",
+   "n": "Registrar cambio o devolución en caja",
+   "a": [
+    "Cajero"
+   ],
+   "f": [
+    "PantallaDevolucion",
+    "DialogoNotaDevolucion"
+   ],
+   "c": [
+    "GestorDevoluciones",
+    "GestorCaja",
+    "GestorInventario",
+    "GestorPromociones",
+    "GestorAutenticacion",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "TurnoCaja",
+    "Venta",
+    "DetalleVenta",
+    "Devolucion",
+    "DetalleDevolucion",
+    "Empresa",
+    "SolicitudDevolucion",
+    "Existencia",
+    "MovimientoInventario",
+    "AsientoBitacora"
+   ],
+   "grupos": [
+    "flujo principal: devolución con la nota y la conformidad",
+    "alternativo 3a: cambio por otra prenda o talla, con la diferencia",
+    "alternativos 6a a 6c: fuera de la ventana, solo cambio o devuelve de más",
+    "alternativo 8a: ver e imprimir la nota"
+   ],
+   "pares": [
+    [
+     "A:Cajero",
+     "DialogoNotaDevolucion"
+    ],
+    [
+     "A:Cajero",
+     "PantallaDevolucion"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorDevoluciones"
+    ],
+    [
+     "DetalleDevolucion",
+     "GestorDevoluciones"
+    ],
+    [
+     "DetalleVenta",
+     "GestorDevoluciones"
+    ],
+    [
+     "Devolucion",
+     "GestorDevoluciones"
+    ],
+    [
+     "DialogoNotaDevolucion",
+     "GestorDevoluciones"
+    ],
+    [
+     "Empresa",
+     "GestorDevoluciones"
+    ],
+    [
+     "Existencia",
+     "GestorInventario"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorDevoluciones"
+    ],
+    [
+     "GestorCaja",
+     "GestorDevoluciones"
+    ],
+    [
+     "GestorCaja",
+     "TurnoCaja"
+    ],
+    [
+     "GestorDevoluciones",
+     "GestorInventario"
+    ],
+    [
+     "GestorDevoluciones",
+     "GestorPromociones"
+    ],
+    [
+     "GestorDevoluciones",
+     "PantallaDevolucion"
+    ],
+    [
+     "GestorDevoluciones",
+     "SolicitudDevolucion"
+    ],
+    [
+     "GestorDevoluciones",
+     "Venta"
+    ],
+    [
+     "GestorInventario",
+     "MovimientoInventario"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-23",
+   "n": "Configurar la ventana de devolución",
+   "a": [
+    "Administrador de la empresa"
+   ],
+   "f": [
+    "PanelVentanaDevolucion"
+   ],
+   "c": [
+    "GestorVentanaDevolucion",
+    "GestorAutenticacion",
+    "BitacoraMiddleware",
+    "GestorDevoluciones"
+   ],
+   "e": [
+    "Empresa",
+    "AsientoBitacora"
+   ],
+   "grupos": [
+    "flujo principal: ver y guardar la ventana",
+    "alternativo 3a: elegir un atajo de 24, 48 o 72 horas",
+    "alternativo 6a: horas fuera de 1 a 720",
+    "alternativo 7a: la caja y la web aplican la ventana vigente (RN-08)"
+   ],
+   "pares": [
+    [
+     "A:Administrador de la empresa",
+     "PanelVentanaDevolucion"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorVentanaDevolucion"
+    ],
+    [
+     "Empresa",
+     "GestorDevoluciones"
+    ],
+    [
+     "Empresa",
+     "GestorVentanaDevolucion"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorVentanaDevolucion"
+    ],
+    [
+     "GestorVentanaDevolucion",
+     "PanelVentanaDevolucion"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-24",
+   "n": "Solicitar cambio o devolución por la web",
+   "a": [
+    "Cliente"
+   ],
+   "f": [
+    "PantallaSolicitarDevolucion",
+    "PantallaMisSolicitudes"
+   ],
+   "c": [
+    "GestorDevolucionesWeb",
+    "GestorDevoluciones",
+    "GestorNotificaciones",
+    "GestorAutenticacion",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "Venta",
+    "DetalleVenta",
+    "DetalleDevolucion",
+    "SolicitudDevolucion",
+    "LineaSolicitudDevolucion",
+    "VarianteProducto",
+    "Empresa",
+    "Notificacion",
+    "AsientoBitacora"
+   ],
+   "grupos": [
+    "flujo principal: pedir la devolución de un pedido entregado",
+    "alternativo 3a: pedir un cambio por otra talla o color",
+    "alternativos 5a y 5b: fuera de la ventana o pedido no entregado",
+    "alternativo 5c: pide más de lo que queda o un cambio inválido",
+    "alternativo 8a: seguir la solicitud en «Mis solicitudes»"
+   ],
+   "pares": [
+    [
+     "A:Cliente",
+     "PantallaMisSolicitudes"
+    ],
+    [
+     "A:Cliente",
+     "PantallaSolicitarDevolucion"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorDevolucionesWeb"
+    ],
+    [
+     "DetalleDevolucion",
+     "GestorDevolucionesWeb"
+    ],
+    [
+     "DetalleVenta",
+     "GestorDevolucionesWeb"
+    ],
+    [
+     "Empresa",
+     "GestorDevoluciones"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorDevolucionesWeb"
+    ],
+    [
+     "GestorDevoluciones",
+     "GestorDevolucionesWeb"
+    ],
+    [
+     "GestorDevolucionesWeb",
+     "GestorNotificaciones"
+    ],
+    [
+     "GestorDevolucionesWeb",
+     "LineaSolicitudDevolucion"
+    ],
+    [
+     "GestorDevolucionesWeb",
+     "PantallaMisSolicitudes"
+    ],
+    [
+     "GestorDevolucionesWeb",
+     "PantallaSolicitarDevolucion"
+    ],
+    [
+     "GestorDevolucionesWeb",
+     "SolicitudDevolucion"
+    ],
+    [
+     "GestorDevolucionesWeb",
+     "VarianteProducto"
+    ],
+    [
+     "GestorDevolucionesWeb",
+     "Venta"
+    ],
+    [
+     "GestorNotificaciones",
+     "Notificacion"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-25",
+   "n": "Atender solicitud de devolución",
+   "a": [
+    "Encargado de sucursal",
+    "Cliente"
+   ],
+   "f": [
+    "PantallaPedidosWeb",
+    "PantallaMisSolicitudes",
+    "PasarelaDePago"
+   ],
+   "c": [
+    "GestorDevolucionesWeb",
+    "GestorInventario",
+    "GestorNotificaciones",
+    "GestorAutenticacion",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "SolicitudDevolucion",
+    "Venta",
+    "Devolucion",
+    "DetalleDevolucion",
+    "Pago",
+    "Existencia",
+    "MovimientoInventario",
+    "Notificacion",
+    "AsientoBitacora"
+   ],
+   "grupos": [
+    "flujo principal: aprobar, recibir la prenda y reembolsar por la pasarela",
+    "alternativo 2a: rechazar con el motivo",
+    "alternativo 4a: un cambio aprobado se retira en caja (CU-22)",
+    "alternativo 6a: la pasarela no puede reembolsar",
+    "paso 8 y alternativo 8a: el cliente da o niega la conformidad"
+   ],
+   "pares": [
+    [
+     "A:Cliente",
+     "PantallaMisSolicitudes"
+    ],
+    [
+     "A:Encargado de sucursal",
+     "PantallaPedidosWeb"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorDevolucionesWeb"
+    ],
+    [
+     "DetalleDevolucion",
+     "GestorDevolucionesWeb"
+    ],
+    [
+     "Devolucion",
+     "GestorDevolucionesWeb"
+    ],
+    [
+     "Existencia",
+     "GestorInventario"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorDevolucionesWeb"
+    ],
+    [
+     "GestorDevolucionesWeb",
+     "GestorInventario"
+    ],
+    [
+     "GestorDevolucionesWeb",
+     "GestorNotificaciones"
+    ],
+    [
+     "GestorDevolucionesWeb",
+     "Pago"
+    ],
+    [
+     "GestorDevolucionesWeb",
+     "PantallaMisSolicitudes"
+    ],
+    [
+     "GestorDevolucionesWeb",
+     "PantallaPedidosWeb"
+    ],
+    [
+     "GestorDevolucionesWeb",
+     "PasarelaDePago"
+    ],
+    [
+     "GestorDevolucionesWeb",
+     "SolicitudDevolucion"
+    ],
+    [
+     "GestorDevolucionesWeb",
+     "Venta"
+    ],
+    [
+     "GestorInventario",
+     "MovimientoInventario"
+    ],
+    [
+     "GestorNotificaciones",
+     "Notificacion"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-26",
+   "n": "Notificar eventos por correo según el plan",
+   "a": [
+    "Sistema"
+   ],
+   "f": [
+    "TareaProgramada",
+    "CanalDeCorreo"
+   ],
+   "c": [
+    "GestorNotificaciones",
+    "GestorTareas",
+    "VerificadorPlan",
+    "GestorReservas"
+   ],
+   "e": [
+    "Notificacion",
+    "Usuario",
+    "Suscripcion",
+    "Plan",
+    "TareaAutomatica",
+    "Empresa"
+   ],
+   "grupos": [
+    "flujo principal: el aviso nace con el hecho y sale por correo",
+    "alternativo 3a: el plan no incluye el correo",
+    "alternativo 4a: el otro worker ya hizo la vuelta",
+    "alternativo 7a: Brevo rechaza o no responde"
+   ],
+   "pares": [
+    [
+     "A:Sistema",
+     "TareaProgramada"
+    ],
+    [
+     "CanalDeCorreo",
+     "GestorNotificaciones"
+    ],
+    [
+     "Empresa",
+     "GestorTareas"
+    ],
+    [
+     "GestorNotificaciones",
+     "GestorReservas"
+    ],
+    [
+     "GestorNotificaciones",
+     "GestorTareas"
+    ],
+    [
+     "GestorNotificaciones",
+     "Notificacion"
+    ],
+    [
+     "GestorNotificaciones",
+     "Usuario"
+    ],
+    [
+     "GestorNotificaciones",
+     "VerificadorPlan"
+    ],
+    [
+     "GestorTareas",
+     "TareaAutomatica"
+    ],
+    [
+     "GestorTareas",
+     "TareaProgramada"
+    ],
+    [
+     "Plan",
+     "VerificadorPlan"
+    ],
+    [
+     "Suscripcion",
+     "VerificadorPlan"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-27",
+   "n": "Generar reporte con IA por texto o voz",
+   "a": [
+    "Administrador de la empresa",
+    "Encargado de sucursal"
+   ],
+   "f": [
+    "PantallaReportesIA",
+    "ProveedorIA"
+   ],
+   "c": [
+    "GestorReportesIA",
+    "GestorAutenticacion",
+    "VerificadorPlan",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "Plan",
+    "ConsumoCupo",
+    "Sucursal",
+    "Venta",
+    "Devolucion",
+    "Existencia",
+    "Reserva",
+    "AsientoBitacora"
+   ],
+   "grupos": [
+    "flujo principal: el pedido se entiende y se arma el reporte",
+    "alternativo 3a: el plan no lo incluye o se agotó el cupo",
+    "alternativo 5a: sin IA, entra el intérprete por reglas",
+    "alternativo 6a: pedido ambiguo o no soportado",
+    "alternativo 8a: exportar a PDF o Excel"
+   ],
+   "pares": [
+    [
+     "A:Administrador de la empresa",
+     "PantallaReportesIA"
+    ],
+    [
+     "A:Encargado de sucursal",
+     "PantallaReportesIA"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorReportesIA"
+    ],
+    [
+     "ConsumoCupo",
+     "VerificadorPlan"
+    ],
+    [
+     "Devolucion",
+     "GestorReportesIA"
+    ],
+    [
+     "Existencia",
+     "GestorReportesIA"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorReportesIA"
+    ],
+    [
+     "GestorReportesIA",
+     "PantallaReportesIA"
+    ],
+    [
+     "GestorReportesIA",
+     "ProveedorIA"
+    ],
+    [
+     "GestorReportesIA",
+     "Reserva"
+    ],
+    [
+     "GestorReportesIA",
+     "Sucursal"
+    ],
+    [
+     "GestorReportesIA",
+     "Venta"
+    ],
+    [
+     "GestorReportesIA",
+     "VerificadorPlan"
+    ],
+    [
+     "Plan",
+     "VerificadorPlan"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-28",
+   "n": "Generar reportes de gestión con devoluciones",
+   "a": [
+    "Administrador de la empresa",
+    "Encargado de sucursal"
+   ],
+   "f": [
+    "PantallaReportes",
+    "ProveedorIA"
+   ],
+   "c": [
+    "GestorReportes",
+    "GestorAutenticacion",
+    "VerificadorPlan",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "Devolucion",
+    "DetalleDevolucion",
+    "DetalleVenta",
+    "Sucursal",
+    "AsientoBitacora"
+   ],
+   "grupos": [
+    "flujo principal: bajar el reporte de devoluciones y cambios",
+    "alternativo 3a: pedir el reporte hablando",
+    "alternativo 5a: el encargado solo ve su sucursal"
+   ],
+   "pares": [
+    [
+     "A:Administrador de la empresa",
+     "PantallaReportes"
+    ],
+    [
+     "A:Encargado de sucursal",
+     "PantallaReportes"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorReportes"
+    ],
+    [
+     "DetalleDevolucion",
+     "GestorReportes"
+    ],
+    [
+     "DetalleVenta",
+     "GestorReportes"
+    ],
+    [
+     "Devolucion",
+     "GestorReportes"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorReportes"
+    ],
+    [
+     "GestorReportes",
+     "PantallaReportes"
+    ],
+    [
+     "GestorReportes",
+     "ProveedorIA"
+    ],
+    [
+     "GestorReportes",
+     "Sucursal"
+    ],
+    [
+     "GestorReportes",
+     "VerificadorPlan"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-29",
+   "n": "Entrenar los modelos de analítica",
+   "a": [
+    "Administrador de la empresa"
+   ],
+   "f": [
+    "PantallaAnalitica"
+   ],
+   "c": [
+    "GestorAnalitica",
+    "GestorAutenticacion",
+    "VerificadorPlan",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "Plan",
+    "Producto",
+    "Venta",
+    "ModeloAnalitica",
+    "AsientoBitacora"
+   ],
+   "grupos": [
+    "flujo principal: entrenar los dos modelos",
+    "alternativo 2a: el plan no incluye la analítica",
+    "alternativo 3a: la empresa casi no tiene ventas"
+   ],
+   "pares": [
+    [
+     "A:Administrador de la empresa",
+     "PantallaAnalitica"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorAnalitica"
+    ],
+    [
+     "GestorAnalitica",
+     "GestorAutenticacion"
+    ],
+    [
+     "GestorAnalitica",
+     "ModeloAnalitica"
+    ],
+    [
+     "GestorAnalitica",
+     "PantallaAnalitica"
+    ],
+    [
+     "GestorAnalitica",
+     "Producto"
+    ],
+    [
+     "GestorAnalitica",
+     "Venta"
+    ],
+    [
+     "GestorAnalitica",
+     "VerificadorPlan"
+    ],
+    [
+     "Plan",
+     "VerificadorPlan"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-30",
+   "n": "Consultar el dashboard analítico",
+   "a": [
+    "Administrador de la empresa"
+   ],
+   "f": [
+    "PantallaAnalitica"
+   ],
+   "c": [
+    "GestorAnalitica",
+    "GestorAutenticacion",
+    "VerificadorPlan"
+   ],
+   "e": [
+    "Plan",
+    "ModeloAnalitica",
+    "Venta"
+   ],
+   "grupos": [
+    "flujo principal: ver el dashboard",
+    "alternativo 2a: el plan no incluye la analítica",
+    "alternativo 3a: todavía no se entrenó",
+    "alternativo 7a: descargar el reporte inteligente"
+   ],
+   "pares": [
+    [
+     "A:Administrador de la empresa",
+     "PantallaAnalitica"
+    ],
+    [
+     "GestorAnalitica",
+     "GestorAutenticacion"
+    ],
+    [
+     "GestorAnalitica",
+     "ModeloAnalitica"
+    ],
+    [
+     "GestorAnalitica",
+     "PantallaAnalitica"
+    ],
+    [
+     "GestorAnalitica",
+     "Venta"
+    ],
+    [
+     "GestorAnalitica",
+     "VerificadorPlan"
+    ],
+    [
+     "Plan",
+     "VerificadorPlan"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-31",
+   "n": "Gestionar ofertas y precios mayoristas",
+   "a": [
+    "Administrador de la empresa"
+   ],
+   "f": [
+    "PantallaOfertas",
+    "PantallaPromociones"
+   ],
+   "c": [
+    "GestorOfertas",
+    "GestorPromociones",
+    "GestorAutenticacion",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "PrecioMayorista",
+    "Producto",
+    "VarianteProducto",
+    "Promocion",
+    "AsientoBitacora"
+   ],
+   "grupos": [
+    "flujo principal: definir un precio mayorista",
+    "alternativo 3a: editar, apagar o encender un escalón",
+    "alternativo 6a: el escalón ya existe o el precio no es menor",
+    "alternativo 1a: oferta manual con vigencia (RF-58)"
+   ],
+   "pares": [
+    [
+     "A:Administrador de la empresa",
+     "PantallaOfertas"
+    ],
+    [
+     "A:Administrador de la empresa",
+     "PantallaPromociones"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorOfertas"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorPromociones"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorOfertas"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorPromociones"
+    ],
+    [
+     "GestorOfertas",
+     "PantallaOfertas"
+    ],
+    [
+     "GestorOfertas",
+     "PrecioMayorista"
+    ],
+    [
+     "GestorOfertas",
+     "Producto"
+    ],
+    [
+     "GestorOfertas",
+     "VarianteProducto"
+    ],
+    [
+     "GestorPromociones",
+     "PantallaPromociones"
+    ],
+    [
+     "GestorPromociones",
+     "Promocion"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-32",
+   "n": "Aplicar ofertas de fuera de temporada",
+   "a": [
+    "Sistema",
+    "Administrador de la empresa"
+   ],
+   "f": [
+    "TareaProgramada",
+    "PantallaOfertas"
+   ],
+   "c": [
+    "GestorOfertas",
+    "GestorAutenticacion",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "ReglaFueraDeTemporada",
+    "Producto",
+    "Temporada",
+    "Existencia",
+    "Promocion",
+    "AsientoBitacora"
+   ],
+   "grupos": [
+    "flujo principal: la tarea automática crea y cierra las ofertas",
+    "alternativo 2a: la regla está apagada",
+    "alternativo 4a: el producto ya tiene su oferta automática",
+    "alternativo 1a: el administrador guarda el factor o aplica a mano"
+   ],
+   "pares": [
+    [
+     "A:Administrador de la empresa",
+     "PantallaOfertas"
+    ],
+    [
+     "A:Sistema",
+     "TareaProgramada"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorOfertas"
+    ],
+    [
+     "Existencia",
+     "GestorOfertas"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorOfertas"
+    ],
+    [
+     "GestorOfertas",
+     "PantallaOfertas"
+    ],
+    [
+     "GestorOfertas",
+     "Producto"
+    ],
+    [
+     "GestorOfertas",
+     "Promocion"
+    ],
+    [
+     "GestorOfertas",
+     "ReglaFueraDeTemporada"
+    ],
+    [
+     "GestorOfertas",
+     "TareaProgramada"
+    ],
+    [
+     "GestorOfertas",
+     "Temporada"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-33",
+   "n": "Solicitar traspaso entre sucursales",
+   "a": [
+    "Encargado de sucursal",
+    "Administrador de la empresa"
+   ],
+   "f": [
+    "PantallaTraspasos"
+   ],
+   "c": [
+    "GestorTraspasos",
+    "GestorAutenticacion",
+    "GestorInventario",
+    "GestorNotificaciones",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "Existencia",
+    "VarianteProducto",
+    "Sucursal",
+    "Traspaso",
+    "Usuario",
+    "Notificacion",
+    "AsientoBitacora"
+   ],
+   "grupos": [
+    "flujo principal: el encargado pide a otra sucursal",
+    "alternativo 1a: el administrador ordena sin pedido previo",
+    "alternativo 5a: sucursal o prenda dada de baja",
+    "alternativos 6a y 6b: no alcanza en el origen o ya hay un traspaso abierto"
+   ],
+   "pares": [
+    [
+     "A:Administrador de la empresa",
+     "PantallaTraspasos"
+    ],
+    [
+     "A:Encargado de sucursal",
+     "PantallaTraspasos"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorTraspasos"
+    ],
+    [
+     "Existencia",
+     "GestorTraspasos"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorTraspasos"
+    ],
+    [
+     "GestorInventario",
+     "GestorTraspasos"
+    ],
+    [
+     "GestorInventario",
+     "Sucursal"
+    ],
+    [
+     "GestorInventario",
+     "VarianteProducto"
+    ],
+    [
+     "GestorNotificaciones",
+     "GestorTraspasos"
+    ],
+    [
+     "GestorNotificaciones",
+     "Notificacion"
+    ],
+    [
+     "GestorNotificaciones",
+     "Usuario"
+    ],
+    [
+     "GestorTraspasos",
+     "PantallaTraspasos"
+    ],
+    [
+     "GestorTraspasos",
+     "Traspaso"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-34",
+   "n": "Atender traspaso",
+   "a": [
+    "Encargado de sucursal"
+   ],
+   "f": [
+    "PantallaTraspasos"
+   ],
+   "c": [
+    "GestorTraspasos",
+    "GestorAutenticacion",
+    "GestorInventario",
+    "GestorNotificaciones",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "Traspaso",
+    "Existencia",
+    "MovimientoInventario",
+    "Sucursal",
+    "Usuario",
+    "Notificacion",
+    "AsientoBitacora"
+   ],
+   "grupos": [
+    "flujo principal: aprobar, enviar y recibir",
+    "alternativo 3a: rechazar o retirar el pedido",
+    "alternativo 4a: ya no alcanza en el origen",
+    "alternativo 4b: el paso le toca a la otra sucursal o el traspaso cambió",
+    "alternativo 5a: el destino se dio de baja con la mercadería en camino"
+   ],
+   "pares": [
+    [
+     "A:Encargado de sucursal",
+     "PantallaTraspasos"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorTraspasos"
+    ],
+    [
+     "Existencia",
+     "GestorInventario"
+    ],
+    [
+     "Existencia",
+     "GestorTraspasos"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorTraspasos"
+    ],
+    [
+     "GestorInventario",
+     "GestorTraspasos"
+    ],
+    [
+     "GestorInventario",
+     "MovimientoInventario"
+    ],
+    [
+     "GestorNotificaciones",
+     "GestorTraspasos"
+    ],
+    [
+     "GestorNotificaciones",
+     "Notificacion"
+    ],
+    [
+     "GestorNotificaciones",
+     "Usuario"
+    ],
+    [
+     "GestorTraspasos",
+     "PantallaTraspasos"
+    ],
+    [
+     "GestorTraspasos",
+     "Sucursal"
+    ],
+    [
+     "GestorTraspasos",
+     "Traspaso"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-35",
+   "n": "Consultar traspasos sugeridos",
+   "a": [
+    "Administrador de la empresa"
+   ],
+   "f": [
+    "PantallaTraspasos"
+   ],
+   "c": [
+    "GestorTraspasos",
+    "GestorAutenticacion",
+    "VerificadorPlan",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "Plan",
+    "Venta",
+    "Sucursal",
+    "Existencia",
+    "Traspaso",
+    "VarianteProducto",
+    "AsientoBitacora"
+   ],
+   "grupos": [
+    "flujo principal: calcular y mostrar las sugerencias",
+    "alternativo 2a: el plan no incluye la función",
+    "alternativo 3a: cambiar el período o recalcular",
+    "alternativo 7a: ordenar una sugerencia (extiende CU-33)"
+   ],
+   "pares": [
+    [
+     "A:Administrador de la empresa",
+     "PantallaTraspasos"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorTraspasos"
+    ],
+    [
+     "Existencia",
+     "GestorTraspasos"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorTraspasos"
+    ],
+    [
+     "GestorTraspasos",
+     "PantallaTraspasos"
+    ],
+    [
+     "GestorTraspasos",
+     "Sucursal"
+    ],
+    [
+     "GestorTraspasos",
+     "Traspaso"
+    ],
+    [
+     "GestorTraspasos",
+     "VarianteProducto"
+    ],
+    [
+     "GestorTraspasos",
+     "Venta"
+    ],
+    [
+     "GestorTraspasos",
+     "VerificadorPlan"
+    ],
+    [
+     "Plan",
+     "VerificadorPlan"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-36",
+   "n": "Preparar prenda para el probador",
+   "a": [
+    "Administrador de la empresa"
+   ],
+   "f": [
+    "PantallaPrepararPrenda"
+   ],
+   "c": [
+    "GestorProbador",
+    "GestorAutenticacion",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "Producto",
+    "ImagenProducto",
+    "PuntoPrenda",
+    "Talla",
+    "MedidaTalla",
+    "AsientoBitacora"
+   ],
+   "grupos": [
+    "flujo principal: marcar los puntos y cargar las medidas",
+    "alternativo 5a: la imagen no es de vestidor",
+    "alternativo 5b: puntos incoherentes",
+    "alternativo 7a: medidas inválidas"
+   ],
+   "pares": [
+    [
+     "A:Administrador de la empresa",
+     "PantallaPrepararPrenda"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorProbador"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorProbador"
+    ],
+    [
+     "GestorProbador",
+     "ImagenProducto"
+    ],
+    [
+     "GestorProbador",
+     "MedidaTalla"
+    ],
+    [
+     "GestorProbador",
+     "PantallaPrepararPrenda"
+    ],
+    [
+     "GestorProbador",
+     "Producto"
+    ],
+    [
+     "GestorProbador",
+     "PuntoPrenda"
+    ],
+    [
+     "GestorProbador",
+     "Talla"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-37",
+   "n": "Probarse una prenda con su talla real",
+   "a": [
+    "Cliente"
+   ],
+   "f": [
+    "PantallaProbador"
+   ],
+   "c": [
+    "GestorProbador",
+    "ControlComposicion",
+    "GestorMedidas",
+    "GestorAutenticacion",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "Producto",
+    "ImagenProducto",
+    "PuntoPrenda",
+    "VarianteProducto",
+    "Cliente",
+    "MedidaCliente",
+    "MedidaTalla",
+    "SesionVestidorVirtual",
+    "AsientoBitacora"
+   ],
+   "grupos": [
+    "flujo principal: probarse la prenda y guardar la prueba",
+    "alternativo 2a: faltan las medidas del cliente",
+    "alternativo 4a: no se detecta la pose",
+    "alternativo 8a: borrar una prueba"
+   ],
+   "pares": [
+    [
+     "A:Cliente",
+     "PantallaProbador"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorMedidas"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorProbador"
+    ],
+    [
+     "Cliente",
+     "GestorProbador"
+    ],
+    [
+     "ControlComposicion",
+     "PantallaProbador"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorProbador"
+    ],
+    [
+     "GestorMedidas",
+     "GestorProbador"
+    ],
+    [
+     "GestorMedidas",
+     "MedidaCliente"
+    ],
+    [
+     "GestorMedidas",
+     "MedidaTalla"
+    ],
+    [
+     "GestorMedidas",
+     "PantallaProbador"
+    ],
+    [
+     "GestorProbador",
+     "ImagenProducto"
+    ],
+    [
+     "GestorProbador",
+     "MedidaCliente"
+    ],
+    [
+     "GestorProbador",
+     "PantallaProbador"
+    ],
+    [
+     "GestorProbador",
+     "Producto"
+    ],
+    [
+     "GestorProbador",
+     "PuntoPrenda"
+    ],
+    [
+     "GestorProbador",
+     "SesionVestidorVirtual"
+    ],
+    [
+     "GestorProbador",
+     "VarianteProducto"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-38",
+   "n": "Generar foto realista de la prueba",
+   "a": [
+    "Cliente"
+   ],
+   "f": [
+    "PantallaProbador",
+    "ProveedorIA"
+   ],
+   "c": [
+    "GestorProbador",
+    "ControlComposicion",
+    "VerificadorPlan",
+    "GestorAutenticacion",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "SesionVestidorVirtual",
+    "ImagenProducto",
+    "Plan",
+    "ConsumoCupo",
+    "AsientoBitacora"
+   ],
+   "grupos": [
+    "flujo principal: generar la foto y descontar el cupo",
+    "alternativo 4a: el plan no la incluye o no queda cupo",
+    "alternativo 5a: la prueba ya tiene foto",
+    "alternativo 6a: falla el proveedor de IA"
+   ],
+   "pares": [
+    [
+     "A:Cliente",
+     "PantallaProbador"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorProbador"
+    ],
+    [
+     "ConsumoCupo",
+     "VerificadorPlan"
+    ],
+    [
+     "ControlComposicion",
+     "PantallaProbador"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorProbador"
+    ],
+    [
+     "GestorProbador",
+     "ImagenProducto"
+    ],
+    [
+     "GestorProbador",
+     "PantallaProbador"
+    ],
+    [
+     "GestorProbador",
+     "ProveedorIA"
+    ],
+    [
+     "GestorProbador",
+     "SesionVestidorVirtual"
+    ],
+    [
+     "GestorProbador",
+     "VerificadorPlan"
+    ],
+    [
+     "Plan",
+     "VerificadorPlan"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-39",
+   "n": "Exportar los datos de la empresa",
+   "a": [
+    "Administrador de la empresa"
+   ],
+   "f": [
+    "PantallaDatos"
+   ],
+   "c": [
+    "GestorExportacion",
+    "GestorAutenticacion",
+    "VerificadorPlan"
+   ],
+   "e": [
+    "Usuario",
+    "Rol",
+    "TablaDeEmpresa",
+    "Plan"
+   ],
+   "grupos": [
+    "flujo principal: exportar a Excel",
+    "alternativo 3a: exportar a CSV",
+    "alternativo 4a: el plan no incluye la exportación"
+   ],
+   "pares": [
+    [
+     "A:Administrador de la empresa",
+     "PantallaDatos"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorExportacion"
+    ],
+    [
+     "GestorExportacion",
+     "PantallaDatos"
+    ],
+    [
+     "GestorExportacion",
+     "Rol"
+    ],
+    [
+     "GestorExportacion",
+     "TablaDeEmpresa"
+    ],
+    [
+     "GestorExportacion",
+     "Usuario"
+    ],
+    [
+     "GestorExportacion",
+     "VerificadorPlan"
+    ],
+    [
+     "PantallaDatos",
+     "VerificadorPlan"
+    ],
+    [
+     "Plan",
+     "VerificadorPlan"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-40",
+   "n": "Gestionar copias de seguridad de la empresa",
+   "a": [
+    "Administrador de la empresa",
+    "Sistema"
+   ],
+   "f": [
+    "PantallaDatos",
+    "TareaProgramada"
+   ],
+   "c": [
+    "GestorRespaldos",
+    "GestorAutenticacion",
+    "VerificadorPlan",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "Respaldo",
+    "Restauracion",
+    "TablaDeEmpresa",
+    "Usuario",
+    "Empresa",
+    "Plan",
+    "AsientoBitacora"
+   ],
+   "grupos": [
+    "flujo principal: generar y descargar una copia manual",
+    "alternativo 3a: restaurar desde un archivo o una copia automática",
+    "alternativo 4a: todavía no toca la copia manual",
+    "alternativo 3c: copia alterada, de otra empresa o que no entra",
+    "alternativo 1a: copia automática del Sistema"
+   ],
+   "pares": [
+    [
+     "A:Administrador de la empresa",
+     "PantallaDatos"
+    ],
+    [
+     "A:Sistema",
+     "TareaProgramada"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorRespaldos"
+    ],
+    [
+     "Empresa",
+     "GestorRespaldos"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorRespaldos"
+    ],
+    [
+     "GestorRespaldos",
+     "PantallaDatos"
+    ],
+    [
+     "GestorRespaldos",
+     "Respaldo"
+    ],
+    [
+     "GestorRespaldos",
+     "Restauracion"
+    ],
+    [
+     "GestorRespaldos",
+     "TablaDeEmpresa"
+    ],
+    [
+     "GestorRespaldos",
+     "TareaProgramada"
+    ],
+    [
+     "GestorRespaldos",
+     "Usuario"
+    ],
+    [
+     "GestorRespaldos",
+     "VerificadorPlan"
+    ],
+    [
+     "Plan",
+     "VerificadorPlan"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-41",
+   "n": "Gestionar roles y permisos de la empresa",
+   "a": [
+    "Administrador de la empresa"
+   ],
+   "f": [
+    "PantallaRoles"
+   ],
+   "c": [
+    "GestorRoles",
+    "GestorAutenticacion",
+    "VerificadorPlan",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "RolEmpresa",
+    "RolEmpresaPermiso",
+    "Permiso",
+    "Usuario",
+    "Rol",
+    "Sucursal",
+    "Plan",
+    "AsientoBitacora"
+   ],
+   "grupos": [
+    "flujo principal: crear un rol y asignarlo",
+    "alternativo 3a: editar un rol",
+    "alternativo 3b: activar o desactivar un rol",
+    "alternativo 4a: permiso fuera del plan o del rol base",
+    "alternativo 7a: asignación inválida"
+   ],
+   "pares": [
+    [
+     "A:Administrador de la empresa",
+     "PantallaRoles"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorRoles"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorRoles"
+    ],
+    [
+     "GestorRoles",
+     "PantallaRoles"
+    ],
+    [
+     "GestorRoles",
+     "Permiso"
+    ],
+    [
+     "GestorRoles",
+     "Rol"
+    ],
+    [
+     "GestorRoles",
+     "RolEmpresa"
+    ],
+    [
+     "GestorRoles",
+     "RolEmpresaPermiso"
+    ],
+    [
+     "GestorRoles",
+     "Sucursal"
+    ],
+    [
+     "GestorRoles",
+     "Usuario"
+    ],
+    [
+     "GestorRoles",
+     "VerificadorPlan"
+    ],
+    [
+     "Plan",
+     "VerificadorPlan"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-42",
+   "n": "Enviar avisos push de las operaciones sin conexión",
+   "a": [
+    "Sistema",
+    "Usuario"
+   ],
+   "f": [
+    "PantallaAvisos",
+    "PantallaInicioSesion",
+    "TareaProgramada",
+    "EventoDeConexion",
+    "CanalPush"
+   ],
+   "c": [
+    "GestorPush",
+    "ControlPush",
+    "GestorNotificaciones",
+    "GestorOffline",
+    "ControlOffline",
+    "GestorAutenticacion",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "SuscripcionPush",
+    "Notificacion",
+    "AsientoBitacora"
+   ],
+   "grupos": [
+    "flujo principal: el usuario activa los avisos en la PWA",
+    "flujo principal, pasos 4, 6 a 8: la tarea automática despacha los pendientes",
+    "flujo principal, paso 5: la sincronización despacha al instante",
+    "flujo principal, paso 2 en el móvil: el token de FCM al iniciar sesión",
+    "alternativos 3a y 7a: dispositivo de otra cuenta o que ya no existe"
+   ],
+   "pares": [
+    [
+     "A:Sistema",
+     "EventoDeConexion"
+    ],
+    [
+     "A:Sistema",
+     "TareaProgramada"
+    ],
+    [
+     "A:Usuario",
+     "PantallaAvisos"
+    ],
+    [
+     "A:Usuario",
+     "PantallaInicioSesion"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorPush"
+    ],
+    [
+     "CanalPush",
+     "GestorPush"
+    ],
+    [
+     "ControlOffline",
+     "EventoDeConexion"
+    ],
+    [
+     "ControlOffline",
+     "GestorOffline"
+    ],
+    [
+     "ControlPush",
+     "GestorPush"
+    ],
+    [
+     "ControlPush",
+     "PantallaAvisos"
+    ],
+    [
+     "ControlPush",
+     "PantallaInicioSesion"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorPush"
+    ],
+    [
+     "GestorNotificaciones",
+     "GestorOffline"
+    ],
+    [
+     "GestorNotificaciones",
+     "GestorPush"
+    ],
+    [
+     "GestorNotificaciones",
+     "Notificacion"
+    ],
+    [
+     "GestorOffline",
+     "GestorPush"
+    ],
+    [
+     "GestorPush",
+     "Notificacion"
+    ],
+    [
+     "GestorPush",
+     "SuscripcionPush"
+    ],
+    [
+     "GestorPush",
+     "TareaProgramada"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-43",
+   "n": "Devolver automáticamente el pago de una operación rechazada",
+   "a": [
+    "Sistema"
+   ],
+   "f": [
+    "EventoDeConexion",
+    "CanalPush"
+   ],
+   "c": [
+    "GestorOffline",
+    "ControlOffline",
+    "GestorInventario",
+    "GestorNotificaciones",
+    "GestorPush",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "OperacionOffline",
+    "OperacionLocal",
+    "Cliente",
+    "Usuario",
+    "Sucursal",
+    "Notificacion",
+    "AsientoBitacora"
+   ],
+   "grupos": [
+    "flujo principal: rechazada y cobrada por QR, se reintegra sola",
+    "alternativo 2a: no se había cobrado, solo se avisa el rechazo",
+    "alternativo 4a: cobrada en efectivo, queda por devolver en la sucursal",
+    "alternativo 6a: venta anónima, el aviso va en el resumen del lote"
+   ],
+   "pares": [
+    [
+     "A:Sistema",
+     "EventoDeConexion"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorOffline"
+    ],
+    [
+     "CanalPush",
+     "GestorPush"
+    ],
+    [
+     "Cliente",
+     "GestorNotificaciones"
+    ],
+    [
+     "ControlOffline",
+     "EventoDeConexion"
+    ],
+    [
+     "ControlOffline",
+     "GestorOffline"
+    ],
+    [
+     "ControlOffline",
+     "OperacionLocal"
+    ],
+    [
+     "GestorInventario",
+     "GestorOffline"
+    ],
+    [
+     "GestorNotificaciones",
+     "GestorOffline"
+    ],
+    [
+     "GestorNotificaciones",
+     "Notificacion"
+    ],
+    [
+     "GestorNotificaciones",
+     "Usuario"
+    ],
+    [
+     "GestorOffline",
+     "GestorPush"
+    ],
+    [
+     "GestorOffline",
+     "OperacionOffline"
+    ],
+    [
+     "GestorOffline",
+     "Sucursal"
+    ],
+    [
+     "GestorPush",
+     "Notificacion"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-44",
+   "n": "Pedir aviso de talla disponible",
+   "a": [
+    "Cliente",
+    "Encargado de sucursal",
+    "Administrador de la empresa",
+    "Sistema"
+   ],
+   "f": [
+    "PantallaFicha",
+    "PantallaMisAvisos",
+    "PantallaTallasEsperadas",
+    "PantallaInventario",
+    "TareaProgramada",
+    "CanalPush"
+   ],
+   "c": [
+    "GestorAvisosTalla",
+    "GestorAutenticacion",
+    "GestorInventario",
+    "GestorNotificaciones",
+    "GestorPush",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "AvisoTalla",
+    "VarianteProducto",
+    "Existencia",
+    "Sucursal",
+    "Cliente",
+    "Notificacion",
+    "AsientoBitacora"
+   ],
+   "grupos": [
+    "flujo principal: el cliente pide el aviso",
+    "flujo principal, pasos 6 y 7: vuelve la talla y se avisa",
+    "alternativos 4a y 4b: ya lo había pedido o llegaron unidades",
+    "alternativo 8a: cancelar desde «Mis avisos»",
+    "alternativo 8b: el personal consulta las tallas esperadas"
+   ],
+   "pares": [
+    [
+     "A:Administrador de la empresa",
+     "PantallaTallasEsperadas"
+    ],
+    [
+     "A:Cliente",
+     "PantallaFicha"
+    ],
+    [
+     "A:Cliente",
+     "PantallaMisAvisos"
+    ],
+    [
+     "A:Encargado de sucursal",
+     "PantallaInventario"
+    ],
+    [
+     "A:Encargado de sucursal",
+     "PantallaTallasEsperadas"
+    ],
+    [
+     "A:Sistema",
+     "TareaProgramada"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "AvisoTalla",
+     "GestorAvisosTalla"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorAvisosTalla"
+    ],
+    [
+     "CanalPush",
+     "GestorPush"
+    ],
+    [
+     "Cliente",
+     "GestorAvisosTalla"
+    ],
+    [
+     "Existencia",
+     "GestorAvisosTalla"
+    ],
+    [
+     "Existencia",
+     "GestorInventario"
+    ],
+    [
+     "GestorAutenticacion",
+     "GestorAvisosTalla"
+    ],
+    [
+     "GestorAvisosTalla",
+     "GestorInventario"
+    ],
+    [
+     "GestorAvisosTalla",
+     "GestorNotificaciones"
+    ],
+    [
+     "GestorAvisosTalla",
+     "PantallaFicha"
+    ],
+    [
+     "GestorAvisosTalla",
+     "PantallaMisAvisos"
+    ],
+    [
+     "GestorAvisosTalla",
+     "PantallaTallasEsperadas"
+    ],
+    [
+     "GestorAvisosTalla",
+     "Sucursal"
+    ],
+    [
+     "GestorAvisosTalla",
+     "VarianteProducto"
+    ],
+    [
+     "GestorInventario",
+     "PantallaInventario"
+    ],
+    [
+     "GestorNotificaciones",
+     "Notificacion"
+    ],
+    [
+     "GestorPush",
+     "Notificacion"
+    ],
+    [
+     "GestorPush",
+     "TareaProgramada"
+    ]
+   ]
+  },
+  {
+   "cu": "CU-45",
+   "n": "Detectar anomalías en caja y devoluciones",
+   "a": [
+    "Administrador de la empresa"
+   ],
+   "f": [
+    "PantallaAnomalias"
+   ],
+   "c": [
+    "GestorAnalitica",
+    "DetectorAnomalias",
+    "GestorAutenticacion",
+    "VerificadorPlan",
+    "BitacoraMiddleware"
+   ],
+   "e": [
+    "TurnoCaja",
+    "Venta",
+    "Devolucion",
+    "Usuario",
+    "ModeloAnalitica",
+    "AsientoBitacora"
+   ],
+   "grupos": [
+    "flujo principal: buscar anomalías",
+    "flujo principal, paso 9: marcar una anomalía como revisada",
+    "alternativo 2a: el plan no incluye la función",
+    "alternativo 3a: menos de 20 turnos cerrados",
+    "alternativo 5a: menos de 15 devoluciones"
+   ],
+   "pares": [
+    [
+     "A:Administrador de la empresa",
+     "PantallaAnomalias"
+    ],
+    [
+     "AsientoBitacora",
+     "BitacoraMiddleware"
+    ],
+    [
+     "BitacoraMiddleware",
+     "GestorAnalitica"
+    ],
+    [
+     "DetectorAnomalias",
+     "GestorAnalitica"
+    ],
+    [
+     "Devolucion",
+     "GestorAnalitica"
+    ],
+    [
+     "GestorAnalitica",
+     "GestorAutenticacion"
+    ],
+    [
+     "GestorAnalitica",
+     "ModeloAnalitica"
+    ],
+    [
+     "GestorAnalitica",
+     "PantallaAnomalias"
+    ],
+    [
+     "GestorAnalitica",
+     "TurnoCaja"
+    ],
+    [
+     "GestorAnalitica",
+     "Usuario"
+    ],
+    [
+     "GestorAnalitica",
+     "Venta"
+    ],
+    [
+     "GestorAnalitica",
+     "VerificadorPlan"
+    ]
+   ]
+  }
+ ],
+ "descripcion": {
+  "GestorEmpresas": "Coordina CU-01 y el alta de CU-11: crea empresa, suscripción, sucursal principal y administrador en una transacción.",
+  "GestorPlanes": "Coordina CU-02: planes con sus límites y funciones.",
+  "GestorSuscripciones": "Coordina CU-03: asigna, renueva, suspende y vence suscripciones.",
+  "GestorConsumoPlan": "Coordina CU-04: plan vigente, uso de los límites y consumo de los cupos.",
+  "VerificadorPlan": "CU-05: verifica función, límite y cupo del plan antes de una operación controlada; responde 403 plan_limit.",
+  "GestorAutenticacion": "CU-06 y la autorización del resto: login con slug, token con empresa y rol, cierre de sesión.",
+  "GestorRegistro": "Coordina CU-07: cuenta única del cliente y su asociación con la empresa.",
+  "GestorUsuarios": "Coordina CU-08: usuarios de la empresa, con su rol y su sucursal.",
+  "GestorOrganizacion": "Coordina CU-09: sucursales de la empresa dentro del límite del plan.",
+  "GestorEmpleados": "Coordina CU-10: crea el empleado y su usuario en una transacción.",
+  "GestorContratacion": "Coordina CU-11: elección del plan, pago simulado y alta de la empresa.",
+  "GestorMarca": "Coordina CU-12: logo y colores de la tienda de la empresa.",
+  "Empresa": "Tenant. Tiene slug único (RN-14), estado y marca (logo y colores).",
+  "Plan": "Precio simulado, límites max_* (vacío = ilimitado) y funciones habilitadas.",
+  "Suscripcion": "Plan de una empresa con inicio, vencimiento y estado. Una sola vigente por empresa (RN-02).",
+  "PagoSimulado": "Registro del cobro simulado de una suscripción.",
+  "ConsumoCupo": "Uso del mes de cada límite o cupo (reportes y fotos con IA) por empresa.",
+  "ClienteEmpresa": "Asocia la cuenta única de un cliente con cada empresa donde compra (RN-13).",
+  "SesionToken": "Sesión emitida: el JWT lleva usuario, empresa y rol.",
+  "Usuario": "Identidad y credencial de quien accede, dentro de una empresa.",
+  "Cliente": "Datos comerciales de la persona con rol Cliente.",
+  "Rol": "Conjunto de permisos de un tipo de usuario.",
+  "Sucursal": "Tienda física; pertenece a una sola empresa (RN-01).",
+  "Ciudad": "Agrupa las sucursales de una misma plaza.",
+  "Empleado": "Persona que trabaja en una sucursal de la empresa, con su cargo.",
+  "OperacionControlada": "Frontera técnica: cualquier endpoint que crea un recurso limitado o usa una función de pago.",
+  "TareaProgramada": "Frontera sin persona: el proceso diario del backend.",
+  "CanalDeCorreo": "Frontera de salida: el correo enviado por Brevo.",
+  "TiendaEnLinea": "La tienda pública de la empresa, que muestra su marca.",
+  "PantallaSinConexion": "Pantalla «Sin conexión»: preparar el dispositivo, ver la cola y sincronizar (PWA y móvil).",
+  "PantallaVenta": "La caja del cajero; sin conexión vende contra los datos guardados en el navegador.",
+  "PantallaReservaSinRed": "Nueva reserva sin conexión del móvil, con la vitrina de fotos guardada.",
+  "PantallaOperacionesSinConexion": "Operaciones sin conexión de la sucursal: las rechazadas por devolver.",
+  "PantallaTurno": "Abrir y cerrar el turno de caja, con el arqueo.",
+  "EventoDeConexion": "Frontera técnica: el dispositivo avisa que volvió la conexión.",
+  "ControlOffline": "Control del dispositivo: OfflineService en la PWA y ControlOffline en el móvil. Arma la cola y la sincroniza.",
+  "GestorOffline": "Control del backend para CU-13 a CU-19: paquetes, sincronización y devoluciones (offline/service.py).",
+  "GestorCaja": "Control del backend de CU-20: abrir y cerrar el turno con el arqueo (caja/service.py).",
+  "GestorInventario": "Descuenta la existencia con bloqueo de fila: gana el que llega primero (RN-06).",
+  "GestorReservas": "Crea la reserva con las mismas reglas que en línea: horario, probadores y existencia.",
+  "BitacoraMiddleware": "Escribe un asiento de bitácora por cada petición que modifica datos (CU-42 del primer parcial).",
+  "OperacionOffline": "Operación sin conexión recibida por el servidor: UUID, estado, motivo y devolución.",
+  "OperacionLocal": "La operación en la cola del dispositivo (IndexedDB o SQLite), con su estado local.",
+  "PaqueteLocal": "Lo descargado al preparar: sucursales, prendas, existencia y clientes, con su vigencia.",
+  "FotoLocal": "Las fotos de la vitrina guardadas en la caché del teléfono.",
+  "TurnoCaja": "Turno de una caja: apertura, monto esperado y contado al cierre.",
+  "Caja": "Caja de una sucursal; un solo turno abierto a la vez.",
+  "Existencia": "Cantidad disponible de una variante en una sucursal.",
+  "ImagenProducto": "Fotos del producto; la principal va a la vitrina.",
+  "Venta": "Venta en caja o en línea, colgada de un turno si es presencial.",
+  "Reserva": "Reserva de prendas para probarse en una sucursal y una franja.",
+  "Devolucion": "Devolución o cambio registrado en caja; mueve el cajón.",
+  "AsientoBitacora": "Registro inmutable de quién hizo qué, cuándo y desde dónde.",
+  "PantallaInventario": "Pantalla «Inventario»: existencias, ingresos, ajustes y kardex; en la web y en el móvil, también sin conexión.",
+  "MovimientoInventario": "Movimiento inmutable de una existencia, con signo, tipo, motivo, usuario y la operación offline que lo originó.",
+  "VarianteProducto": "La prenda vendible: producto en una talla y un color, con su SKU y su precio.",
+  "Proveedor": "Quien manda la mercadería de un ingreso.",
+  "PantallaDevolucion": "Pantalla «Devoluciones y cambios» de la caja.",
+  "DialogoNotaDevolucion": "Diálogo que muestra e imprime la nota de devolución (ND-…).",
+  "GestorDevoluciones": "Control del backend de CU-22 (pos/devolucion_service.py): devolución, cambio, nota y la ventana vigente.",
+  "GestorPromociones": "Calcula el descuento vigente de cada prenda (RN-15) para el precio del cambio.",
+  "DetalleVenta": "Línea de una venta, con el precio y el descuento congelados.",
+  "DetalleDevolucion": "Prenda y cantidad que volvieron en una devolución o un cambio.",
+  "SolicitudDevolucion": "Pedido web de cambio o devolución: PENDIENTE, APROBADA, RECHAZADA o COMPLETADA.",
+  "LineaSolicitudDevolucion": "Prenda que el cliente pide devolver y, en un cambio, la que quiere a cambio.",
+  "PanelVentanaDevolucion": "Tarjeta «Ventana de devolución» dentro de «Mi tienda».",
+  "GestorVentanaDevolucion": "Control de CU-23 (plataforma/mi_tienda/service.py): lee y guarda la ventana de la empresa.",
+  "PantallaSolicitarDevolucion": "Diálogo «Cambio o devolución» de un pedido en «Mis compras».",
+  "PantallaMisSolicitudes": "Lista «Mis cambios y devoluciones» del cliente, con la nota y la conformidad.",
+  "GestorDevolucionesWeb": "Control del backend de CU-24 y CU-25 (devoluciones_web/service.py).",
+  "GestorNotificaciones": "Deja el aviso en la campanita y en la cola de correo y push (notificaciones/service.py).",
+  "Notificacion": "Aviso a un usuario, con su estado de correo y de push.",
+  "PantallaPedidosWeb": "Pantalla «Pedidos web» de la sucursal: entregas y solicitudes de devolución.",
+  "PasarelaDePago": "Frontera de salida: el proveedor de pagos (Stripe o el simulado) que hace el reembolso.",
+  "Pago": "Cobro de un pedido web por la pasarela, con la referencia externa de la sesión.",
+  "GestorTareas": "Control de las tareas automáticas (core/tareas.py): una vuelta cada 15 minutos por empresa activa, con advisory lock.",
+  "TareaAutomatica": "Marca de la plataforma con la hora de la última vuelta; evita que el otro worker la repita.",
+  "PantallaReportesIA": "Pantalla «Reportes con IA»: pedido escrito o dictado, ejemplos, tabla, gráfico y exportación.",
+  "ProveedorIA": "Frontera de salida: Gemini, que traduce la frase a una especificación en JSON. No escribe SQL.",
+  "GestorReportesIA": "Coordina CU-27: vocabulario, interpretación, validación contra la lista blanca y ejecución (reportes/dinamico*.py).",
+  "PantallaReportes": "Pantalla «Reportes de gestión»: catálogo de reportes fijos con filtros y descarga en PDF o Excel.",
+  "GestorReportes": "Coordina CU-28: genera el reporte fijo pedido y lo convierte a PDF o Excel (reportes/reportes_*.py).",
+  "PantallaAnalitica": "Pantalla «Analítica inteligente»: entrenar, métricas, demanda prevista, segmentos y reporte.",
+  "GestorAnalitica": "Coordina CU-29 y CU-30: arma los datos, entrena GradientBoosting y KMeans y arma el dashboard (analitica/service.py).",
+  "ModeloAnalitica": "Un entrenamiento guardado: tipo, parámetros, métricas, resultado, filas reales y sintéticas y el modelo serializado.",
+  "Producto": "Prenda del catálogo con su categoría, temporada y precio base.",
+  "PantallaOfertas": "Pantalla «Ofertas y precios mayoristas» del administrador: escalones mayoristas y el factor de fuera de temporada.",
+  "PantallaPromociones": "Pantalla «Promociones»: las ofertas manuales con su vigencia sobre una prenda, una categoría o una temporada.",
+  "PantallaTraspasos": "Pantalla «Traspasos entre sucursales»: seguimiento, pedir u ordenar, y los sugeridos del administrador.",
+  "GestorOfertas": "Coordina CU-31 y CU-32: precios mayoristas, la regla de fuera de temporada y sus ofertas automáticas (catalogo/ofertas_service.py).",
+  "GestorTraspasos": "Coordina CU-33 a CU-35: pedir, ordenar, aprobar, enviar, recibir o rechazar traspasos, y calcular los sugeridos.",
+  "PrecioMayorista": "Escalón de precio de un producto: desde una cantidad mínima de prendas, cada una a un precio (RF-56).",
+  "ReglaFueraDeTemporada": "El factor medible de RF-57, uno por empresa: días desde el fin de la temporada, existencia sobrante y porcentaje.",
+  "Promocion": "Oferta con vigencia sobre un producto, una categoría o una temporada; MANUAL o AUTOMATICA (RN-16).",
+  "Temporada": "Temporada comercial con fecha de inicio y de fin.",
+  "Traspaso": "Pedido de mercadería de una sucursal a otra con su seguimiento: SOLICITADO, APROBADO, ENVIADO, RECIBIDO o RECHAZADO.",
+  "PantallaPrepararPrenda": "Pantalla «Probador» del administrador (probador-admin.ts): marca los puntos y carga las medidas por talla.",
+  "PantallaProbador": "Probador de la tienda en línea (probador.ts, web): la prenda a escala real sobre la foto del cliente.",
+  "PantallaDatos": "Pantalla «Datos de la empresa» (datos.ts): exportación, copias de seguridad, restauración e historial.",
+  "PantallaRoles": "Pantalla «Roles y permisos» (roles.ts): roles propios, sus permisos y la asignación al personal.",
+  "GestorProbador": "Coordina CU-36 a CU-38: puntos, medidas por talla, pruebas y foto realista (vestidor_virtual/probador_service.py).",
+  "ControlComposicion": "Control del navegador: detecta los hombros con MediaPipe Pose y dibuja la prenda con sus cm; la foto no sale del dispositivo.",
+  "GestorMedidas": "Medidas del cliente y ajuste por talla con la talla recomendada (medidas/service.py y medidas/router.py).",
+  "GestorExportacion": "Coordina CU-39: arma el Excel o el ZIP de CSV con todas las tablas de la empresa (datos/exportacion.py).",
+  "GestorRespaldos": "Coordina CU-40: copia manual firmada, automática cifrada, restauración e historial (datos/respaldos.py).",
+  "GestorRoles": "Coordina CU-41: roles propios, sus permisos y su asignación al personal (roles/service.py).",
+  "Talla": "Talla del catálogo de la empresa, con su orden para comparar series.",
+  "PuntoPrenda": "Calibración de una imagen de vestidor: hombros y ruedo en coordenadas relativas (0 a 1).",
+  "MedidaTalla": "Centímetros de la prenda en una talla: busto, cintura, cadera y largo.",
+  "MedidaCliente": "Medidas del cuerpo del cliente: busto, cintura, cadera y estatura.",
+  "SesionVestidorVirtual": "Una prueba del cliente: variante, método de los hombros, ajuste, talla recomendada y foto realista.",
+  "TablaDeEmpresa": "Cualquier tabla con empresa_id (TABLAS_DE_EMPRESA), leída o repuesta de forma genérica con RLS.",
+  "Respaldo": "Copia de seguridad generada: tipo, archivo, SHA-256, filas por tabla y, si es automática, el contenido cifrado.",
+  "Restauracion": "Cada reemplazo de los datos desde una copia: origen, archivo, de cuándo eran los datos y quién lo hizo.",
+  "RolEmpresa": "Rol propio de una empresa, que parte de un rol base del personal (RN-22).",
+  "RolEmpresaPermiso": "Permiso del catálogo que conserva un rol propio.",
+  "Permiso": "Catálogo de permisos del sistema, definido en código (app/core/permisos.py), con sus rutas y su función del plan.",
+  "PantallaAvisos": "Menú de la campanita (web): los avisos y el botón «Recibir avisos en este dispositivo».",
+  "CanalPush": "Frontera de salida: Firebase Cloud Messaging para la app y Web Push con VAPID para la PWA.",
+  "ControlPush": "Control del dispositivo: PushWebService en la PWA y ServicioPush en el móvil. Suscribe el dispositivo y abre la pantalla del aviso al tocarlo.",
+  "GestorPush": "Control del backend de CU-42 (notificaciones/push_service.py): registra dispositivos y despacha los avisos pendientes por push.",
+  "SuscripcionPush": "Un dispositivo que acepta avisos push de una persona: token de FCM o suscripción Web Push.",
+  "GestorAvisosTalla": "Control del backend de CU-44 (avisos_talla/service.py): pedidos de aviso, demanda y el gancho que avisa cuando vuelve la talla.",
+  "PantallaFicha": "Ficha de la prenda en la tienda: elegir talla y color y el botón «Avísenme cuando llegue».",
+  "PantallaMisAvisos": "«Mis avisos» del cliente: las tallas que espera y las que ya llegaron.",
+  "PantallaTallasEsperadas": "«Tallas esperadas» del encargado y del administrador: la demanda en espera.",
+  "AvisoTalla": "Pedido de un cliente de que le avisen cuando vuelva una variante; pendiente mientras notificado_en es nulo.",
+  "PantallaAnomalias": "Panel «Anomalías» dentro de «Analítica inteligente», con las pestañas de turnos y devoluciones.",
+  "DetectorAnomalias": "Isolation Forest de 200 árboles y la explicación por mediana y MAD (analitica/anomalias.py)."
+ }
+}

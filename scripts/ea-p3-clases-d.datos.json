@@ -1,0 +1,1548 @@
+{
+ "_convencion": "igual que ea-p2-clases.datos.json",
+ "clases": {
+  "ProbadorAdmin": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/admin/probador/probador-admin.ts",
+   "nota": "Ruta /admin/probador, menú «Probador». cargarProductos(), mostrar() y refrescar() son privados.",
+   "atributos": [],
+   "operaciones": [
+    "ngOnInit(): void",
+    "elegirProducto(id: number): void",
+    "elegirImagen(imagen: ImagenParaPreparar | null): void",
+    "marcar(evento: MouseEvent): void",
+    "elegirPaso(paso: Paso): void",
+    "guardarPuntos(): void",
+    "guardarMedidas(): void",
+    "pct(valor: number | undefined): string"
+   ]
+  },
+  "Probador": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/tienda/probador/probador.ts",
+   "nota": "Ruta /tienda/producto/:id/probador (sesionGuard + rolGuard('CLIENTE')), WEB. La pose (MediaPipe) y el dibujo a escala corren aca; cargar(), cargarMisPruebas(), imagenDe() y superponer() son privados.",
+   "atributos": [],
+   "operaciones": [
+    "ngOnInit(): void",
+    "guardarMedidas(): void",
+    "elegirTalla(tallaId: number): void",
+    "cambiarPrenda(prenda: PrendaDelProbador | null): void",
+    "elegirFoto(evento: Event): void",
+    "detectarPose(): Promise<void>",
+    "marcarHombro(evento: MouseEvent): void",
+    "dibujar(): Promise<void>",
+    "guardarPrueba(): void",
+    "generarFoto(): void",
+    "borrar(s: SesionProbador): void",
+    "generadaPor(s: SesionProbador): string"
+   ]
+  },
+  "Datos": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/admin/datos/datos.ts",
+   "nota": "Ruta /admin/datos, menú «Datos y copias». guardar(d) (descarga el Blob), mostrar() y mensajeDeBlob() son privados.",
+   "atributos": [],
+   "operaciones": [
+    "ngOnInit(): void",
+    "cargar(): void",
+    "textoIntervalo(horas: number | null): string",
+    "totalFilas(filas: Record<string, number>): number",
+    "exportar(formato: 'xlsx' | 'zip'): void",
+    "copiaManual(): void",
+    "copiaAutomatica(): void",
+    "descargar(copia: Copia): void",
+    "elegirArchivo(evento: Event): void",
+    "prepararRestauracion(copia: Copia): void",
+    "cancelarRestauracion(): void",
+    "restaurar(): void"
+   ]
+  },
+  "Roles": {
+   "tipo": "interfaz",
+   "origen": "frontend-web/src/app/features/admin/roles/roles.ts",
+   "nota": "Ruta /admin/roles, menú «Roles y permisos» (solo con roles.gestionar). cargar() y mostrar() son privados.",
+   "atributos": [],
+   "operaciones": [
+    "ngOnInit(): void",
+    "nuevo(): void",
+    "editar(rol: RolEmpresa): void",
+    "cambiarBase(base: RolBase): void",
+    "alternar(codigo: string, marcado: boolean): void",
+    "guardar(): void",
+    "cambiarEstado(rol: RolEmpresa, activo: boolean, control?: { checked: boolean }): void",
+    "rolesPara(persona: Persona): RolEmpresa[]",
+    "asignar(persona: Persona, rolId: number | null, control?: { value: unknown }): void"
+   ]
+  },
+  "ProbadorService": {
+   "tipo": "control",
+   "origen": "frontend-web/src/app/core/services/probador.service.ts",
+   "atributos": [
+    "admin: string",
+    "vestidor: string"
+   ],
+   "operaciones": [
+    "productos(): Observable<ProductoDelProbador[]>",
+    "preparacion(productoId: number): Observable<PrendaParaPreparar>",
+    "guardarPuntos(imagenId: number, puntos: PuntosDePrenda): Observable<PuntosDePrenda>",
+    "guardarMedidas(productoId: number, tallas: MedidaDeTalla[]): Observable<PrendaParaPreparar>",
+    "prueba(productoId: number): Observable<PruebaDeProducto>",
+    "guardarMisMedidas(medidas: MedidasDelCliente): Observable<unknown>",
+    "registrar(varianteId: number, metodo: 'POSE' | 'MANUAL'): Observable<SesionProbador>",
+    "misPruebas(): Observable<SesionProbador[]>",
+    "borrar(sesionId: number): Observable<void>",
+    "generarFoto(sesionId: number, composicion: Blob): Observable<SesionProbador>"
+   ]
+  },
+  "DatosService": {
+   "tipo": "control",
+   "origen": "frontend-web/src/app/core/services/datos.service.ts",
+   "atributos": [
+    "api: string"
+   ],
+   "operaciones": [
+    "exportar(formato: 'xlsx' | 'zip'): Observable<Descarga>",
+    "historial(): Observable<HistorialDeCopias>",
+    "copiaManual(): Observable<Descarga>",
+    "descargarCopia(id: number): Observable<Descarga>",
+    "copiaAutomatica(): Observable<{ creada: boolean; motivo: string | null; borradas: number }>",
+    "restaurarArchivo(archivo: File): Observable<Restaurado>",
+    "restaurarCopia(id: number): Observable<Restaurado>"
+   ]
+  },
+  "RolesService": {
+   "tipo": "control",
+   "origen": "frontend-web/src/app/core/services/roles.service.ts",
+   "atributos": [
+    "base: string"
+   ],
+   "operaciones": [
+    "permisos(): Observable<PermisoDelCatalogo[]>",
+    "listar(): Observable<RolEmpresa[]>",
+    "crear(datos: GuardarRol): Observable<RolEmpresa>",
+    "editar(id: number, datos: Omit<GuardarRol, 'rol_base'>): Observable<RolEmpresa>",
+    "estado(id: number, activo: boolean): Observable<RolEmpresa>",
+    "personal(): Observable<Persona[]>",
+    "asignar(usuarioId: number, rolId: number | null): Observable<Persona>"
+   ]
+  },
+  "probador_service": {
+   "tipo": "control",
+   "origen": "backend/app/modules/vestidor_virtual/probador_service.py",
+   "nota": "Modulo de funciones. Rutas en vestidor_virtual/probador_router.py: admin_router /catalogo/probador (ADMINISTRADOR; GET /productos, GET /productos/{id}, PUT /imagenes/{id}/puntos, PUT /productos/{id}/medidas) y cliente_router /vestidor (CLIENTE; GET /productos/{id}/prueba, POST y GET /sesiones, DELETE /sesiones/{id}, POST /sesiones/{id}/foto con requiere_funcion('foto_ia') y requiere_cupo('fotos_ia')). prueba() tambien llama a vestidor_virtual/service.py estado(db) para saber si ofrecer la foto.",
+   "atributos": [
+    "SEPARACION_MINIMA_HOMBROS: float = 0.10",
+    "DESNIVEL_MAXIMO_HOMBROS: float = 0.15",
+    "LARGO_MINIMO: float = 0.10"
+   ],
+   "operaciones": [
+    "productos(db): list[ProductoDelProbador]",
+    "preparacion(db, producto_id): PrendaParaPreparar",
+    "validar_puntos(puntos: PuntosDePrenda): None",
+    "guardar_puntos(db, imagen_id, puntos): PuntosDePrenda",
+    "guardar_medidas(db, producto_id, tallas: list[MedidaDeTalla]): PrendaParaPreparar",
+    "prueba(db, producto_id, usuario_id): PruebaDeProducto",
+    "registrar_sesion(db, usuario_id, variante_id, metodo): SesionSalida",
+    "mis_sesiones(db, usuario_id): list[SesionSalida]",
+    "borrar_sesion(db, usuario_id, sesion_id): None",
+    "_sesion_propia(db, usuario_id, sesion_id): SesionVestidorVirtual",
+    "_guardar_foto(contenido: bytes): str",
+    "generar_foto(db, usuario_id, sesion_id, composicion: bytes, tipo_mime: str | None): SesionSalida",
+    "_producto_o_404(db, producto_id)",
+    "_cliente_o_404(db, usuario_id): int"
+   ]
+  },
+  "medidas_service": {
+   "tipo": "control",
+   "origen": "backend/app/modules/medidas/service.py",
+   "nota": "El ajuste por talla y la talla recomendada (clasificacion de medidas/tallaje.py: A_TU_MEDIDA, HOLGADA, ...). Las medidas del cliente se guardan por PUT /clientes/me/medidas (medidas/router.py guardar_mis_medidas -> repository.guardar_medidas).",
+   "atributos": [],
+   "operaciones": [
+    "ajuste_de_producto(db, producto_id, usuario_id): AjusteDeProducto",
+    "_sin_ajuste(producto_id, hay_medidas, hay_tabla): AjusteDeProducto"
+   ]
+  },
+  "verificador": {
+   "tipo": "control",
+   "origen": "backend/app/modules/plataforma/verificador.py",
+   "nota": "CU-05. Lo piden las dependencias requiere_funcion / requiere_cupo de app/core/dependencies.py. Rechaza con RechazoDelPlan (403 plan_limit) o SinSuscripcionVigente.",
+   "atributos": [
+    "FUNCIONES: dict[str, str]",
+    "CUPOS: dict[str, tuple[str, str]]"
+   ],
+   "operaciones": [
+    "suscripcion_vigente(db): Suscripcion | None",
+    "plan_vigente(db): Plan",
+    "incluye(db, funcion): bool",
+    "verificar_funcion(db, funcion): None",
+    "verificar_cupo(db, cupo): None",
+    "uso_del_mes(db, cupo): int",
+    "consumir_cupo(db, cupo): int"
+   ]
+  },
+  "probador_ia": {
+   "tipo": "control",
+   "origen": "backend/app/integrations/probador_ia/__init__.py",
+   "nota": "Integracion con el proveedor (ProbadorGemini, ProbadorSimulado con Pillow, ProbadorNoDisponible). Si Gemini falla devuelve la vista simulada con generada_por = 'simulado (fallo gemini)'; ProbadorNoConfigurado -> 503.",
+   "atributos": [],
+   "operaciones": [
+    "obtener_proveedor(): ProveedorProbador",
+    "esta_disponible(): bool",
+    "probar(solicitud: SolicitudDeProbado): ResultadoDeProbado"
+   ]
+  },
+  "exportacion": {
+   "tipo": "control",
+   "origen": "backend/app/modules/datos/exportacion.py",
+   "nota": "Rutas en datos/router.py: GET /exportacion/datos.xlsx y GET /exportacion/datos.zip, con requiere_roles('ADMINISTRADOR') y requiere_funcion('exportar_datos'). Del personal nunca sale el hash de la contrasena.",
+   "atributos": [
+    "_LARGO_HOJA: int = 31"
+   ],
+   "operaciones": [
+    "_personal(db, empresa_id): tuple[list[str], list[list]]",
+    "_hojas(db, empresa_id)",
+    "a_excel(db, empresa_id): bytes",
+    "_texto(valor): str",
+    "a_zip_csv(db, empresa_id): bytes"
+   ]
+  },
+  "tablas": {
+   "tipo": "control",
+   "origen": "backend/app/modules/datos/tablas.py",
+   "nota": "Acceso generico a las tablas de empresa (Base.metadata.sorted_tables, en orden de dependencias). FUERA_DE_LA_EXPORTACION = respaldo, suscripcion_push, modelo_analitica.",
+   "atributos": [
+    "FUERA_DE_LA_COPIA: frozenset[str]",
+    "FUERA_DE_LA_EXPORTACION: frozenset[str]"
+   ],
+   "operaciones": [
+    "tablas_de_empresa(excluir: frozenset[str]): list[Table]",
+    "filas_de(db, tabla: Table): list[dict]",
+    "sin_formula(valor)",
+    "a_json(valor)",
+    "de_json(columna, valor)",
+    "a_celda(valor)"
+   ]
+  },
+  "respaldos": {
+   "tipo": "control",
+   "origen": "backend/app/modules/datos/respaldos.py",
+   "nota": "Rutas en datos/router.py (ADMINISTRADOR): GET /respaldos, POST /respaldos/manual, GET /respaldos/{id}/descarga, POST /respaldos/restaurar (archivo, tope 50 MB), POST /respaldos/{id}/restaurar y POST /mantenimiento/respaldos. Firma HMAC-SHA256; automatica cifrada con Fernet.",
+   "atributos": [
+    "FORMATO: str = 'violet-boutique/respaldo'",
+    "VERSION: int = 1",
+    "INTERVALO_AUTOMATICO_POR_OMISION: int = 24",
+    "RETENCION_POR_OMISION: int = 7"
+   ],
+   "operaciones": [
+    "historial(db): dict",
+    "proxima_manual(db): datetime | None",
+    "_ajustes(db): tuple[int | None, int, str]",
+    "manual(db, empresa_id, usuario_id): tuple[bytes, str]",
+    "armar(db, empresa_id): tuple[bytes, dict[str, int], datetime]",
+    "_instantanea(db): None",
+    "_firmar(cuerpo: dict): str",
+    "automatica(db, empresa_id): dict",
+    "contenido_de(db, respaldo_id): tuple[bytes, Respaldo]",
+    "_leer(archivo: bytes, empresa_id): dict",
+    "restaurar(db, archivo, *, nombre, empresa_id, usuario_id, origen, respaldo_id): Restauracion",
+    "restaurar_copia_guardada(db, respaldo_id, *, empresa_id, usuario_id): Restauracion",
+    "_preferencias(db, empresa_id): list[dict]",
+    "_reponer_preferencias(db, preferencias, empresa_id): None"
+   ]
+  },
+  "tareas": {
+   "tipo": "control",
+   "origen": "backend/app/core/tareas.py",
+   "nota": "Las tareas automaticas del Sistema: una tarea asyncio dentro del backend que despierta cada TAREAS_INTERVALO_MINUTOS y, por cada empresa activa, corre _copia -> respaldos.automatica.",
+   "atributos": [],
+   "operaciones": [
+    "correr_vuelta(fabrica_de_sesiones, minimo_entre_vueltas): Vuelta",
+    "_copia(db, empresa_id): None",
+    "_empresas_activas(db): list[int]"
+   ]
+  },
+  "roles_service": {
+   "tipo": "control",
+   "origen": "backend/app/modules/roles/service.py",
+   "nota": "Modulo de funciones. Rutas en roles/router.py (ADMINISTRADOR sin rol propio): GET /roles/permisos, GET /roles/personal, PUT /roles/asignacion, GET y POST /roles, PATCH /roles/{id}, PATCH /roles/{id}/estado.",
+   "atributos": [],
+   "operaciones": [
+    "catalogo_de_permisos(db): list[PermisoOut]",
+    "_validar_permisos(db, rol_base, codigos): list[str]",
+    "listar(db): list[RolOut]",
+    "crear(db, datos: RolIn): RolOut",
+    "editar(db, rol_id, datos: RolEditarIn): RolOut",
+    "cambiar_estado(db, rol_id, activo): RolOut",
+    "personal(db, empresa_id): list[PersonaOut]",
+    "asignar(db, empresa_id, quien_id, datos: AsignacionIn): PersonaOut",
+    "_personas_por_rol(db): dict[int, int]",
+    "_nombre_libre(db, nombre, excepto): None",
+    "_poner_permisos(rol, codigos): None"
+   ]
+  },
+  "permisos": {
+   "tipo": "control",
+   "origen": "backend/app/core/permisos.py",
+   "nota": "El catalogo de permisos es del sistema (dataclass Permiso: codigo, nombre, area, roles_base, rutas, funcion, asignable). get_usuario_actual (core/dependencies.py) corta con 403 la ruta que el rol propio no cubre.",
+   "atributos": [
+    "ROLES_BASE: tuple[str, ...]",
+    "CATALOGO: tuple[Permiso, ...]",
+    "POR_CODIGO: dict[str, Permiso]",
+    "RUTAS_LIBRES: tuple[str, ...]"
+   ],
+   "operaciones": [
+    "permiso_de_ruta(ruta): str | None",
+    "es_libre(ruta): bool",
+    "asignables_para(rol_base): list[Permiso]",
+    "es_consulta_de_apoyo(metodo, ruta): bool"
+   ]
+  },
+  "BitacoraMiddleware": {
+   "tipo": "control",
+   "origen": "backend/app/modules/bitacora/middleware.py",
+   "nota": "Anota toda peticion POST/PUT/PATCH/DELETE (y las exportaciones GET). _anotar llama a bitacora/service.py registrar(db, accion, metodo, ruta, estado_http, exito, usuario_id, actor, rol, entidad, entidad_id, ip, agente, detalle), que inserta con bitacora/repository.py agregar(db, **campos). Los GET no se anotan.",
+   "atributos": [],
+   "operaciones": [
+    "dispatch(peticion: Request, siguiente): Response",
+    "_anotar(peticion: Request, respuesta): None"
+   ]
+  },
+  "Producto": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/catalogo/models.py",
+   "tabla": "producto",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "codigo: VARCHAR(30)",
+    "nombre: VARCHAR(120)",
+    "descripcion: VARCHAR(500)",
+    "categoria_id: INTEGER (FK categoria)",
+    "proveedor_id: BIGINT (FK proveedor)",
+    "temporada_id: INTEGER (FK temporada)",
+    "coleccion_id: INTEGER (FK coleccion)",
+    "precio_base: NUMERIC(10,2)",
+    "activo: BOOLEAN"
+   ],
+   "operaciones": [
+    "producto(db, producto_id): Producto | None  [vestidor_virtual/probador_repository.py]",
+    "productos_con_vestidor(db): list[Row]  [vestidor_virtual/probador_repository.py]"
+   ]
+  },
+  "ImagenProducto": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/catalogo/models.py",
+   "tabla": "imagen_producto",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "producto_id: BIGINT (FK producto, ON DELETE CASCADE)",
+    "variante_id: BIGINT (FK variante_producto, ON DELETE CASCADE)",
+    "ruta: VARCHAR(255)",
+    "es_principal: BOOLEAN",
+    "es_transparente: BOOLEAN",
+    "es_silueta_generada: BOOLEAN",
+    "orden: SMALLINT"
+   ],
+   "operaciones": [
+    "imagen(db, imagen_id): ImagenProducto | None  [vestidor_virtual/probador_repository.py]",
+    "imagenes_de_vestidor(db, producto_id, solo_activas): list[Row]  [vestidor_virtual/probador_repository.py]",
+    "prenda_de_variante(db, variante_id): Row | None  [vestidor_virtual/repository.py]"
+   ]
+  },
+  "VarianteProducto": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/catalogo/models.py",
+   "tabla": "variante_producto",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "producto_id: BIGINT (FK producto)",
+    "talla_id: INTEGER (FK talla)",
+    "color_id: INTEGER (FK color)",
+    "sku: VARCHAR(40)",
+    "precio: NUMERIC(10,2)",
+    "activa: BOOLEAN"
+   ],
+   "operaciones": [
+    "variante_preparada(db, variante_id): Row | None  [vestidor_virtual/probador_repository.py]"
+   ]
+  },
+  "Talla": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/catalogo/models.py",
+   "tabla": "talla",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ.",
+   "atributos": [
+    "id: INTEGER (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "tipo_prenda: VARCHAR(30)",
+    "codigo: VARCHAR(10)",
+    "orden: SMALLINT",
+    "activa: BOOLEAN"
+   ],
+   "operaciones": [
+    "tallas_del_producto(db, producto_id): list[Row]  [vestidor_virtual/probador_repository.py, JOIN medida_talla]"
+   ]
+  },
+  "PuntoPrenda": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/vestidor_virtual/models.py",
+   "tabla": "punto_prenda",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ. CHECK: coordenadas entre 0 y 1, hombro_izq_x < hombro_der_x, ruedo debajo de los hombros. Migracion 0041_cu36_probador.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "imagen_id: BIGINT (FK imagen_producto, UNIQUE, ON DELETE CASCADE)",
+    "hombro_izq_x: NUMERIC(5,4)",
+    "hombro_izq_y: NUMERIC(5,4)",
+    "hombro_der_x: NUMERIC(5,4)",
+    "hombro_der_y: NUMERIC(5,4)",
+    "ruedo_x: NUMERIC(5,4)",
+    "ruedo_y: NUMERIC(5,4)"
+   ],
+   "operaciones": [
+    "puntos_de(db, imagen_id): PuntoPrenda | None  [vestidor_virtual/probador_repository.py]",
+    "imagenes_de_vestidor(db, producto_id, solo_activas): list[Row]  [vestidor_virtual/probador_repository.py, OUTER JOIN punto_prenda]"
+   ]
+  },
+  "MedidaTalla": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/medidas/models.py",
+   "tabla": "medida_talla",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ. UNIQUE (producto_id, talla_id); busto, cintura y cadera entre 30 y 250, largo entre 20 y 200.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "producto_id: BIGINT (FK producto, ON DELETE CASCADE)",
+    "talla_id: INTEGER (FK talla)",
+    "busto_cm: NUMERIC(5,1)",
+    "cintura_cm: NUMERIC(5,1)",
+    "cadera_cm: NUMERIC(5,1)",
+    "largo_cm: NUMERIC(5,1)"
+   ],
+   "operaciones": [
+    "medida_talla(db, producto_id, talla_id): MedidaTalla | None  [vestidor_virtual/probador_repository.py]",
+    "tallas_del_producto(db, producto_id): list[Row]  [vestidor_virtual/probador_repository.py]",
+    "tabla_de_producto(db, producto_id): list[tuple]  [medidas/repository.py]"
+   ]
+  },
+  "MedidaCliente": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/medidas/models.py",
+   "tabla": "medida_cliente",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ. No es tabla de empresa (sin empresa_id): el cliente es de la plataforma (RN-13).",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "cliente_id: BIGINT (FK cliente, UNIQUE, ON DELETE CASCADE)",
+    "busto_cm: NUMERIC(5,1)",
+    "cintura_cm: NUMERIC(5,1)",
+    "cadera_cm: NUMERIC(5,1)",
+    "altura_cm: NUMERIC(5,1)"
+   ],
+   "operaciones": [
+    "medidas_de(db, cliente_id): MedidaCliente | None  [medidas/repository.py]",
+    "guardar_medidas(db, cliente_id, busto_cm, cintura_cm, cadera_cm, altura_cm): MedidaCliente  [medidas/repository.py]",
+    "cliente_de_usuario(db, usuario_id): Cliente | None  [medidas/repository.py]"
+   ]
+  },
+  "SesionVestidorVirtual": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/vestidor_virtual/models.py",
+   "tabla": "sesion_probador",
+   "nota": "CHECK metodo IN ('POSE', 'MANUAL') y (foto_ruta IS NULL) = (foto_generada_por IS NULL).",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "cliente_id: BIGINT (FK cliente, ON DELETE CASCADE)",
+    "variante_id: BIGINT (FK variante_producto, ON DELETE CASCADE)",
+    "metodo: VARCHAR(10)",
+    "ajuste: VARCHAR(15)",
+    "talla_recomendada: VARCHAR(10)",
+    "foto_ruta: VARCHAR(255)",
+    "foto_generada_por: VARCHAR(60)",
+    "creado_en: TIMESTAMPTZ"
+   ],
+   "operaciones": [
+    "sesion(db, sesion_id): SesionVestidorVirtual | None  [vestidor_virtual/probador_repository.py]",
+    "sesiones_de(db, cliente_id, limite): list[Row]  [vestidor_virtual/probador_repository.py]",
+    "una_sesion_con_detalle(db, sesion_id): Row | None  [vestidor_virtual/probador_repository.py]"
+   ]
+  },
+  "ConsumoCupo": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/plataforma/models.py",
+   "tabla": "consumo_cupo",
+   "nota": "PK compuesta (empresa_id, recurso, periodo); periodo = primer dia del mes. CHECK usados >= 0.",
+   "atributos": [
+    "empresa_id: BIGINT (PK, FK empresa)",
+    "recurso: VARCHAR(20) (PK)",
+    "periodo: DATE (PK)",
+    "usados: INTEGER"
+   ],
+   "operaciones": [
+    "uso_del_mes(db, cupo): int  [plataforma/verificador.py]",
+    "consumir_cupo(db, cupo): int  [plataforma/verificador.py, INSERT ... ON CONFLICT DO UPDATE]"
+   ]
+  },
+  "Plan": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/plataforma/models.py",
+   "tabla": "plan",
+   "nota": "Funciones usadas aca (en funciones JSONB): foto_ia, exportar_datos, respaldo_intervalo_horas, respaldo_retencion y las de los permisos con funcion (RN-22).",
+   "atributos": [
+    "id: SMALLINT (PK)",
+    "codigo: VARCHAR(20) (UNIQUE)",
+    "nombre: VARCHAR(40) (UNIQUE)",
+    "precio_mensual: NUMERIC(10,2)",
+    "duracion_dias: SMALLINT",
+    "max_sucursales: INTEGER",
+    "max_empleados: INTEGER",
+    "cupo_reportes_ia: INTEGER",
+    "cupo_fotos_ia: INTEGER",
+    "funciones: JSONB",
+    "activo: BOOLEAN"
+   ],
+   "operaciones": [
+    "plan_vigente(db): Plan  [plataforma/verificador.py, por la suscripcion vigente]"
+   ]
+  },
+  "Respaldo": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/datos/models.py",
+   "tabla": "respaldo",
+   "nota": "Sin repository: las consultas estan en datos/respaldos.py. CHECK tipo IN ('MANUAL', 'AUTOMATICA') y (tipo = 'AUTOMATICA') = (contenido IS NOT NULL): la manual no se guarda (RNF17).",
+   "atributos": [
+    "id: INTEGER (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "tipo: VARCHAR(10)",
+    "archivo: VARCHAR(120)",
+    "tamano_bytes: INTEGER",
+    "sha256: VARCHAR(64)",
+    "filas: JSONB",
+    "contenido: BYTEA",
+    "creado_por: BIGINT (FK usuario, ON DELETE SET NULL)",
+    "creado_en: TIMESTAMPTZ"
+   ],
+   "operaciones": [
+    "_ultima(db, tipo): datetime | None  [datos/respaldos.py]",
+    "manual(db, empresa_id, usuario_id): INSERT respaldo  [datos/respaldos.py]",
+    "automatica(db, empresa_id): INSERT respaldo y DELETE de las sobrantes  [datos/respaldos.py]",
+    "contenido_de(db, respaldo_id): tuple[bytes, Respaldo]  [datos/respaldos.py]",
+    "historial(db): SELECT respaldo ORDER BY creado_en DESC  [datos/respaldos.py]"
+   ]
+  },
+  "Restauracion": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/datos/models.py",
+   "tabla": "restauracion",
+   "nota": "Sin repository: las consultas estan en datos/respaldos.py. CHECK origen IN ('ARCHIVO', 'COPIA').",
+   "atributos": [
+    "id: INTEGER (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "origen: VARCHAR(10)",
+    "archivo: VARCHAR(120)",
+    "sha256: VARCHAR(64)",
+    "datos_del: TIMESTAMPTZ",
+    "filas: JSONB",
+    "respaldo_id: INTEGER (FK respaldo, ON DELETE SET NULL)",
+    "restaurado_por: BIGINT (FK usuario, ON DELETE SET NULL)",
+    "creado_en: TIMESTAMPTZ"
+   ],
+   "operaciones": [
+    "restaurar(db, archivo, *, nombre, empresa_id, usuario_id, origen, respaldo_id): INSERT restauracion  [datos/respaldos.py]",
+    "historial(db): SELECT restauracion ORDER BY creado_en DESC  [datos/respaldos.py]"
+   ]
+  },
+  "RolEmpresa": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/roles/models.py",
+   "tabla": "rol_empresa",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ. Sin repository: las consultas estan en roles/service.py. UNIQUE (empresa_id, nombre); CHECK rol_base IN ('ADMINISTRADOR', 'ENCARGADO', 'CAJERO').",
+   "atributos": [
+    "id: INTEGER (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "nombre: VARCHAR(40)",
+    "descripcion: VARCHAR(150)",
+    "rol_base: VARCHAR(15)",
+    "activo: BOOLEAN"
+   ],
+   "operaciones": [
+    "listar(db): SELECT rol_empresa ORDER BY rol_base, nombre  [roles/service.py]",
+    "_rol(db, rol_id): RolEmpresa  [roles/service.py]",
+    "_nombre_libre(db, nombre, excepto): None  [roles/service.py]"
+   ]
+  },
+  "RolEmpresaPermiso": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/roles/models.py",
+   "tabla": "rol_empresa_permiso",
+   "nota": "UNIQUE (rol_empresa_id, permiso). permiso guarda el codigo del catalogo de app/core/permisos.py (no hay tabla de permisos).",
+   "atributos": [
+    "id: INTEGER (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "rol_empresa_id: INTEGER (FK rol_empresa, ON DELETE CASCADE)",
+    "permiso: VARCHAR(60)"
+   ],
+   "operaciones": [
+    "_poner_permisos(rol, codigos): None  [roles/service.py, cascade all, delete-orphan]"
+   ]
+  },
+  "Usuario": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/seguridad/models.py",
+   "tabla": "usuario",
+   "nota": "Omitidas las heredadas de Auditoria: creado_en TIMESTAMPTZ, actualizado_en TIMESTAMPTZ. usuario no esta bajo RLS: la empresa se filtra a mano.",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "correo: VARCHAR(120)",
+    "hash_contrasena: VARCHAR(255)",
+    "nombres: VARCHAR(80)",
+    "apellidos: VARCHAR(80)",
+    "rol_id: SMALLINT (FK rol)",
+    "activo: BOOLEAN",
+    "empresa_id: BIGINT (FK empresa)",
+    "rol_empresa_id: INTEGER (FK rol_empresa, ON DELETE SET NULL)"
+   ],
+   "operaciones": [
+    "_consulta_personal(empresa_id): Select  [roles/service.py, JOIN rol, empleado, sucursal, rol_empresa]",
+    "_personas_por_rol(db): dict[int, int]  [roles/service.py]",
+    "asignar(db, empresa_id, quien_id, datos): UPDATE usuario.rol_empresa_id  [roles/service.py]",
+    "_personal(db, empresa_id): tuple[list[str], list[list]]  [datos/exportacion.py]",
+    "armar(db, empresa_id): SELECT id, rol_empresa_id  [datos/respaldos.py]",
+    "historial(db): SELECT id, nombres, apellidos  [datos/respaldos.py]"
+   ]
+  },
+  "Rol": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/seguridad/models.py",
+   "tabla": "rol",
+   "atributos": [
+    "id: SMALLINT (PK)",
+    "nombre: VARCHAR(30) (UNIQUE)",
+    "descripcion: VARCHAR(150)"
+   ],
+   "operaciones": [
+    "_consulta_personal(empresa_id): Select  [roles/service.py, JOIN rol]",
+    "_personal(db, empresa_id)  [datos/exportacion.py, JOIN rol]"
+   ]
+  },
+  "AsientoBitacora": {
+   "tipo": "entidad",
+   "origen": "backend/app/modules/bitacora/models.py",
+   "tabla": "bitacora",
+   "atributos": [
+    "id: BIGINT (PK)",
+    "empresa_id: BIGINT (FK empresa)",
+    "ocurrido_en: TIMESTAMPTZ",
+    "usuario_id: BIGINT (FK usuario, ON DELETE SET NULL)",
+    "actor: VARCHAR(160)",
+    "rol: VARCHAR(40)",
+    "accion: VARCHAR(40)",
+    "entidad: VARCHAR(60)",
+    "entidad_id: VARCHAR(60)",
+    "metodo: VARCHAR(10)",
+    "ruta: VARCHAR(300)",
+    "estado_http: INTEGER",
+    "exito: BOOLEAN",
+    "ip: VARCHAR(60)",
+    "agente: VARCHAR(200)",
+    "detalle: JSONB"
+   ],
+   "operaciones": [
+    "agregar(db, **campos): AsientoBitacora",
+    "contar(db, **filtros): int",
+    "listar(db, limite, desplazamiento, **filtros): list[tuple]",
+    "acciones(db): list[str]",
+    "roles(db): list[str]",
+    "entidades(db): list[str]",
+    "ultimo(db): AsientoBitacora | None"
+   ]
+  }
+ },
+ "cus": {
+  "CU-36": {
+   "actores": [
+    "Administrador"
+   ],
+   "clases": [
+    "ProbadorAdmin",
+    "ProbadorService",
+    "probador_service",
+    "BitacoraMiddleware",
+    "AsientoBitacora",
+    "Producto",
+    "ImagenProducto",
+    "PuntoPrenda",
+    "VarianteProducto",
+    "Talla",
+    "MedidaTalla"
+   ],
+   "operaciones_en_cu": {
+    "ProbadorService": [
+     "productos()",
+     "preparacion(productoId)",
+     "guardarPuntos(imagenId, puntos)",
+     "guardarMedidas(productoId, tallas)"
+    ],
+    "probador_service": [
+     "productos(db)",
+     "preparacion(db, producto_id)",
+     "validar_puntos(puntos)",
+     "guardar_puntos(db, imagen_id, puntos)",
+     "guardar_medidas(db, producto_id, tallas)",
+     "_producto_o_404(db, producto_id)"
+    ],
+    "ImagenProducto": [
+     "imagen(db, imagen_id)",
+     "imagenes_de_vestidor(db, producto_id, solo_activas)"
+    ]
+   },
+   "nota": "Solo se calibran las imagenes de vestidor (es_transparente y con variante_id); las sube el CU-11 del primer parcial (galeria del producto). Las rutas van bajo /catalogo para que el permiso catalogo.gestionar de un rol propio (CU-41) las cubra. VarianteProducto entra por imagenes_de_vestidor (JOIN variante -> talla y color).",
+   "relaciones": [
+    [
+     "Administrador",
+     "ProbadorAdmin",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "ProbadorAdmin",
+     "ProbadorService",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "ProbadorService",
+     "probador_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "probador_service",
+     "Producto",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "probador_service",
+     "ImagenProducto",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "probador_service",
+     "VarianteProducto",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "probador_service",
+     "Talla",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "probador_service",
+     "PuntoPrenda",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "probador_service",
+     "MedidaTalla",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "probador_service",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "BitacoraMiddleware",
+     "AsientoBitacora",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "Producto",
+     "ImagenProducto",
+     "TIENE",
+     "1",
+     "0..*"
+    ],
+    [
+     "VarianteProducto",
+     "ImagenProducto",
+     "SE_MUESTRA_EN",
+     "0..1",
+     "0..*"
+    ],
+    [
+     "ImagenProducto",
+     "PuntoPrenda",
+     "SE_CALIBRA_CON",
+     "1",
+     "0..1"
+    ],
+    [
+     "Producto",
+     "VarianteProducto",
+     "TIENE",
+     "1",
+     "0..*"
+    ],
+    [
+     "Talla",
+     "VarianteProducto",
+     "CLASIFICA",
+     "1",
+     "0..*"
+    ],
+    [
+     "Producto",
+     "MedidaTalla",
+     "SE_MIDE_EN",
+     "1",
+     "0..*"
+    ],
+    [
+     "Talla",
+     "MedidaTalla",
+     "SE_MIDE_EN",
+     "1",
+     "0..*"
+    ]
+   ]
+  },
+  "CU-37": {
+   "actores": [
+    "Cliente"
+   ],
+   "clases": [
+    "Probador",
+    "ProbadorService",
+    "probador_service",
+    "medidas_service",
+    "BitacoraMiddleware",
+    "AsientoBitacora",
+    "SesionVestidorVirtual",
+    "PuntoPrenda",
+    "ImagenProducto",
+    "VarianteProducto",
+    "MedidaTalla",
+    "MedidaCliente"
+   ],
+   "operaciones_en_cu": {
+    "Probador": [
+     "ngOnInit()",
+     "guardarMedidas()",
+     "elegirTalla(tallaId)",
+     "cambiarPrenda(prenda)",
+     "elegirFoto(evento)",
+     "detectarPose()",
+     "marcarHombro(evento)",
+     "dibujar()",
+     "guardarPrueba()",
+     "borrar(s)"
+    ],
+    "ProbadorService": [
+     "prueba(productoId)",
+     "guardarMisMedidas(medidas)",
+     "registrar(varianteId, metodo)",
+     "misPruebas()",
+     "borrar(sesionId)"
+    ],
+    "probador_service": [
+     "prueba(db, producto_id, usuario_id)",
+     "registrar_sesion(db, usuario_id, variante_id, metodo)",
+     "mis_sesiones(db, usuario_id)",
+     "borrar_sesion(db, usuario_id, sesion_id)",
+     "_sesion_propia(db, usuario_id, sesion_id)",
+     "_cliente_o_404(db, usuario_id)"
+    ],
+    "ImagenProducto": [
+     "imagenes_de_vestidor(db, producto_id, solo_activas)"
+    ]
+   },
+   "nota": "WEB, no movil (el 2.5 dice Movil). La pose (MediaPipe Pose) y el dibujo a escala corren en el navegador: px_por_cm = hombros_px / (busto_cliente_cm x 0.42), ancho = busto_talla_cm x 0.42 x px_por_cm, largo = largo_talla_cm x px_por_cm. El ajuste y la talla recomendada los recalcula el servidor (medidas_service). Omitidos por el tope: Producto, Cliente (medidas/repository.py cliente_de_usuario) y medidas/router.py guardar_mis_medidas (PUT /clientes/me/medidas).",
+   "relaciones": [
+    [
+     "Cliente",
+     "Probador",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Probador",
+     "ProbadorService",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "ProbadorService",
+     "probador_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "probador_service",
+     "medidas_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "probador_service",
+     "ImagenProducto",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "probador_service",
+     "PuntoPrenda",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "probador_service",
+     "VarianteProducto",
+     "CONSULTA",
+     "1",
+     "0..1"
+    ],
+    [
+     "probador_service",
+     "MedidaCliente",
+     "CONSULTA",
+     "1",
+     "0..1"
+    ],
+    [
+     "medidas_service",
+     "MedidaTalla",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "medidas_service",
+     "MedidaCliente",
+     "CONSULTA",
+     "1",
+     "0..1"
+    ],
+    [
+     "probador_service",
+     "SesionVestidorVirtual",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "probador_service",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "BitacoraMiddleware",
+     "AsientoBitacora",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "VarianteProducto",
+     "ImagenProducto",
+     "SE_MUESTRA_EN",
+     "0..1",
+     "0..*"
+    ],
+    [
+     "ImagenProducto",
+     "PuntoPrenda",
+     "SE_CALIBRA_CON",
+     "1",
+     "0..1"
+    ],
+    [
+     "VarianteProducto",
+     "SesionVestidorVirtual",
+     "SE_PRUEBA_EN",
+     "1",
+     "0..*"
+    ]
+   ]
+  },
+  "CU-38": {
+   "actores": [
+    "Cliente"
+   ],
+   "clases": [
+    "Probador",
+    "ProbadorService",
+    "probador_service",
+    "verificador",
+    "probador_ia",
+    "BitacoraMiddleware",
+    "AsientoBitacora",
+    "SesionVestidorVirtual",
+    "ImagenProducto",
+    "ConsumoCupo",
+    "Plan"
+   ],
+   "operaciones_en_cu": {
+    "Probador": [
+     "generarFoto()",
+     "generadaPor(s)"
+    ],
+    "ProbadorService": [
+     "registrar(varianteId, metodo)",
+     "generarFoto(sesionId, composicion)"
+    ],
+    "probador_service": [
+     "generar_foto(db, usuario_id, sesion_id, composicion, tipo_mime)",
+     "_sesion_propia(db, usuario_id, sesion_id)",
+     "_guardar_foto(contenido)",
+     "registrar_sesion(db, usuario_id, variante_id, metodo)"
+    ],
+    "verificador": [
+     "plan_vigente(db)",
+     "incluye(db, funcion)",
+     "verificar_funcion(db, funcion)",
+     "verificar_cupo(db, cupo)",
+     "uso_del_mes(db, cupo)",
+     "consumir_cupo(db, cupo)"
+    ],
+    "ImagenProducto": [
+     "prenda_de_variante(db, variante_id)"
+    ]
+   },
+   "nota": "Incluye CU-05: requiere_funcion('foto_ia') y requiere_cupo('fotos_ia') en la ruta; el cupo es de la tienda, no del cliente, y se descuenta con consumir_cupo solo despues de que la foto salio (si falla el descuento, borra el archivo). Una foto por prueba (409). Composicion de hasta 4 MB (TAMANO_MAXIMO_CAPTURA de vestidor_virtual/service.py). La foto se guarda en MEDIA_ROOT/probador con un nombre aleatorio de 128 bits.",
+   "relaciones": [
+    [
+     "Cliente",
+     "Probador",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Probador",
+     "ProbadorService",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "ProbadorService",
+     "probador_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "probador_service",
+     "verificador",
+     "VERIFICA_CON",
+     "1",
+     "1"
+    ],
+    [
+     "probador_service",
+     "probador_ia",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "probador_service",
+     "SesionVestidorVirtual",
+     "ACTUALIZA",
+     "1",
+     "0..1"
+    ],
+    [
+     "probador_service",
+     "ImagenProducto",
+     "CONSULTA",
+     "1",
+     "0..1"
+    ],
+    [
+     "verificador",
+     "Plan",
+     "CONSULTA",
+     "1",
+     "1"
+    ],
+    [
+     "verificador",
+     "ConsumoCupo",
+     "ACTUALIZA",
+     "1",
+     "0..1"
+    ],
+    [
+     "probador_service",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "BitacoraMiddleware",
+     "AsientoBitacora",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ]
+   ]
+  },
+  "CU-39": {
+   "actores": [
+    "Administrador"
+   ],
+   "clases": [
+    "Datos",
+    "DatosService",
+    "exportacion",
+    "tablas",
+    "verificador",
+    "Usuario",
+    "Rol",
+    "Plan"
+   ],
+   "operaciones_en_cu": {
+    "Datos": [
+     "ngOnInit()",
+     "exportar(formato)"
+    ],
+    "DatosService": [
+     "exportar(formato)"
+    ],
+    "verificador": [
+     "plan_vigente(db)",
+     "incluye(db, funcion)",
+     "verificar_funcion(db, funcion)"
+    ],
+    "Usuario": [
+     "_personal(db, empresa_id)"
+    ],
+    "Rol": [
+     "_personal(db, empresa_id)"
+    ]
+   },
+   "nota": "Incluye CU-05 (requiere_funcion('exportar_datos')). Solo lectura: GET /exportacion/datos.xlsx y GET /exportacion/datos.zip. Ojo: el middleware de bitacora solo anota las exportaciones de /reportes/*.pdf|xlsx y /comprobante, asi que esta descarga NO deja asiento; por eso no hay BitacoraMiddleware. Las demas tablas de empresa se leen de forma generica con tablas.filas_de (RLS); al abrir, la pantalla pregunta el plan por MiPlanService.incluye('exportar_datos') (omitido).",
+   "relaciones": [
+    [
+     "Administrador",
+     "Datos",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Datos",
+     "DatosService",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "DatosService",
+     "exportacion",
+     "DESCARGA_DE",
+     "1",
+     "1"
+    ],
+    [
+     "exportacion",
+     "verificador",
+     "VERIFICA_CON",
+     "1",
+     "1"
+    ],
+    [
+     "exportacion",
+     "tablas",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "exportacion",
+     "Usuario",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "exportacion",
+     "Rol",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "verificador",
+     "Plan",
+     "CONSULTA",
+     "1",
+     "1"
+    ],
+    [
+     "Rol",
+     "Usuario",
+     "CLASIFICA",
+     "1",
+     "0..*"
+    ]
+   ]
+  },
+  "CU-40": {
+   "actores": [
+    "Administrador",
+    "Sistema"
+   ],
+   "clases": [
+    "Datos",
+    "DatosService",
+    "respaldos",
+    "tablas",
+    "verificador",
+    "tareas",
+    "BitacoraMiddleware",
+    "AsientoBitacora",
+    "Respaldo",
+    "Restauracion",
+    "Usuario",
+    "Plan"
+   ],
+   "operaciones_en_cu": {
+    "Datos": [
+     "ngOnInit()",
+     "cargar()",
+     "textoIntervalo(horas)",
+     "totalFilas(filas)",
+     "copiaManual()",
+     "copiaAutomatica()",
+     "descargar(copia)",
+     "elegirArchivo(evento)",
+     "prepararRestauracion(copia)",
+     "cancelarRestauracion()",
+     "restaurar()"
+    ],
+    "DatosService": [
+     "historial()",
+     "copiaManual()",
+     "descargarCopia(id)",
+     "copiaAutomatica()",
+     "restaurarArchivo(archivo)",
+     "restaurarCopia(id)"
+    ],
+    "verificador": [
+     "plan_vigente(db)"
+    ],
+    "Usuario": [
+     "armar(db, empresa_id)",
+     "historial(db)"
+    ]
+   },
+   "nota": "Incluye CU-05: el plan limita cada cuanto sale una copia manual (funciones.respaldo_intervalo_horas) y cuantas automaticas se conservan (respaldo_retencion); la restauracion nunca (RN-18). La manual se descarga y solo queda su registro; la automatica se guarda cifrada (Fernet). Restaurar exige escribir RESTAURAR en la pantalla, verifica formato, version, firma HMAC y empresa, y borra/inserta en una transaccion. Todas las tablas de empresa se leen y reponen de forma generica (tablas); omitidas Empresa (slug para el nombre del archivo) y cliente_categoria (preferencias de los clientes).",
+   "relaciones": [
+    [
+     "Administrador",
+     "Datos",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Sistema",
+     "tareas",
+     "DISPARA",
+     "1",
+     "1"
+    ],
+    [
+     "Datos",
+     "DatosService",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "DatosService",
+     "respaldos",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "tareas",
+     "respaldos",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "respaldos",
+     "verificador",
+     "VERIFICA_CON",
+     "1",
+     "1"
+    ],
+    [
+     "respaldos",
+     "tablas",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "respaldos",
+     "Respaldo",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "respaldos",
+     "Restauracion",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "respaldos",
+     "Usuario",
+     "ACTUALIZA",
+     "1",
+     "0..*"
+    ],
+    [
+     "verificador",
+     "Plan",
+     "CONSULTA",
+     "1",
+     "1"
+    ],
+    [
+     "respaldos",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "BitacoraMiddleware",
+     "AsientoBitacora",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "Usuario",
+     "Respaldo",
+     "GENERA",
+     "0..1",
+     "0..*"
+    ],
+    [
+     "Usuario",
+     "Restauracion",
+     "RESTAURA",
+     "0..1",
+     "0..*"
+    ],
+    [
+     "Respaldo",
+     "Restauracion",
+     "SE_RESTAURA_EN",
+     "0..1",
+     "0..*"
+    ],
+    [
+     "Usuario",
+     "AsientoBitacora",
+     "DEJA_RASTRO_EN",
+     "0..1",
+     "0..*"
+    ]
+   ]
+  },
+  "CU-41": {
+   "actores": [
+    "Administrador"
+   ],
+   "clases": [
+    "Roles",
+    "RolesService",
+    "roles_service",
+    "permisos",
+    "verificador",
+    "BitacoraMiddleware",
+    "AsientoBitacora",
+    "RolEmpresa",
+    "RolEmpresaPermiso",
+    "Usuario",
+    "Rol",
+    "Plan"
+   ],
+   "operaciones_en_cu": {
+    "verificador": [
+     "plan_vigente(db)",
+     "incluye(db, funcion)",
+     "verificar_funcion(db, funcion)"
+    ],
+    "Usuario": [
+     "_consulta_personal(empresa_id)",
+     "_personas_por_rol(db)",
+     "asignar(db, empresa_id, quien_id, datos)"
+    ],
+    "Rol": [
+     "_consulta_personal(empresa_id)"
+    ]
+   },
+   "nota": "Incluye CU-05: un permiso con funcion del plan se rechaza con verificar_funcion (403 plan_limit, RN-22). usuarios.gestionar, roles.gestionar y respaldos.gestionar no son asignables. El rol propio se lee en cada peticion (core/dependencies.py get_usuario_actual): vale desde la siguiente. Omitidos por el tope: Empleado y Sucursal (OUTER JOIN de _consulta_personal para mostrar la sucursal).",
+   "relaciones": [
+    [
+     "Administrador",
+     "Roles",
+     "USA",
+     "1",
+     "1"
+    ],
+    [
+     "Roles",
+     "RolesService",
+     "SOLICITA",
+     "1",
+     "1"
+    ],
+    [
+     "RolesService",
+     "roles_service",
+     "LLAMA_A",
+     "1",
+     "1"
+    ],
+    [
+     "roles_service",
+     "permisos",
+     "CONSULTA",
+     "1",
+     "1"
+    ],
+    [
+     "roles_service",
+     "verificador",
+     "VERIFICA_CON",
+     "1",
+     "1"
+    ],
+    [
+     "roles_service",
+     "RolEmpresa",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "roles_service",
+     "RolEmpresaPermiso",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "roles_service",
+     "Usuario",
+     "ACTUALIZA",
+     "1",
+     "0..*"
+    ],
+    [
+     "roles_service",
+     "Rol",
+     "CONSULTA",
+     "1",
+     "0..*"
+    ],
+    [
+     "verificador",
+     "Plan",
+     "CONSULTA",
+     "1",
+     "1"
+    ],
+    [
+     "roles_service",
+     "BitacoraMiddleware",
+     "ES_ANOTADO_POR",
+     "1",
+     "1"
+    ],
+    [
+     "BitacoraMiddleware",
+     "AsientoBitacora",
+     "REGISTRA",
+     "1",
+     "0..*"
+    ],
+    [
+     "RolEmpresa",
+     "RolEmpresaPermiso",
+     "TIENE",
+     "1",
+     "0..*"
+    ],
+    [
+     "RolEmpresa",
+     "Usuario",
+     "SE_ASIGNA_A",
+     "0..1",
+     "0..*"
+    ],
+    [
+     "Rol",
+     "Usuario",
+     "CLASIFICA",
+     "1",
+     "0..*"
+    ],
+    [
+     "Usuario",
+     "AsientoBitacora",
+     "DEJA_RASTRO_EN",
+     "0..1",
+     "0..*"
+    ]
+   ]
+  }
+ }
+}

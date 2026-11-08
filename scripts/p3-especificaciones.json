@@ -1,0 +1,648 @@
+{
+ "casos": {
+  "CU-01": "Gestionar empresas",
+  "CU-02": "Gestionar planes",
+  "CU-03": "Gestionar suscripciones",
+  "CU-04": "Consultar plan y consumo",
+  "CU-05": "Verificar límites y funciones del plan",
+  "CU-06": "Iniciar sesión en una empresa",
+  "CU-07": "Registrar cliente con cuenta única",
+  "CU-08": "Gestionar usuarios de la empresa",
+  "CU-09": "Gestionar sucursales de la empresa",
+  "CU-10": "Gestionar empleados de la empresa",
+  "CU-11": "Contratar un plan desde la web",
+  "CU-12": "Personalizar la tienda de la empresa",
+  "CU-13": "Preparar el dispositivo para trabajar offline",
+  "CU-14": "Registrar venta offline",
+  "CU-15": "Registrar reserva offline",
+  "CU-16": "Registrar pago sin conexión",
+  "CU-17": "Sincronizar operaciones pendientes",
+  "CU-18": "Consultar operaciones pendientes",
+  "CU-19": "Atender operaciones rechazadas y devolver el dinero",
+  "CU-20": "Abrir y cerrar caja con ventas offline",
+  "CU-21": "Gestionar el inventario de la sucursal",
+  "CU-22": "Registrar cambio o devolución en caja",
+  "CU-23": "Configurar la ventana de devolución",
+  "CU-24": "Solicitar cambio o devolución por la web",
+  "CU-25": "Atender solicitud de devolución",
+  "CU-26": "Notificar eventos por correo según el plan",
+  "CU-27": "Generar reporte con IA por texto o voz",
+  "CU-28": "Generar reportes de gestión con devoluciones",
+  "CU-29": "Entrenar los modelos de analítica",
+  "CU-30": "Consultar el dashboard analítico",
+  "CU-31": "Gestionar ofertas y precios mayoristas",
+  "CU-32": "Aplicar ofertas de fuera de temporada",
+  "CU-33": "Solicitar traspaso entre sucursales",
+  "CU-34": "Atender traspaso",
+  "CU-35": "Consultar traspasos sugeridos",
+  "CU-36": "Preparar prenda para el probador",
+  "CU-37": "Probarse una prenda con su talla real",
+  "CU-38": "Generar foto realista de la prueba",
+  "CU-39": "Exportar los datos de la empresa",
+  "CU-40": "Gestionar copias de seguridad de la empresa",
+  "CU-41": "Gestionar roles y permisos de la empresa",
+  "CU-42": "Enviar avisos push de las operaciones sin conexión",
+  "CU-43": "Devolver automáticamente el pago de una operación rechazada",
+  "CU-44": "Pedir aviso de talla disponible",
+  "CU-45": "Detectar anomalías en caja y devoluciones"
+ },
+ "espec": {
+  "CU-21": {
+   "descripcion": "Permite al encargado consultar la existencia de su sucursal, registrar ingresos de mercadería y ajustes por conteo físico, también sin conexión, y ver el kardex de cada prenda.",
+   "actores": "Encargado de sucursal, administrador de la empresa",
+   "iniciador": "Encargado de sucursal",
+   "precondiciones": "El encargado inició sesión y su cuenta está asignada a una sucursal. Para trabajar sin conexión, antes pulsó «Preparar sin conexión» con red.",
+   "flujo": [
+    "El encargado abre la pantalla «Inventario».",
+    "El sistema muestra las existencias de su sucursal, paginadas, con lo disponible, lo reservado, lo que hay en el local y el mínimo.",
+    "El encargado elige una prenda y pulsa «Ajustar por conteo físico» (en el móvil, «Contar»).",
+    "El encargado ingresa las unidades contadas, reservadas incluidas, y el motivo.",
+    "El sistema compara lo contado con lo que hay en el local (disponible más reservado) y calcula la diferencia.",
+    "El sistema aplica la diferencia al disponible y registra un movimiento AJUSTE con el motivo, el usuario y la fecha, en una sola transacción.",
+    "El sistema anota la operación en la bitácora y muestra el saldo nuevo."
+   ],
+   "alternativos": [
+    "3a. Registrar ingreso: el encargado pulsa «Registrar ingreso», elige el proveedor, el remito y las prendas con su cantidad; el sistema sube los saldos y deja un movimiento INGRESO por prenda.",
+    "3b. Ver el kardex: el encargado pulsa «Ver el kardex»; el sistema muestra cada movimiento de la prenda (ingresos, ventas, reservas, traspasos, devoluciones y ajustes) con el saldo que dejó y la marca «Registrado sin conexión» cuando corresponde.",
+    "4a. Sin conexión: el conteo o el ingreso se guarda en el dispositivo con su UUID y corrige el saldo local; al volver la red se sincroniza (incluye CU-17) y el servidor aplica solo la diferencia contra lo que había en el local a la hora del conteo.",
+    "5a. Conteo sin diferencia o menor que lo reservado: el sistema rechaza el ajuste y no escribe nada; sin conexión, la operación queda rechazada con su motivo."
+   ],
+   "postcondiciones": "El saldo de la prenda es la suma de sus movimientos y cada cambio queda con su motivo, su usuario y su fecha. Lo registrado sin conexión queda confirmado o rechazado en la cola del dispositivo.",
+   "rastreo": "RF-52, RF-53 · RN-07"
+  },
+  "CU-22": {
+   "descripcion": "Permite al cajero recibir en caja una prenda vendida, devolviendo el dinero o cambiándola por otra prenda o talla con la diferencia de precio, y emitir la nota de devolución con la conformidad del cliente.",
+   "actores": "Cajero, encargado de sucursal",
+   "iniciador": "Cajero",
+   "precondiciones": "El cajero tiene un turno de caja abierto. La venta es de su sucursal y está pagada o entregada.",
+   "flujo": [
+    "El cajero abre «Devoluciones y cambios» e ingresa el código de la venta.",
+    "El sistema muestra lo vendido, lo que ya volvió, lo que se puede devolver, el precio pagado y hasta cuándo rige la ventana de la empresa.",
+    "El cajero elige las prendas y cantidades que vuelven y escribe el motivo.",
+    "El cliente da su conformidad; el cajero la marca y anota su observación.",
+    "El cajero pulsa «Registrar devolución».",
+    "El sistema verifica la ventana, bloquea la venta y registra la devolución con su detalle; el dinero sale del cajón solo si la venta se cobró en efectivo.",
+    "El sistema reingresa cada prenda al inventario con un movimiento DEVOLUCION y anota la operación en la bitácora.",
+    "El sistema muestra el comprobante con el número de nota (ND-…), que se puede ver e imprimir."
+   ],
+   "alternativos": [
+    "3a. Cambio de prenda: el cajero elige «Cambiar por otra» y agrega lo que el cliente se lleva; el sistema calcula la diferencia con los precios y ofertas vigentes, la cobra o la devuelve por el método elegido y crea una venta nueva pagada con «CAMBIO» (RN-17).",
+    "6a. Fuera de la ventana: el sistema rechaza e informa cuándo venció (RN-08), salvo un cambio ya aprobado por la web (CU-25).",
+    "6b. Solo cambio: si la venta salió de un cambio (RN-23) o es un pedido web, el sistema no devuelve dinero y solo admite el cambio.",
+    "6c. Devuelve de más: si otra caja devolvió parte en el medio, el sistema rechaza y vuelve a cargar la venta."
+   ],
+   "postcondiciones": "La nota queda cerrada con la conformidad del cliente (RN-20). El inventario y el arqueo del turno quedan coherentes con lo que entró y salió.",
+   "rastreo": "RF-24, RF-37, RF-59 · RN-08, RN-17, RN-20, RN-23"
+  },
+  "CU-23": {
+   "descripcion": "Permite al administrador de la empresa fijar cuántas horas después de la compra o de la entrega se aceptan cambios y devoluciones, en caja y por la web.",
+   "actores": "Administrador de la empresa",
+   "iniciador": "Administrador de la empresa",
+   "precondiciones": "El administrador inició sesión en su empresa. La función no depende del plan.",
+   "flujo": [
+    "El administrador abre «Mi tienda».",
+    "El sistema muestra la tarjeta «Ventana de devolución» con las horas vigentes (48 si nunca se cambió).",
+    "El administrador escribe las horas.",
+    "El sistema muestra el plazo en días cuando es exacto.",
+    "El administrador pulsa «Guardar».",
+    "El sistema verifica que sea un entero entre 1 y 720 horas y lo guarda en la empresa.",
+    "El sistema anota el cambio en la bitácora y confirma la ventana nueva."
+   ],
+   "alternativos": [
+    "3a. Atajo: el administrador pulsa «24 h», «48 h» o «72 h» y el campo toma ese valor.",
+    "6a. Valor fuera de rango: la pantalla no habilita «Guardar» y, si llega al servidor, este lo rechaza con el rango permitido.",
+    "7a. Efecto inmediato: la ventana rige desde ya, también para las ventas anteriores, porque la caja (CU-22) y la web (CU-24) calculan el plazo al momento del pedido."
+   ],
+   "postcondiciones": "La empresa queda con su ventana de devolución; fuera de ella, los cambios y devoluciones se rechazan (RN-08).",
+   "rastreo": "RF-35 · RN-08"
+  },
+  "CU-24": {
+   "descripcion": "Permite al cliente pedir desde la tienda en línea el cambio o la devolución de prendas de un pedido ya entregado, dentro de la ventana de la empresa.",
+   "actores": "Cliente",
+   "iniciador": "Cliente",
+   "precondiciones": "El cliente inició sesión. El pedido es suyo, se compró por la web y está entregado.",
+   "flujo": [
+    "El cliente abre «Mis compras» y pulsa «Cambio o devolución» en un pedido.",
+    "El sistema muestra, por prenda, lo comprado, lo ya comprometido, lo que se puede pedir, el precio pagado y hasta cuándo rige la ventana desde la entrega.",
+    "El cliente elige «Devolver», las prendas y cantidades, y escribe el motivo.",
+    "El cliente pulsa «Enviar solicitud».",
+    "El sistema bloquea el pedido y verifica la ventana y que las cantidades no superen lo que queda.",
+    "El sistema registra la solicitud pendiente con sus líneas.",
+    "El sistema avisa a los encargados de la sucursal (incluye CU-26) y anota la operación en la bitácora.",
+    "El cliente ve la solicitud en «Mis cambios y devoluciones»."
+   ],
+   "alternativos": [
+    "3a. Cambio: el cliente elige «Cambiar talla o color» y, por prenda, otra talla o color del mismo producto con saldo en la sucursal; el sistema muestra la diferencia que se cobrará o devolverá (RF-59).",
+    "5a. Fuera de plazo: el sistema rechaza e informa la fecha y la hora en que venció la ventana (RN-08).",
+    "5b. Pedido no entregado: el sistema no deja pedir nada hasta que la sucursal lo marque como entregado.",
+    "5c. Cantidad de más o cambio inválido: el sistema rechaza si pide más de lo que queda, o si la prenda elegida no es del mismo producto o no hay en la sucursal."
+   ],
+   "postcondiciones": "La solicitud queda pendiente. Mientras esté abierta, esas unidades no se pueden volver a pedir ni traer a caja.",
+   "rastreo": "RF-34, RF-59 · RN-08"
+  },
+  "CU-25": {
+   "descripcion": "Permite al encargado aprobar o rechazar con su motivo las solicitudes web de su sucursal y, al recibir la prenda de una devolución, registrar la nota, reingresar la prenda y reembolsar por la pasarela.",
+   "actores": "Encargado de sucursal, cliente",
+   "iniciador": "Encargado de sucursal",
+   "precondiciones": "Hay una solicitud pendiente en la sucursal del encargado (CU-24).",
+   "flujo": [
+    "El encargado abre «Pedidos web» y ve las solicitudes con sus prendas, el motivo y la diferencia.",
+    "El encargado escribe una respuesta opcional y pulsa «Aprobar».",
+    "El sistema deja la solicitud aprobada con quién y cuándo, avisa al cliente (incluye CU-26) y anota en la bitácora.",
+    "Cuando la prenda llega, el encargado pulsa «Prenda recibida: reembolsar».",
+    "El sistema registra la nota de devolución abierta, de origen web y sin turno de caja, con su detalle, y reingresa cada prenda al inventario.",
+    "El sistema reembolsa lo pagado por la pasarela, por el mismo medio, y guarda la referencia del reembolso.",
+    "El sistema marca la solicitud como completada y avisa al cliente.",
+    "El cliente revisa la nota en «Mis cambios y devoluciones» y pulsa «Estoy conforme»; el sistema cierra la nota (RN-20)."
+   ],
+   "alternativos": [
+    "2a. Rechazar: el encargado escribe el motivo (al menos 5 letras) y pulsa «Rechazar»; la solicitud queda rechazada y el cliente ve el motivo.",
+    "4a. Cambio aprobado: no se recibe acá; el cliente lo retira en caja, donde se salda la diferencia y la solicitud se completa (CU-22).",
+    "6a. Falla la pasarela: el sistema deshace todo (ni nota ni reingreso) e informa el detalle.",
+    "8a. No conforme: el cliente pulsa «No estoy conforme»; la nota queda abierta con su observación, a la vista del encargado."
+   ],
+   "postcondiciones": "La solicitud queda rechazada o completada. Si se completó, la prenda volvió al inventario, el reembolso quedó registrado y la nota se cierra solo con la conformidad del cliente.",
+   "rastreo": "RF-36, RF-37 · RN-20"
+  },
+  "CU-26": {
+   "descripcion": "Avisa por correo a empleados y clientes los hechos que les importan, solo si el plan de la empresa incluye los avisos por correo. El aviso dentro de la aplicación sale siempre.",
+   "actores": "Sistema",
+   "iniciador": "Sistema (la tarea automática)",
+   "precondiciones": "Las tareas automáticas están encendidas (TAREAS_AUTOMATICAS=on). Ocurrió un hecho que avisa: una reserva, un pedido pagado, existencia baja, un traspaso, una devolución, una operación sin conexión o una talla disponible.",
+   "flujo": [
+    "Otro caso de uso registra el hecho y le pide al sistema el aviso, dentro de la misma transacción.",
+    "El sistema resuelve a quién avisarle (los encargados de la sucursal, el cliente o el cajero) y deja el aviso en la campanita.",
+    "El sistema verifica que el plan vigente incluya los avisos por correo (incluye CU-05) y deja el correo pendiente.",
+    "Cada 15 minutos la tarea automática despierta y toma el bloqueo, para que un solo worker corra la vuelta.",
+    "Por cada empresa activa, el sistema toma de a una las notificaciones con el correo pendiente, la más vieja primero, hasta 50 por vuelta.",
+    "El sistema arma el correo con el título, el cuerpo y el botón «Ver en Violet Boutique».",
+    "El sistema envía el correo por Brevo.",
+    "El sistema marca el correo como enviado, con la hora, y confirma cada uno por separado."
+   ],
+   "alternativos": [
+    "3a. Plan sin correo: el aviso nace con el correo omitido y el motivo; queda solo en la campanita y en el push si hay un dispositivo suscrito.",
+    "3b. Sin dirección: si el destinatario no tiene correo, el correo queda omitido.",
+    "4a. Vuelta repetida: si el otro worker empezó una vuelta hace menos de 15 minutos, esta se saltea.",
+    "7a. Falla el envío: Brevo rechaza o no responde; el correo queda fallido con el motivo y el sistema sigue con el siguiente. El administrador puede devolver los fallidos a la cola."
+   ],
+   "postcondiciones": "Cada aviso queda en la campanita y su correo enviado, omitido o fallido. Correr la vuelta otra vez no repite ningún correo.",
+   "rastreo": "RF-49"
+  },
+  "CU-27": {
+   "descripcion": "Permite pedir un reporte en lenguaje natural, escrito o hablado. La IA traduce el pedido y el sistema arma el reporte con datos reales de la empresa, sin que la IA escriba SQL.",
+   "actores": "Administrador de la empresa, encargado de sucursal",
+   "iniciador": "Administrador o encargado",
+   "precondiciones": "El usuario inició sesión. El plan incluye los reportes con IA y le queda cupo en el mes.",
+   "flujo": [
+    "El usuario abre «Reportes con IA».",
+    "El usuario escribe el pedido o lo dicta con «Hablar», o toca uno de los ejemplos, y pulsa «Generar».",
+    "El sistema verifica el rol, que el plan incluya los reportes con IA y que quede cupo en el mes (incluye CU-05).",
+    "El sistema arma el vocabulario: medidas, dimensiones y los nombres de las sucursales, categorías, productos y temporadas activas. Al encargado solo le da su sucursal.",
+    "Gemini traduce el pedido a una especificación: medida, agrupación, filtros, período, orden, límite y tipo de gráfico.",
+    "El sistema valida la especificación contra la lista blanca y comprueba que cada id sea de la empresa.",
+    "El sistema arma la consulta, la ejecuta dentro de la empresa y escribe una lectura de los datos.",
+    "El sistema descuenta uno del cupo del mes y muestra qué entendió, la tabla con totales y el gráfico."
+   ],
+   "alternativos": [
+    "3a. Plan o cupo: si el plan no incluye los reportes con IA o el cupo del mes se agotó, el sistema rechaza el pedido y muestra el motivo.",
+    "5a. Sin IA: si Gemini no está configurado o no contesta, el sistema usa el intérprete por reglas y la pantalla lo marca «sin IA».",
+    "6a. Pedido ambiguo o no soportado: el sistema explica qué faltó y sugiere ejemplos; no gasta cupo.",
+    "8a. Exportar: el usuario pulsa «PDF» o «Excel»; el sistema vuelve a correr la especificación y descarga el archivo."
+   ],
+   "postcondiciones": "El usuario ve el reporte armado con datos de su empresa. El cupo del mes bajó en uno y la bitácora registra el pedido.",
+   "rastreo": "RF-25, RF-26, RF-27, RF-28, RF-29, RF-30 · RN-10, RN-11"
+  },
+  "CU-28": {
+   "descripcion": "Permite bajar los reportes de gestión en PDF o Excel, incluido el de devoluciones y cambios, con el valor de cada prenda devuelta.",
+   "actores": "Administrador de la empresa, encargado de sucursal",
+   "iniciador": "Administrador o encargado",
+   "precondiciones": "El usuario inició sesión. El encargado tiene una sucursal asignada.",
+   "flujo": [
+    "El usuario abre «Reportes de gestión».",
+    "El sistema muestra el catálogo de reportes con sus columnas y sus filtros, con las opciones ya cargadas.",
+    "El usuario elige el período y, en «Reporte de devoluciones y cambios», la sucursal y el tipo: devolución o cambio de prenda.",
+    "El usuario pulsa «PDF» o «Excel».",
+    "El sistema aplica solo los filtros que declara ese reporte; al encargado le impone su sucursal.",
+    "El sistema arma una fila por prenda devuelta: fecha y hora, sucursal, tipo, venta, cajero, prenda, talla, color, cantidad y valor devuelto al precio pagado en la venta.",
+    "El sistema suma las unidades y el valor, e imprime el período, la sucursal y los filtros aplicados.",
+    "El sistema entrega el archivo y la bitácora registra la exportación."
+   ],
+   "alternativos": [
+    "3a. Pedir hablando: el usuario pulsa el micrófono y dice el reporte; el sistema muestra lo que entendió antes de descargar (necesita la función reportes_ia del plan).",
+    "3b. Otros cortes: las devoluciones por día, semana, mes, producto, categoría, talla o color se piden en «Reportes con IA» (CU-27).",
+    "5a. Encargado sin sucursal: el sistema no genera el reporte y le pide que el administrador lo asigne."
+   ],
+   "postcondiciones": "El usuario tiene el archivo con el alcance impreso. La bitácora registra quién exportó qué reporte.",
+   "rastreo": "RF-28, RF-38"
+  },
+  "CU-29": {
+   "descripcion": "Entrena el modelo supervisado de la demanda semanal y el no supervisado de los segmentos de clientes, con los datos reales de la empresa completados con datos sintéticos.",
+   "actores": "Administrador de la empresa",
+   "iniciador": "Administrador",
+   "precondiciones": "El administrador inició sesión. El plan incluye la analítica con ML.",
+   "flujo": [
+    "El administrador abre «Analítica inteligente» y pulsa «Entrenar los modelos» o «Volver a entrenar».",
+    "El sistema verifica el rol y que el plan incluya la analítica con ML (incluye CU-05).",
+    "El sistema junta los productos activos y las unidades vendidas por producto y semana de las ventas pagadas o entregadas.",
+    "El sistema genera la demanda sintética de 104 semanas con una semilla fija y le suma la real.",
+    "El sistema entrena el GradientBoosting, lo valida con las últimas 12 semanas que no vio (MAE, RMSE, R² y mejora sobre la línea base), lo reentrena con todo y predice la semana que viene.",
+    "El sistema calcula la recencia, la frecuencia y el monto de cada cliente real, los completa con 240 clientes sintéticos y entrena el KMeans con k de 2 a 6.",
+    "El sistema elige el k de mejor silueta y le pone nombre a cada segmento según su centro.",
+    "El sistema guarda los dos entrenamientos con sus parámetros, métricas, filas reales y sintéticas, duración y el modelo, y conserva los últimos cinco de cada tipo.",
+    "El sistema muestra el dashboard nuevo (CU-30)."
+   ],
+   "alternativos": [
+    "1a. Otro rol: si no es administrador, el sistema rechaza el pedido.",
+    "2a. Plan sin analítica: el sistema rechaza el pedido y la pantalla muestra el candado con el enlace a «Mi plan».",
+    "3a. Pocas ventas: si la empresa no tiene productos o ventas, el sistema entrena con productos de relleno y datos sintéticos, y el dashboard muestra cuántas filas son reales."
+   ],
+   "postcondiciones": "Quedan guardados un entrenamiento de demanda y uno de segmentos. La bitácora registra quién entrenó.",
+   "rastreo": "RF-31, RF-32"
+  },
+  "CU-30": {
+   "descripcion": "Muestra el dashboard analítico: las métricas de los modelos, la demanda prevista, los segmentos de clientes y los clientes de hoy en su segmento.",
+   "actores": "Administrador de la empresa",
+   "iniciador": "Administrador",
+   "precondiciones": "El administrador inició sesión. El plan incluye la analítica con ML.",
+   "flujo": [
+    "El administrador abre «Analítica inteligente».",
+    "El sistema verifica el rol y que el plan incluya la analítica con ML (incluye CU-05).",
+    "El sistema lee el último entrenamiento de demanda y el último de segmentos.",
+    "El sistema muestra las métricas del modelo de demanda, el gráfico de lo previsto contra lo real y el peso de cada variable.",
+    "El sistema muestra la demanda prevista para la semana que viene por producto, con su tendencia.",
+    "El sistema muestra los segmentos con la silueta de cada k y la cantidad de clientes de cada uno.",
+    "El sistema clasifica a los clientes reales de hoy con el modelo guardado, sin reentrenar, y muestra los 20 de mayor monto con su segmento."
+   ],
+   "alternativos": [
+    "2a. Plan sin analítica: la pantalla muestra el candado con el enlace a «Mi plan».",
+    "3a. Sin entrenar: la pantalla invita a pulsar «Entrenar los modelos» (CU-29).",
+    "7a. Reporte inteligente: el administrador pulsa «PDF» o «Excel» y baja las predicciones con las métricas y los segmentos."
+   ],
+   "postcondiciones": "El administrador conoce la demanda prevista y los segmentos de sus clientes. No se modifica ningún dato.",
+   "rastreo": "RF-32, RF-33"
+  },
+  "CU-31": {
+   "descripcion": "Permite al administrador de la empresa definir precios mayoristas por producto, que se aplican desde una cantidad mínima de prendas, y seguir creando ofertas manuales con su vigencia.",
+   "actores": "Administrador de la empresa",
+   "iniciador": "Administrador de la empresa",
+   "precondiciones": "El administrador inició sesión en su empresa. El producto existe y tiene variantes activas.",
+   "flujo": [
+    "El administrador abre «Ofertas», pestaña «Precios mayoristas».",
+    "El sistema muestra los escalones de la empresa: producto, precio base, desde cuántas unidades, precio por unidad y si está activo.",
+    "El administrador busca y elige el producto, indica desde cuántas unidades (2 o más) y el precio por unidad, y pulsa «Guardar».",
+    "El sistema verifica que el producto exista y que no tenga ya un escalón con esa cantidad mínima.",
+    "El sistema verifica que el precio mayorista sea menor que el precio más bajo de las variantes activas del producto.",
+    "El sistema registra el escalón activo y lo muestra en la lista.",
+    "Desde ese momento la caja, el carrito y el pedido web suman las unidades del producto, mezclando tallas y colores, y cobran el escalón más alto que se alcanza si deja el precio más bajo (RN-15)."
+   ],
+   "alternativos": [
+    "1a. Oferta manual: el administrador abre «Promociones», pulsa «Nueva» y carga el nombre, el alcance (prenda, categoría o temporada), el porcentaje y la vigencia; el sistema la registra como MANUAL.",
+    "3a. Editar o apagar: el administrador pulsa «Editar» y cambia la cantidad o el precio, o usa el interruptor para apagar o encender el escalón; no se borra, porque las ventas ya lo cobraron.",
+    "4a. Escalón repetido: el producto ya tiene un precio desde esa cantidad; el sistema lo rechaza y no guarda nada.",
+    "5a. Precio que no gana: el precio no es menor que el más bajo del producto; el sistema lo rechaza indicando el mínimo, porque nunca se aplicaría."
+   ],
+   "postcondiciones": "El escalón queda guardado y activo, o con el estado elegido. La caja, el carrito y la vitrina lo muestran y lo cobran sin acumular descuentos. La petición queda en la bitácora.",
+   "rastreo": "RF-56, RF-58 · RN-15"
+  },
+  "CU-32": {
+   "descripcion": "Permite al sistema poner en oferta, sin intervención de nadie, las prendas cuya temporada terminó y que sobran, según un factor medible guardado en la base.",
+   "actores": "Sistema, administrador de la empresa",
+   "iniciador": "Sistema (tarea automática del backend)",
+   "precondiciones": "Las tareas automáticas están encendidas en el servidor. La empresa guardó su regla de fuera de temporada y la dejó activa. El producto tiene una temporada con fecha de fin.",
+   "flujo": [
+    "La tarea automática del backend despierta cada intervalo configurado y, para cada empresa activa, ejecuta la aplicación de ofertas de fuera de temporada.",
+    "El sistema lee la regla de la empresa: si está activa, los días desde el fin de la temporada, la existencia sobrante y el porcentaje.",
+    "El sistema busca los productos activos cuya temporada terminó hace al menos esos días y cuya existencia disponible, sumada en las sucursales activas, llega al mínimo.",
+    "A cada producto que califica y no tiene oferta automática le crea una promoción de origen AUTOMATICA sobre el producto, con el porcentaje de la regla, desde hoy y sin fecha de fin.",
+    "El sistema cierra las ofertas automáticas vigentes cuyo producto ya no califica, con fecha de fin de ayer, y las marca como cerradas por la regla.",
+    "El sistema confirma los cambios de la empresa y anota en el registro del servidor cuántas tareas hizo.",
+    "Desde ese momento la vitrina, la caja y el carrito aplican la oferta, con el precio más bajo entre el normal, el mayorista y la oferta (RN-15)."
+   ],
+   "alternativos": [
+    "1a. A mano: el administrador abre «Ofertas», pestaña «Fuera de temporada», ajusta el factor y pulsa «Guardar regla», revisa las «Prendas que cumplen hoy el factor» y pulsa «Aplicar ahora»; esas peticiones quedan en la bitácora.",
+    "2a. Regla apagada: el sistema no crea ninguna oferta y cierra las automáticas que sigan vigentes; apagar la regla desde la pantalla las cierra en el acto.",
+    "4a. Ya tiene oferta automática: si está vigente se deja; si el administrador la apagó o la cerró a mano, no se vuelve a crear (RN-16); si la cerró la regla y el producto vuelve a sobrar, se reabre desde hoy.",
+    "5a. Creada hoy: una automática creada hoy que deja de calificar se cierra recién al día siguiente.",
+    "6a. Falla una empresa: el sistema deshace lo de esa empresa, anota el error y sigue con las demás."
+   ],
+   "postcondiciones": "Cada producto que cumple el factor tiene una oferta automática vigente, y las que dejaron de cumplirlo quedan cerradas en el historial. Correrla de nuevo no repite nada.",
+   "rastreo": "RF-57 · RN-15, RN-16"
+  },
+  "CU-33": {
+   "descripcion": "Permite al encargado pedir a otra sucursal una cantidad de una prenda, en una talla y un color, y al administrador ordenar un traspaso entre dos sucursales sin pedido previo.",
+   "actores": "Encargado de sucursal, administrador de la empresa",
+   "iniciador": "Encargado de sucursal o administrador de la empresa",
+   "precondiciones": "El usuario inició sesión. El encargado tiene una sucursal asignada. La empresa tiene la suscripción vigente.",
+   "flujo": [
+    "El encargado abre «Traspasos» y elige la pestaña «Pedir».",
+    "El sistema lista las prendas activas que otras sucursales tienen disponibles, filtradas por lo que escribe en el buscador.",
+    "El encargado elige la prenda y el sistema muestra las sucursales que la tienen, con su disponible.",
+    "El encargado elige la sucursal de origen, indica la cantidad y, si quiere, el motivo, y pulsa «Pedir a …».",
+    "El sistema toma la sucursal del encargado como destino y verifica que las dos sucursales estén activas y que la prenda exista y esté activa.",
+    "El sistema verifica que el origen tenga disponible la cantidad pedida y que no haya otro traspaso de esa prenda entre las mismas sucursales sin despachar.",
+    "El sistema registra el traspaso de tipo PEDIDO en estado SOLICITADO y avisa a los encargados del origen.",
+    "El sistema muestra el número del traspaso y abre la pestaña «Seguimiento»."
+   ],
+   "alternativos": [
+    "1a. Ordenar sin pedido: el administrador usa la pestaña «Ordenar», elige también la sucursal de destino y pulsa «Ordenar traspaso»; el traspaso nace de tipo ORDEN en estado APROBADO y se avisa al origen para que lo despache (RF-40).",
+    "4a. Suscripción vencida: la empresa solo consulta y el sistema rechaza el registro (RN-03, CU-05).",
+    "5a. Datos no válidos: una sucursal o la prenda están dadas de baja, el origen y el destino son la misma, o el encargado intenta pedir para otra sucursal; el sistema rechaza el pedido con el motivo.",
+    "6a. No alcanza: el sistema rechaza el pedido mostrando el disponible del origen; ninguna sucursal puede quedar con existencia negativa (RN-09).",
+    "6b. Traspaso abierto: ya hay uno SOLICITADO o APROBADO de esa prenda entre las dos sucursales; el sistema pide esperar a que se atienda o que lo rechacen."
+   ],
+   "postcondiciones": "El traspaso queda registrado con su tipo, su estado, quién lo pidió y cuándo. Los encargados del origen tienen el aviso. La existencia todavía no se mueve. La petición queda en la bitácora.",
+   "rastreo": "RF-39, RF-40 · RN-03, RN-09"
+  },
+  "CU-34": {
+   "descripcion": "Permite a los encargados seguir los traspasos de su sucursal y atender el paso que les toca: aprobar, enviar, recibir o rechazar, con su movimiento de inventario.",
+   "actores": "Encargado de sucursal",
+   "iniciador": "Encargado de sucursal",
+   "precondiciones": "El encargado inició sesión y tiene una sucursal asignada. Existe un traspaso en el que su sucursal es el origen o el destino.",
+   "flujo": [
+    "El encargado abre «Traspasos», pestaña «Seguimiento», y elige «Para mi sucursal», «Me piden» o «Todos», y «En curso» o «Historial».",
+    "El sistema lista los traspasos de su sucursal con su estado, quién hizo cada paso y las acciones que le tocan según sea el origen o el destino.",
+    "El encargado del origen pulsa «Aprobar» en un traspaso SOLICITADO; puede bajar la cantidad sin superar lo pedido.",
+    "El sistema bloquea el traspaso, verifica que el origen tenga ese disponible y lo deja APROBADO, con quién y cuándo.",
+    "El encargado del origen pulsa «Enviar»; el sistema descuenta la cantidad de la existencia del origen con un movimiento TRANSFERENCIA, deja el traspaso ENVIADO y avisa a los encargados del destino.",
+    "El encargado del destino pulsa «Recibir»; el sistema suma la cantidad a la existencia del destino, que crea si no existía, con otro movimiento TRANSFERENCIA, y deja el traspaso RECIBIDO.",
+    "El sistema confirma cada paso con un mensaje y recarga el seguimiento."
+   ],
+   "alternativos": [
+    "3a. Rechazar: el origen rechaza un traspaso SOLICITADO o APROBADO, o el destino retira su pedido mientras siga SOLICITADO, escribiendo el motivo; el sistema lo deja RECHAZADO y avisa a la otra sucursal.",
+    "4a. No alcanza: al aprobar o al enviar, si el origen ya no tiene la cantidad, el sistema rechaza el paso mostrando el disponible y no escribe nada (RN-09).",
+    "4b. Paso ajeno o traspaso cambiado: el paso le toca a la otra sucursal, o alguien ya movió el traspaso; el sistema lo rechaza y la pantalla relee la lista.",
+    "5a. Sucursal dada de baja: no se envía si una de las dos está de baja; si el destino se dio de baja con la mercadería en camino, el origen pulsa «Recibir de vuelta» y las unidades vuelven a su existencia."
+   ],
+   "postcondiciones": "El traspaso avanza de estado con quién y cuándo. Al enviarse la existencia del origen baja y al recibirse la del destino sube, con sus movimientos en el kardex; nunca queda negativa. Cada paso queda en la bitácora.",
+   "rastreo": "RF-41 · RN-03, RN-09"
+  },
+  "CU-35": {
+   "descripcion": "Permite al administrador ver qué prendas conviene mover de una sucursal a otra, según lo más vendido en cada una y la existencia de cada una, y ordenar el traspaso.",
+   "actores": "Administrador de la empresa",
+   "iniciador": "Administrador de la empresa",
+   "precondiciones": "El administrador inició sesión. El plan de la empresa incluye los traspasos sugeridos. Hay ventas cobradas en el período.",
+   "flujo": [
+    "El administrador abre «Traspasos» y elige la pestaña «Sugeridos».",
+    "El sistema verifica que el plan incluya la función de traspasos sugeridos (CU-05).",
+    "El sistema suma las unidades vendidas de cada prenda en cada sucursal en los últimos 30 días.",
+    "Para cada prenda vendida, lee la existencia disponible y el stock mínimo en las sucursales activas, y lo que ya está en traspasos abiertos.",
+    "El sistema calcula por sucursal el objetivo (lo vendido en el período o el stock mínimo, el mayor), lo que le falta y lo que le sobra.",
+    "El sistema reparte lo que sobra hacia las sucursales que venden y les falta, primero a la que más vende y desde la que más le sobra, y arma cada sugerencia con su razón.",
+    "El sistema muestra hasta 100 sugerencias: la prenda, el origen y el destino con su disponible y sus ventas, la cantidad y la razón."
+   ],
+   "alternativos": [
+    "2a. Plan sin la función: el sistema muestra «Su plan no incluye los traspasos sugeridos» y el botón «Ver mi plan».",
+    "3a. Cambiar el período: el administrador elige 7, 30, 60 o 90 días o pulsa «Recalcular», y el sistema vuelve a calcular.",
+    "6a. Nada que mover: ninguna sucursal se queda corta de lo que vende mientras a otra le sobra; el sistema lo informa.",
+    "7a. Ordenar una sugerencia: el administrador pulsa «Ordenar N u.»; el sistema registra un traspaso de tipo SUGERIDO en estado APROBADO con la razón como motivo (extiende CU-33) y recalcula las sugerencias."
+   ],
+   "postcondiciones": "La consulta no modifica datos. Lo que ya está en traspaso cuenta en el cálculo, para no sugerir dos veces lo mismo. Un traspaso ordenado desde aquí queda listo para que el origen lo envíe.",
+   "rastreo": "RF-42, RF-40"
+  },
+  "CU-36": {
+   "descripcion": "Permite al administrador dejar una prenda lista para el probador: marca dónde están los hombros y el ruedo en su imagen sin fondo y carga cuánto mide la prenda en cada talla.",
+   "actores": "Administrador de la empresa",
+   "iniciador": "Administrador de la empresa",
+   "precondiciones": "El administrador inició sesión. El producto tiene al menos una imagen PNG sin fondo asociada a una variante, subida en la galería del producto.",
+   "flujo": [
+    "El administrador abre «Probador» en el menú de administración.",
+    "El sistema lista los productos con imagen de vestidor y su avance: imágenes calibradas y tallas con medidas.",
+    "El administrador elige un producto; el sistema muestra sus imágenes, sus tallas y lo que falta para dejarlo listo.",
+    "El administrador marca con un clic el hombro izquierdo, el hombro derecho y el ruedo sobre la imagen, y pulsa «Guardar puntos».",
+    "El sistema verifica que la imagen sea de vestidor y que los puntos sean coherentes, y los guarda en coordenadas relativas.",
+    "El administrador carga busto, cintura, cadera y largo en cm de cada talla y pulsa «Guardar medidas».",
+    "El sistema verifica que cada talla se venda en el producto, que no se repita y que el busto no baje al subir de talla, y guarda las medidas.",
+    "El sistema actualiza el avance: con una imagen calibrada y todas las tallas medidas, el producto queda «Lista» para el probador."
+   ],
+   "alternativos": [
+    "5a. Imagen que no es de vestidor: si la imagen no es un PNG sin fondo asociado a una variante, el sistema la rechaza y no guarda los puntos.",
+    "5b. Puntos incoherentes: hombros invertidos, separados menos del 10 % del ancho, con un desnivel de más del 15 % del alto o con el ruedo a menos del 10 % debajo de los hombros; el sistema explica el motivo y no guarda.",
+    "6a. Talla incompleta: si a una talla le falta alguna de las cuatro medidas, la pantalla avisa cuál es antes de enviar.",
+    "7a. Medidas inválidas: una talla que no se vende en el producto, una talla repetida o un busto menor que el de la talla anterior; el sistema rechaza todo el lote con el motivo."
+   ],
+   "postcondiciones": "La imagen queda calibrada y las medidas por talla quedan guardadas. El probador de la tienda ya puede dibujar esa prenda a su tamaño real. La bitácora registra cada cambio.",
+   "rastreo": "RF-43"
+  },
+  "CU-37": {
+   "descripcion": "Permite al cliente probarse una prenda sobre su propia foto, dibujada con los centímetros reales de la talla elegida, para ver si le queda grande o chica antes de comprar.",
+   "actores": "Cliente",
+   "iniciador": "Cliente",
+   "precondiciones": "El cliente inició sesión en la tienda en línea de la empresa (web). La prenda fue preparada para el probador (CU-36).",
+   "flujo": [
+    "En la ficha de una prenda de la tienda en línea, el cliente pulsa «Probármela».",
+    "El sistema devuelve las variantes preparadas con su imagen y sus puntos, las medidas del cliente, el ajuste de cada talla con la talla recomendada y si la foto realista está disponible.",
+    "El cliente sube o toma una foto de cuerpo entero.",
+    "El navegador detecta los hombros con MediaPipe Pose; la foto no sale del dispositivo.",
+    "El cliente elige la talla y el color; por omisión se muestra la talla recomendada.",
+    "El navegador dibuja la prenda con los cm de esa talla, a la escala que dan el busto del cliente y sus hombros en la foto, y muestra cómo le queda.",
+    "El cliente pulsa «Guardar esta prueba».",
+    "El sistema recalcula en el servidor el ajuste y la talla recomendada, registra la prueba y la muestra en «Mis pruebas»."
+   ],
+   "alternativos": [
+    "2a. Faltan las medidas: la pantalla pide busto, cintura, cadera y, si quiere, la estatura; las guarda y vuelve a cargar la prueba. Sin medidas la prenda se dibuja en tamaño aproximado y se avisa.",
+    "2b. Prenda no preparada: si ninguna variante tiene puntos, el sistema muestra «Esta prenda todavía no está preparada para el probador».",
+    "4a. No se detecta la pose: el sistema pide marcar los dos hombros con un clic sobre la foto; la prueba queda con el método MANUAL.",
+    "7a. Foto realista: el cliente pulsa «Generar foto realista» (extiende con CU-38).",
+    "8a. Borrar una prueba: el cliente borra una prueba de «Mis pruebas»; el sistema la elimina con su foto, si la tenía."
+   ],
+   "postcondiciones": "La prueba queda registrada con la variante, el método, el ajuste y la talla recomendada. La foto del cliente no se guardó en el servidor. La bitácora registra la prueba.",
+   "rastreo": "RF-44"
+  },
+  "CU-38": {
+   "descripcion": "Permite al cliente obtener una foto realista de su prueba, generada con IA a partir de la composición a escala, sin que la prenda cambie de tamaño.",
+   "actores": "Cliente",
+   "iniciador": "Cliente",
+   "precondiciones": "El cliente está en el probador con la prenda dibujada a escala (CU-37). El plan de la tienda incluye la foto con IA y le queda cupo en el mes.",
+   "flujo": [
+    "El cliente pulsa «Generar foto realista».",
+    "Si la prueba no estaba guardada, el sistema la registra primero.",
+    "El navegador exporta la composición del lienzo como PNG y la envía; es la única imagen del cliente que sale de su dispositivo.",
+    "El sistema verifica que el plan de la tienda incluya la foto con IA y que le quede cupo en el mes (incluye CU-05).",
+    "El sistema verifica que la prueba sea del cliente, que no tenga foto y que la composición sea una imagen de hasta 4 MB.",
+    "El sistema envía la composición y la imagen de la prenda al proveedor de IA, con el pedido de no cambiar su tamaño.",
+    "Con la foto hecha, el sistema la guarda con un nombre aleatorio y recién entonces descuenta una del cupo mensual de la tienda.",
+    "El sistema muestra la foto en la prueba y en «Mis pruebas», y dice si la generó la IA o es una vista simulada."
+   ],
+   "alternativos": [
+    "4a. Sin la función o sin cupo: el plan no incluye la foto con IA o la tienda ya usó las del mes; el sistema rechaza con el motivo y la pantalla muestra «Foto realista no disponible».",
+    "5a. La prueba ya tiene foto: el sistema pide hacer otra prueba para generar una nueva.",
+    "6a. Falla el proveedor: si Gemini no responde, la foto sale igual con la vista simulada, marcada como tal; si la foto con IA está apagada en el entorno, el sistema rechaza sin descontar el cupo.",
+    "7a. Se agotó el cupo mientras tanto: si otro pedido se llevó el último lugar, el sistema borra la foto recién guardada y rechaza sin descontar."
+   ],
+   "postcondiciones": "La prueba tiene su foto realista y quién la generó. El cupo de fotos con IA de la tienda bajó en una. La bitácora registra el pedido.",
+   "rastreo": "RF-45, RF-09 · RN-11"
+  },
+  "CU-39": {
+   "descripcion": "Permite al administrador descargar todos los datos de su empresa para leerlos, en un Excel con una hoja por tabla o en un ZIP con un CSV por tabla.",
+   "actores": "Administrador de la empresa",
+   "iniciador": "Administrador de la empresa",
+   "precondiciones": "El administrador inició sesión. El plan de la empresa incluye la exportación de datos.",
+   "flujo": [
+    "El administrador abre «Datos y copias» en el menú de administración.",
+    "El sistema consulta si el plan incluye la exportación y, si no, deja los botones bloqueados antes del clic.",
+    "El administrador pulsa «Excel».",
+    "El sistema verifica que sea administrador y que el plan incluya la función de exportar los datos (incluye CU-05).",
+    "El sistema lee todas las tablas de la empresa en orden de dependencias; del personal saca solo lo que muestra la pantalla de usuarios, nunca la contraseña.",
+    "El sistema deja fuera las copias de seguridad, los dispositivos push y los modelos de analítica, y escapa los textos que una planilla tomaría por fórmula.",
+    "El sistema arma un Excel con una hoja por tabla y una hoja «resumen» con las filas de cada una.",
+    "El navegador descarga el archivo con la empresa y la fecha en el nombre."
+   ],
+   "alternativos": [
+    "3a. En CSV: el administrador pulsa «CSV (ZIP)»; el sistema arma un ZIP con un CSV por tabla, con BOM para que Excel en español lea bien las tildes.",
+    "4a. El plan no incluye la exportación: el sistema rechaza con el motivo y la pantalla deja los botones bloqueados.",
+    "4b. Rol propio sin el permiso: si el administrador tiene un rol propio sin «Exportar todos los datos», el sistema rechaza el pedido (CU-41)."
+   ],
+   "postcondiciones": "El administrador tiene una copia legible de los datos de su empresa. No se modificó ningún dato.",
+   "rastreo": "RF-48, RF-09"
+  },
+  "CU-40": {
+   "descripcion": "Permite al administrador generar copias de seguridad de su empresa, descargarlas, restaurar los datos desde una copia y ver el historial; el sistema genera además copias automáticas.",
+   "actores": "Administrador de la empresa, Sistema",
+   "iniciador": "Administrador de la empresa (la copia automática la inicia el Sistema)",
+   "precondiciones": "El administrador inició sesión y no tiene un rol propio. La empresa tiene una suscripción vigente para generar copias; para restaurar no hace falta.",
+   "flujo": [
+    "El administrador abre «Datos y copias» en el menú de administración.",
+    "El sistema muestra el historial de copias y restauraciones (cuándo, quién, tamaño y filas por tabla), lo que permite el plan y desde cuándo se puede pedir la próxima copia manual.",
+    "El administrador pulsa «Generar y descargar copia».",
+    "El sistema verifica que el plan permita otra copia manual según su intervalo (incluye CU-05).",
+    "El sistema lee todas las tablas de la empresa en una sola foto, con el rol propio de cada persona del personal y las preferencias de los clientes.",
+    "El sistema firma la copia, registra su SHA-256, su tamaño y sus filas por tabla, y no guarda el contenido.",
+    "El navegador descarga el archivo JSON y avisa que no queda en el servidor."
+   ],
+   "alternativos": [
+    "1a. Copia automática: en cada vuelta de las tareas automáticas, si ya pasó el intervalo del plan (diaria por omisión), el sistema genera la copia cifrada y conserva solo las últimas que indica el plan (7 por omisión).",
+    "3a. Restaurar: el administrador elige un archivo o una copia automática del historial y escribe RESTAURAR; el sistema reemplaza todos los datos de la empresa por los de la copia en una sola transacción y registra la restauración.",
+    "3b. Descargar una automática: el sistema descifra la copia guardada y la entrega; una manual no se puede volver a bajar porque no quedó en el servidor.",
+    "3c. Copia inválida: si el archivo no es una copia, es de otra versión, su firma no coincide o es de otra empresa, el sistema la rechaza; si una fila no entra, deshace todo y los datos no cambian.",
+    "4a. Todavía no toca: el sistema rechaza con la fecha desde la que se puede pedir la próxima copia manual; las automáticas siguen saliendo."
+   ],
+   "postcondiciones": "Queda registrada la copia o la restauración, con quién, cuándo, tamaño y filas por tabla. Tras una restauración, los datos de la empresa son los de la copia. La bitácora registra cada operación.",
+   "rastreo": "RF-60, RF-61, RF-62, RF-63 · RN-18, RN-19"
+  },
+  "CU-41": {
+   "descripcion": "Permite al administrador crear roles propios de su empresa a partir de un rol base, elegir sus permisos y asignarlos a su personal.",
+   "actores": "Administrador de la empresa",
+   "iniciador": "Administrador de la empresa",
+   "precondiciones": "El administrador inició sesión y no tiene un rol propio.",
+   "flujo": [
+    "El administrador abre «Roles y permisos» en el menú de administración.",
+    "El sistema muestra el catálogo de permisos por área, marcando los que el plan no incluye, los roles de la empresa con cuántas personas tienen cada uno, y el personal con su rol.",
+    "El administrador pulsa «Nuevo rol», escribe el nombre y la descripción, elige el rol base (administrador, encargado o cajero) y marca los permisos.",
+    "El sistema verifica que el nombre no esté usado y que cada permiso exista, se pueda delegar, sea del rol base y esté incluido en el plan (incluye CU-05).",
+    "El sistema guarda el rol con sus permisos, solo para la empresa.",
+    "En la pestaña «Personal», el administrador elige el rol para una persona.",
+    "El sistema verifica que la persona sea del personal, que no sea él mismo, y que el rol esté activo y sea de su mismo rol base, y se lo asigna.",
+    "Desde su siguiente pedido, esa persona solo entra a las pantallas que cubren los permisos de su rol."
+   ],
+   "alternativos": [
+    "3a. Editar: el administrador cambia el nombre, la descripción o los permisos; el rol base no se cambia.",
+    "3b. Desactivar: el sistema no apaga un rol con personas asignadas y pide reasignarlas antes.",
+    "4a. Permiso no permitido: si un permiso no está en el plan, el sistema rechaza por el plan; si no es del rol base o no se delega (usuarios, roles y copias de seguridad), lo rechaza con el motivo.",
+    "4b. Nombre repetido: ya hay un rol con ese nombre en la empresa.",
+    "6a. Quitar el rol propio: con «Todo lo de su rol», la persona vuelve a tener todos los permisos de su rol base."
+   ],
+   "postcondiciones": "El rol queda guardado solo para la empresa y la persona queda con sus permisos, que nunca superan los de su rol base ni los del plan. La bitácora registra cada cambio.",
+   "rastreo": "RF-64, RF-09 · RN-22"
+  },
+  "CU-42": {
+   "descripcion": "Envía al cliente, al cajero y al encargado, en el teléfono o en el navegador y aunque la aplicación esté cerrada, el aviso de lo que pasó con sus operaciones sin conexión.",
+   "actores": "Sistema, usuario (cliente, cajero o encargado)",
+   "iniciador": "Sistema",
+   "precondiciones": "El usuario inició sesión y aceptó los avisos en su dispositivo. El servidor tiene configurado Web Push (claves VAPID) o FCM; si no, usa el canal simulado.",
+   "flujo": [
+    "El usuario abre la campanita y pulsa «Recibir avisos en este dispositivo».",
+    "El sistema entrega la clave pública VAPID; el navegador crea la suscripción y la envía con sus claves. En el móvil, la aplicación envía su token de FCM sola al iniciar sesión.",
+    "El sistema guarda el dispositivo a nombre del usuario; si ya existía, lo renueva sin duplicarlo.",
+    "Cuando nace un aviso para una persona con algún dispositivo, el sistema lo deja con el push pendiente.",
+    "Al terminar el lote de la sincronización (CU-17), el sistema despacha al instante los push de los avisos que nacieron en ese lote.",
+    "En cada vuelta, la tarea automática despacha los push pendientes de los demás casos de uso.",
+    "El sistema envía cada aviso a todos los dispositivos de la persona: por FCM a la aplicación y por Web Push a la PWA.",
+    "El sistema marca el push como enviado, con su fecha, si llegó al menos a un dispositivo.",
+    "El usuario toca la notificación y la aplicación lo lleva a la pantalla del aviso."
+   ],
+   "alternativos": [
+    "1a. Apagar los avisos: el usuario pulsa «Apagar los avisos en este dispositivo» o cierra sesión, y el sistema da de baja ese dispositivo.",
+    "1b. Permiso denegado: si el navegador bloqueó los avisos, la campanita muestra «El navegador bloqueó los avisos» y no ofrece activarlos.",
+    "3a. Dispositivo de otra cuenta: si el dispositivo está a nombre de otra persona de la tienda y la petición no trae sus mismas claves, el sistema responde «Este dispositivo recibe los avisos de otra cuenta».",
+    "7a. Dispositivo que ya no existe: si FCM o el navegador responden que la suscripción venció, el sistema borra el dispositivo y el push queda fallido con el motivo; el aviso sigue en la campanita.",
+    "7b. Sin dispositivos: si la persona ya no tiene ningún dispositivo, el push queda omitido."
+   ],
+   "postcondiciones": "El aviso llegó al dispositivo o quedó registrado por qué no. Un push que falla no deshace la operación ni borra el aviso de la campanita.",
+   "rastreo": "RF-65, RF-23 · RN-06"
+  },
+  "CU-43": {
+   "descripcion": "Devuelve por el mismo medio el pago de una operación sin conexión que el servidor rechazó al sincronizar: el QR se reintegra solo y el efectivo queda registrado para entregarse en la sucursal.",
+   "actores": "Sistema",
+   "iniciador": "Sistema",
+   "precondiciones": "Una venta o una reserva hecha sin conexión se cobró (CU-16) y llega al servidor en la sincronización (CU-17).",
+   "flujo": [
+    "El dispositivo envía el lote de operaciones pendientes al recuperar la conexión.",
+    "El sistema intenta confirmar la operación, no alcanza la existencia y la deja rechazada con su motivo.",
+    "El sistema limita lo que hay que devolver al total de la operación: lo que el cliente dio de más ya se le entregó como vuelto.",
+    "Como se cobró con QR, el sistema reintegra el monto (simulado) y genera la referencia «REINT-QR-…».",
+    "El sistema marca la operación como devuelta automáticamente, con la fecha, el medio «QR», la referencia y una observación, sin un responsable humano.",
+    "El sistema deja al cliente el aviso «Le devolvimos Bs … por QR» con la referencia, y al cajero el resumen del lote.",
+    "El sistema confirma la operación y despacha los avisos por push (CU-42).",
+    "El dispositivo muestra la operación rechazada y reintegrada por QR, con su referencia, en la pantalla «Sin conexión»."
+   ],
+   "alternativos": [
+    "2a. Sin cobro: si la operación no se había cobrado, no hay nada que devolver y solo se avisa el rechazo.",
+    "4a. Cobrada en efectivo: el sistema no puede sacar billetes del cajón. La operación queda por devolver en la lista de la sucursal (CU-19); a los encargados les llega «Hay Bs … en efectivo para devolver» y al cliente, «Su dinero lo espera en …». El arqueo cuenta ese efectivo hasta que se entregue.",
+    "6a. Venta anónima: si la venta no tenía cliente, nadie recibe el aviso de la devolución; el cajero la ve en el resumen del lote.",
+    "8a. Ya devuelta: si el encargado intenta registrarla a mano en CU-19, el sistema responde «El sistema ya la reintegró por QR»."
+   ],
+   "postcondiciones": "El pago de la operación rechazada se devolvió una sola vez, por el mismo medio, y quedó registrado cuándo y cómo. El cliente fue avisado.",
+   "rastreo": "RF-66, RF-55 · RN-06, RN-21"
+  },
+  "CU-44": {
+   "descripcion": "Permite al cliente pedir que le avisen cuando vuelva a haber unidades de una talla y un color agotados, y a la empresa ver cuántos clientes esperan cada talla.",
+   "actores": "Cliente, encargado de sucursal, administrador de la empresa, Sistema",
+   "iniciador": "Cliente",
+   "precondiciones": "El cliente inició sesión. La talla y el color están activos, su producto también, y no tienen unidades disponibles en ninguna sucursal activa.",
+   "flujo": [
+    "El cliente abre la ficha de la prenda y elige la talla y el color.",
+    "El sistema muestra que no hay unidades en ninguna sucursal y ofrece el botón «Avísenme cuando llegue».",
+    "El cliente pulsa el botón.",
+    "El sistema verifica que la variante se siga ofreciendo y que siga sin unidades, y registra el aviso pendiente.",
+    "El sistema responde «Listo. Le avisaremos por la campanita, el correo y el teléfono cuando llegue».",
+    "Cuando entra mercadería a esa variante y el total de las sucursales activas pasa de 0 a más de 0, el sistema crea el aviso «Volvió su talla» y marca el pedido como avisado, en la misma transacción del movimiento de inventario.",
+    "La tarea automática envía el aviso por correo y por push (CU-42); en la campanita se ve al instante.",
+    "El cliente entra desde el aviso a la ficha y compra o reserva."
+   ],
+   "alternativos": [
+    "4a. Ya lo había pedido: el sistema devuelve el aviso pendiente que ya existía; no lo duplica.",
+    "4b. Llegaron unidades: si mientras miraba entró mercadería, el sistema responde «Esa talla ya tiene unidades: puede comprarla o reservarla ahora» y la ficha vuelve a consultar la disponibilidad.",
+    "6a. No es noticia: si la mercadería entra a una sucursal inactiva o ya había unidades en otra sucursal, el sistema no avisa.",
+    "8a. Cancelar: en «Mis avisos», el cliente cancela un aviso pendiente y el sistema lo borra.",
+    "8b. Tallas esperadas: el encargado o el administrador abren «Tallas esperadas» y el sistema lista cada talla y color con los clientes que esperan y desde cuándo, lo más pedido primero."
+   ],
+   "postcondiciones": "El pedido queda pendiente hasta que vuelve la talla; entonces se avisa una sola vez. La empresa conoce la demanda que espera.",
+   "rastreo": "RF-67 · RN-24"
+  },
+  "CU-45": {
+   "descripcion": "Marca con aprendizaje no supervisado (Isolation Forest) los turnos de caja y las devoluciones que se apartan de lo habitual, y explica el motivo de cada caso.",
+   "actores": "Administrador de la empresa",
+   "iniciador": "Administrador de la empresa",
+   "precondiciones": "El administrador inició sesión. El plan de la empresa incluye la analítica con aprendizaje automático. Hay al menos 20 turnos de caja cerrados en el último año.",
+   "flujo": [
+    "El administrador abre «Analítica inteligente» y pulsa «Buscar anomalías».",
+    "El sistema verifica el rol y que el plan incluya la función (incluye CU-05).",
+    "El sistema junta los turnos cerrados del último año con la diferencia de arqueo, las devoluciones y su monto, el descuento, la parte cobrada en efectivo, las ventas y la duración.",
+    "El sistema entrena un Isolation Forest de 200 árboles y marca alrededor del 5 % más aislado.",
+    "Como hay al menos 15 devoluciones, hace lo mismo con su valor, las horas desde la venta, la tasa de devoluciones de quien la atendió, si la prenda venía de un cambio, si es un cambio y la hora.",
+    "Para cada caso marcado, el sistema nombra las variables que más se apartan de la mediana, por ejemplo «diferencia de arqueo 8× la habitual».",
+    "El sistema guarda el análisis, conserva las revisiones anteriores y deja solo los últimos cinco análisis.",
+    "El sistema muestra las pestañas «Turnos de caja» y «Devoluciones» con el puntaje, la fecha, el cajero, la sucursal, el detalle y el motivo.",
+    "El administrador pulsa «Marcar revisada» en cada caso y el sistema registra quién y cuándo."
+   ],
+   "alternativos": [
+    "2a. Plan sin la función: el sistema responde «plan_limit» y la pantalla muestra el candado con «Ver mi plan».",
+    "3a. Pocos turnos: con menos de 20 turnos cerrados, el sistema responde «Hacen falta al menos 20 turnos de caja cerrados para buscar anomalías» y no guarda nada.",
+    "5a. Pocas devoluciones: el sistema analiza solo los turnos y la pestaña «Devoluciones» dice cuántas faltan.",
+    "9a. Volver a buscar: el administrador pulsa «Volver a buscar» y el sistema entrena de nuevo con los datos de hoy, sin perder las revisiones de los mismos casos."
+   ],
+   "postcondiciones": "Queda guardado un análisis de tipo «ANOMALIAS» con los casos marcados, su puntaje, su explicación y su revisión. Una anomalía es una alerta para revisar, no una prueba de fraude.",
+   "rastreo": "RF-68, RF-09"
+  }
+ }
+}
