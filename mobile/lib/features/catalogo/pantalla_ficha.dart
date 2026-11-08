@@ -262,6 +262,8 @@ class _EstadoPantallaFicha extends ConsumerState<PantallaFicha> {
               _BotonReservar(prenda: prenda, variante: variante),
               const SizedBox(height: 10),
               _BotonVestidor(prenda: prenda, variante: variante),
+              const SizedBox(height: 10),
+              _BotonProbadorTalla(prenda: prenda),
 
               const SizedBox(height: 8),
               const _Rotulo('Dónde encontrarla'),
@@ -668,6 +670,33 @@ class _BotonVestidor extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// CU-37 (3ra presentación) · el probador con la talla real.
+///
+/// Solo para el cliente con sesión: el probador guarda las pruebas en su
+/// cuenta y usa sus medidas. Si la prenda todavía no está preparada por el
+/// administrador (CU-36), la pantalla lo dice al abrirla.
+class _BotonProbadorTalla extends ConsumerWidget {
+  const _BotonProbadorTalla({required this.prenda});
+
+  final FichaPrenda prenda;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sesion = ref.watch(sesionProvider);
+    if (sesion is! SesionAbierta || !sesion.usuario.esCliente) {
+      return const SizedBox.shrink();
+    }
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        icon: const Icon(Icons.straighten),
+        label: const Text('Probármela con mi talla real'),
+        onPressed: () => context.push(Rutas.probadorTalla(prenda.id)),
+      ),
     );
   }
 }
