@@ -16,6 +16,16 @@ from app.core.config import settings
 from app.core.registro import configurar_logging
 from app.core.tareas import ciclo_de_vida
 
+# Las organizaciones de demostración (scripts/organizaciones_demo.py) usan
+# correos `rol@<slug>.test`. `email-validator`, que valida los `EmailStr`, da
+# por inválido el dominio reservado `.test` y el login respondía 422 antes de
+# mirar la contraseña. Se lo quita de la lista de reservados; los demás
+# (`.local`, `.invalid`, `.localhost`...) siguen rechazados.
+import email_validator  # noqa: E402
+
+if "test" in email_validator.SPECIAL_USE_DOMAIN_NAMES:
+    email_validator.SPECIAL_USE_DOMAIN_NAMES.remove("test")
+
 # --- Ciclo 1 -------------------------------------------------------------
 from app.modules.seguridad.router import admin_router as seguridad_admin_router
 from app.modules.seguridad.router import perfil_router as seguridad_perfil_router
