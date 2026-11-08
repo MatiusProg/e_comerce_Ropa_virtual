@@ -34,8 +34,9 @@ import 'pintor_talla_real.dart';
 /// Nariz a tobillos, como fracción de la estatura de un adulto.
 const double narizATobillosSobreEstatura = 0.89;
 
-/// Ancho biacromial real sobre la distancia entre los puntos de hombro de ML Kit.
-const double biacromialSobreLandmarks = 1.15;
+/// Ancho biacromial real sobre la distancia entre los puntos de hombro de ML Kit. Medido el
+/// 08/11 con una persona real: con 1,15 sobreestimaba el busto en ~13 cm; con 1,0 da su talla.
+const double biacromialSobreLandmarks = 1.0;
 
 class MedicionCorporal {
   const MedicionCorporal({required this.bustoCm, required this.hombrosCm});
