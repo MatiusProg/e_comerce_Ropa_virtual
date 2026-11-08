@@ -96,8 +96,11 @@ export interface Solicitud {
   reembolso_referencia: string | null;
 }
 
+// PENDIENTE es «la tienda todavía no la revisó». «Esperando a la tienda» se
+// leía como «tenés que ir a la tienda», que es lo que pasa recién en APROBADA.
+// El rótulo lo comparten el cliente y la sucursal: tiene que servir a los dos.
 export const ROTULO_SOLICITUD: Record<EstadoSolicitud, string> = {
-  PENDIENTE: 'Esperando a la tienda',
+  PENDIENTE: 'Pendiente de revisión',
   APROBADA: 'Aprobada',
   RECHAZADA: 'Rechazada',
   COMPLETADA: 'Completada',

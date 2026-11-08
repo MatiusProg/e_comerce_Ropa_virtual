@@ -52,7 +52,7 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core import tiempo
+from app.core import moneda, tiempo
 from app.core.config import settings
 from app.integrations.correo import ErrorDeEnvio, Mensaje, enviar
 from app.modules.notificaciones import repository
@@ -272,8 +272,10 @@ def avisar_pedido_pagado(db: Session, venta) -> Notificacion | None:
         tipo="PEDIDO_PAGADO",
         titulo=f"Pago confirmado del pedido {venta.codigo}",
         cuerpo=(
+            # En Bs y con formato boliviano. NO con `PAGO_MONEDA`: esa es la
+            # moneda de la prueba de Stripe, no la del precio de la tienda.
             f"Recibimos el pago de su pedido {venta.codigo} por "
-            f"{venta.total} {settings.PAGO_MONEDA.upper()}. "
+            f"{moneda.bs(venta.total)}. "
             f"Ya estamos preparándolo."
         ),
         enlace="/mi-cuenta/compras",

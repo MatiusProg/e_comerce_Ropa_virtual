@@ -25,7 +25,7 @@ de uso pide.
 
 from __future__ import annotations
 
-from app.core import tiempo
+from app.core import moneda, tiempo
 
 from dataclasses import dataclass, field
 from datetime import date, datetime
@@ -67,7 +67,8 @@ def _texto(valor: object) -> str:
     if isinstance(valor, bool):
         return "Sí" if valor else "No"
     if isinstance(valor, Decimal):
-        return f"{valor:,.2f}"
+        # Formato boliviano: 2.732,00 y no 2,732.00.
+        return moneda.numero(valor)
     if isinstance(valor, datetime):
         # En hora BOLIVIANA. La base guarda instantes en UTC ---que es lo
         # correcto--- pero un reporte lo lee una persona al lado del reloj de
@@ -77,7 +78,7 @@ def _texto(valor: object) -> str:
     if isinstance(valor, date):
         return valor.strftime("%d/%m/%Y")
     if isinstance(valor, float):
-        return f"{valor:,.2f}"
+        return moneda.numero(valor)
     return str(valor)
 
 

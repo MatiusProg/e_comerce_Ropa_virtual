@@ -166,11 +166,22 @@ def entrenar_demanda(
     # Reentrenado con todo para predecir hacia adelante.
     final = GradientBoostingRegressor(random_state=semilla, **PARAMETROS_GB)
     final.fit(np.vstack([x_tr, x_te]), np.concatenate([y_tr, y_te]))
-    proximo = lunes[-1] + timedelta(days=7)
+    # LA SEMANA QUE VIENE ESTÁ A DOS PASOS, NO A UNO.
+    #
+    # `lunes[-1]` es el lunes de la última semana COMPLETA, o sea la pasada.
+    # Un paso más adelante cae en la semana EN CURSO, que ya empezó: antes se
+    # publicaba esa como «la semana que viene», y al mirarla unos días después
+    # figuraba una semana ya vencida. Se predice primero la semana en curso,
+    # esa estimación ocupa su lugar en la serie (todavía no tiene ventas
+    # completas) y con ella se predice la siguiente.
+    en_curso = lunes[-1] + timedelta(days=7)
+    proximo = en_curso + timedelta(days=7)
     predicciones = []
     for i, p in enumerate(productos):
-        y = np.append(serie[i], 0.0)  # el hueco de la semana que se predice
-        fila = _fila(y, n, proximo, p, codigo[p.categoria])
+        y = np.append(serie[i], [0.0, 0.0])  # los huecos de las dos semanas
+        fila = _fila(y, n, en_curso, p, codigo[p.categoria])
+        y[n] = max(0.0, float(final.predict([fila])[0]))
+        fila = _fila(y, n + 1, proximo, p, codigo[p.categoria])
         valor = max(0.0, float(final.predict([fila])[0]))
         media4 = float(np.mean(serie[i][-4:]))
         if media4 and valor > media4 * 1.1:

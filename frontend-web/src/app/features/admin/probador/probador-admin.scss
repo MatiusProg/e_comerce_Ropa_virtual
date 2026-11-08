@@ -139,8 +139,14 @@
 }
 
 .lienzo {
+  // El lienzo mide lo mismo que la imagen: los puntos y las líneas se ubican
+  // en % de ESTA caja. La tarjeta (mat-card) es un flex en columna y estira a
+  // sus hijos a todo el ancho; sin `align-self` el `inline-block` no alcanza
+  // y los puntos se dibujaban corridos a la derecha de la prenda.
   position: relative;
   display: inline-block;
+  align-self: flex-start;
+  width: fit-content;
   max-width: 100%;
   margin: 8px 0 12px;
   background: repeating-conic-gradient(#f2f2f2 0% 25%, #fff 0% 50%) 50% / 16px 16px;

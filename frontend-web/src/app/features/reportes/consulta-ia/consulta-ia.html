@@ -8,7 +8,10 @@
   </header>
 
   <mat-card class="pedido">
-    <form (ngSubmit)="consultar()">
+    <!-- (submit) y no (ngSubmit): el pedido es un FormControl suelto, sin
+         [formGroup] ni NgForm que emita ngSubmit. Con (ngSubmit) el botón hacía
+         el submit nativo y recargaba la página. -->
+    <form (submit)="$event.preventDefault(); consultar()">
       <mat-form-field appearance="outline" class="campo">
         <mat-label>¿Qué reporte necesita?</mat-label>
         <textarea
