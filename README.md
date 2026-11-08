@@ -46,7 +46,23 @@ esquemas públicos no exponen proveedor ni precio base.
 
 | | |
 |---|---|
-| **APK** | <https://github.com/MatiusProg/e_comerce_Ropa_virtual/releases/latest> |
+| **APK (3ra presentación)** | <https://github.com/MatiusProg/e_comerce_Ropa_virtual/releases/tag/p3-apk> — archivo `violet-boutique-p3.apk` |
+| **Siempre el último** | <https://github.com/MatiusProg/e_comerce_Ropa_virtual/releases/latest> (hoy apunta al de arriba) |
+
+El APK de la 3ra presentación suma dos cosas al de la 2da:
+
+- **El inventario offline del encargado (CU-21):** consulta las existencias de
+  su sucursal y registra conteos y ajustes sin red; se sincronizan con el mismo
+  contrato que la caja.
+- **Los avisos push (CU-42)** con **Firebase Cloud Messaging**: el teléfono se
+  entera cuando una operación hecha sin conexión se confirma o se rechaza, sin
+  tener que abrir la app.
+
+**Para compilarlo con push hace falta `mobile/android/app/google-services.json`**,
+el archivo del proyecto de Firebase. No se versiona (está en el `.gitignore`):
+lo pasa el equipo. Del lado del backend, el push se configura con
+`PUSH_PROVEEDOR`, `PUSH_FCM_CREDENCIALES` y las claves VAPID de la web (ver
+[Variables de producción](#variables-de-producción-nuevas-del-2do-parcial)).
 
 Apunta a la **API desplegada**, no a `localhost`: la URL de producción es el
 valor por omisión en el código, y el APK se compila **sin** `--dart-define`.
@@ -66,6 +82,24 @@ detector de pose del vestidor--- arrastra WorkManager, que usa Room, que carga
 su clase generada por reflexión. R8 la renombraba y la aplicación moría antes
 del primer cuadro. Ver la nota en `mobile/android/app/build.gradle.kts`.
 
+### Variables de producción nuevas del 2do parcial
+
+Se cargan en Railway, en el servicio de la API. Acá van **solo los nombres**:
+ningún valor ni clave se escribe en el repositorio. Están definidas, con su
+valor por omisión, en `backend/app/core/config.py`.
+
+| Variable | Para qué sirve |
+|---|---|
+| `TAREAS_AUTOMATICAS` | `on` prende las tareas que corren dentro del backend: copias automáticas, ofertas de fuera de temporada, expiración de reservas y pedidos, despacho de correos y de push. Apagada (`off`) en local y en las pruebas. La acompaña `TAREAS_INTERVALO_MINUTOS` |
+| `PAGO_PROVEEDOR` | la pasarela: `simulada` aprueba al instante sin cobrar; en producción, Stripe en modo de pruebas |
+| `PAGO_API_KEY` · `PAGO_WEBHOOK_SECRET` | la clave de la pasarela y el secreto con que se verifica la firma del webhook |
+| `PAGO_URL_EXITO` · `PAGO_URL_CANCELADO` | adónde vuelve el navegador después de pagar o de cancelar |
+| `PAGO_MONEDA` | la moneda con que se le habla a la pasarela (el *sandbox* de Stripe no admite bolivianos) |
+| `PUSH_PROVEEDOR` | `simulado` solo deja el aviso en el log; `real` envía por FCM (app) y por Web Push (web instalada) |
+| `PUSH_FCM_CREDENCIALES` | la cuenta de servicio de Firebase, en JSON o en base64 |
+| `PUSH_VAPID_PUBLICA` · `PUSH_VAPID_PRIVADA` · `PUSH_VAPID_CONTACTO` | las claves VAPID de Web Push y el contacto que exige el estándar |
+| `PROBADOR_IA_PROVEEDOR` | la foto realista del probador (CU-38): `simulado` compone la vista en el servidor sin llamar a nadie, `gemini` usa el modelo, `no_disponible` la apaga |
+
 ## Tecnologías
 
 | Capa | Herramienta | Versión |
@@ -78,6 +112,8 @@ del primer cuadro. Ver la nota en `mobile/android/app/build.gradle.kts`.
 | Móvil | Flutter / Dart | Flutter **3.47** · Dart **3.13** |
 | Realidad aumentada | `camera` + ML Kit Pose Detection | procesamiento en el dispositivo |
 | Inteligencia artificial | Gemini | **modelo gratuito** · el SDK se fija al construir P10 |
+| Analítica con ML | scikit-learn | **1.9** · GradientBoosting, KMeans e Isolation Forest |
+| Avisos push | Firebase Cloud Messaging (app) + Web Push con VAPID (web) | `pywebpush` **2.5** |
 | Pasarela de pago | Stripe | **modo de pruebas** |
 | Correo | Brevo (API HTTP) | el SMTP de Gmail no sale de Railway; en local, `CORREO_PROVEEDOR=consola` |
 | Multitenant | PostgreSQL RLS con `FORCE` + `SET ROLE violet_app` | una sola base, aislada por `empresa_id` |
@@ -160,7 +196,7 @@ python --version                         # debe decir 3.13.x
 curl http://localhost:8000/health        # {"status":"ok",...}
 
 # 3. Las pruebas pasan.
-cd backend && pytest
+cd backend && pytest                     # 1303 pruebas, todas pasan
 ```
 
 Documentación interactiva de la API: <http://localhost:8000/docs>
@@ -233,11 +269,72 @@ está en el Word de la entrega, `SI2 Ex2 Grupo 15.docx`.
 |---|---|---|---|---|
 | **1** | dom 25/10 | CU-01 a CU-12 | Empresas, planes y suscripciones · login por empresa · cuenta única del cliente · usuarios y empleados por empresa · contratar un plan · personalizar la tienda | ✅ |
 | **2** | dom 01/11 | CU-13 a CU-20 | Preparar el dispositivo · venta, reserva y pago sin conexión · sincronizar · operaciones pendientes y rechazadas · caja con ventas sin conexión | ✅ |
-| **3** | dom 08/11 | CU-21 a CU-43 | Inventario de la sucursal · cambios y devoluciones (en caja y por la web) · avisos por correo según el plan · reportes con IA y voz · analítica con ML · ofertas · traspasos · probador por talla · exportación y copias de seguridad · roles · avisos push | 🚧 hechos CU-21 a 25, 31 a 35, 42 y 43 |
+| **3** | dom 08/11 | CU-21 a CU-45 | Inventario de la sucursal · cambios y devoluciones (en caja y por la web) · avisos por correo según el plan · reportes con IA y voz · analítica con ML · ofertas · traspasos · probador por talla · exportación y copias de seguridad · roles · avisos push · **dos aportes propios** | ✅ |
 
 **Defensa: martes 10/11/2026, 7:00.** El reparto de la 3ra presentación es por
 bloques: devoluciones, IA, ML, probador y avisos van por un lado; traspasos,
 ofertas, roles, exportación y copias de seguridad, por el otro.
+
+### Qué trae la 3ra presentación
+
+Los 23 casos de uso que pide el enunciado (CU-21 a CU-43) y **dos aportes
+propios** que no pide: en total, **45 CU** en el 2do parcial. El material de la
+entrega está en [docs/entregas/Presentacion-3/](docs/entregas/Presentacion-3/).
+
+| Módulo | CU | Qué hace |
+|---|---|---|
+| **Inventario y devoluciones** | CU-21 a CU-26, CU-28 | Inventario de la sucursal, también sin conexión · cambio o devolución en caja con nota y conformidad · ventana de devolución por empresa · solicitud por la web y su atención con reembolso por la pasarela · avisos por correo según el plan · reportes de gestión con devoluciones |
+| **IA y analítica** | CU-27, CU-29, CU-30, CU-45 | Reporte con IA **por texto o por voz** · demanda por producto con **GradientBoosting** · segmentos de clientes con **KMeans** · dashboard analítico · **anomalías** en caja y devoluciones (aporte) |
+| **Ofertas y traspasos** | CU-31 a CU-35 | Precios mayoristas · ofertas de fuera de temporada que se aplican solas · traspaso entre sucursales, su atención y los traspasos sugeridos |
+| **Probador con talla real** | CU-36 a CU-38 | La prenda se dibuja con los centímetros de la talla elegida sobre la foto del cliente, y la foto realista con IA parte de esa composición ([detalle](docs/entregas/Presentacion-3/cu-36-38-probador.md)) |
+| **Exportación, copias y roles** | CU-39 a CU-41 | Exportar los datos de la empresa · copias de seguridad propias de cada empresa · roles y permisos que define cada empresa |
+| **Push y devolución automática** | CU-42, CU-43 | Avisos push (FCM y Web Push) de lo hecho sin conexión · devolución automática del pago de una operación rechazada |
+| **Aviso de talla** | CU-44 | «Avísame cuando llegue mi talla» (aporte) |
+
+Los dos aportes propios:
+
+- **CU-44 · «Avísame cuando llegue mi talla».** Si la talla y el color están
+  agotados, el cliente pide el aviso y le llega por push, correo y la campanita
+  apenas el inventario repone. La empresa, además, ve cuántos clientes esperan
+  cada variante. [Detalle](docs/entregas/Presentacion-3/aporte-aviso-talla.md).
+- **CU-45 · «Detectar anomalías en caja y devoluciones».** Un **Isolation
+  Forest** marca los turnos de caja y las devoluciones que se apartan de lo
+  habitual (descuadres de arqueo, devoluciones en serie o fuera de hora) y
+  explica por qué. Pide el plan Empresarial.
+  [Detalle](docs/entregas/Presentacion-3/aporte-anomalias.md).
+
+### Cómo probar el multitenant
+
+Además de Violet Boutique, la plataforma tiene **cuatro organizaciones de
+demostración**, una por cada combinación de plan que vale la pena mostrar.
+Todo el detalle —cuentas, qué datos tiene cada una y ejemplos para la
+defensa— está en
+[docs/entregas/Presentacion-3/organizaciones-demo.md](docs/entregas/Presentacion-3/organizaciones-demo.md).
+
+| Slug | Plan | Qué muestra |
+|---|---|---|
+| `alpaca` | Empresarial | todo, con analítica ML e IA; tiene un turno con un faltante marcado como anomalía |
+| `chiquitana` | Empresarial | todo, con analítica ML e IA |
+| `illimani` | Profesional | la IA anda, la analítica con ML **no** (responde 403) |
+| `awayu` | Básico | **sin** IA ni analítica, y no deja crear una tercera sucursal |
+
+En el login se escribe el slug y una de estas cuentas:
+
+| Rol | Correo |
+|---|---|
+| Administrador | `admin@<slug>.test` |
+| Encargado | `encargado1@<slug>.test` (uno por sucursal) |
+| Cajero | `cajero1@<slug>.test` |
+| Cliente | `cliente1@<slug>.test` (hasta `cliente20`) |
+| Proveedor | `proveedor1@<slug>.test` |
+
+**La contraseña de las cuentas de demostración la entrega el equipo.**
+
+Tres cosas para ver en la defensa: el administrador de `alpaca` ve solo sus
+productos `ALP-..` y el de `awayu` solo los `AWY-..`; `admin@awayu.test` con el
+slug `alpaca` no entra; y `cliente1@alpaca.test` entra también con el slug
+`violet-boutique`, porque la cuenta del cliente es una sola en la plataforma
+(RN-13).
 
 ---
 
@@ -271,15 +368,19 @@ backend/
                     ia · reportes · notificaciones · bitacora
                     2do parcial: plataforma (empresas, planes, suscripciones)
                     · offline (paquetes y sincronización)
+                    3ra presentación: devoluciones_web · analitica ·
+                    traspasos · roles · datos (exportación y copias) ·
+                    avisos_talla
   app/integrations/ adaptadores de Stripe y de la API de IA
-  alembic/          migraciones versionadas (0022 en adelante: 2do parcial)
-  tests/            pytest; los del 2do parcial empiezan con test_p2_
+  alembic/          migraciones versionadas (0022 en adelante: 2do parcial; 0043 la última)
+  tests/            pytest; los del 2do parcial empiezan con test_p2_ o test_p3_
 frontend-web/
   src/app/core/     interceptor JWT, guardas por rol, servicios de API,
                     y la cola offline (offline.service.ts + IndexedDB)
   src/app/shared/   componentes reutilizables
   src/app/features/ auth · admin · tienda · sucursal · caja · reportes ·
-                    asistente · plataforma · contratar · proveedor · cliente
+                    asistente · plataforma · contratar · proveedor · cliente ·
+                    avisos · seguridad
 mobile/
   lib/core/         cliente HTTP (Dio), tema, enrutado, SQLite (base_local.dart)
   lib/data/         modelos del contrato y repositorios
@@ -287,7 +388,8 @@ mobile/
                     compra · asistente · gestion · reportes · offline ·
                     inventario
 scripts/            generadores de los diagramas UML sobre el .eapx
-                    (ea-p2-*.ps1 para el 2do parcial) y del Word (word-p2/)
+                    (ea-p2-*.ps1 y ea-p3-*.ps1 para el 2do parcial) y del
+                    Word (word-p2/, word-p3/)
 docs/
   00                índice oficial de la ingeniera y mapeo del entregable
   01 a 07           documentación PUDS
