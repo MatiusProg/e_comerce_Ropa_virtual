@@ -1,0 +1,68 @@
+{
+  "5.2": [
+    [
+      "5-2-01-cu21-inventario.png",
+      "CU-21: pruebas funcionales del inventario de la sucursal (kardex, paquete e ingresos y conteos offline): 18 de 18 pasan."
+    ],
+    [
+      "5-2-02-cu22-cu23-devoluciones.png",
+      "CU-22 y CU-23: pruebas funcionales del cambio y la devolución en caja y de la ventana de devolución: 11 de 11 pasan."
+    ],
+    [
+      "5-2-03-cu33-35-traspasos.png",
+      "CU-33 a CU-35: pruebas funcionales de solicitar, atender y sugerir traspasos: 19 de 19 pasan."
+    ],
+    [
+      "5-2-04-cu29-cu30-analitica.png",
+      "CU-29 y CU-30: pruebas funcionales del entrenamiento de la demanda semanal, los segmentos de clientes y el dashboard: 12 de 12 pasan."
+    ],
+    [
+      "5-2-05-cu36-38-probador.png",
+      "CU-36 a CU-38: pruebas funcionales del probador virtual (preparar la prenda, talla real y foto realista): 26 de 26 pasan."
+    ],
+    [
+      "5-2-06-aporte-aviso-talla.png",
+      "Aporte propio «Avísame cuando llegue mi talla»: pruebas funcionales del aviso y su notificación: 12 de 12 pasan."
+    ]
+  ],
+  "5.3": [
+    [
+      "5-3-01-venta-inventario.png",
+      "Venta en caja: la venta VP-20261108-AEFD deja su detalle (con el descuento de la promoción) y su movimiento VENTA de −2 en el kardex de la sucursal Centro (saldo 124 → 122)."
+    ],
+    [
+      "5-3-02-devolucion-nota-inventario.png",
+      "Devolución en caja: nace la nota ND-000040 cerrada y con la conformidad del cliente, su detalle y el movimiento DEVOLUCION de +1; la existencia queda en 123."
+    ],
+    [
+      "5-3-03-traspaso-dos-sucursales.png",
+      "Traspaso #4: queda RECIBIDO y enlazado a sus dos movimientos TRANSFERENCIA; sale −4 de Violet Centro (97 → 93) y entra +4 a Violet Equipetrol."
+    ],
+    [
+      "5-3-04-aviso-talla-notificacion.png",
+      "Aviso de talla: el ingreso de 3 unidades de una talla agotada (0 → 3) marca el aviso como notificado y crea la notificación STOCK_DISPONIBLE para la clienta, en la misma transacción."
+    ],
+    [
+      "5-3-05-sincronizacion-offline-venta.png",
+      "Sincronización offline: la operación enviada dos veces queda en una sola fila CONFIRMADA, crea una sola venta en el turno de caja y descuenta la existencia una sola vez."
+    ]
+  ],
+  "5.4": [
+    [
+      "5-4-E02-formulas-excel.png",
+      "E-02: las pruebas de regresión pasan; un texto que empieza con «=», «+», «-» o «@» sale con apóstrofo («'=1+1») en el Excel y el CSV exportados."
+    ],
+    [
+      "5-4-E04-roles-propios.png",
+      "E-04: las pruebas de regresión pasan; un rol propio que no se encuentra responde 403 y cambiar el rol base le quita el rol propio."
+    ],
+    [
+      "5-4-E06-traspasos.png",
+      "E-06: las pruebas de regresión pasan; con el destino dado de baja el origen recibe el traspaso de vuelta y crear el saldo dos veces ya no choca."
+    ],
+    [
+      "5-4-E07-operacion-offline.png",
+      "E-07: las pruebas de regresión pasan; la reserva offline con pago se rechaza y lo por devolver de una venta rechazada no supera su total."
+    ]
+  ]
+}
