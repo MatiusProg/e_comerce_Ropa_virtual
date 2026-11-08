@@ -22,11 +22,11 @@ if (-not $ea.OpenFile($Modelo)) { throw "No se pudo abrir $Modelo" }
 Write-Output 'modelo abierto'
 $proj = $ea.GetProjectInterface()
 $xml = [xml]$ea.SQLQuery("SELECT ea_guid, Name FROM t_diagram")
-$CARPETA = @{ '2.5' = 'Diagrama de casos de uso'; '3.2' = 'Diagrama de robustez'; '3.4' = 'Diagrama de clases' }
+$CARPETA = @{ '2.5' = 'Diagrama de casos de uso'; '3.2' = 'Diagrama de robustez'; '3.4' = 'Diagrama de clases'; '3.3' = 'Diagrama de secuencia'; '3.1' = 'Modelo de dominio'; '3.5' = 'Base de datos' }
 $n = 0
 foreach ($f in $xml.SelectNodes('//Row')) {
     $nombre = $f.Name; $guid = $f.ea_guid
-    $esP3 = ($nombre -match '^(2\.5|3\.2|3\.4) CU-(\d+) ' -and [int]$Matches[2] -ge 21) -or $nombre -like '2.5 Diagrama general*CU-01 a CU-45*'
+    $esP3 = ($nombre -match '^(2\.5|3\.2|3\.3|3\.4) CU-(\d+) ' -and [int]$Matches[2] -ge 21) -or $nombre -like '2.5 Diagrama general*CU-01 a CU-45*' -or $nombre -like '3.[15] *3ra presentaci*'
     if (-not $esP3) { continue }
     $dir = Join-Path $Salida $CARPETA[$nombre.Substring(0, 3)]
     New-Item -ItemType Directory -Force $dir | Out-Null

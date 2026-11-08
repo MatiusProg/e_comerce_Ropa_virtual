@@ -1,0 +1,204 @@
+{
+  "CU-21": [
+    [
+      "cu21-inventario-sucursal.png",
+      "Web: inventario de la sucursal, con lo disponible, lo reservado, lo que hay en el local y el mínimo."
+    ],
+    [
+      "cu21-ajuste-por-conteo.png",
+      "Web: ajuste por conteo físico, con la diferencia calculada y el motivo."
+    ]
+  ],
+  "CU-22": [
+    [
+      "cu22-devolucion-en-caja.png",
+      "Web: devolución en caja, con la ventana vigente, las prendas que vuelven y la conformidad del cliente."
+    ],
+    [
+      "cu22-devolucion-registrada.png",
+      "Web: devolución registrada con su nota y el efectivo que se entrega."
+    ]
+  ],
+  "CU-23": [
+    [
+      "cu23-ventana-de-devolucion.png",
+      "Web: ventana de devolución en «Mi tienda», en horas y su equivalente en días."
+    ]
+  ],
+  "CU-24": [
+    [
+      "cu24-solicitar-devolucion.png",
+      "Web: el cliente pide la devolución de una prenda de su pedido, con el motivo y el plazo."
+    ],
+    [
+      "cu24-solicitud-enviada.png",
+      "Web: «Mis cambios y devoluciones», con la solicitud enviada esperando a la tienda."
+    ]
+  ],
+  "CU-25": [
+    [
+      "cu25-solicitud-pendiente.png",
+      "Web: el encargado responde y aprueba la solicitud en «Pedidos web»."
+    ],
+    [
+      "cu25-prenda-recibida-reembolso.png",
+      "Web: prenda recibida, con la nota abierta y el reembolso por el mismo medio de pago."
+    ]
+  ],
+  "CU-26": [
+    [
+      "cu26-campanita-aviso.png",
+      "Web: la campanita del encargado con el aviso de la devolución pedida."
+    ],
+    [
+      "cu26-despacho-de-correos.png",
+      "Web: despacho de los correos pendientes según el plan."
+    ]
+  ],
+  "CU-27": [
+    [
+      "cu27-reporte-con-ia.png",
+      "Web: reporte pedido con lenguaje natural, con lo que entendió la IA y el gráfico."
+    ]
+  ],
+  "CU-28": [
+    [
+      "cu28-reporte-de-devoluciones.png",
+      "Web: reportes de gestión, con el de devoluciones y cambios filtrado por tipo."
+    ],
+    [
+      "cu28-reporte-de-devoluciones-pdf.png",
+      "PDF: reporte de devoluciones con una fila por prenda y el total devuelto."
+    ]
+  ],
+  "CU-29": [
+    [
+      "cu29-entrenando-modelos.png",
+      "Web: entrenamiento de los modelos en curso."
+    ],
+    [
+      "cu29-modelos-entrenados.png",
+      "Web: modelos entrenados, con las métricas de validación y el peso de cada variable."
+    ]
+  ],
+  "CU-30": [
+    [
+      "cu30-demanda-prevista.png",
+      "Web: demanda prevista por producto para la semana, con su tendencia."
+    ],
+    [
+      "cu30-segmentos-de-clientes.png",
+      "Web: segmentos de clientes con K-means y la silueta de cada k."
+    ]
+  ],
+  "CU-31": [
+    [
+      "cu31-precios-mayoristas.png",
+      "Web: precios mayoristas, con el escalón por cantidad mínima de cada producto."
+    ]
+  ],
+  "CU-32": [
+    [
+      "cu32-regla-fuera-de-temporada.png",
+      "Web: regla de fuera de temporada activa y las prendas que cumplen el factor."
+    ],
+    [
+      "cu32-ofertas-automaticas.png",
+      "Web: promociones de origen automático creadas por la regla."
+    ]
+  ],
+  "CU-33": [
+    [
+      "cu33-pedir-traspaso.png",
+      "Web: el encargado pide una prenda a otra sucursal, con su disponible y el motivo."
+    ]
+  ],
+  "CU-34": [
+    [
+      "cu34-traspaso-por-atender.png",
+      "Web: traspasos que le piden a la sucursal, para aprobar, enviar o rechazar."
+    ]
+  ],
+  "CU-35": [
+    [
+      "cu35-traspasos-sugeridos.png",
+      "Web: traspasos sugeridos según lo vendido y lo que sobra en cada sucursal."
+    ]
+  ],
+  "CU-36": [
+    [
+      "cu36-marcar-puntos-de-la-prenda.png",
+      "Web: el administrador marca los hombros y el ruedo sobre la imagen de la prenda."
+    ],
+    [
+      "cu36-prenda-lista.png",
+      "Web: prenda lista para el probador, con sus imágenes calibradas y las medidas por talla."
+    ]
+  ],
+  "CU-37": [
+    [
+      "cu37-probador-talla-real.png",
+      "Web: probador con la prenda a su tamaño real sobre la foto del cliente y el ajuste de la talla."
+    ]
+  ],
+  "CU-38": [
+    [
+      "cu38-foto-realista.png",
+      "Web: foto realista de la prueba (vista simulada en local) y la prueba guardada."
+    ]
+  ],
+  "CU-39": [
+    [
+      "cu39-exportar-datos.png",
+      "Web: «Datos de la empresa», con la exportación a Excel o CSV."
+    ]
+  ],
+  "CU-40": [
+    [
+      "cu40-copias-de-seguridad.png",
+      "Web: copia generada y el historial de copias y restauraciones."
+    ]
+  ],
+  "CU-41": [
+    [
+      "cu41-nuevo-rol.png",
+      "Web: nuevo rol propio a partir del de cajero, con sus permisos."
+    ],
+    [
+      "cu41-personal-y-roles.png",
+      "Web: el personal de la empresa con su rol y el rol propio asignable."
+    ]
+  ],
+  "CU-42": [
+    [
+      "cu42-recibir-avisos-push.png",
+      "Web: la campanita ofrece «Recibir avisos en este dispositivo»."
+    ]
+  ],
+  "CU-43": [
+    [
+      "cu43-devolucion-automatica.png",
+      "Web: venta sin conexión rechazada, con el reintegro automático por QR y su referencia."
+    ],
+    [
+      "cu43-aviso-de-reintegro.png",
+      "Web: la campanita del cliente con el aviso del reintegro."
+    ]
+  ],
+  "CU-44": [
+    [
+      "cu44-avisenme-cuando-llegue.png",
+      "Web: talla sin unidades en ninguna sucursal, con el botón «Avísenme cuando llegue»."
+    ],
+    [
+      "cu44-tallas-esperadas.png",
+      "Web: tallas esperadas, con los clientes que esperan cada talla agotada."
+    ]
+  ],
+  "CU-45": [
+    [
+      "cu45-anomalias-detectadas.png",
+      "Web: anomalías en caja y devoluciones, con el puntaje y por qué es rara cada una."
+    ]
+  ]
+}
