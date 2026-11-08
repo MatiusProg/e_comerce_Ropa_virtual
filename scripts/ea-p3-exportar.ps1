@@ -26,7 +26,7 @@ $CARPETA = @{ '2.5' = 'Diagrama de casos de uso'; '3.2' = 'Diagrama de robustez'
 $n = 0
 foreach ($f in $xml.SelectNodes('//Row')) {
     $nombre = $f.Name; $guid = $f.ea_guid
-    $esP3 = ($nombre -match '^(2\.5|3\.2|3\.3|3\.4) CU-(\d+) ' -and [int]$Matches[2] -ge 21) -or $nombre -like '2.5 Diagrama general*CU-01 a CU-45*' -or $nombre -like '3.[15] *3ra presentaci*'
+    $esP3 = ($nombre -match '^(2\.5|3\.2|3\.3|3\.4) CU-(\d+) ' -and [int]$Matches[2] -ge 21) -or $nombre -like '*(CU-01 a CU-46)'
     if (-not $esP3) { continue }
     $dir = Join-Path $Salida $CARPETA[$nombre.Substring(0, 3)]
     New-Item -ItemType Directory -Force $dir | Out-Null

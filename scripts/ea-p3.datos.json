@@ -550,6 +550,16 @@
    ],
    "notas": "Aporte propio. Isolation Forest sobre los turnos de caja cerrados y las devoluciones, con la explicación de cada caso por mediana y MAD. Pide la función analitica_ml del plan. RF-68.",
    "extiende": []
+  },
+  {
+   "id": "CU-46",
+   "n": "Consultar mis comprobantes por voz",
+   "actores": [
+    "Cliente"
+   ],
+   "incluye": [],
+   "notas": "Pedido de la docente. El cliente pide por voz o texto sus recibos y notas de devolución; cada uno con su QR de verificación pública. RF-69.",
+   "extiende": []
   }
  ],
  "robustez": [

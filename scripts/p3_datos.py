@@ -14,7 +14,7 @@ AQUI = Path(__file__).parent
 sys.path.insert(0, str(AQUI))
 import p2_datos  # noqa: E402
 
-GRUPOS = ['a', 'b', 'c', 'd', 'e']
+GRUPOS = ['a', 'b', 'c', 'd', 'e', 'f']
 MD = AQUI.parent / 'docs' / 'diagramas' / '2do Parcial' / '3.2-robustez-mensajes-p3.md'
 
 
